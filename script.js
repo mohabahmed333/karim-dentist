@@ -31,7 +31,6 @@ const translations = {
     navMore: "More Images",
     navContact: "Contact",
     headerContact: "Contact",
-    searchAria: "Open gallery",
     menuOpenAria: "Open menu",
     menuCloseAria: "Close menu",
     aboutJumpAria: "Go to services",
@@ -192,7 +191,6 @@ const translations = {
     navMore: "صور إضافية",
     navContact: "تواصل معنا",
     headerContact: "تواصل",
-    searchAria: "فتح المعرض",
     menuOpenAria: "فتح القائمة",
     menuCloseAria: "إغلاق القائمة",
     aboutJumpAria: "الانتقال إلى الخدمات",
@@ -431,15 +429,22 @@ function startSliderAutoplay() {
   }, 3500);
 }
 
-function updateMenuPushOffset() {
+function updateMenuPosition() {
   if (!siteMenu || siteMenu.hidden) {
     return;
   }
 
-  document.documentElement.style.setProperty(
-    "--menu-push",
-    `${siteMenu.offsetHeight}px`
-  );
+  const stickyVisible = siteHeaderSticky?.classList.contains("is-visible");
+  const anchor = stickyVisible
+    ? document.querySelector(".site-header-bar")
+    : document.querySelector(".hero-topbar");
+
+  if (anchor) {
+    const bottom = Math.ceil(anchor.getBoundingClientRect().bottom);
+    document.documentElement.style.setProperty("--menu-top", `${bottom}px`);
+  } else {
+    document.documentElement.style.setProperty("--menu-top", "0px");
+  }
 }
 
 function setMenuOpen(isOpen) {
@@ -451,11 +456,10 @@ function setMenuOpen(isOpen) {
   document.body.classList.toggle("menu-open", isOpen);
 
   if (isOpen) {
-    requestAnimationFrame(() => {
-      updateMenuPushOffset();
-    });
+    updateMenuPosition();
+    requestAnimationFrame(updateMenuPosition);
   } else {
-    document.documentElement.style.removeProperty("--menu-push");
+    document.documentElement.style.removeProperty("--menu-top");
   }
 
   menuToggles.forEach((toggle) => {
@@ -484,7 +488,7 @@ function updateStickyHeader() {
   );
 
   if (document.body.classList.contains("menu-open")) {
-    updateMenuPushOffset();
+    updateMenuPosition();
   }
 }
 
@@ -768,7 +772,7 @@ window.addEventListener("scroll", updateStickyHeader, { passive: true });
 window.addEventListener("resize", () => {
   updateStickyHeader();
   if (document.body.classList.contains("menu-open")) {
-    updateMenuPushOffset();
+    updateMenuPosition();
   }
 });
 
