@@ -6,14 +6,11 @@ import type { PatientTreatmentRow } from "@/services/patient_treatments";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 import { ArchStage } from "./ArchStage";
 import { ClinicalPatientHeader } from "./ClinicalPatientHeader";
-import { RequiredTreatmentsQueue } from "./RequiredTreatmentsQueue";
-import { ToothActionSidebar } from "./ToothActionSidebar";
-import {
-  appendCdtToQueue,
-  openBalanceEgp,
-} from "./queueHelpers";
+import { PatientDashboardShell } from "./PatientDashboardShell";
+import { CDT_QUICK_ACTIONS } from "./clinicalCatalog";
 import { buildQueueFromServer } from "./buildQueue";
-import type { CdtQuickAction, QueueRow, ViewTab } from "./clinicalTypes";
+import { appendCdtToQueue, openBalanceEgp } from "./queueHelpers";
+import type { QueueRow } from "./clinicalTypes";
 
 type Props = {
   group: PatientGroup;
@@ -26,10 +23,7 @@ export function SinglePatient3DDashboard({
   treatments,
   imaging,
 }: Props) {
-  const [selectedUniversal, setSelectedUniversal] = useState<number | null>(
-    null,
-  );
-  const [viewTab, setViewTab] = useState<ViewTab>("chairside");
+  const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
   const [sessionRows, setSessionRows] = useState<QueueRow[]>([]);
 
   const serverQueue = buildQueueFromServer(treatments, imaging);
@@ -41,30 +35,34 @@ export function SinglePatient3DDashboard({
   ];
   const balanceEgp = openBalanceEgp(queue);
 
-  function handleQuickAction(action: CdtQuickAction) {
-    if (selectedUniversal === null) return;
-    setSessionRows((prev) => appendCdtToQueue(prev, selectedUniversal, action));
+  function handlePickCdt(cdtCode: string, label: string) {
+    if (selectedTooth === null) return;
+    const action =
+      CDT_QUICK_ACTIONS.find((a) => a.cdtCode === cdtCode) ?? {
+        id: `custom-${cdtCode}`,
+        label: `+ ${label}`,
+        cdtCode,
+        severity: "Minor" as const,
+        feeAmount: 0,
+        procedureName: label,
+      };
+    setSessionRows((prev) => appendCdtToQueue(prev, selectedTooth, action));
   }
 
   return (
     <div className="flex min-h-full flex-col bg-[#f8fafc]">
       <ClinicalPatientHeader group={group} balanceEgp={balanceEgp} />
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-4 lg:p-6">
-        <div className="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,380px)]">
-          <ArchStage
-            selectedUniversal={selectedUniversal}
-            markedFdis={markedFdis}
-            viewTab={viewTab}
-            onViewTab={setViewTab}
-            onSelectUniversal={setSelectedUniversal}
-          />
-          <ToothActionSidebar
-            selectedUniversal={selectedUniversal}
-            onQuickAction={handleQuickAction}
-          />
-        </div>
-        <RequiredTreatmentsQueue rows={queue} />
-      </div>
+      <PatientDashboardShell
+        selectedTooth={selectedTooth}
+        queue={queue}
+        onPickCdt={handlePickCdt}
+      >
+        <ArchStage
+          selectedUniversal={selectedTooth}
+          markedFdis={markedFdis}
+          onSelectUniversal={setSelectedTooth}
+        />
+      </PatientDashboardShell>
     </div>
   );
 }
