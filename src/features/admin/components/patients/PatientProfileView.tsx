@@ -5,7 +5,7 @@ import type { PatientImaging } from "@/services/patient_imaging";
 import type { PatientToothNote } from "@/services/patient_tooth_notes";
 import type { PatientTreatmentRow } from "@/services/patient_treatments";
 import type { Service } from "@/services/services/types";
-import { SinglePatientDashboard } from "./single-patient-dashboard";
+import { SinglePatient3DDashboard } from "./single-patient-dashboard/SinglePatient3DDashboard";
 
 type Props = {
   group: PatientGroup;
@@ -16,6 +16,16 @@ type Props = {
   directory: PatientGroup[];
 };
 
-export function PatientProfileView(_props: Props) {
-  return <SinglePatientDashboard />;
+export function PatientProfileView({
+  group,
+  imaging,
+  treatments,
+}: Props) {
+  return (
+    <SinglePatient3DDashboard
+      group={group}
+      treatments={treatments}
+      imaging={imaging}
+    />
+  );
 }
