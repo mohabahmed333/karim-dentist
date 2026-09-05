@@ -5,7 +5,7 @@ import type { PatientImaging } from "@/services/patient_imaging";
 import type { PatientToothNote } from "@/services/patient_tooth_notes";
 import type { PatientTreatmentRow } from "@/services/patient_treatments";
 import type { Service } from "@/services/services/types";
-import { SinglePatient3DDashboard } from "./single-patient-dashboard/SinglePatient3DDashboard";
+import { PatientWorkspaceView } from "./workspace/PatientWorkspaceView";
 
 type Props = {
   group: PatientGroup;
@@ -18,14 +18,20 @@ type Props = {
 
 export function PatientProfileView({
   group,
+  notes,
   imaging,
   treatments,
+  services,
+  directory,
 }: Props) {
   return (
-    <SinglePatient3DDashboard
+    <PatientWorkspaceView
       group={group}
-      treatments={treatments}
+      notes={notes}
       imaging={imaging}
+      treatments={treatments}
+      services={services}
+      directory={directory}
     />
   );
 }
