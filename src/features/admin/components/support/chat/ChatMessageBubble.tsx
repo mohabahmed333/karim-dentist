@@ -23,6 +23,7 @@ type Props = {
   message: SupportMessage;
   booking?: FlowBookingContext;
   onReply?: (message: SupportMessage) => void;
+  highlighted?: boolean;
 };
 
 function isImage(mime?: string, type?: string) {
@@ -59,7 +60,12 @@ function isButtonOrListReplyFlow(
   return title === "button_reply" || title === "list_reply";
 }
 
-export function ChatMessageBubble({ message: m, booking, onReply }: Props) {
+export function ChatMessageBubble({
+  message: m,
+  booking,
+  onReply,
+  highlighted = false,
+}: Props) {
   const t = useTranslations();
   const isAgent = m.author === "agent";
   const media = m.media ?? [];
@@ -102,9 +108,11 @@ export function ChatMessageBubble({ message: m, booking, onReply }: Props) {
 
   return (
     <div
+      data-message-id={m.id}
       className={cn(
-        "group flex flex-col",
+        "group flex flex-col rounded-xl transition-[box-shadow,background-color] duration-500",
         isAgent ? "items-end" : "items-start",
+        highlighted && "bg-[#EEF2FF]/80 ring-2 ring-[#6366F1]/40",
       )}
     >
       <p className="mb-1 px-1 text-xs font-medium text-[#6B7280]">

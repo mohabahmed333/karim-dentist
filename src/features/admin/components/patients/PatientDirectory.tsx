@@ -43,22 +43,22 @@ export function PatientDirectory({ groups, services }: Props) {
           <table className="w-full text-start text-sm">
             <thead className="bg-[var(--admin-canvas)]">
               <tr>
-                <th className="px-4 py-3 font-medium text-[var(--admin-muted)]">
+                <th className="px-4 py-3 text-start font-medium text-[var(--admin-muted)]">
                   {t("admin.patients.name")}
                 </th>
-                <th className="px-4 py-3 font-medium text-[var(--admin-muted)]">
+                <th className="px-4 py-3 text-start font-medium text-[var(--admin-muted)]">
                   {t("admin.patients.phone")}
                 </th>
-                <th className="px-4 py-3 font-medium text-[var(--admin-muted)]">
+                <th className="px-4 py-3 text-start font-medium text-[var(--admin-muted)]">
                   {t("admin.patients.treatments")}
                 </th>
-                <th className="px-4 py-3 font-medium text-[var(--admin-muted)]">
+                <th className="px-4 py-3 text-start font-medium text-[var(--admin-muted)]">
                   {t("admin.patients.lastVisit")}
                 </th>
-                <th className="px-4 py-3 font-medium text-[var(--admin-muted)]">
+                <th className="px-4 py-3 text-start font-medium text-[var(--admin-muted)]">
                   {t("admin.patients.nextVisit")}
                 </th>
-                <th className="px-4 py-3 font-medium text-[var(--admin-muted)]">
+                <th className="px-4 py-3 text-start font-medium text-[var(--admin-muted)]">
                   {t("admin.patients.profile")}
                 </th>
               </tr>

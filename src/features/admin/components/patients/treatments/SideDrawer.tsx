@@ -1,6 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAdminDrawerSide } from "@/features/admin/hooks/useAdminDrawerSide";
 import { cn } from "@/lib/utils";
 
@@ -13,12 +15,17 @@ type Props = {
 
 export function SideDrawer({ open, title, onClose, children }: Props) {
   const drawer = useAdminDrawerSide();
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open ? (
         <div
-          className={cn("fixed inset-0 z-50 flex", drawer.shellClass)}
+          className={cn("fixed inset-0 flex", drawer.shellClass)}
           dir={drawer.shellDir}
         >
           <motion.button
@@ -57,6 +64,7 @@ export function SideDrawer({ open, title, onClose, children }: Props) {
           </motion.aside>
         </div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

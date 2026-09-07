@@ -31,6 +31,8 @@
   --detail-subnav-height: 2.8rem;
   --z-site-nav: 50;
   --z-detail-subnav: 49;
+  --z-drawer: 10000;
+  --z-popover: 11000;
   --content-max: 1180px;
   --site-header-height: 0px;
   --menu-top: 0px;
@@ -585,7 +587,7 @@ body.nav-drawer-open .site-nav .brand {
 .nav-drawer {
   position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: var(--z-drawer);
   pointer-events: none;
   visibility: hidden;
   transition: visibility 0s linear 0.52s;
@@ -737,7 +739,7 @@ body.nav-drawer-closing {
 body.nav-drawer-open .site-shell,
 body.nav-drawer-closing .site-shell {
   position: fixed;
-  z-index: 2;
+  z-index: calc(var(--z-drawer) + 1);
   width: auto;
   min-height: 0;
   overflow: hidden;

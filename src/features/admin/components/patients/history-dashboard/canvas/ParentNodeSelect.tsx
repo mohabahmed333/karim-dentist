@@ -69,7 +69,7 @@ export function ParentNodeSelect({ value, nodes, onChange }: Props) {
           <SelectValue placeholder="Choose parent node…" />
         )}
       </SelectTrigger>
-      <SelectContent className="z-[200] rounded-2xl border-[#111111]/10 p-1 shadow-xl">
+      <SelectContent className="z-(--z-popover) rounded-2xl border-[#111111]/10 p-1 shadow-xl">
         <SelectItem value="none" className="rounded-xl py-2.5">
           <span className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-full bg-[#EBEAE5]">

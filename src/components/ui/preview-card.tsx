@@ -28,7 +28,7 @@ function PreviewCardContent({
   return (
     <PreviewCardPrimitive.Portal>
       <PreviewCardPrimitive.Positioner
-        className="isolate z-[80] outline-none"
+        className="isolate z-(--z-popover) outline-none"
         side={side}
         sideOffset={sideOffset}
         align={align}

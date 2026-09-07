@@ -25,13 +25,18 @@ import {
 } from "@/services/reservations/stats";
 import {
   buildCalendarGrid,
-  formatCalendarMonthLabel,
   groupReservationsByDay,
   reservationDayIso,
   shiftMonth,
 } from "@/services/reservations/timeline";
 import type { Reservation } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
+import { listOpenAppointmentSlots } from "@/services/clinic_schedule";
+import {
+  calendarDayBookingBlockReason,
+  localTodayIso,
+  openSlotDaySet,
+} from "@/features/admin/lib/calendarDayBooking";
 import { useLocale, useTranslations } from "@/lib/i18n";
 
 type Props = {
@@ -49,6 +54,7 @@ export function ReservationsPageView({ reservations, services }: Props) {
   const [selectedDayIso, setSelectedDayIso] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [filtering, setFiltering] = useState(false);
+  const [openSlotDays, setOpenSlotDays] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     const date = searchParams.get("date");
@@ -63,6 +69,54 @@ export function ReservationsPageView({ reservations, services }: Props) {
     () => groupReservationsByDay(editor.items),
     [editor.items],
   );
+
+  useEffect(() => {
+    if (calendarDays.length === 0) return;
+    const from = calendarDays[0]!.iso;
+    const to = calendarDays[calendarDays.length - 1]!.iso;
+    let cancelled = false;
+    void listOpenAppointmentSlots({
+      fromIso: new Date(`${from}T00:00:00`).toISOString(),
+      toIso: new Date(`${to}T23:59:59`).toISOString(),
+    })
+      .then((slots) => {
+        if (!cancelled) setOpenSlotDays(openSlotDaySet(slots));
+      })
+      .catch(() => {
+        if (!cancelled) setOpenSlotDays(new Set());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [calendarDays]);
+
+  function onCalendarDayClick(iso: string) {
+    setSelectedDayIso(iso);
+    const block = calendarDayBookingBlockReason(
+      iso,
+      localTodayIso(),
+      openSlotDays,
+    );
+    if (block === "past") {
+      toast.message(t("admin.reservations.dayBeforeToday"));
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("date", iso);
+      params.delete("selected");
+      params.delete("new");
+      router.replace(`/admin/reservations?${params.toString()}`);
+      return;
+    }
+    if (block === "no_slots") {
+      toast.message(t("admin.reservations.dayNoSlots"));
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("date", iso);
+      params.delete("selected");
+      params.delete("new");
+      router.replace(`/admin/reservations?${params.toString()}`);
+      return;
+    }
+    editor.openNew(iso);
+  }
 
   const createOpen = editor.selectedId === "new";
   const editId =
@@ -167,14 +221,7 @@ export function ReservationsPageView({ reservations, services }: Props) {
                 }
                 movingReservationId={movingId}
                 eventLabel={(r) => r.patient_name}
-                onSelectDay={(iso) => {
-                  setSelectedDayIso(iso);
-                  const params = new URLSearchParams(searchParams.toString());
-                  params.set("date", iso);
-                  params.delete("selected");
-                  params.delete("new");
-                  router.replace(`/admin/reservations?${params.toString()}`);
-                }}
+                onSelectDay={onCalendarDayClick}
                 onSelectReservation={editor.openRow}
                 onMoveReservation={(id, date) => {
                   void moveReservationToDay(id, date);

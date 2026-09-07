@@ -26,7 +26,12 @@ export default async function AdminPatientsPage({ searchParams }: PageProps) {
 
   const supabase = await createClient();
   const [reservations, services] = await Promise.all([
-    listReservationsServer(supabase, filters).catch(() => []),
+    // Patient directory needs full visit history — do not clamp to the overview date range.
+    listReservationsServer(supabase, {
+      status: filters.status,
+      serviceIds: filters.serviceIds,
+      q: filters.q,
+    }).catch(() => []),
     supabase
       .from("services")
       .select("*")

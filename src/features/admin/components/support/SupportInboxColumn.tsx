@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Bot, ChevronDown, Search, Star, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/lib/i18n";
@@ -9,6 +10,11 @@ import { SupportAvatar } from "./SupportAvatar";
 import { InboxMessagePreview } from "./chat/InboxMessagePreview";
 import { CLINIC_ASSIST_CHAT_ID } from "./clinicAssistChat";
 import type { SupportConversation } from "./supportDummyData";
+import {
+  UNREAD_BADGE_POP_MS,
+  unreadBadgePopAnimate,
+  unreadBadgePopTransition,
+} from "./compactInboxMotion";
 
 export type InboxStatusFilter = "open" | "archived" | "all";
 export type InboxSort = "newest" | "unread" | "name";
@@ -67,10 +73,37 @@ export function SupportInboxColumn({
   widthPx,
 }: Props) {
   const t = useTranslations();
+  const reduced = useReducedMotion();
   const [searchOpen, setSearchOpen] = useState(Boolean(search));
   const [sortOpen, setSortOpen] = useState(false);
+  const [poppingUnreadId, setPoppingUnreadId] = useState<string | null>(null);
+  const popTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heading = title ?? t("admin.frontDesk.title");
   const openText = openLabel ?? t("admin.frontDesk.open");
+
+  useEffect(() => {
+    return () => {
+      if (popTimerRef.current) clearTimeout(popTimerRef.current);
+    };
+  }, []);
+
+  function selectConversation(id: string, unread?: string) {
+    if (popTimerRef.current) {
+      clearTimeout(popTimerRef.current);
+      popTimerRef.current = null;
+    }
+    if (compact && unread && !reduced) {
+      setPoppingUnreadId(id);
+      popTimerRef.current = setTimeout(() => {
+        popTimerRef.current = null;
+        setPoppingUnreadId(null);
+        onSelect(id);
+      }, UNREAD_BADGE_POP_MS);
+      return;
+    }
+    setPoppingUnreadId(null);
+    onSelect(id);
+  }
 
   const sortLabel = useMemo(() => {
     const key =
@@ -249,7 +282,7 @@ export function SupportInboxColumn({
             <button
               key={c.id}
               type="button"
-              onClick={() => onSelect(c.id)}
+              onClick={() => selectConversation(c.id, c.unread)}
               className={cn(
                 "flex w-full gap-3.5 border-b border-[#E5E7EB] text-left transition-colors",
                 compact ? "px-3 py-3" : "px-4 py-3.5",
@@ -307,13 +340,25 @@ export function SupportInboxColumn({
                   </div>
                 </div>
                 <InboxMessagePreview conversation={c} />
-                {c.unread ? (
-                  <div className="mt-2 flex justify-end">
-                    <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#374151] px-1.5 text-[11px] font-semibold text-white">
-                      {c.unread}
-                    </span>
-                  </div>
-                ) : null}
+                <AnimatePresence initial={false}>
+                  {c.unread ? (
+                    <div className="mt-2 flex justify-end">
+                      <motion.span
+                        key={`${c.id}-unread`}
+                        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#374151] px-1.5 text-[11px] font-semibold text-white"
+                        initial={false}
+                        animate={
+                          poppingUnreadId === c.id
+                            ? unreadBadgePopAnimate
+                            : { scale: 1, opacity: 1 }
+                        }
+                        transition={unreadBadgePopTransition(reduced)}
+                      >
+                        {c.unread}
+                      </motion.span>
+                    </div>
+                  ) : null}
+                </AnimatePresence>
               </div>
             </button>
           );

@@ -16,7 +16,9 @@ export function useAdminDrawerSide() {
     contentDir: (rtl ? "rtl" : "ltr") as "rtl" | "ltr",
     /** Off-screen exit (percentage of self width). */
     offscreenX: rtl ? "100%" : "-100%",
-    shellClass: rtl ? "justify-end" : "justify-start",
+    shellClass: rtl
+      ? "z-(--z-drawer) justify-end"
+      : "z-(--z-drawer) justify-start",
     panelClass: rtl
       ? "border-s border-[var(--admin-border,#e6e6e6)] shadow-[-12px_0_40px_rgba(0,0,0,0.12)]"
       : "border-e border-[var(--admin-border,#e6e6e6)] shadow-[12px_0_40px_rgba(0,0,0,0.12)]",

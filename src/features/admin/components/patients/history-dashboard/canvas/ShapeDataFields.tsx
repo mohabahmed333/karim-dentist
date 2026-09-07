@@ -133,7 +133,7 @@ export function ShapeDataFields({ shapeType, form, onChange, mediaFiles = [], on
           <Field label="Drug 1 timing">
             <Select value={form.drug1Timing} onValueChange={(v) => onChange({ drug1Timing: v as ShapeFormState["drug1Timing"] })}>
               <SelectTrigger className="w-full rounded-xl"><SelectValue placeholder="Timing" /></SelectTrigger>
-              <SelectContent className="z-[200]">
+              <SelectContent className="z-(--z-popover)">
                 <SelectItem value="day">☀️ Day</SelectItem>
                 <SelectItem value="night">🌙 Night</SelectItem>
                 <SelectItem value="both">☀️🌙 Both</SelectItem>
@@ -146,7 +146,7 @@ export function ShapeDataFields({ shapeType, form, onChange, mediaFiles = [], on
           <Field label="Drug 2 timing">
             <Select value={form.drug2Timing} onValueChange={(v) => onChange({ drug2Timing: v as ShapeFormState["drug2Timing"] })}>
               <SelectTrigger className="w-full rounded-xl"><SelectValue placeholder="Timing" /></SelectTrigger>
-              <SelectContent className="z-[200]">
+              <SelectContent className="z-(--z-popover)">
                 <SelectItem value="day">☀️ Day</SelectItem>
                 <SelectItem value="night">🌙 Night</SelectItem>
                 <SelectItem value="both">☀️🌙 Both</SelectItem>
@@ -167,7 +167,7 @@ export function ShapeDataFields({ shapeType, form, onChange, mediaFiles = [], on
           <Field label="Theme">
             <Select value={form.schemaTheme} onValueChange={(v) => onChange({ schemaTheme: v as "dark" | "light" })}>
               <SelectTrigger className="w-full rounded-xl"><SelectValue placeholder="Theme" /></SelectTrigger>
-              <SelectContent className="z-[200]">
+              <SelectContent className="z-(--z-popover)">
                 <SelectItem value="dark">Dark card</SelectItem>
                 <SelectItem value="light">Light card</SelectItem>
               </SelectContent>

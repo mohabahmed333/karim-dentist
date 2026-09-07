@@ -132,7 +132,7 @@ export function ShapePickerPanel({ shapeType, previewTitle, onPick }: Props) {
                 <SelectValue placeholder="Browse all schema shapes…" />
               )}
             </SelectTrigger>
-            <SelectContent className="z-[200] max-h-72 w-[var(--anchor-width)] rounded-2xl border-[#111111]/10 p-1.5 shadow-xl">
+            <SelectContent className="z-(--z-popover) max-h-72 w-[var(--anchor-width)] rounded-2xl border-[#111111]/10 p-1.5 shadow-xl">
               {schemaOptions.map((item) => (
                 <SelectItem
                   key={item.key}

@@ -74,7 +74,7 @@ export function ReservationFormDrawer({
     <AnimatePresence>
       {open ? (
         <div
-          className={cn("fixed inset-0 z-[200] flex", drawer.shellClass)}
+          className={cn("fixed inset-0 flex", drawer.shellClass)}
           dir={drawer.shellDir}
           style={adminThemeStyle(themeVars, { surface: false })}
         >

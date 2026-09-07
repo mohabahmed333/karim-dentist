@@ -5,6 +5,7 @@ import { ReservationsPageSkeleton } from "@/features/admin/components/reservatio
 import {
   reservationFiltersCache,
   resolveReservationFilters,
+  defaultMonthFromTo,
 } from "@/features/admin/lib/reservationFilters";
 import { listReservationsServer } from "@/services/reservations/queries";
 
@@ -18,7 +19,7 @@ export default async function AdminReservationsPage({
   searchParams,
 }: PageProps) {
   const raw = await reservationFiltersCache.parse(searchParams);
-  const filters = resolveReservationFilters(raw);
+  const filters = resolveReservationFilters(raw, defaultMonthFromTo());
 
   const supabase = await createClient();
   const [reservations, services] = await Promise.all([

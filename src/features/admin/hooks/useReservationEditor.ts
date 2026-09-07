@@ -29,6 +29,8 @@ import {
   emptyReservationForm,
   reservationToForm,
 } from "@/features/admin/components/ReservationFormFields";
+import { expandDateRangeToInclude } from "@/features/admin/lib/reservationDateRange";
+import { defaultMonthFromTo } from "@/features/admin/lib/reservationFilters";
 
 export type ReservationFilter = "upcoming" | "today" | "pending" | "all";
 
@@ -163,9 +165,16 @@ export function useReservationEditor(initial: Reservation[]) {
     );
   }
 
-  function closeDialog() {
+  function closeDialog(opts?: { keepDate?: string | null }) {
     setSelectedId(null);
     setDeleteOpen(false);
+    const defaults = defaultMonthFromTo();
+    const currentFrom = searchParams.get("from") ?? defaults.from;
+    const currentTo = searchParams.get("to") ?? defaults.to;
+    const day = opts?.keepDate;
+    const range = day
+      ? expandDateRangeToInclude(currentFrom, currentTo, day)
+      : { from: currentFrom, to: currentTo };
     router.replace(
       reservationsUrl({
         selected: null,
@@ -173,8 +182,12 @@ export function useReservationEditor(initial: Reservation[]) {
         wa: null,
         phone: null,
         name: null,
+        from: range.from,
+        to: range.to,
+        ...(day ? { date: day } : {}),
       }),
     );
+    router.refresh();
   }
 
   function upsertItem(row: Reservation) {
@@ -277,7 +290,7 @@ export function useReservationEditor(initial: Reservation[]) {
           return true;
         }
 
-        closeDialog();
+        closeDialog({ keepDate: parsed.data.date });
         return true;
       }
       if (selectedId) {

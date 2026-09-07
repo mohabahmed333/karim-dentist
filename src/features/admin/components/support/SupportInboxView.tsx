@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
-import { useTranslations } from "@/lib/i18n";
+import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { SupportChatColumn } from "./SupportChatColumn";
 import { SupportDetailsColumn } from "./SupportDetailsColumn";
@@ -38,6 +38,10 @@ import {
 import { InboxColumnResizeHandle } from "./InboxColumnResizeHandle";
 import { useInboxColumnWidth } from "./useInboxColumnWidth";
 import type { WhatsappMessage } from "@/services/whatsapp";
+import {
+  compactPaneTransition,
+  compactPaneVariants,
+} from "./compactInboxMotion";
 
 const DETAILS_WIDTH = 300;
 
@@ -69,6 +73,8 @@ export function SupportInboxView({
   showClinicAssist = true,
 }: Props) {
   const t = useTranslations();
+  const { locale } = useLocale();
+  const rtl = locale === "ar";
   const initial = useMemo<LiveInbox>(
     () => ({
       conversations: propConversations?.length
@@ -132,6 +138,18 @@ export function SupportInboxView({
   const [assistReturnId, setAssistReturnId] = useState("");
   /** Messenger list↔chat for floating bubble only. */
   const [compactPane, setCompactPane] = useState<"list" | "thread">("list");
+  /** +1 open thread, -1 back to list — drives slide direction. */
+  const [paneDir, setPaneDir] = useState(1);
+
+  function goToThread() {
+    setPaneDir(1);
+    setCompactPane("thread");
+  }
+
+  function goToList() {
+    setPaneDir(-1);
+    setCompactPane("list");
+  }
 
   useEffect(() => {
     if (!selectedId && conversations[0]?.id) {
@@ -324,6 +342,8 @@ export function SupportInboxView({
 
   const duration = reduced ? 0.01 : 0.28;
   const ease = [0.22, 1, 0.36, 1] as const;
+  const paneTransition = compactPaneTransition(reduced);
+  const paneVariants = useMemo(() => compactPaneVariants(rtl), [rtl]);
 
   async function handleLoadMore() {
     if (!useKapso || !selectedId || loadingMore) return;
@@ -656,16 +676,138 @@ export function SupportInboxView({
     <div
       className={cn(
         "flex h-full min-h-0 w-full flex-1 overflow-hidden bg-white font-sans text-[#111827]",
+        compact && "relative",
       )}
     >
-      {(!compact || compactPane === "list") && (
+      {compact ? (
+        <AnimatePresence initial={false} custom={paneDir}>
+          {compactPane === "list" ? (
+            <motion.div
+              key="compact-list"
+              className="absolute inset-0 flex min-h-0 flex-col"
+              custom={paneDir}
+              variants={paneVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={paneTransition}
+            >
+              <SupportInboxColumn
+                title={t("admin.frontDesk.title")}
+                openLabel={t("admin.frontDesk.openCount").replace(
+                  "{count}",
+                  String(openCount),
+                )}
+                conversations={filteredConversations}
+                selectedId={selectedId || conversation.id}
+                onSelect={(id) => {
+                  if (id === CLINIC_ASSIST_CHAT_ID) {
+                    setAssistPatient(null);
+                  }
+                  setSelectedId(id);
+                  goToThread();
+                }}
+                filter={inboxFilter}
+                onFilterChange={setInboxFilter}
+                sort={inboxSort}
+                onSortChange={setInboxSort}
+                search={inboxSearch}
+                onSearchChange={setInboxSearch}
+                compact
+                onClose={onClose}
+              />
+            </motion.div>
+          ) : isAiChat ? (
+            <motion.div
+              key="compact-thread-ai"
+              className="absolute inset-0 flex min-h-0 min-w-0 flex-col bg-white"
+              custom={paneDir}
+              variants={paneVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={paneTransition}
+            >
+              <ReceptionChat
+                key={
+                  assistPatient
+                    ? `assist-${assistPatient.patientKey}`
+                    : "assist-default"
+                }
+                className="h-full min-h-0"
+                statsSummary={t("admin.chat.title")}
+                initialPatient={assistPatient}
+                onClose={() => {
+                  setAssistPatient(null);
+                  setAssistReturnId("");
+                  setSelectedId(assistReturnId || selectedId);
+                  goToList();
+                }}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="compact-thread"
+              className="absolute inset-0 flex min-h-0 min-w-0 flex-col bg-white"
+              custom={paneDir}
+              variants={paneVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={paneTransition}
+            >
+              <SupportChatColumn
+                conversation={conversation}
+                messages={messages}
+                draft={draftsById[conversation.id] ?? ""}
+                onDraftChange={(value) =>
+                  setDraftsById((prev) => ({
+                    ...prev,
+                    [conversation.id]: value,
+                  }))
+                }
+                replyTo={replyById[conversation.id] ?? null}
+                onReply={(message) =>
+                  setReplyById((prev) => ({
+                    ...prev,
+                    [conversation.id]: message,
+                  }))
+                }
+                onClearReply={() =>
+                  setReplyById((prev) => ({
+                    ...prev,
+                    [conversation.id]: null,
+                  }))
+                }
+                detailsOpen={false}
+                showWorkspace={false}
+                onBack={goToList}
+                onLoadMore={() => {
+                  void handleLoadMore();
+                }}
+                loadingMore={loadingMore}
+                sending={sending}
+                archiving={archiving}
+                onArchiveToggle={
+                  useKapso ? () => void handleArchiveToggle() : undefined
+                }
+                onAskAi={() => {
+                  setAssistReturnId(conversation.id);
+                  setAssistPatient(conversationToAssistPatient(conversation));
+                  setSelectedId(CLINIC_ASSIST_CHAT_ID);
+                  goToThread();
+                }}
+                onSend={(payload) => {
+                  if (sending) return;
+                  void handleSend(payload);
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      ) : (
         <>
-          <div
-            className={cn(
-              "flex h-full min-h-0 flex-col",
-              compact ? "w-full" : "shrink-0",
-            )}
-          >
+          <div className="flex h-full min-h-0 shrink-0 flex-col">
             <SupportInboxColumn
               title={t("admin.frontDesk.title")}
               openLabel={t("admin.frontDesk.openCount").replace(
@@ -679,7 +821,6 @@ export function SupportInboxView({
                   setAssistPatient(null);
                 }
                 setSelectedId(id);
-                if (compact) setCompactPane("thread");
               }}
               filter={inboxFilter}
               onFilterChange={setInboxFilter}
@@ -687,131 +828,106 @@ export function SupportInboxView({
               onSortChange={setInboxSort}
               search={inboxSearch}
               onSearchChange={setInboxSearch}
-              compact={compact}
-              onClose={compact ? onClose : undefined}
-              widthPx={compact ? undefined : inboxWidth}
+              widthPx={inboxWidth}
             />
           </div>
-          {!compact ? (
-            <InboxColumnResizeHandle
-              width={inboxWidth}
-              dragging={inboxResizing}
-              onPointerDown={startInboxResize}
-            />
-          ) : null}
+          <InboxColumnResizeHandle
+            width={inboxWidth}
+            dragging={inboxResizing}
+            onPointerDown={startInboxResize}
+          />
+          {isAiChat ? (
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
+              <ReceptionChat
+                key={
+                  assistPatient
+                    ? `assist-${assistPatient.patientKey}`
+                    : "assist-default"
+                }
+                className="h-full min-h-0"
+                statsSummary={t("admin.chat.title")}
+                initialPatient={assistPatient}
+              />
+            </div>
+          ) : (
+            <>
+              <SupportChatColumn
+                conversation={conversation}
+                messages={messages}
+                draft={draftsById[conversation.id] ?? ""}
+                onDraftChange={(value) =>
+                  setDraftsById((prev) => ({
+                    ...prev,
+                    [conversation.id]: value,
+                  }))
+                }
+                replyTo={replyById[conversation.id] ?? null}
+                onReply={(message) =>
+                  setReplyById((prev) => ({
+                    ...prev,
+                    [conversation.id]: message,
+                  }))
+                }
+                onClearReply={() =>
+                  setReplyById((prev) => ({
+                    ...prev,
+                    [conversation.id]: null,
+                  }))
+                }
+                detailsOpen={detailsOpen}
+                onToggleDetails={() => setDetailsOpen((v) => !v)}
+                showWorkspace
+                onLoadMore={() => {
+                  void handleLoadMore();
+                }}
+                loadingMore={loadingMore}
+                sending={sending}
+                archiving={archiving}
+                onArchiveToggle={
+                  useKapso ? () => void handleArchiveToggle() : undefined
+                }
+                onAskAi={() => {
+                  setAssistReturnId(conversation.id);
+                  setAssistPatient(conversationToAssistPatient(conversation));
+                  setSelectedId(CLINIC_ASSIST_CHAT_ID);
+                }}
+                onSend={(payload) => {
+                  if (sending) return;
+                  void handleSend(payload);
+                }}
+              />
+              <AnimatePresence initial={false}>
+                {detailsOpen ? (
+                  <motion.div
+                    key="support-details"
+                    className="h-full shrink-0 overflow-hidden"
+                    initial={
+                      reduced
+                        ? { width: DETAILS_WIDTH, opacity: 1 }
+                        : { width: 0, opacity: 0 }
+                    }
+                    animate={{ width: DETAILS_WIDTH, opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={{ duration, ease }}
+                  >
+                    <div className="h-full w-[300px]">
+                      <SupportDetailsColumn
+                        details={details}
+                        messages={messages}
+                        onToggleDetails={() => setDetailsOpen(false)}
+                        onAddNote={addNote}
+                        onTogglePinNote={togglePinNote}
+                        onEditNote={editNote}
+                        onDeleteNote={deleteNote}
+                      />
+                    </div>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </>
+          )}
         </>
       )}
-      {(!compact || compactPane === "thread") &&
-        (isAiChat ? (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
-            <ReceptionChat
-              key={
-                assistPatient
-                  ? `assist-${assistPatient.patientKey}`
-                  : "assist-default"
-              }
-              className="h-full min-h-0"
-              statsSummary={t("admin.chat.title")}
-              initialPatient={assistPatient}
-              onClose={
-                compact
-                  ? () => {
-                      setAssistPatient(null);
-                      setAssistReturnId("");
-                      setCompactPane("list");
-                      setSelectedId(assistReturnId || selectedId);
-                    }
-                  : undefined
-              }
-            />
-          </div>
-        ) : (
-          <>
-            <SupportChatColumn
-              conversation={conversation}
-              messages={messages}
-              draft={draftsById[conversation.id] ?? ""}
-              onDraftChange={(value) =>
-                setDraftsById((prev) => ({
-                  ...prev,
-                  [conversation.id]: value,
-                }))
-              }
-              replyTo={replyById[conversation.id] ?? null}
-              onReply={(message) =>
-                setReplyById((prev) => ({
-                  ...prev,
-                  [conversation.id]: message,
-                }))
-              }
-              onClearReply={() =>
-                setReplyById((prev) => ({
-                  ...prev,
-                  [conversation.id]: null,
-                }))
-              }
-              detailsOpen={detailsOpen}
-              onToggleDetails={
-                compact ? undefined : () => setDetailsOpen((v) => !v)
-              }
-              showWorkspace={!compact}
-              onBack={
-                compact
-                  ? () => {
-                      setCompactPane("list");
-                    }
-                  : undefined
-              }
-              onLoadMore={() => {
-                void handleLoadMore();
-              }}
-              loadingMore={loadingMore}
-              sending={sending}
-              archiving={archiving}
-              onArchiveToggle={
-                useKapso ? () => void handleArchiveToggle() : undefined
-              }
-              onAskAi={() => {
-                setAssistReturnId(conversation.id);
-                setAssistPatient(conversationToAssistPatient(conversation));
-                setSelectedId(CLINIC_ASSIST_CHAT_ID);
-                if (compact) setCompactPane("thread");
-              }}
-              onSend={(payload) => {
-                if (sending) return;
-                void handleSend(payload);
-              }}
-            />
-            <AnimatePresence initial={false}>
-              {detailsOpen && !compact ? (
-                <motion.div
-                  key="support-details"
-                  className="h-full shrink-0 overflow-hidden"
-                  initial={
-                    reduced
-                      ? { width: DETAILS_WIDTH, opacity: 1 }
-                      : { width: 0, opacity: 0 }
-                  }
-                  animate={{ width: DETAILS_WIDTH, opacity: 1 }}
-                  exit={{ width: 0, opacity: 0 }}
-                  transition={{ duration, ease }}
-                >
-                  <div className="h-full w-[300px]">
-                    <SupportDetailsColumn
-                      details={details}
-                      messages={messages}
-                      onToggleDetails={() => setDetailsOpen(false)}
-                      onAddNote={addNote}
-                      onTogglePinNote={togglePinNote}
-                      onEditNote={editNote}
-                      onDeleteNote={deleteNote}
-                    />
-                  </div>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </>
-        ))}
     </div>
   );
 }

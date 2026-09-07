@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Archive,
   ArchiveRestore,
@@ -8,6 +9,7 @@ import {
   ChevronLeft,
   ExternalLink,
   PanelRight,
+  Search,
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,7 +18,10 @@ import { useQuickBook } from "@/features/admin/components/quick-book/QuickBookCo
 import { useTranslations } from "@/lib/i18n";
 import { SupportAvatar } from "./SupportAvatar";
 import { ChatComposer } from "./chat/ChatComposer";
+import { ChatGalleryProvider } from "./chat/ChatGalleryContext";
 import { ChatMessageBubble } from "./chat/ChatMessageBubble";
+import { ChatThreadSearch } from "./chat/ChatThreadSearch";
+import { collectConversationMedia } from "./chat/collectConversationMedia";
 import type { ComposerSendPayload } from "./chat/composerTypes";
 import { useChatScroll } from "./chat/useChatScroll";
 import type {
@@ -70,6 +75,14 @@ export function SupportChatColumn({
   const t = useTranslations();
   const { openQuickBook } = useQuickBook();
   const archived = conversation.status === "archived";
+  const allowMessageSearch = !onBack;
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const galleryImages = useMemo(
+    () => collectConversationMedia(messages).images,
+    [messages],
+  );
   const { listRef } = useChatScroll(messages.length, {
     loadingMore: Boolean(loadingMore),
     onNearTop: () => {
@@ -77,6 +90,33 @@ export function SupportChatColumn({
       onLoadMore();
     },
   });
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    setSearchOpen(false);
+    setHighlightId(null);
+  }, [conversation.id]);
+
+  const jumpToMessage = useCallback((messageId: string) => {
+    const root = listRef.current;
+    if (!root) return;
+    const el = root.querySelector<HTMLElement>(
+      `[data-message-id="${CSS.escape(messageId)}"]`,
+    );
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightId(messageId);
+    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    highlightTimerRef.current = setTimeout(() => {
+      setHighlightId((current) => (current === messageId ? null : current));
+      highlightTimerRef.current = null;
+    }, 1600);
+  }, [listRef]);
 
   function openAppointmentForClient() {
     toast.message(t("admin.frontDesk.newAppointment"), {
@@ -91,6 +131,7 @@ export function SupportChatColumn({
   }
 
   return (
+    <ChatGalleryProvider images={galleryImages}>
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-[#F9FAFB]">
       <header className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] bg-white px-4 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
@@ -120,6 +161,24 @@ export function SupportChatColumn({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          {allowMessageSearch ? (
+            <button
+              type="button"
+              onClick={() => setSearchOpen((v) => !v)}
+              className={cn(
+                "rounded-md p-1.5 text-[#6B7280] transition-colors hover:bg-[#F3F4F6]",
+                searchOpen && "bg-[#F3F4F6] text-[#111827]",
+              )}
+              aria-label={
+                searchOpen
+                  ? t("admin.frontDesk.hideMessageSearch")
+                  : t("admin.frontDesk.searchMessages")
+              }
+              aria-pressed={searchOpen}
+            >
+              <Search className="h-4 w-4" />
+            </button>
+          ) : null}
           {onAskAi ? (
             <button
               type="button"
@@ -195,6 +254,15 @@ export function SupportChatColumn({
         </div>
       </header>
 
+      {allowMessageSearch ? (
+        <ChatThreadSearch
+          open={searchOpen}
+          onOpenChange={setSearchOpen}
+          messages={messages}
+          onJump={jumpToMessage}
+        />
+      ) : null}
+
       <div
         ref={listRef}
         className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6"
@@ -208,6 +276,7 @@ export function SupportChatColumn({
           <ChatMessageBubble
             key={m.id}
             message={m}
+            highlighted={highlightId === m.id}
             onReply={onReply}
             booking={{
               conversationId: conversation.id,
@@ -228,5 +297,6 @@ export function SupportChatColumn({
         onClearReply={onClearReply}
       />
     </section>
+    </ChatGalleryProvider>
   );
 }

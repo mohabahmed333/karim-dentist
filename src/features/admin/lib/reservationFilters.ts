@@ -38,6 +38,12 @@ export function defaultFromTo(now = new Date()): { from: string; to: string } {
   return { from: dayIso(range.start), to: dayIso(range.end) };
 }
 
+/** Calendar month range — used by the reservations page so month grid bookings stay visible. */
+export function defaultMonthFromTo(now = new Date()): { from: string; to: string } {
+  const range = rangeFromPreset("this_month", now);
+  return { from: dayIso(range.start), to: dayIso(range.end) };
+}
+
 export function rangeFromDayIso(from: string, to: string) {
   return {
     start: new Date(`${from}T00:00:00`),
@@ -59,14 +65,16 @@ export const reservationFiltersCache = createSearchParamsCache(
   reservationFilterParsers,
 );
 
-export function resolveReservationFilters(raw: {
-  from: string | null;
-  to: string | null;
-  status: FilterStatus;
-  service: string;
-  q: string;
-}): ReservationListFilters {
-  const defaults = defaultFromTo();
+export function resolveReservationFilters(
+  raw: {
+    from: string | null;
+    to: string | null;
+    status: FilterStatus;
+    service: string;
+    q: string;
+  },
+  defaults: { from: string; to: string } = defaultFromTo(),
+): ReservationListFilters {
   const from =
     raw.from && /^\d{4}-\d{2}-\d{2}$/.test(raw.from) ? raw.from : defaults.from;
   const to =
