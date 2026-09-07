@@ -1,0 +1,160 @@
+---
+alwaysApply: true
+description: Mandatory structure for src/features and src/shared/modules — when to use each, folder layout, and rules.
+---
+
+# Feature & Module Structure (Mandatory)
+
+PharmaConnect uses **two** code homes. Pick one before adding code:
+
+| Location | Use when |
+|----------|----------|
+| `src/features/<featureName>/` | Route-level pages, auth, onboarding flows, settings tabs — **orchestration** tied to a route or product area |
+| `src/shared/modules/<DomainModule>/` | Reusable domain UI + data (tables, modals, filters, services) consumed by **2+ features** or admin + pharmacist surfaces |
+
+**Examples:** `features/inventory` owns the route page; `shared/modules/InventoryModule` owns `InventoryTable`, hooks, and services. `features/Settings/.../PharmacistsTab` imports `PharmacistsSettingsModule` from `PharmacistsModule`.
+
+### Component nesting (max one level)
+
+- **One parent → one level of children only** — no `components/X/components/Y`
+- Child components are **sibling `.tsx` files** in the parent folder, or one purpose subfolder (`fields/`, `columns/`) — not another `components/` tree
+- If a child needs its own children → extract a new top-level component file or move to `src/components/ui/`
+
+```
+✅ components/RefundModal/RefundModal.tsx + RefundModal/CustomerDetails.tsx
+✅ modals/AddEditModal/fields/NameField.tsx
+❌ components/Tab/components/Section/components/Row.tsx
+```
+
+---
+
+## `src/features/<featureName>/`
+
+```
+src/features/<featureName>/
+├── components/          ← UI scoped to this feature/route (`<name>.component.tsx` + `index.ts`)
+├── hooks/               ← React Query hooks scoped to this feature
+├── types/               ← UI-only types (`<name>.types.ts` + `index.ts` barrel)
+├── schemas/             ← Zod validation (forms, API boundaries)
+├── pages/               ← route-level page components (lazy-loaded)
+├── services/            ← only when API calls are feature-specific
+└── index.ts             ← public surface (do NOT export pages)
+```
+
+**Minimum required:** `components/`, `hooks/`, `index.ts`.
+Add `types/`, `schemas/`, `pages/`, `services/` only when needed — no empty folders.
+
+### Feature rules
+
+- **Never scatter feature code** — all code lives inside `src/features/<featureName>/`
+- **`index.ts` is the only public surface** — `import from "@/features/<featureName>"`, never deep paths
+- **Delegate domain tables/modals** to `src/shared/modules/` when the same UI appears in multiple places
+- **Shared UI** (2+ features, not domain-specific) → `src/components/ui/`
+- **Page components** live in `pages/` and are lazy-loaded from the router
+- **`index.ts` must not export page components** — router imports pages directly
+
+---
+
+## `src/shared/modules/<DomainModule>/`
+
+Folder name: **`PascalCase` + `Module`** — `InventoryModule`, `PharmacistsModule`, `OrdersModule`.
+
+```
+src/shared/modules/<DomainModule>/
+├── components/          ← tables, filters, settings shells (`<name>.component.tsx` + `index.ts`)
+├── hooks/               ← orchestration hooks (`use<Domain>Table`, modals, forms)
+│   ├── queries/       ← `useQuery` / `useInfiniteQuery` only
+│   └── mutations/     ← `useMutation` only
+├── services/            ← API calls (*.service.ts) + services/index.ts barrel
+├── columns/             ← table column definitions
+├── modals/              ← add/edit/detail modal flows
+├── constants/           ← filters, initial state, table config
+├── types/               ← module-local UI types (`<name>.types.ts` + `index.ts`)
+├── utils/               ← query-param builders, export helpers — **not** response mappers
+├── schema.ts            ← Zod schemas (when module has forms) — optional
+└── index.ts             ← ONLY public surface
+```
+
+**Minimum required:** `components/`, `hooks/`, `services/`, `index.ts`.
+Add `columns/`, `modals/`, `constants/`, `types/`, `utils/`, `schema.ts` only when needed.
+
+### Module rules
+
+- **One module = one domain** — inventory, orders, pharmacists, branches, customers, refunds
+- **`index.ts` is the only public surface** — `import from "@/shared/modules/<DomainModule>"`
+- **Co-locate services inside the module** — not `src/services/` (legacy `src/services/` is not used for these domains)
+- **Queries live in** `hooks/queries/` — `useQuery` / `useInfiniteQuery` only (e.g. `useBranchList.ts`, `useCustomerOrders.ts`)
+- **Mutations live in** `hooks/mutations/` — `useMutation` only (e.g. `useAddBranch.ts`, `useBranchLinkWithMeta.ts`)
+- **Orchestration hooks stay in** `hooks/` root — `use<Domain>Table.ts` (state + infinity `fetchFn`), `use<Domain>Modals.ts`, form wiring
+- **All API logic lives in** `services/` — one file per action (`getOrders.service.ts`, `getOrdersByRole.service.ts`, `fetchOrdersPage.service.ts`)
+- **Hooks are thin** — React Query wiring only (`queryKey`, `queryFn`, `enabled`, `staleTime`); **never** inline `fetch*` helpers or `Api` calls in hooks
+- **Use backend DTOs in UI** — import types from `@/shared/types/dtos/`; **no mapper utils** unless the API shape truly differs (prefer backend fixes or column-level display)
+- **Role branching** (admin vs pharmacist) → dedicated `*ByRole.service.ts` that calls the low-level endpoint services
+- **Infinity-table pagination** → `fetch<Domain>Page.service.ts` adapts API response to `{ data, meta }` for the table
+- **Table columns** → single `columns/<domain>Columns.tsx` with `use<Domain>TableColumns`; inline column objects in `useMemo` (no split column files, no `buildColumns` helpers)
+- **`constants/`** → `initialFilters.ts` (default filter state) + `filters.ts` (e.g. `use<Domain>FilterItems` hook)
+- **Module `types/`** → UI-only shapes (filters, service params); **API row types** come from `@/shared/types/dtos/` — do not duplicate DTOs in the module
+- **Cross-module hooks** → if a hook serves 2+ modules (e.g. city search), place in `src/shared/hooks/` — not inside one module
+- **Complex flows live in** `modals/<Name>/` with optional `fields/` subfolder — **no** `modals/<Name>/components/<Child>/components/`
+- **Modules may import other modules** through their `index.ts` only — e.g. `PharmacistsModule` imports `useBranches` from `BranchesModule`
+- **Features import modules, not the other way around** — modules must not import from `src/features/`
+
+### Hook responsibilities (table modules)
+
+| Hook | Location | Responsibility |
+|------|----------|----------------|
+| `use<Domain>Table.ts` | `hooks/` | Orchestration: modal state, `querySignature`, `useCallback` fetch fn → `fetch<Domain>Page.service.ts` |
+| `use<Domain><Resource>.ts` | `hooks/queries/` | Single `useQuery` / `useInfiniteQuery` — `queryFn` calls a service only |
+| `use<Domain><Action>.ts` | `hooks/mutations/` | Single `useMutation` — calls a service only |
+
+### Service layers (table + role-scoped APIs)
+
+```
+getCustomers.service.ts           ← raw Api GET (admin + pharmacist endpoints)
+getCustomerOrdersByRole.service.ts ← picks endpoint by role; unwraps StandardApiResponse
+fetchCustomersPage.service.ts     ← maps list API to { data, meta } for infinity scroll table
+```
+
+---
+
+## Creation checklists
+
+### New feature (`src/features/`)
+
+1. `hooks/use<Feature>.ts` (+ `use<Feature>Mutations.ts` if needed)
+2. `components/` — page shell; compose from `@/shared/modules/*` when possible
+3. `schemas/index.ts` / `types/index.ts` if forms or filters exist
+4. `pages/<Feature>Page.tsx` if it owns a route
+5. `index.ts` — re-export hooks/components; **exclude** pages
+
+### New shared module (`src/shared/modules/`)
+
+1. `services/<action>.service.ts` + `services/index.ts`
+2. `hooks/use<Domain>Table.ts` — orchestration + infinity table `fetchFn` at `hooks/` root
+3. `hooks/queries/` for list/detail `useQuery` hooks; `hooks/mutations/` for create/update/delete
+4. `components/<domain>Table.component.tsx` + `components/index.ts`
+5. `columns/<domain>Columns.tsx` if the module has a data table
+6. `constants/initialFilters.ts` + `constants/filters.ts` when filters exist
+7. `types/*.types.ts` + `types/index.ts` for filter/param shapes
+8. `utils/build*QueryParams.ts` / `*Export.ts` when needed — **no** `*Mapper.ts` if backend DTOs suffice
+9. `modals/` if add/edit/detail flows exist
+10. `index.ts` — export hooks, `components/`, `services/`; **exclude** pages
+
+---
+
+## Tests (`tests/`)
+
+All tests live under **`tests/`** at the repo root — never beside production files in `src/`.
+
+| Production | Test |
+|------------|------|
+| `src/features/orders/hooks/useOrders.ts` | `tests/features/orders/hooks/useOrders.test.ts` |
+| `src/shared/modules/CustomersModule/hooks/queries/useCustomersMetrics.ts` | `tests/shared/modules/CustomersModule/hooks/queries/useCustomersMetrics.test.ts` |
+
+- Mirror the `src/` folder path under `tests/`
+- Import production code with `@/`; import test helpers with `@tests/helpers/...`
+- See `04-testing/` for unit and API test requirements
+
+---
+
+See `01-structure/018-feature-templates.mdc` for code templates and examples.

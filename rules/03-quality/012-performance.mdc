@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+description: Performance rules — lazy loading, images, memoization, bundle budget, and tree-shaking.
+---
+
+# Performance
+
+- **Lazy-load routes** with `React.lazy` + `Suspense` for any page > 30KB
+- **Images**: use CDN transforms or `loading="lazy"` with explicit `width`/`height` to prevent CLS
+- **Memoize heavy work** (`useMemo`, `React.memo`) only with a measured reason — no premature memoization
+- **Bundle budget**: main chunk < 300KB gzipped — fail PR if exceeded
+- **No barrel `index.ts` re-exports** of large modules — they break tree-shaking

@@ -1,0 +1,32 @@
+---
+alwaysApply: true
+---
+
+# Imagineer / Glil Portfolio — Development Rules
+
+## Task workflow
+
+1. Break every prompt into tasks in `/todo.md` (○ ◐ ● ✕).
+2. Work sequentially; mark progress immediately; clear `todo.md` when done.
+
+## Stack
+
+- Next.js App Router + TypeScript + Tailwind + yarn
+- Supabase (Auth, Database, Storage) — project `puibdsyokgjdvkkousil`
+- Zod validation; React Query for admin client state
+- Services in `src/services/<table>/`; features in `src/features/<name>/`
+- Import Supabase only from `@/lib/supabase/client` or `server`
+- Never put `SUPABASE_SERVICE_ROLE_KEY` in `src/`
+- Max ~100 lines per TS/TSX file; no `any`; named exports
+
+## Migrations
+
+- All schema changes via `supabase/migrations/`
+- RLS required on every table
+- Regenerate types after push into `src/lib/supabase/database.types.ts`
+
+## UI
+
+- Shared UI in `src/components/ui/` (ask before new shared components)
+- Public portfolio under `src/features/portfolio`
+- Admin under `src/features/admin` + `src/app/admin`

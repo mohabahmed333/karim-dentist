@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+description: Git, commit, and pull request conventions for PharmaConnect.
+---
+
+# Git, Commits & PRs
+
+- **Conventional Commits**: `feat(scope): …`, `fix(scope): …`, `chore`, `refactor`, `test`, `docs`, `perf`
+- **Branch naming**: `feat/<ticket>-short-desc`, `fix/<ticket>-short-desc`
+- **PR title < 70 chars**; body must include **Summary**, **Test Plan**, and **Screenshots/GIF** for UI changes
+- **Never force-push** `main` / `master` / `develop`
+- **One PR = one concern** — max ~400 changed lines (excluding lockfiles & generated types)
+- **Merge gate**: typecheck, lint, tests, build must all pass

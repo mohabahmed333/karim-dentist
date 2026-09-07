@@ -1,0 +1,114 @@
+---
+alwaysApply: true
+description: UI implementation workflow — shared components first, creation rules, and documentation.
+---
+
+# UI Implementation Rules
+
+## Feature & Module Components
+
+- **Features and shared modules:** `components/<domain>.component.tsx` + `components/index.ts` barrel
+- **Export name:** `PascalCase` (`export function CustomersTable`) — filename is camelCase + `.component.tsx`
+- **`src/components/ui`:** plain `PascalCase.tsx` or folder — app-wide reusable UI only
+
+## Shared Components First
+
+- Always **check `/components/ui` first** before creating or modifying UI
+- Use `/components/ui` as the primary shared UI location
+- If a reusable component exists: import and use it; update it for small changes
+- If no suitable component exists:
+  - **Do not create a new component directly**
+  - **Ask first** before creating a new shared component
+  - Once confirmed, create inside `/components/ui`
+
+## Cross-Rule References
+
+- **Messages feature components:** `.cursor/rules/02-patterns/023-messages-components.mdc` — single-component merged files, folder decision tree
+- **Tooltips:** `.cursor/rules/guides/use-tooltips.mdc` — `@/components/ui/tooltip` / `HelpTooltip`
+- **Loading pages:** `.cursor/rules/guides/use-loading-pages.mdc` — `PageBreadcrumb` + `Skeleton`
+- **Action toasts:** `.cursor/rules/guides/use-action-toasts.mdc` — `toastSuccess` / `toastFromError`
+- **Permission UI:** `.cursor/rules/guides/use-permission-guards.mdc` — `PermissionGuard`, `ProtectedRoute`
+- **Destructive actions:** `.cursor/rules/guides/confirm-destructive-actions.mdc` — `ConfirmDeleteDialog`
+
+## Component Creation Rules
+
+When creating a new shared component:
+
+- Place under `/components/ui/<ComponentName>/`
+- Include `index.tsx` (component) and `README.md` (usage guide)
+- Props must be **typed with TypeScript** and documented
+- **No file should exceed 240 lines**
+
+## README.md Requirements
+
+Each component README must contain:
+
+- **Description** — what the component does
+- **Props** — required and optional props
+- **Usage Example** — short code snippet
+- **Best Practices** — when and how to use it
+
+## Component nesting (max one level)
+
+**Rule:** A parent component may have **at most one** level of child components. No `components/` inside `components/`.
+
+| Depth | Allowed | Example |
+|-------|---------|---------|
+| 0 | Page / shell | `InventoryTable.tsx` in `components/` |
+| 1 | Direct children only | `OrderPlaced/TrackOrder.tsx`, `AddEditModal/fields/NameField.tsx` |
+| 2+ | **Forbidden** | `Tab/components/Section/components/Row.tsx` |
+
+### ✅ Allowed
+
+```
+components/
+  OrderPlaced/
+    OrderPlaced.tsx
+    TrackOrder.tsx              ← child file, same folder
+
+modals/PharmacistsAddEditModal/
+  PharmacistsAddEditModal.tsx
+  fields/
+    NameField.tsx               ← one subfolder for form fields
+
+components/InventoryDetails/
+  index.tsx
+  ProductDetails.tsx            ← siblings, not nested components/
+```
+
+### ❌ Forbidden
+
+```
+components/GeneralTab/
+  components/                   ← first nested components/
+    EmailSection/
+      components/               ← second level — NOT allowed
+        VerifyEmail.tsx
+
+components/OrderPlaced/
+  components/
+    trackorder/
+      components/               ← never nest components/ twice
+        Item.tsx
+```
+
+### When logic grows past one level
+
+- **Flatten** — move grandchildren to the parent's folder as sibling `.tsx` files
+- **Extract hook** — `hooks/use<OrderPlaced>.ts` for logic; keep JSX shallow
+- **Promote to shared UI** — if reused → `src/components/ui/<Name>/`
+- **Promote to module** — if domain-specific and reused → `src/shared/modules/<DomainModule>/`
+
+## Component Architecture
+
+- Prefer **composition over duplication**
+- Keep components **small, focused, and reusable**
+- Follow **Tailwind + ShadCN UI conventions**
+
+## UI Workflow Summary
+
+1. UI change received → check `/components/ui`
+2. Use/update existing shared component
+3. If none exists → confirm → create in `/components/ui`
+4. Add `README.md` inside component folder
+5. Deletes → `ConfirmDeleteDialog` + trash affordance

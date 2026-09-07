@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+description: File and folder naming conventions for src/ layout and path aliases.
+---
+
+# File / Folder Conventions
+
+- **`src/` layout**: `features/`, `components/ui/`, `lib/`, `lib/api/`, `lib/constants/`, `pages/` (or `routes/`), `types/`, `schemas/` (Zod), `services/` (API wrappers)
+- **`tests/` layout**: mirrors `src/` paths — all `*.test.ts(x)` files live here, never beside production files in `src/`
+- **`types/` files**: `<domain>.types.ts` only; barrel via `types/index.ts`
+- **`components/` files (features/modules)**: `<domain>.component.tsx` only; barrel via `components/index.ts`
+- **`@/` path alias** → `src/`; **`@tests/`** → `tests/` — no `../../../` deeper than 2 levels
+- **Naming rules** (files, symbols, routes, query keys): see `01-structure/021-naming-conventions.mdc`

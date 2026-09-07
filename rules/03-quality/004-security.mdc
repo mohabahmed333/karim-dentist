@@ -1,0 +1,15 @@
+---
+alwaysApply: true
+description: Security and secrets handling — env vars, input validation, CORS, and logging.
+---
+
+# Security & Secrets
+
+- **Never commit secrets**: `.env*`, API keys, JWTs, service credentials, `*.pem`, `.ssh/`, `.aws/`
+- **Server-only secrets stay out of `src/`** — use only in backend/server code
+- **Only `VITE_*` env vars are exposed to the client** — everything else stays server-side
+- **Validate ALL external input with Zod** at every boundary: forms, URL params, route loaders, edge payloads, RPC responses
+- **Never use `dangerouslySetInnerHTML`** without sanitizing via DOMPurify
+- **No `eval`, `new Function()`, or dynamic `import()`** of user-controlled input
+- **CORS allowlist** in edge functions — never `Access-Control-Allow-Origin: *` in production
+- **No PII in logs** — redact emails, phone numbers, tokens before logging

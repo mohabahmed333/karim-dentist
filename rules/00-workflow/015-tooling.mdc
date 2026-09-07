@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+description: Tooling and workflow — Husky hooks, linting, yarn, and Node version pinning.
+---
+
+# Tooling & Workflow
+
+- **Husky pre-commit**: `lint-staged` runs ESLint + Prettier + `tsc --noEmit` on staged files
+- **Pre-push**: full `yarn typecheck && yarn vitest run`
+- **No inline lint disables** without `// eslint-disable-next-line <rule> -- reason: ...`
+- **Yarn only** — commit `yarn.lock`, never both lockfiles
+- **Node version pinned** via `.nvmrc` and `engines` in `package.json`

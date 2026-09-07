@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+description: Accessibility requirements — keyboard, labels, contrast, semantic HTML, and focus.
+---
+
+# Accessibility (A11Y)
+
+- **Keyboard reachable** — every interactive element supports Tab/Enter/Escape
+- **All images have `alt`**; decorative images use `alt=""`
+- **All form inputs have `<Label htmlFor>`** or `aria-label`
+- **Color contrast ≥ 4.5:1** for body text
+- **Semantic HTML first**, ARIA only when no native element fits
+- **Focus visible** — never remove the focus ring without replacing it

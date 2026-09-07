@@ -1,0 +1,7 @@
+Source: https://github.com/akashngb/MouthWatch
+File: dentist-dashboard/public/teeth.glb
+Saved as: public/dental/teeth/arch.glb
+
+MouthWatch (SmileHacks 2026 hackathon submission) — public GitHub asset.
+Used for chairside Charting visualization. Prefer replacing with a
+clinically licensed anatomical set when available.

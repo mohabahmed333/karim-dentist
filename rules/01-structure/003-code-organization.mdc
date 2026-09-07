@@ -1,0 +1,56 @@
+---
+alwaysApply: true
+description: Code organization, package management, backend basics, and mandatory DO/DON'T behaviors.
+---
+
+# Code Organization
+
+## File Structure Standards
+
+- Separate into: **components**, **utils**, **hooks**, **types** per `@prd.txt`
+- **Maximum 240 lines per file** — break into smaller files if exceeded
+- Use TypeScript for all code files
+- **Avoid `any`** — use proper TypeScript typing
+
+## Package Management
+
+- **Use `yarn`** for all dependency management and commands
+- Do not use `npm` or `pnpm`
+
+## Backend, Validation & Data Fetching
+
+- Backend source of truth is the **project API** (see `src/lib/api/` and `src/services/`)
+- Use the project's migration tooling for all schema changes
+- Any DB schema change MUST include a migration and rollback note
+- Use **zod** for request/response/form validation
+- Use **`@src/lib/apiHandler`** for all HTTP/API calls — only inside `services/*.service.ts`, not in hooks or components
+- Every API call path MUST handle loading, error, and empty states
+- Use **React Query** for server state
+- Define query keys in **`@/constants/queryKeys.ts`** — import `QUERY_KEYS` in every API hook/mutation
+
+## Mandatory DO
+
+- Break EVERY prompt into tasks; update `todo.md` before starting
+- Mark progress immediately; work sequentially; clear `todo.md` when done
+- Check `/components/ui` before creating UI
+- Use `ConfirmDeleteDialog` for delete confirmations
+- Ask before creating new shared components
+- Keep files under 240 lines; use proper TypeScript typing
+- Use `yarn`, `zod`, `@src/lib/apiHandler`, React Query, query key factory
+- Place all tests under `tests/` mirroring `src/` — never add `*.test.ts(x)` inside `src/`
+
+## Mandatory DON'T
+
+- Skip task breakdown or work without updating `todo.md`
+- Work on multiple tasks simultaneously
+- Create components outside `/components/ui` without asking
+- Use `any`, `npm`, `pnpm`, or files exceeding 240 lines
+- Add `*.test.ts` or `*.test.tsx` files inside `src/` — use `tests/` instead
+- Call APIs directly from components without `apiHandler`
+- Put `fetch*` / `get*` API logic inside hook files — use `services/<action>.service.ts`
+- Add response `*Mapper.ts` in module `utils/` when `@/shared/types/dtos/` already matches the API — use DTO fields in UI
+- Merge DB changes without migration + rollback notes
+- Leave API paths without loading/error/empty-state handling
+- Define ad-hoc React Query keys outside `@/constants/queryKeys.ts`
+- Use inline string literals in `queryKey` / `invalidateQueries` — use `QUERY_KEYS` from `@/constants/queryKeys`
+- Use `window.confirm` for destructive actions

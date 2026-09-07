@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+description: Error handling and logging — typed errors, toasts, translations, and Sentry breadcrumbs.
+---
+
+# Error Handling & Logging
+
+- **`apiHandler` errors are typed** as a discriminated `AppError` union
+- **Never swallow `catch`** — log + rethrow, or convert to a typed error
+- **User-facing errors are translated** — no raw database or API messages shown to users
+- **Toast errors via a single `useErrorToast` hook** for consistency
+- **Add Sentry (or equivalent) breadcrumbs** for every mutation

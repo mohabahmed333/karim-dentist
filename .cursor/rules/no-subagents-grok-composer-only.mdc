@@ -1,0 +1,11 @@
+---
+description: No Task/subagents; Grok and Composer models only
+alwaysApply: true
+---
+
+# Agent execution constraints
+
+- Do **not** launch Task/subagents, explore agents, Bugbot, security-review, or any parallel agent fan-out.
+- Do **not** use or request any model other than **Grok** or **Composer**.
+- Implement and investigate **directly** in this chat with normal tools.
+- Prefer sequential work; run Superpowers plans **inline** only.

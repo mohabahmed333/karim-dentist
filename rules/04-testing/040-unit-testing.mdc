@@ -1,0 +1,64 @@
+---
+alwaysApply: true
+description: "Phase 2 — Unit and component testing with Vitest and React Testing Library."
+---
+
+# Unit Testing (Phase 2)
+
+> **When to apply:** After Phase 1 implementation is complete. See `00-workflow/000-rules-sequence.mdc`.
+
+## Scope
+
+| Target | Requirement |
+|--------|-------------|
+| `src/lib/**` utils | Unit test every new or changed util |
+| `src/hooks/**` and feature/module hooks | Unit test pure logic; mock React Query / router where needed |
+| `src/components/ui/**` | Component test with React Testing Library — render + a11y queries, not snapshot-only |
+| Zod schemas (`schemas/`, `schema.ts`) | At least one valid + one invalid case per schema |
+
+## Conventions
+
+- **Runner:** Vitest
+- **Location:** all tests live under `tests/` at the repo root — **never** in `src/`
+- **Mirror `src/` paths:** `src/features/orders/hooks/useOrders.ts` → `tests/features/orders/hooks/useOrders.test.ts`
+- **Shared helpers:** `tests/helpers/` (import via `@tests/helpers/...`)
+- **Import production code** via `@/` only — no relative imports into `src/`
+- **Naming:** `describe('<UnitName>', () => { it('should ...', () => {}) })`
+- **No `test.skip` or `test.only`** merged to main
+- **Coverage gate:** ≥ 70% lines on `src/lib` and `src/hooks` (CI target)
+
+## What to test
+
+```ts
+// ✅ util — pure function
+describe('formatFileSize', () => {
+  it('should format megabytes correctly', () => {
+    expect(formatFileSize(1024 * 1024)).toBe('1.00 MB');
+  });
+});
+
+// ✅ schema — valid + invalid
+describe('createAPIKeySchema', () => {
+  it('accepts valid input', () => { /* ... */ });
+  it('rejects empty name', () => { /* ... */ });
+});
+
+// ✅ component — behavior, not snapshots
+describe('NameField', () => {
+  it('shows validation error when name is empty', () => { /* RTL + userEvent */ });
+});
+```
+
+## Commands
+
+```bash
+yarn vitest run                              # all tests once
+yarn vitest run tests/path/to/Foo.test.ts    # single file
+yarn vitest run tests/shared/modules/**      # module tests
+```
+
+## Do not
+
+- Write tests before implementation (Phase 1) unless the prompt is test-only
+- Use snapshot-only tests as the sole coverage for a component
+- Mock everything — prefer testing real util logic and shallow component behavior

@@ -1,0 +1,10 @@
+---
+alwaysApply: true
+description: Internationalization and content rules — no hardcoded strings, RTL, and formatting.
+---
+
+# I18N & Content
+
+- **No hardcoded user-facing strings** in components — use the i18n layer (or a central `messages.ts` constant if i18n is not yet set up)
+- **RTL-safe layouts**: use Tailwind `start`/`end` instead of `left`/`right` where applicable
+- **Date/number formatting** via `Intl.*` APIs, never manual string concatenation

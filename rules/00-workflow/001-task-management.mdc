@@ -1,0 +1,72 @@
+---
+alwaysApply: true
+description: Mandatory task breakdown workflow using todo.md with radio-button status tracking.
+---
+
+# Task Management Rules
+
+Every prompt MUST follow this workflow:
+
+1. **BREAK DOWN** — break any prompt into specific, actionable tasks
+2. **ADD TO TODO** — write all tasks to `todo.md` with radio button format
+3. **PHASE 1 FIRST** — complete all implementation tasks before any testing tasks (see `00-workflow/000-rules-sequence.mdc`)
+4. **WORK SEQUENTIALLY** — work on tasks one by one, in order
+5. **MARK PROGRESS** — update task status with progress symbols
+6. **PHASE 2 TESTING** — after Phase 1 is ● complete, run unit tests then API tests
+7. **MARK COMPLETE** — check off completed tasks immediately
+8. **CLEAR TODO** — clear `todo.md` when all tasks are done
+
+## Radio Button Format (REQUIRED)
+
+```markdown
+○ Pending task
+◐ In progress task
+● Completed task
+✕ Cancelled task
+```
+
+## Task Structure
+
+- Each task must be **specific** and **actionable**
+- Break complex tasks into smaller sub-tasks
+- Use clear, descriptive language
+- Include acceptance criteria when needed
+
+## Todo.md File Management
+
+- **Path:** `/todo.md`
+- **Purpose:** Single source of truth for current task list
+
+```markdown
+# Current Tasks
+
+## Prompt: [Brief description of current prompt]
+
+### Phase 1 — Implementation
+○ Task 1: [Specific action required]
+○ Task 2: [Specific action required]
+
+### Phase 2 — Testing (after Phase 1 complete)
+○ Task 3: Unit tests for [changed utils/hooks/components/schemas]
+○ Task 4: API tests for [changed *.service.ts files]
+
+## Progress Notes
+- Started: [timestamp]
+- Current: [what you're working on]
+- Blockers: [any issues encountered]
+```
+
+## Status Updates
+
+- **IMMEDIATELY** update status when starting a task (○ → ◐)
+- **IMMEDIATELY** update status when completing a task (◐ → ●)
+- **NEVER** work on multiple tasks simultaneously
+- **ALWAYS** show current progress
+
+## Success Criteria
+
+1. All tasks clearly defined in `todo.md`
+2. Each task marked with appropriate status
+3. Sequential completion of all tasks
+4. Final clearing of `todo.md`
+5. User confirmation of completion

@@ -1,0 +1,77 @@
+@keyframes hx-dash {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+@keyframes hx-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(226, 241, 99, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(226, 241, 99, 0);
+  }
+}
+
+@keyframes hx-ecg {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.hx-path-active {
+  stroke-dasharray: 10 8;
+  animation: hx-dash 1.15s linear infinite;
+}
+
+.hx-path-glow {
+  filter: drop-shadow(0 0 5px rgba(226, 241, 99, 0.55));
+}
+
+.hx-badge-glow {
+  animation: hx-pulse 2.1s ease-in-out infinite;
+}
+
+.hx-ecg {
+  animation: hx-ecg 1.35s linear infinite;
+}
+
+.hx-bento-scroll {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.hx-bezier-path {
+  transition: opacity 0.28s ease, stroke 0.2s ease;
+}
+
+.hx-graph-card-visible {
+  transform: translateY(0) scale(1);
+}
+
+.hx-graph-card-hidden {
+  transform: translateY(8px) scale(0.96);
+}
+
+.hx-condition-stack > * {
+  transition: transform 0.25s ease, margin 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hx-path-active,
+  .hx-badge-glow,
+  .hx-ecg {
+    animation: none;
+  }
+
+  .hx-bezier-path,
+  .hx-graph-card-visible,
+  .hx-graph-card-hidden,
+  .hx-condition-stack > * {
+    transition: none;
+  }
+}

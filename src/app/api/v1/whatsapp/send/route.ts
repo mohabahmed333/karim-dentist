@@ -1,0 +1,220 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
+import {
+  clinicContactFromSettings,
+} from "@/lib/clinic/whatsappClinicContact";
+import {
+  getConversation,
+  insertOutboundMessage,
+} from "@/services/whatsapp";
+import {
+  sendKapsoPayload,
+  uploadMediaFile,
+  type SendKind,
+} from "@/services/whatsapp/sendKapso";
+
+export const runtime = "nodejs";
+
+const jsonSchema = z
+  .object({
+    conversationId: z.string().uuid(),
+    kind: z
+      .enum([
+        "text",
+        "location",
+        "contacts",
+        "interactive_buttons",
+        "interactive_cta",
+      ])
+      .optional(),
+    text: z.string().max(4000).optional(),
+    buttons: z
+      .array(
+        z.object({
+          id: z.string().min(1).max(256),
+          title: z.string().min(1).max(20),
+        }),
+      )
+      .max(3)
+      .optional(),
+    ctaLabel: z.string().trim().min(1).max(20).optional(),
+    ctaUrl: z.string().url().optional(),
+    location: z
+      .object({
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
+        name: z.string().trim().min(1).max(100),
+        address: z.string().trim().min(1).max(300),
+      })
+      .optional(),
+    replyTo: z
+      .object({
+        wamid: z.string().min(1),
+        authorName: z.string().min(1).max(120),
+        body: z.string().max(500),
+        messageType: z.string().optional(),
+      })
+      .optional(),
+  })
+  .transform((v) => ({
+    ...v,
+    kind: v.kind ?? ("text" as const),
+    text: v.text ?? "",
+  }));
+
+function mediaKindFromMime(mime: string): SendKind {
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+  return "document";
+}
+
+async function requireUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return { supabase, user };
+}
+
+export async function POST(request: Request) {
+  try {
+    const { user } = await requireUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const contentType = request.headers.get("content-type") ?? "";
+    const service = createServiceClient();
+    const { phoneNumberId } = getKapsoConfig();
+    const client = createKapsoClient();
+
+    const { data: settings } = await service
+      .from("site_settings")
+      .select("contact_phone, contact_address, contact_clinic_name")
+      .limit(1)
+      .maybeSingle();
+    const clinic = clinicContactFromSettings(settings);
+
+    let conversationId = "";
+    let kind: SendKind = "text";
+    let text = "";
+    let buttons: { id: string; title: string }[] | undefined;
+    let ctaLabel: string | undefined;
+    let ctaUrl: string | undefined;
+    let location:
+      | {
+          latitude: number;
+          longitude: number;
+          name: string;
+          address: string;
+        }
+      | undefined;
+    let replyTo:
+      | {
+          wamid: string;
+          authorName: string;
+          body: string;
+          messageType?: string;
+        }
+      | undefined;
+    let mediaId: string | undefined;
+    let mime: string | undefined;
+    let fileName: string | undefined;
+    let localPreviewUrl: string | undefined;
+
+    if (contentType.includes("multipart/form-data")) {
+      const form = await request.formData();
+      conversationId = String(form.get("conversationId") ?? "");
+      text = String(form.get("text") ?? "");
+      const replyWamid = String(form.get("replyToWamid") ?? "");
+      if (replyWamid) {
+        replyTo = {
+          wamid: replyWamid,
+          authorName: String(form.get("replyToAuthor") || "Patient"),
+          body: String(form.get("replyToBody") || ""),
+        };
+      }
+      const file = form.get("file");
+      if (!(file instanceof File) || !conversationId) {
+        return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+      }
+      mime = file.type || "application/octet-stream";
+      fileName = file.name;
+      kind = mediaKindFromMime(mime);
+      if (form.get("kind") === "audio") kind = "audio";
+      mediaId = await uploadMediaFile(
+        client,
+        phoneNumberId,
+        file,
+        mime,
+        fileName,
+      );
+      localPreviewUrl = undefined;
+    } else {
+      const parsed = jsonSchema.safeParse(await request.json());
+      if (!parsed.success) {
+        return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+      }
+      conversationId = parsed.data.conversationId;
+      kind = parsed.data.kind;
+      text = parsed.data.text?.trim() ?? "";
+      buttons = parsed.data.buttons;
+      ctaLabel = parsed.data.ctaLabel;
+      ctaUrl = parsed.data.ctaUrl;
+      location = parsed.data.location;
+      replyTo = parsed.data.replyTo;
+      if (kind === "text" && !text) {
+        return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+      }
+    }
+
+    const conversation = await getConversation(service, conversationId);
+    if (!conversation) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const to = conversation.phone_number.replace(/\D/g, "");
+    const sent = await sendKapsoPayload({
+      client,
+      phoneNumberId,
+      to,
+      kind,
+      text,
+      mediaId,
+      mime,
+      fileName,
+      buttons,
+      ctaLabel,
+      ctaUrl,
+      clinic,
+      location,
+      contextMessageId: replyTo?.wamid,
+    });
+
+    if (localPreviewUrl && sent.media[0]) {
+      sent.media[0] = { ...sent.media[0], url: localPreviewUrl };
+    }
+
+    const message = await insertOutboundMessage(service, {
+      conversationId: conversation.id,
+      body: sent.body,
+      sentBy: user.id,
+      wamid: sent.wamid,
+      status: "sent",
+      messageType: sent.messageType,
+      media: sent.media,
+      flow: sent.flow,
+      replyTo: replyTo ?? null,
+      preview: sent.preview,
+    });
+
+    return NextResponse.json({ message });
+  } catch (error) {
+    console.error("[whatsapp/send]", error);
+    return NextResponse.json({ error: "Send failed" }, { status: 500 });
+  }
+}

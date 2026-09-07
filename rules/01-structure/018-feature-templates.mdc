@@ -1,0 +1,216 @@
+---
+alwaysApply: true
+description: Code templates and examples for src/features and src/shared/modules.
+---
+
+# Feature & Module Templates
+
+## index.ts — Feature
+
+```ts
+export * from "./components";
+export * from "./hooks/use<FeatureName>";
+export * from "./hooks/use<FeatureName>Mutations";
+export type * from "./types";
+```
+
+## index.ts — Shared Module
+
+```ts
+export * from "./hooks/use<Domain>Table";
+export * from "./hooks/queries/use<Domain>List";
+export * from "./hooks/mutations/useAdd<Domain>";
+export * from "./components";
+export * from "./services";
+export type * from "./types";
+```
+
+## components/index.ts — Feature or Module
+
+```ts
+export { CustomersTable } from "./customersTable.component";
+export { CustomersTableFilters } from "./customersTableFilters.component";
+```
+
+Each component file: `components/<domain>.component.tsx` — export name stays `PascalCase`.
+
+## types/index.ts — Feature or Module
+
+```ts
+export type { CustomersFilters } from "./customerFilters.types";
+export type { GetCustomersParams } from "./getCustomersParams.types";
+```
+
+Each domain file: `types/<domain>.types.ts` — **never** `filterType.ts` or files without `.types.ts`.
+
+## schemas/index.ts — Feature
+
+```ts
+import { z } from "zod";
+
+export const <featureName>FormSchema = z.object({
+  // fields matching API / form shape
+});
+
+export type <FeatureName>FormValues = z.infer<typeof <featureName>FormSchema>;
+```
+
+## schema.ts — Shared Module
+
+```ts
+import { z } from "zod";
+
+export const <domain>FormSchema = z.object({
+  // fields for add/edit modal
+});
+
+export type <Domain>FormValues = z.infer<typeof <domain>FormSchema>;
+```
+
+## types/ — single-domain file example
+
+```
+types/postsFilters.types.ts   ← filters shape
+types/index.ts                ← re-exports
+```
+
+## Example — `posts` Feature
+
+```
+src/features/posts/
+├── components/  PostList.tsx, PostForm.tsx
+├── hooks/       usePosts.ts, usePostMutations.ts
+├── schemas/     index.ts
+├── types/       index.ts
+├── pages/       PostsPage.tsx
+└── index.ts
+```
+
+Consumers: `import { PostList, useCreatePost } from "@/features/posts";`
+
+Router (pages imported directly, not via index):
+
+```ts
+const PostsPage = React.lazy(() =>
+  import("@/features/posts/pages/PostsPage").then((m) => ({
+    default: m.PostsPage,
+  })),
+);
+```
+
+## Example — `CustomersModule` (canonical shared module)
+
+Reference implementation after refactor — follow this layout for new table modules:
+
+```
+src/shared/modules/CustomersModule/
+├── components/
+│   ├── customersTable.component.tsx
+│   ├── customersTableFilters.component.tsx
+│   ├── customersModelFilter.component.tsx
+│   ├── customersFilterToolbar.component.tsx
+│   └── index.ts
+├── columns/
+│   └── customerColumns.tsx          ← useCustomerTableColumns, inline column defs
+├── constants/
+│   ├── initialFilters.ts
+│   └── filters.ts                   ← useCustomerFilterItems
+├── hooks/
+│   ├── useCustomersTable.ts         ← orchestration + infinity fetchFn
+│   ├── queries/
+│   │   ├── useCustomersMetrics.ts
+│   │   ├── useCustomerAnalytics.ts
+│   │   └── useCustomerOrders.ts
+│   └── mutations/                   ← when module has mutations
+├── services/
+│   ├── getCustomers.service.ts
+│   ├── getCustomerOrders.service.ts
+│   ├── getCustomerOrdersByRole.service.ts
+│   ├── getCustomerAnalyticsByRole.service.ts
+│   ├── fetchCustomersPage.service.ts
+│   └── index.ts
+├── types/
+│   ├── customerFilters.types.ts
+│   ├── getCustomersParams.types.ts
+│   └── index.ts
+├── utils/
+│   ├── buildCustomersQueryParams.ts
+│   └── customerExport.ts
+└── index.ts
+```
+
+Feature shell (`src/features/customers/`):
+
+```
+├── pages/CustomersPage.tsx   ← thin: renders <CustomersTable /> from module
+└── index.ts                  ← empty or hooks only — no page export
+```
+
+Shared hook used across modules: `src/shared/hooks/useCitySearch.ts`
+
+Tests: `tests/shared/modules/CustomersModule/**` (mirror `src/` — never co-located in `src/`)
+
+## Example — `BranchesModule` (table module with mutations)
+
+```
+src/shared/modules/BranchesModule/
+├── hooks/
+│   ├── useBranchesTable.ts          ← orchestration + infinity fetchFn
+│   ├── useBranchModals.ts
+│   ├── useBranchUpsertForm.ts
+│   ├── queries/
+│   │   ├── useBranchList.ts
+│   │   └── useBranchPharmacistsInfinite.ts
+│   └── mutations/
+│       ├── useAddBranch.ts
+│       ├── useUpdateBranch.ts
+│       ├── useBranchDeletion.ts
+│       └── useBranchLinkWithMeta.ts
+└── index.ts                         ← re-export queries + mutations via barrel
+```
+
+## Example — `InventoryModule` (legacy — migrate toward CustomersModule pattern)
+
+```
+src/shared/modules/InventoryModule/
+├── components/   inventoryTable.component.tsx, …
+├── hooks/        useInventoryTable.ts, useInventoryFilters.ts
+│   ├── queries/    useInventoryList.ts (when migrated)
+│   └── mutations/  useUpdateProductStatus.ts
+├── services/     getInventoryProducts.service.ts, index.ts
+├── columns/      columns.tsx
+├── constants/    initialFilters.ts, filters.ts
+├── types/        *.types.ts, index.ts
+├── utils/        filterValidationUtils.ts
+└── index.ts
+```
+
+Consumers: `import { InventoryTable, useInventoryTable } from "@/shared/modules/InventoryModule";`
+
+Feature page composes the module:
+
+```tsx
+import { InventoryTable } from "@/shared/modules/InventoryModule";
+```
+
+## DO
+
+- Create `index.ts` first — define the public API before implementation
+- **Features:** keep routes/pages thin; compose from `@/shared/modules/*` when domain UI is reused
+- **Modules:** co-locate `services/`, `columns/`, `constants/`, `modals/` inside the module
+- **No response mappers** in `utils/` when `@/shared/types/dtos/` matches the API — use backend fields in columns/UI
+- Table logic in `use<Domain>Table` — state, `querySignature`, and `useCallback` fetch fn → `fetch<Domain>Page.service`
+- Keep Zod in `schemas/index.ts` (features) or `schema.ts` (modules)
+- Lazy-load feature page components from the router
+
+## DON'T
+
+- Import deep paths — use `@/features/<name>` or `@/shared/modules/<Module>`
+- Put domain tables/modals in a feature when used in 2+ places — extract to a module
+- Put generic UI in features or modules — move to `src/components/ui/`
+- Nest `components/` inside `components/` (max one level of child components — see `02-patterns/002-ui-components.mdc`)
+- Export page components from feature `index.ts`
+- Import `src/features/*` from inside a shared module
+- Add `*.mapper.ts` or `*Mapper.ts` in module `utils/` when the backend already returns the correct DTO shape
+- Put `useCitySearch`-style hooks inside a single module when 2+ modules need them — use `src/shared/hooks/`
+- Create empty `types/`, `schemas/`, or `pages/` folders

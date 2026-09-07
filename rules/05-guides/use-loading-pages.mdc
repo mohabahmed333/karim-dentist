@@ -1,0 +1,26 @@
+---
+description: Loading pages — breadcrumbs and skeletons for list and form pages
+globs: src/features/**/pages/**,src/features/**/*Page.tsx
+alwaysApply: false
+---
+
+# Loading pages (breadcrumbs + skeletons)
+
+## When this applies
+
+Feature **list** and **create/edit** pages that wait on React Query (or similar) before showing the main UI.
+
+## Required patterns
+
+1. **Breadcrumb navigation** — Use [`PageBreadcrumb`](@/components/ui/PageBreadcrumb/index.tsx) with `items: { label, to? }[]`. Every segment except the last should include `to` (e.g. `Dashboard` → `/`, parent list → `/users` or `/roles`). The current page is the last item with **no** `to` (plain text, `aria-current="page"`).
+
+2. **Skeletons instead of bare "Loading…"** — When the page layout is known, use [`Skeleton`](@/components/ui/skeleton.tsx) and/or feature skeletons:
+   - Users: [`UserFormPageSkeleton`](@/features/users/components/UserFormPageSkeleton.tsx) for create/edit while roles or user data loads.
+   - Roles: [`RoleFormPageSkeleton`](@/features/roles/components/RoleFormPageSkeleton.tsx) for create/edit while role or permissions load; [`RolePermissionsPickerSkeleton`](@/features/roles/components/RolePermissionsPickerSkeleton.tsx) inside the permissions picker.
+
+3. **Tables** — Keep using [`PaginatedTable`](@/components/ui/table/PaginatedTable/) `loading` for the table body; add header/breadcrumb skeletons above the table when the title or counts depend on the same fetch.
+
+## Reference implementations
+
+- [`UsersPage.tsx`](@/features/users/UsersPage.tsx), [`CreateUserPage.tsx`](@/features/users/create-user/CreateUserPage.tsx), [`UpdateUserPage.tsx`](@/features/users/update-user/UpdateUserPage.tsx)
+- [`RolesPage.tsx`](@/features/roles/RolesPage.tsx), [`CreateRolePage.tsx`](@/features/roles/create-role/CreateRolePage.tsx), [`UpdateRolePage.tsx`](@/features/roles/update-role/UpdateRolePage.tsx)

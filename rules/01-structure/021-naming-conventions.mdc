@@ -1,0 +1,107 @@
+---
+alwaysApply: true
+description: Naming conventions for files, folders, routes, and TypeScript/React symbols.
+---
+
+# Naming Conventions
+
+## Files & Folders
+
+| Kind | Pattern | Example |
+|------|---------|---------|
+| React component (feature/module) | `<domain>.component.tsx` in `components/` | `customersTable.component.tsx` |
+| Components barrel | `components/index.ts` re-exports only | `export { CustomersTable } from "./customersTable.component"` |
+| React component (`src/components/ui`) | `PascalCase.tsx` | `Button.tsx` (shared UI only) |
+| Page component | `PascalCasePage.tsx` or `pages/index.tsx` | `APIKeysPage.tsx` |
+| Hook | `use<Name>.ts` (camelCase after `use`) | `useProducts.ts`, `useRoutePermissions.ts` |
+| Query hook (module) | `hooks/queries/use<Name>.ts` | `useBranchList.ts`, `useCustomerOrders.ts` |
+| Mutation hook (module) | `hooks/mutations/use<Name>.ts` | `useAddBranch.ts`, `useBranchDeletion.ts` |
+| Orchestration hook (module) | `hooks/use<Domain>Table.ts` | `useBranchesTable.ts`, `useCustomersTable.ts` |
+| Utility / helper | `camelCase.ts` | `paymentUtils.ts`, `stepCompletionUtils.ts` |
+| Service (API) | `<action>.service.ts` | `getCustomers.service.ts` |
+| Service (role router) | `get<Domain>ByRole.service.ts` | `getCustomerOrdersByRole.service.ts` |
+| Service (table page) | `fetch<Domain>Page.service.ts` | `fetchCustomersPage.service.ts` |
+| Columns | `<domain>Columns.tsx` in `columns/` | `customerColumns.tsx` |
+| Constants | `initialFilters.ts`, `filters.ts` in `constants/` | `initialFilters.ts` |
+| Utils | `build<Domain>QueryParams.ts`, `<domain>Export.ts` | `buildCustomersQueryParams.ts` |
+| Shared hook (2+ modules) | `src/shared/hooks/use<Name>.ts` | `useCitySearch.ts` |
+| Types file | `<domain>.types.ts` in `types/` | `customerFilters.types.ts`, `getCustomersParams.types.ts` |
+| Types barrel | `types/index.ts` re-exports only | `export type { CustomersFilters } from "./customerFilters.types"` |
+| Zod schemas | `schemas/index.ts` | — |
+| Test | `tests/<mirror-of-src>/<Name>.test.ts(x)` | `tests/features/orders/hooks/useOrders.test.ts` |
+| Feature folder | `camelCase` | `apiKeys`, `inventory`, `onBoarding` |
+| Shared module folder | `PascalCaseModule` | `InventoryModule`, `PharmacistsModule` |
+| Route URL segment | `kebab-case` | `account-settings`, `api-keys` |
+| Barrel export | `index.ts` / `index.tsx` | feature public surface only |
+
+- **Do not** mix casing in a single filename (`product_list.tsx`, `Product-list.tsx`)
+- **Types folder:** every UI/module-local type file **must** end with `.types.ts` — never `filterType.ts`, `types.ts`, or bare `params.ts`
+- **Components folder (features/modules):** every component file **must** end with `.component.tsx` — camelCase domain prefix; export remains `PascalCase`
+- **No `I` prefix** on interfaces — use `CustomersFilters`, not `ICustomersFilterType`
+- **Legacy PascalCase feature folders** (`PaymentSystem`, `SignUp`) exist — prefer `camelCase` for new features
+
+## TypeScript Symbols
+
+| Kind | Pattern | Example |
+|------|---------|---------|
+| Component | `PascalCase` | `ProductList`, `NameField` |
+| Hook | `use` + `PascalCase` | `useProducts`, `useAuth` |
+| Function / method | `camelCase` | `getDefaultPathForRole`, `hasPermission` |
+| Variable | `camelCase` | `permissionState`, `currentPath` |
+| Boolean | `is` / `has` / `should` prefix | `isRTL`, `hasPermission`, `shouldRedirect` |
+| Interface / type | `PascalCase` | `RoutePermission`, `InventoryColumnsConfig` |
+| Component props type | `<Component>Props` | `NameFieldProps`, `InventoryTableProps` |
+| Form values type | `<Feature>FormValues` | `APIKeyFormValues` |
+| Enum | `PascalCase` name; `SCREAMING_SNAKE` members | `UserType.SUPER_ADMIN` |
+| Constant object | `SCREAMING_SNAKE` | `QUERY_KEYS`, `ADMIN_ROLES` |
+| Private helper | `_camelCase` prefix | `_getPathsForRole` |
+| Zod schema | `camelCase` + `Schema` suffix | `createAPIKeySchema` |
+| Inferred schema type | `PascalCase` + `Values` / `Input` | `CreateAPIKeyValues` |
+
+- **Named exports only** — no `export default` for components, hooks, or utilities
+- **Avoid abbreviations** unless domain-standard (`API`, `OTP`, `SKU`, `UPC`, `KPI`)
+
+## React Query Keys
+
+- **Single registry:** `@/constants/queryKeys.ts` — every API must import `QUERY_KEYS` from here
+- **Key name:** `SCREAMING_SNAKE` in the object; **value:** `kebab-case` or `camelCase` string
+- **Never** duplicate keys locally — no `const MY_KEY = "orders"`; use `QUERY_KEYS.ORDERS`
+
+```ts
+// src/constants/queryKeys.ts
+export const QUERY_KEYS = {
+  API_KEYS: "api-keys",
+  PHARMACY_PRODUCTS: "pharmacyProducts",
+} as const;
+
+// in hooks — always import
+import { QUERY_KEYS } from "@/constants/queryKeys";
+```
+
+## Services & API
+
+- **Module services** live under `src/shared/modules/<Module>/services/` — export via `services/index.ts`
+- **Three layers when needed:** `get*.service.ts` (HTTP) → `get*ByRole.service.ts` (admin/pharmacist) → `fetch*Page.service.ts` (infinity table)
+- **Request params** → `types/<action>Params.types.ts` (e.g. `getCustomersParams.types.ts`)
+- **Response rows** → `@/shared/types/dtos/*.dto.ts` — do not remap in `utils/*Mapper.ts` unless the API contract is wrong
+- Legacy `src/services/` is not used for domain modules
+
+## Git & Branches
+
+See `00-workflow/014-git-prs.mdc`:
+
+- Branches: `feat/<ticket>-short-desc`, `fix/<ticket>-short-desc`
+- Commits: `type(scope): description` — `feat(inventory): add bulk upload`
+
+## Quick Checklist (New Code)
+
+1. Component file + export share the same `PascalCase` name
+2. Hook file is `use<Feature>.ts` and export is `use<Feature>`
+3. Props interface is `<Component>Props`
+4. Route path segments are `kebab-case`
+5. Register `QUERY_KEYS.<DOMAIN>` in `@/constants/queryKeys.ts` and import in every API hook
+6. Zod schema ends with `Schema`; inferred type ends with `Values` or `Input`
+7. Module/feature UI types live in `types/<name>.types.ts` with `types/index.ts` barrel
+8. Module/feature components live in `components/<name>.component.tsx` with `components/index.ts` barrel
+9. Module `services/` has `get*.service.ts`; add `*ByRole` and `fetch*Page` only when needed
+10. Infinity tables: `fetch<Domain>Page.service.ts` + `use<Domain>Table` `fetchFn` — not inline fetch in the table component

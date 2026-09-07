@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GlowDent-style hero — layout reference</title>
+    <style>
+      :root {
+        --navy: #0a1d37;
+        --muted: #8b93a1;
+        --line: #e8eaef;
+        --bg: #ffffff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, sans-serif;
+        color: var(--navy);
+        background: var(--bg);
+      }
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+        gap: 2.5rem;
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 1.75rem 2rem 2.5rem;
+        min-height: 100vh;
+        align-items: stretch;
+      }
+      .left {
+        display: flex;
+        flex-direction: column;
+        padding: 0.5rem 0 1rem;
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 4.5rem;
+      }
+      .brand {
+        font-size: 1.35rem;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+        text-decoration: none;
+        color: var(--navy);
+      }
+      .icons { display: flex; gap: 0.6rem; }
+      .icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: #fff;
+        display: grid;
+        place-items: center;
+      }
+      h1 {
+        max-width: 11.5ch;
+        margin: 0;
+        font-size: clamp(2.6rem, 4.6vw, 4.1rem);
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+        font-weight: 700;
+      }
+      h1 em {
+        font-family: "Instrument Serif", Georgia, serif;
+        font-style: italic;
+        font-weight: 400;
+      }
+      .body {
+        margin: 1.35rem 0 0;
+        max-width: 34ch;
+        color: var(--muted);
+        font-size: 1rem;
+        line-height: 1.55;
+      }
+      .cta {
+        margin-top: 1.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 999px;
+        background: #0b0b0b;
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.92rem;
+        font-weight: 600;
+        padding: 0.95rem 1.45rem;
+      }
+      .logos {
+        margin-top: auto;
+        padding-top: 3.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.75rem;
+        align-items: center;
+        opacity: 0.35;
+      }
+      .logos span {
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      .media {
+        position: relative;
+        border-radius: 48px;
+        overflow: hidden;
+        min-height: 640px;
+        background: #dfe5ee;
+      }
+      .media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .contact {
+        position: absolute;
+        top: 1.1rem;
+        right: 1.1rem;
+        z-index: 2;
+        background: #fff;
+        border-radius: 999px;
+        padding: 0.55rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        color: var(--navy);
+        box-shadow: 0 8px 24px rgba(10, 29, 55, 0.08);
+      }
+      .card {
+        position: absolute;
+        left: 8%;
+        top: 38%;
+        width: min(42%, 240px);
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        background: rgba(255, 255, 255, 0.28);
+        backdrop-filter: blur(10px);
+        padding: 0.85rem 0.95rem 1rem;
+        color: #fff;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+      }
+      .dots { display: flex; gap: 0.35rem; margin-bottom: 0.55rem; }
+      .dots i {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        display: block;
+      }
+      .dots i:nth-child(1) { background: #ff5f57; }
+      .dots i:nth-child(2) { background: #febc2e; }
+      .dots i:nth-child(3) { background: #28c840; }
+      .card .eyebrow {
+        font-size: 0.7rem;
+        opacity: 0.9;
+        margin-bottom: 0.35rem;
+      }
+      .card .title {
+        font-family: "Instrument Serif", Georgia, serif;
+        font-size: 1.45rem;
+        line-height: 1.15;
+        margin: 0 0 1.4rem;
+      }
+      .specs {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        font-size: 0.62rem;
+        opacity: 0.95;
+      }
+      @media (max-width: 900px) {
+        .hero { grid-template-columns: 1fr; }
+        .media { min-height: 420px; }
+        .logos { padding-top: 2rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Static layout reference for Dental Lounge hero restyle (option 1 content). -->
+    <section class="hero">
+      <div class="left">
+        <div class="top">
+          <a class="brand" href="#home">The Dental Lounge</a>
+          <div class="icons">
+            <span class="icon" aria-hidden="true">⌕</span>
+            <span class="icon" aria-hidden="true">≡</span>
+          </div>
+        </div>
+        <h1>Caring for Your <em>Smile,</em> One Visit at a Time.</h1>
+        <p class="body">
+          Your smile is more than just an expression, it's a reflection of your
+          confidence, health, and happiness.
+        </p>
+        <a class="cta" href="#contact">Set Appointment <span aria-hidden="true">↗</span></a>
+        <div class="logos" aria-label="Partners">
+          <span>Basecamp</span><span>DocuSign</span><span>hopin</span><span>attentive</span>
+        </div>
+      </div>
+      <div class="media">
+        <a class="contact" href="#contact">Contact ↗</a>
+        <img src="./glowdent-hero-reference.png" alt="Hero reference photo" />
+        <aside class="card">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <p class="eyebrow">Clinic highlight</p>
+          <p class="title">Laser dentistry</p>
+          <div class="specs">
+            <span>Care: Comfort-first</span>
+            <span>Tech: Diode laser</span>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </body>
+</html>

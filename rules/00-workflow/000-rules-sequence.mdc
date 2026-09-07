@@ -1,0 +1,53 @@
+---
+alwaysApply: true
+description: Master rule execution order — Phase 1 implementation rules, then Phase 2 testing rules.
+---
+
+# Rule Execution Sequence (Mandatory)
+
+All project rules apply in **two phases**. Never skip Phase 1. Never start Phase 2 before Phase 1 tasks are marked complete in `todo.md`.
+
+## Phase 1 — Implementation (run first)
+
+Apply these rules while writing or changing production code:
+
+| Order | Folder | Rules |
+|-------|--------|-------|
+| 1 | `00-workflow/` | task management, git, tooling, agent safety |
+| 2 | `01-structure/` | code organization, file layout, features, modules, naming |
+| 3 | `02-patterns/` | React/TS, data fetching, UI, errors, i18n |
+| 4 | `03-quality/` | security, accessibility, performance |
+| 5 | `05-guides/` | scoped how-tos (loading pages, tables, etc.) when relevant |
+
+**Phase 1 is done when:** implementation tasks in `todo.md` are ● complete and `yarn typecheck` / `yarn lint` pass for touched files.
+
+## Phase 2 — Testing (run after Phase 1)
+
+Apply these rules **only after** Phase 1 is complete:
+
+| Order | Folder | Rules |
+|-------|--------|-------|
+| 1 | `04-testing/040-unit-testing.mdc` | utils, hooks, components, Zod schemas |
+| 2 | `04-testing/041-api-testing.mdc` | `*.service.ts`, API handlers, module services |
+
+**Phase 2 workflow:**
+
+1. Add Phase 2 tasks to `todo.md` (unit tests, then API tests)
+2. Write tests under `tests/` mirroring the `src/` path (`tests/.../Foo.test.tsx` for `src/.../Foo.tsx`)
+3. Run `yarn vitest run` and fix failures
+4. Mark Phase 2 tasks ● complete, then clear `todo.md`
+
+## Exceptions
+
+- **Test-only prompts** ("add tests for X", "fix failing test") → start at Phase 2; still follow `00-workflow/` task rules
+- **Explicit user skip** ("no tests for this change") → skip Phase 2; note it in `todo.md` as ✕ cancelled
+
+## Quick checklist
+
+```
+□ Phase 1 — structure + patterns + quality rules followed
+□ Phase 1 — typecheck / lint clean
+□ Phase 2 — unit tests for new/changed utils, hooks, components, schemas
+□ Phase 2 — API tests for new/changed services
+□ Phase 2 — test run passes
+```

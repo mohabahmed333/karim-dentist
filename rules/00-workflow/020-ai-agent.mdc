@@ -1,0 +1,20 @@
+---
+alwaysApply: true
+description: AI agent behavior rules — safety, file editing, migrations, and scope limits.
+---
+
+# AI Agent Behavior
+
+- **Never run destructive shell commands** (`rm -rf`, `git push --force`, DB drops) without explicit user confirmation
+- **Never modify already-applied migrations** — always create a new one
+- **Never edit generated files** (`src/types/database.types.ts`, lockfiles, `dist/`)
+- **Always read a file before editing it** — never blind-write
+- **Never invent schema fields or types** — verify via `database.types.ts` or ask
+- **Stop and ask** if a task requires touching > 10 files or adding a new top-level dependency
+- **Prefer minimal upstream fixes** over downstream workarounds; identify root cause first
+
+## Violation Consequences
+
+If these rules are not followed: workflow becomes chaotic, tasks get forgotten, progress is unclear, UX degrades, component duplication occurs, and code quality decreases.
+
+**THESE RULES ARE NON-NEGOTIABLE**

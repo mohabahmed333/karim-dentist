@@ -1,0 +1,74 @@
+---
+alwaysApply: true
+description: React Query data fetching — QUERY_KEYS registry, pagination, mutations, and cache rules.
+---
+
+# Data Fetching (React Query)
+
+## QUERY_KEYS registry (mandatory for every API)
+
+**Single source of truth:** `@/constants/queryKeys.ts`
+
+Every API-backed hook, mutation, table, or cache operation **must** import from this file:
+
+```ts
+import { QUERY_KEYS, getAuthTokenQueryKey } from "@/constants/queryKeys";
+```
+
+### Rules
+
+1. **Register first** — add a new `SCREAMING_SNAKE` entry to `QUERY_KEYS` in `@/constants/queryKeys.ts` before writing the hook/service
+2. **Import always** — never inline string literals (`'pharmacists'`, `"orders"`) in `queryKey`, `invalidateQueries`, or `resetQueries`
+3. **One API domain = one key** — e.g. `QUERY_KEYS.PHARMACISTS`, `QUERY_KEYS.ORDERS`, `QUERY_KEYS.API_KEYS`
+4. **Compose query keys** — root tag from `QUERY_KEYS` + params:
+
+```ts
+queryKey: [QUERY_KEYS.ORDERS, getAuthTokenQueryKey(), page, limit, branchId]
+```
+
+5. **Mutations invalidate via `QUERY_KEYS`** — same tag the query uses:
+
+```ts
+queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.API_KEYS] });
+```
+
+6. **Auth-scoped queries** — append `getAuthTokenQueryKey()` when cache must vary per session/token
+
+### Adding a new API — checklist
+
+```
+□ Add QUERY_KEYS.<DOMAIN>: "<kebab-or-camel-value>" in src/constants/queryKeys.ts
+□ import { QUERY_KEYS } from "@/constants/queryKeys" in hook + mutation files
+□ Use QUERY_KEYS.<DOMAIN> in useQuery / useInfiniteQuery / PaginatedTable queryKey
+□ Use QUERY_KEYS.<DOMAIN> in invalidateQueries / resetQueries on mutation success
+```
+
+### ❌ Don't
+
+```ts
+queryKey: ["pharmacists", pharmacyId]           // inline string
+queryClient.invalidateQueries({ queryKey: ['refunds'] })
+export const BRANCHES_QUERY_KEY = "branches"   // duplicate — use QUERY_KEYS.BRANCHES
+```
+
+### ✅ Do
+
+```ts
+import { QUERY_KEYS } from "@/constants/queryKeys";
+
+queryKey: [QUERY_KEYS.PHARMACISTS, pharmacyId]
+queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PHARMACISTS] })
+```
+
+---
+
+## General React Query rules
+
+- **Hooks call services** — `queryFn` must import from `services/*.service.ts`; no inline `fetch*` functions in `hooks/`
+- **Service per action** — each API call or orchestration step gets its own `*.service.ts` under `services/` (export via `services/index.ts`)
+- **Infinity scroll tables** — `fetch<Domain>Page.service.ts` returns `{ data, meta: { totalRowCount } }`; wire via `use<Domain>Table` `fetchFn` + infinity scroll table component
+- **Table `queryKey`** — `[QUERY_KEYS.<DOMAIN>, getAuthTokenQueryKey(), ...filterSignature]` (see `useCustomersTable` `querySignature` pattern)
+- **Mutations MUST invalidate or update related queries** explicitly — no silent staleness
+- **Set `staleTime` per query domain** — never rely on default 0 in production
+- **Optimistic updates require an `onError` rollback** path
+- **No fetching in `useEffect`** — always React Query

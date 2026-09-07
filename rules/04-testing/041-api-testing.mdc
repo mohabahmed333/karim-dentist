@@ -1,0 +1,79 @@
+---
+alwaysApply: true
+description: "Phase 2 — API and service-layer testing for *.service.ts and Api handler calls."
+---
+
+# API Testing (Phase 2)
+
+> **When to apply:** After Phase 1 implementation **and** unit tests (040) are complete. See `00-workflow/000-rules-sequence.mdc`.
+
+## Scope
+
+| Target | Requirement |
+|--------|-------------|
+| `src/features/**/services/*.service.ts` | Integration test for new or changed endpoints |
+| `src/shared/modules/**/services/*.service.ts` | Integration test for new or changed endpoints |
+| `src/lib/apiHandler` wrappers | Test error mapping and request shape when modified |
+
+## Conventions
+
+- **Location:** `tests/` mirrors `src/` — e.g. `tests/shared/modules/OrdersModule/services/getOrders.service.test.ts`
+- **File naming:** `<action>.service.test.ts` matching the service filename under `src/`
+- **Shared helpers:** `tests/helpers/` — e.g. `@tests/helpers/createMockApiResponse`
+- **Import services** via `@/features/...` or `@/shared/modules/...` — never relative paths into `src/`
+- **Mock HTTP** at the `Api` / axios boundary — do not hit production APIs in tests
+- **Assert:** correct URL, method, params/body, and response mapping to typed return shape
+- **Error paths:** at least one test for 4xx/5xx or network failure → typed `AppError`
+
+## What to test
+
+```ts
+import { vi } from 'vitest';
+import { Api } from '@/lib/apiHandler';
+import { createMockApiResponse } from '@tests/helpers/createMockApiResponse';
+import { getPharmacists } from '@/features/pharmacists/services/getPharmacists.service';
+
+vi.mock('@/lib/apiHandler', () => ({ Api: vi.fn() }));
+
+describe('getPharmacists', () => {
+  it('calls GET /pharmacy/pharmacists with pharmacyId and pagination', async () => {
+    vi.mocked(Api).mockResolvedValue(createMockApiResponse({ items: [], pagination: {}, summary: {} }));
+
+    await getPharmacists({ page: 1, limit: 10, pharmacyId: 'ph-1' });
+
+    expect(Api).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: '/pharmacy/pharmacists',
+        method: 'GET',
+      }),
+    );
+  });
+
+  it('maps API errors to a typed failure', async () => {
+    vi.mocked(Api).mockRejectedValue(new Error('Network error'));
+    await expect(getPharmacists({ page: 1, limit: 10 })).rejects.toThrow();
+  });
+});
+```
+
+## Module checklist (new/changed service)
+
+1. Add `QUERY_KEYS.<DOMAIN>` to `@/constants/queryKeys.ts` if not already registered
+2. Happy path — correct request + parsed response
+3. Required params included (`pharmacyId`, `branchId`, etc.)
+4. Error / empty response handling
+5. Types match `StandardApiResponse<T>` or module interface
+6. Hook/mutation imports `QUERY_KEYS` — no inline `queryKey` strings
+
+## Commands
+
+```bash
+yarn vitest run tests/shared/modules/**/services/*.test.ts
+yarn vitest run tests/features/**/services/*.test.ts
+```
+
+## Do not
+
+- Call live backend URLs in unit/API tests
+- Skip API tests when adding a new `*.service.ts` file
+- Duplicate full UI flows here — keep API tests focused on the service layer

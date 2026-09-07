@@ -1,0 +1,12 @@
+Drop anatomical models here:
+
+  Preferred (full mouth):
+    arch.glb
+
+  Or kind templates:
+    incisor.glb
+    canine.glb
+    premolar.glb
+    molar.glb
+
+See ATTRIBUTION.txt for the current arch.glb source.

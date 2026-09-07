@@ -1,0 +1,68 @@
+---
+alwaysApply: false
+description: Messages feature component layout — single-component files, folder decision tree, no module-level render helpers.
+globs: src/features/messages/components/**
+---
+
+# Messages Feature Components
+
+Applies to `src/features/messages/components/**`.
+
+## Folder decision tree
+
+| Files in subfolder | Layout |
+|--------------------|--------|
+| 1 primary component | `{name}.component.tsx` at subfolder root |
+| 2–3 related files, combined &lt; ~180 lines | Merge into one file (`index.tsx` or `{name}.component.tsx`) |
+| 2–3 files, not mergeable | Keep sibling `.component.tsx` files |
+| 4+ files or clear primary entry | `index.tsx` holds the primary component; siblings for distinct children |
+
+Parent group folders (`conversationList/`, `messageView/`, `cartAndCheckout/`, etc.) expose a barrel `index.ts` only — no component code in group `index.ts`.
+
+## Single-component rule (mandatory for merged files)
+
+Each merged component file (`index.tsx` or merged `*.component.tsx`) must have:
+
+1. **Exactly one exported React component** — no second `export function Foo` / `export const Bar` in the same file.
+2. **No module-level JSX helpers** — do not use `const renderXxx = () => <…>` or `function renderXxx()` at file scope. Inline JSX in the component `return`, or use `useCallback` **inside** the component when passing to virtualized lists.
+3. **Allowed at module scope:** pure utilities (`formatAmount`, `summarizeInvoice`), constants (`COLORS`, style objects), lazy imports, types, and non-UI managers (e.g. `toastManager`).
+
+## When to keep a separate file
+
+Keep a sibling `.component.tsx` when the piece is:
+
+- Reused by 2+ parents in the feature
+- A distinct domain child (e.g. `mediaViewer.component.tsx`, `thumbnailStrip.component.tsx`)
+- Over ~80 lines on its own and not tightly coupled to one parent
+
+Do **not** split only to avoid a long `return` — prefer one component with inline branches over pseudo-subcomponents via `render*` helpers.
+
+## Imports
+
+- Folder with `index.tsx`: `from "../messageBox"` or `from "@/features/messages/components/messageView/messageBox"`
+- Single-file subfolder: `from "../cart/cart.component"`
+- Public API: `@/features/messages/components/<group>` via group `index.ts`
+
+## Examples
+
+```tsx
+// ✅ One export, inline JSX
+export function CartList() {
+  const renderItem = useCallback((index, item) => <CartRow … />, [deps]);
+  return <VirtualizedList renderItem={renderItem} />;
+}
+
+// ❌ Module-level pseudo-component
+const renderEmptyCart = () => <div>…</div>;
+export function CartList() {
+  return renderEmptyCart();
+}
+
+// ❌ Multiple React exports in one merged file
+export function CheckoutButton() { … }
+export function InvoicePreviewCard() { … }
+```
+
+## Cross-reference
+
+General nesting and file limits: `02-patterns/002-ui-components.mdc`, `01-structure/017-feature-structure.mdc`.

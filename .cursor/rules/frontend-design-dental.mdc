@@ -1,0 +1,15 @@
+---
+description: Simple, clean admin UI for patient clinical views — match mockup style.
+globs: src/features/admin/components/patients/**/*.tsx
+alwaysApply: false
+---
+
+# Patient clinical UI — simple style
+
+- **White cards**, light grey borders `#e5e7eb`, minimal shadow
+- **Blue** `#2563eb` for selected/documented teeth and active tabs
+- **Light blue fill** `#dbeafe` for teeth with notes
+- **Sans-serif only** — no serif eyebrows or gold accents on clinical charts
+- **Two-column layout**: odontogram left, tooth record panel right
+- **Service toggle**: Medical / Cosmetic pill switch at top of Medical Record tab
+- Notes edit on the **right panel**, not floating on the chart

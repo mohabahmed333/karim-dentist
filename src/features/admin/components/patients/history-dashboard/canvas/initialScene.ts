@@ -1,0 +1,86 @@
+import type { CanvasNode } from "./canvas.types";
+
+export function createInitialScene(conditionTitle = "Endodontic Infection"): CanvasNode[] {
+  return [
+    {
+      id: "node-root",
+      x: 50,
+      y: 200,
+      shapeType: "SHAPE_01",
+      title: conditionTitle,
+      parentId: null,
+      childrenIds: ["node-metric", "node-perio", "node-culture"],
+    },
+    {
+      id: "node-metric",
+      x: 350,
+      y: 80,
+      shapeType: "SHAPE_02",
+      title: "Office Visit: Tooth #14 Pulpectomy",
+      parentId: "node-root",
+      childrenIds: ["node-media"],
+      data: { metric: "62–180 bpm / Vitality Index", toothNumber: 14 },
+    },
+    {
+      id: "node-perio",
+      x: 350,
+      y: 320,
+      shapeType: "SHAPE_06",
+      title: "Perio Probing Depth",
+      parentId: "node-root",
+      childrenIds: [],
+      data: { date: "07.10" },
+    },
+    {
+      id: "node-culture",
+      x: 350,
+      y: 480,
+      shapeType: "SHAPE_05",
+      title: "Canal Culture",
+      parentId: "node-root",
+      childrenIds: ["node-biopsy"],
+      data: { date: "07.10" },
+    },
+    {
+      id: "node-media",
+      x: 700,
+      y: 220,
+      shapeType: "SHAPE_03",
+      title: "Office Visit: Tooth #14 CBCT Scan",
+      parentId: "node-metric",
+      childrenIds: ["node-stacked", "node-tmj"],
+      data: { toothNumber: 14 },
+    },
+    {
+      id: "node-biopsy",
+      x: 700,
+      y: 480,
+      shapeType: "SHAPE_05",
+      title: "Biopsy Results",
+      parentId: "node-culture",
+      childrenIds: [],
+      data: { date: "07.10" },
+    },
+    {
+      id: "node-stacked",
+      x: 1050,
+      y: 80,
+      shapeType: "SHAPE_04",
+      title: "Office Visit: Endodontic Note",
+      parentId: "node-media",
+      childrenIds: [],
+    },
+    {
+      id: "node-tmj",
+      x: 1050,
+      y: 380,
+      shapeType: "SHAPE_05",
+      title: "TMJ Scan",
+      parentId: "node-media",
+      childrenIds: [],
+      data: { date: "07.10" },
+    },
+  ];
+}
+
+export const CANVAS_WORLD = { width: 1600, height: 820 };

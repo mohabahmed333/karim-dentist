@@ -1,0 +1,23 @@
+---
+description: Project rules for pharmaconnnect — generated from AGENTS.md by haac-aikit
+alwaysApply: true
+---
+
+<!-- BEGIN:haac-aikit -->
+# pharmaconnnect
+
+See [AGENTS.md](../../AGENTS.md) for the authoritative rule set. Cursor-specific dialect:
+
+## Commit & PR conventions
+
+- Conventional commits: `type(scope): description`  <!-- id: commit.conventional-commits -->
+- Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `perf`  <!-- id: commit.types -->
+- PR title < 70 characters; body: Summary + Test Plan.  <!-- id: pr.title-under-70 -->
+- **Never force-push to `main`/`master`/`develop`.**  <!-- id: git.no-force-push-protected -->
+
+## Security
+
+- **Never read, write, or commit:**  <!-- id: security.no-sensitive-files -->
+- **Never force-push to `main`/`master`/`develop`.**  <!-- id: git.no-force-push-protected -->
+
+<!-- END:haac-aikit -->

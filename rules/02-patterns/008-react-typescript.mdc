@@ -1,0 +1,17 @@
+---
+alwaysApply: true
+description: React and TypeScript conventions — strict mode, exports, hooks, and component patterns.
+---
+
+# React / TypeScript (Advanced)
+
+- **`strict: true`** in `tsconfig` — no `any`, no `@ts-ignore`. Use `@ts-expect-error` with reason if unavoidable
+- **Named exports only** for components, hooks, and utilities — no `export default`
+- **Hooks naming**: `useXyz`, pure on first render unless side effects are intentional
+- **No business logic in components** — extract to hooks (`src/hooks`) or services (`src/lib`)
+- **Max one level of nested components** — parent folder → child `.tsx` files only; never `components/` inside `components/` (see `02-patterns/002-ui-components.mdc`)
+- **Lift state when prop drilling exceeds 2 levels** — use context or React Query cache
+- **No `useEffect` for derived state** — compute during render or with `useMemo`
+- **Stable list keys** — never `key={index}` for dynamic data
+- **Wrap async UI paths** with `<ErrorBoundary>` and Suspense fallbacks
+- **No circular imports** — enforce via `eslint-plugin-import/no-cycle`
