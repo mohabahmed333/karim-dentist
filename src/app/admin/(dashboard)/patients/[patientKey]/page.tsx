@@ -32,13 +32,18 @@ export default async function AdminPatientDetailPage({ params }: Props) {
     listToothNotesServer(supabase, group.patientKey).catch(() => []),
     listPatientImagingServer(supabase, group.patientKey).catch(() => []),
     listPatientTreatmentsServer(supabase, group.patientKey).catch(() => []),
-    supabase
-      .from("services")
-      .select("*")
-      .is("deleted_at", null)
-      .order("sort_order", { ascending: true })
-      .then(({ data }) => (data ?? []) as Service[])
-      .catch(() => [] as Service[]),
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("services")
+          .select("*")
+          .is("deleted_at", null)
+          .order("sort_order", { ascending: true });
+        return (data ?? []) as Service[];
+      } catch {
+        return [] as Service[];
+      }
+    })(),
   ]);
 
   return (

@@ -373,9 +373,9 @@ export function SupportInboxView({
         : payload.kind;
     const preview =
       body.trim() ||
-      (messageType === "image" || messageType === "sticker"
+      (messageType === "image"
         ? "Photo"
-        : messageType === "audio" || messageType === "voice"
+        : messageType === "audio"
           ? "Voice message"
           : messageType === "video"
             ? "Video"

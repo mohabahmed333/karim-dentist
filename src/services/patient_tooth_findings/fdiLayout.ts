@@ -5,7 +5,7 @@ import {
   UPPER_LEFT,
   UPPER_RIGHT,
   type FdiNumber,
-} from "./fdi.ts";
+} from "./fdi";
 
 export const ODONTOGRAM_VIEWBOX = { width: 400, height: 480, cx: 200, cy: 240 };
 

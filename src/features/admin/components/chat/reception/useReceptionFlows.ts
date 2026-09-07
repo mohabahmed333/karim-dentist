@@ -441,7 +441,7 @@ export function useReceptionFlows(push: PushFn, options: Options = {}) {
                   currentPatient?.lastReservationId,
                 noteCount: currentPatient?.noteCount ?? fromPayload.noteCount,
               }
-            : currentPatient;
+            : (currentPatient ?? null);
 
           // Always check reservations API for an open booking.
           let reservationId =

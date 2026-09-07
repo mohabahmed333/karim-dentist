@@ -103,6 +103,7 @@ export function ShapePickerPanel({ shapeType, previewTitle, onPick }: Props) {
           <Select
             value={isSchemaShape(shapeType) ? shapeType : undefined}
             onValueChange={(key) => {
+              if (!key) return;
               const item = getShapeDefinition(key);
               if (item) onPick(key, item.defaultTitle);
             }}
