@@ -78,7 +78,7 @@ Flow:
 
 For non-template kinds (text, media, location, contacts, interactive, …):
 
-- If session is closed → reject with **`409`** (or `403`) and code **`SESSION_EXPIRED`**.
+- If session is closed → reject with **`409`** and code **`SESSION_EXPIRED`**.
 - UI should already be locked; this is a safety net.
 
 ### Webhook
