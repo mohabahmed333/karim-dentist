@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, LayoutGrid, Plus } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import type { Reservation } from "@/services/reservations/types";
 import { rescheduleReservation } from "@/services/reservations/mutations";
@@ -27,6 +28,15 @@ import {
   type TimelineStatusFilter,
 } from "@/services/reservations/timeline";
 import { useEffect, useMemo, useState } from "react";
+import { useLocale } from "@/lib/i18n";
+import {
+  calendarMonthGridVariants,
+  calendarMonthMotionKey,
+  calendarMonthSlideDir,
+  calendarMonthTitleTransition,
+  calendarMonthTitleVariants,
+  calendarMonthTransition,
+} from "@/features/admin/lib/calendarMonthMotion";
 import { CalendarMonthGrid } from "./CalendarMonthGrid";
 import { CalendarReservationPanel } from "./CalendarReservationPanel";
 import { ReservationsTimelineFilters } from "./ReservationsTimelineFilters";
@@ -43,12 +53,17 @@ type Props = {
 
 export function ReservationsTimeline({
   reservations,
-  title = "Appointments",
+  title: _title = "Appointments",
 }: Props) {
+  void _title;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { dir: localeDir } = useLocale();
+  const reduced = useReducedMotion();
+  const rtl = localeDir === "rtl";
   const [month, setMonth] = useState(() => new Date());
+  const [monthDir, setMonthDir] = useState(0);
   const [statusFilter, setStatusFilter] = useState<TimelineStatusFilter>("all");
   const [viewMode, setViewMode] = useState<TimelineViewMode>("patient");
   const [patientFilter, setPatientFilter] =
@@ -68,6 +83,23 @@ export function ReservationsTimeline({
   }, [reservations]);
 
   const calendarDays = useMemo(() => buildCalendarGrid(month), [month]);
+  const monthKey = calendarMonthMotionKey(month);
+  const monthLabel = formatCalendarMonthLabel(month);
+  const gridVariants = useMemo(() => calendarMonthGridVariants(rtl), [rtl]);
+  const gridTransition = calendarMonthTransition(reduced);
+  const titleTransition = calendarMonthTitleTransition(reduced);
+  const titleVariants = calendarMonthTitleVariants();
+
+  function goToMonth(next: Date) {
+    setMonthDir(calendarMonthSlideDir(month, next));
+    setMonth(next);
+  }
+
+  function shiftCalendarMonth(delta: -1 | 1) {
+    setMonthDir(delta);
+    setMonth((value) => shiftMonth(value, delta));
+  }
+
   const filtered = useMemo(
     () => filterReservationsForTimeline(items, statusFilter),
     [items, statusFilter],
@@ -123,7 +155,11 @@ export function ReservationsTimeline({
     const iso = reservationDayIso(row.starts_at);
     setSelectedReservationId(row.id);
     setSelectedDayIso(iso);
-    setMonth(new Date(`${iso}T12:00:00`));
+    const next = new Date(`${iso}T12:00:00`);
+    setMonthDir(calendarMonthSlideDir(month, next));
+    setMonth(next);
+    // Sync selection from URL; month is read for slide direction only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, filteredReservations]);
 
   function selectDay(iso: string) {
@@ -186,7 +222,7 @@ export function ReservationsTimeline({
       );
       setSelectedDayIso(targetDate);
       setSelectedReservationId(updated.id);
-      setMonth(new Date(`${targetDate}T12:00:00`));
+      goToMonth(new Date(`${targetDate}T12:00:00`));
       const params = new URLSearchParams(searchParams.toString());
       params.set("selected", updated.id);
       params.set("date", targetDate);
@@ -212,18 +248,30 @@ export function ReservationsTimeline({
           <button
             type="button"
             className="rounded-lg border border-[#e6e8ec] p-2 text-[#6b7280] hover:bg-white"
-            onClick={() => setMonth((value) => shiftMonth(value, -1))}
+            onClick={() => shiftCalendarMonth(-1)}
             aria-label="Previous month"
           >
             <ChevronLeft className="size-4 rtl:rotate-180" />
           </button>
-          <h2 className="min-w-[10rem] text-center text-lg font-semibold text-[#0f2744]">
-            {formatCalendarMonthLabel(month)}
-          </h2>
+          <div className="relative flex min-h-[1.75rem] min-w-[10rem] items-center justify-center overflow-hidden">
+            <AnimatePresence initial={false} mode="wait">
+              <motion.h2
+                key={monthKey}
+                variants={titleVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={titleTransition}
+                className="text-center text-lg font-semibold text-[#0f2744]"
+              >
+                {monthLabel}
+              </motion.h2>
+            </AnimatePresence>
+          </div>
           <button
             type="button"
             className="rounded-lg border border-[#e6e8ec] p-2 text-[#6b7280] hover:bg-white"
-            onClick={() => setMonth((value) => shiftMonth(value, 1))}
+            onClick={() => shiftCalendarMonth(1)}
             aria-label="Next month"
           >
             <ChevronRight className="size-4 rtl:rotate-180" />
@@ -264,18 +312,30 @@ export function ReservationsTimeline({
       </div>
 
       <div className="flex flex-col gap-4 p-4 lg:flex-row">
-        <div className="min-w-0 flex-1">
-          <CalendarMonthGrid
-            days={calendarDays}
-            eventsByDay={eventsByDay}
-            selectedDayIso={selectedDayIso}
-            selectedReservationId={selectedReservationId}
-            movingReservationId={movingReservationId}
-            eventLabel={eventLabel}
-            onSelectDay={selectDay}
-            onSelectReservation={selectReservation}
-            onMoveReservation={moveReservationToDay}
-          />
+        <div className="relative min-w-0 flex-1 overflow-hidden">
+          <AnimatePresence initial={false} custom={monthDir} mode="popLayout">
+            <motion.div
+              key={monthKey}
+              custom={monthDir}
+              variants={gridVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={gridTransition}
+            >
+              <CalendarMonthGrid
+                days={calendarDays}
+                eventsByDay={eventsByDay}
+                selectedDayIso={selectedDayIso}
+                selectedReservationId={selectedReservationId}
+                movingReservationId={movingReservationId}
+                eventLabel={eventLabel}
+                onSelectDay={selectDay}
+                onSelectReservation={selectReservation}
+                onMoveReservation={moveReservationToDay}
+              />
+            </motion.div>
+          </AnimatePresence>
         </div>
         {showSidePanel ? (
           <CalendarReservationPanel
