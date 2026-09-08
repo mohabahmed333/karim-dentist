@@ -476,4 +476,12 @@ describe("dashboardLayout", () => {
     assert.equal(layout[0]?.colSpan, 9);
     assert.equal(layout[1]?.colSpan, 3);
   });
+
+  it("lists missing catalog widgets for add picker", () => {
+    const missing = missingDashboardWidgets(DEFAULT_DASHBOARD_LAYOUT);
+    assert.ok(missing.includes("kpiCancelled"));
+    assert.ok(missing.includes("listPending"));
+    assert.ok(missing.includes("chartWeekCompare"));
+    assert.ok(missing.includes("attentionNoShow"));
+  });
 });

@@ -34,6 +34,7 @@ import { createDragAutoScroll } from "@/features/admin/lib/dashboardDragScroll";
 import {
   emptyLayoutHistory,
   layoutsEqual,
+  layoutHeightsEqual,
   pushLayoutHistory,
   redoLayout,
   undoLayout,
@@ -173,12 +174,7 @@ export function useDashboardLayoutEditor(
       });
       const fromDb = normalizeDashboardLayout(row.dashboard_layout);
       // Keep client save if the echo is missing heights we just wrote.
-      const next = layoutsEqual(
-        fromDb.map((w) => ({ id: w.id, heightPx: w.heightPx })),
-        toSave.map((w) => ({ id: w.id, heightPx: w.heightPx })),
-      )
-        ? fromDb
-        : toSave;
+      const next = layoutHeightsEqual(fromDb, toSave) ? fromDb : toSave;
       setSettings(row);
       setSavedLayout(next);
       savedLayoutRef.current = next;
@@ -242,12 +238,7 @@ export function useDashboardLayoutEditor(
         dashboard_layout: toSave,
       });
       const fromDb = normalizeDashboardLayout(row.dashboard_layout);
-      const normalized = layoutsEqual(
-        fromDb.map((w) => ({ id: w.id, heightPx: w.heightPx })),
-        toSave.map((w) => ({ id: w.id, heightPx: w.heightPx })),
-      )
-        ? fromDb
-        : toSave;
+      const normalized = layoutHeightsEqual(fromDb, toSave) ? fromDb : toSave;
       setSettings(row);
       setSavedLayout(normalized);
       savedLayoutRef.current = normalized;

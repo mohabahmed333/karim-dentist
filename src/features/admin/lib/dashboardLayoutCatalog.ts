@@ -3,20 +3,35 @@ import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 export const DASHBOARD_WIDGET_IDS = [
   "attentionPending",
   "attentionToday",
+  "attentionCancelled",
+  "attentionNoShow",
   "kpiTodayVisits",
   "kpiPending",
   "kpiConfirmedWeek",
   "kpiServices",
+  "kpiCancelled",
+  "kpiNoShow",
+  "kpiCompleted",
+  "kpiTomorrow",
+  "kpiWeekTotal",
+  "kpiUnreadChats",
   "daySchedule",
   "bookings",
   "recent",
   "schedule",
   "messages",
+  "listPending",
+  "listToday",
+  "listTopServices",
+  "listNextAppointment",
   "chartVisitsWeek",
   "chartBookingMix",
   "chartStatus",
   "chartBusyHours",
   "chartDayTrend",
+  "chartWeekCompare",
+  "chartCancelRate",
+  "chartServiceRank",
 ] as const;
 
 export type DashboardWidgetId = (typeof DASHBOARD_WIDGET_IDS)[number];
@@ -92,6 +107,16 @@ export const DASHBOARD_WIDGET_CATALOG: readonly DashboardWidgetMeta[] = [
     ...CARD,
   },
   {
+    id: "attentionCancelled",
+    labelKey: "admin.overview.widget.attentionCancelled",
+    ...CARD,
+  },
+  {
+    id: "attentionNoShow",
+    labelKey: "admin.overview.widget.attentionNoShow",
+    ...CARD,
+  },
+  {
     id: "kpiTodayVisits",
     labelKey: "admin.overview.widget.kpiTodayVisits",
     ...CARD,
@@ -109,6 +134,36 @@ export const DASHBOARD_WIDGET_CATALOG: readonly DashboardWidgetMeta[] = [
   {
     id: "kpiServices",
     labelKey: "admin.overview.widget.kpiServices",
+    ...CARD,
+  },
+  {
+    id: "kpiCancelled",
+    labelKey: "admin.overview.widget.kpiCancelled",
+    ...CARD,
+  },
+  {
+    id: "kpiNoShow",
+    labelKey: "admin.overview.widget.kpiNoShow",
+    ...CARD,
+  },
+  {
+    id: "kpiCompleted",
+    labelKey: "admin.overview.widget.kpiCompleted",
+    ...CARD,
+  },
+  {
+    id: "kpiTomorrow",
+    labelKey: "admin.overview.widget.kpiTomorrow",
+    ...CARD,
+  },
+  {
+    id: "kpiWeekTotal",
+    labelKey: "admin.overview.widget.kpiWeekTotal",
+    ...CARD,
+  },
+  {
+    id: "kpiUnreadChats",
+    labelKey: "admin.overview.widget.kpiUnreadChats",
     ...CARD,
   },
   {
@@ -138,6 +193,26 @@ export const DASHBOARD_WIDGET_CATALOG: readonly DashboardWidgetMeta[] = [
     ...CARD,
   },
   {
+    id: "listPending",
+    labelKey: "admin.overview.widget.listPending",
+    ...CARD,
+  },
+  {
+    id: "listToday",
+    labelKey: "admin.overview.widget.listToday",
+    ...CARD,
+  },
+  {
+    id: "listTopServices",
+    labelKey: "admin.overview.widget.listTopServices",
+    ...CARD,
+  },
+  {
+    id: "listNextAppointment",
+    labelKey: "admin.overview.widget.listNextAppointment",
+    ...CARD,
+  },
+  {
     id: "chartVisitsWeek",
     labelKey: "admin.overview.widget.chartVisitsWeek",
     ...CHART,
@@ -162,6 +237,21 @@ export const DASHBOARD_WIDGET_CATALOG: readonly DashboardWidgetMeta[] = [
     labelKey: "admin.overview.widget.chartDayTrend",
     defaultColSpan: 12,
     allowedColSpans: ALL_SPANS,
+  },
+  {
+    id: "chartWeekCompare",
+    labelKey: "admin.overview.widget.chartWeekCompare",
+    ...CHART,
+  },
+  {
+    id: "chartCancelRate",
+    labelKey: "admin.overview.widget.chartCancelRate",
+    ...CHART,
+  },
+  {
+    id: "chartServiceRank",
+    labelKey: "admin.overview.widget.chartServiceRank",
+    ...CHART,
   },
 ];
 

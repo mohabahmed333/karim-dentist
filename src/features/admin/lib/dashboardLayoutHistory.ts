@@ -64,3 +64,19 @@ export function redoLayout(
 export function layoutsEqual(a: DashboardLayout, b: DashboardLayout): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
+
+/** Compare widget ids + heightPx only (ignore colSpan/rowId drift from DB echo). */
+export function layoutHeightsEqual(
+  a: DashboardLayout,
+  b: DashboardLayout,
+): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((widget, index) => {
+    const other = b[index];
+    return (
+      !!other &&
+      widget.id === other.id &&
+      widget.heightPx === other.heightPx
+    );
+  });
+}

@@ -62,6 +62,10 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
   const displayName = firstNameFromEmail(email);
   const publishedCount = servicesRes.data?.length ?? 0;
   const stats = buildReservationStats(reservations);
+  const unreadChats = conversations.reduce(
+    (sum, row) => sum + (row.unread_count ?? 0),
+    0,
+  );
   const settings = settingsRes.data ?? null;
   const initialLayout = normalizeDashboardLayout(
     settings?.dashboard_layout ?? DEFAULT_DASHBOARD_LAYOUT,
@@ -76,7 +80,7 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
       coverageTo={coverage.to}
       services={servicesRes.data ?? []}
       attention={buildAttentionItems(reservations)}
-      kpis={buildDashboardKpis(reservations, publishedCount)}
+      kpis={buildDashboardKpis(reservations, publishedCount, unreadChats)}
       stats={stats}
       conversations={conversations}
       settings={settings}

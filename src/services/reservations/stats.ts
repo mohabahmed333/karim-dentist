@@ -6,7 +6,15 @@ export type ReservationStats = {
   pendingCount: number;
   confirmedThisWeek: number;
   cancelledCount: number;
+  completedCount: number;
+  noShowCount: number;
+  tomorrowCount: number;
+  weekTotalCount: number;
+  /** Cancelled / (cancelled + completed + no_show + confirmed) as 0–100. */
+  cancelRatePercent: number;
   weekCounts: { label: string; count: number }[];
+  /** Prior Mon–Sun week, same shape as weekCounts. */
+  lastWeekCounts: { label: string; count: number }[];
   serviceMix: { label: string; count: number; percent: number }[];
   statusMix: { status: ReservationStatus; count: number; percent: number }[];
   /** Clinic window hours 8–19 inclusive. */
@@ -75,10 +83,38 @@ export function buildReservationStats(
   const cancelledCount = active.filter(
     (row) => row.status === "cancelled",
   ).length;
+  const completedCount = active.filter(
+    (row) => row.status === "completed",
+  ).length;
+  const noShowCount = active.filter((row) => row.status === "no_show").length;
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const tomorrowCount = countReservationsForDay(active, tomorrow);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+  const weekTotalCount = active.filter((row) => {
+    const starts = new Date(row.starts_at);
+    return starts >= weekStart && starts <= weekEnd;
+  }).length;
+  const settled =
+    cancelledCount + completedCount + noShowCount + confirmedThisWeek;
+  const cancelRatePercent =
+    settled === 0 ? 0 : Math.round((cancelledCount / settled) * 100);
 
   const weekCounts = Array.from({ length: 7 }, (_, index) => {
     const day = new Date(weekStart);
     day.setDate(weekStart.getDate() + index);
+    return {
+      label: day.toLocaleDateString(undefined, { weekday: "short" }),
+      count: countReservationsForDay(active, day),
+    };
+  });
+  const lastWeekStart = new Date(weekStart);
+  lastWeekStart.setDate(weekStart.getDate() - 7);
+  const lastWeekCounts = Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(lastWeekStart);
+    day.setDate(lastWeekStart.getDate() + index);
     return {
       label: day.toLocaleDateString(undefined, { weekday: "short" }),
       count: countReservationsForDay(active, day),
@@ -150,7 +186,13 @@ export function buildReservationStats(
     pendingCount,
     confirmedThisWeek,
     cancelledCount,
+    completedCount,
+    noShowCount,
+    tomorrowCount,
+    weekTotalCount,
+    cancelRatePercent,
     weekCounts,
+    lastWeekCounts,
     serviceMix,
     statusMix,
     hourCounts,

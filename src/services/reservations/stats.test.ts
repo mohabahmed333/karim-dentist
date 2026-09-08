@@ -65,6 +65,9 @@ describe("reservation stats", () => {
       stats.dayTrend[stats.dayTrend.length - 1]?.count,
       2,
     );
+    assert.equal(stats.lastWeekCounts.length, 7);
+    assert.equal(typeof stats.cancelRatePercent, "number");
+    assert.equal(stats.tomorrowCount, 1);
   });
 
   it("filters upcoming reservations", () => {

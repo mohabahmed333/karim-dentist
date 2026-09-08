@@ -9,6 +9,7 @@ import {
   Undo2,
   X,
 } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "@/lib/i18n";
 import {
@@ -17,6 +18,10 @@ import {
   dispatchDashboardLayoutAction,
   type DashboardLayoutUiState,
 } from "@/features/admin/lib/dashboardLayoutBridge";
+import {
+  dashboardEditChromeTransition,
+  dashboardEditChromeVariants,
+} from "@/features/admin/lib/dashboardLayoutMotion";
 import {
   Tooltip,
   TooltipContent,
@@ -70,6 +75,9 @@ function TipButton({
 
 export function DashboardLayoutTopbarControls() {
   const t = useTranslations();
+  const reduced = useReducedMotion();
+  const transition = dashboardEditChromeTransition(reduced);
+  const variants = dashboardEditChromeVariants(reduced);
   const [state, setState] = useState(INACTIVE_DASHBOARD_LAYOUT_STATE);
 
   useEffect(() => {
@@ -89,88 +97,107 @@ export function DashboardLayoutTopbarControls() {
   return (
     <TooltipProvider>
       <div className="flex items-center gap-0.5">
-        {!state.editing ? (
-          <TipButton
-            label={t("admin.overview.customize.edit")}
-            onClick={() =>
-              dispatchDashboardLayoutAction({ type: "toggleEdit" })
-            }
-          >
-            <LayoutGrid className="size-4" aria-hidden />
-          </TipButton>
-        ) : (
-          <>
-            <TipButton
-              label={t("admin.overview.customize.undo")}
-              disabled={!state.canUndo}
-              onClick={() =>
-                dispatchDashboardLayoutAction({ type: "undo" })
-              }
+        <AnimatePresence mode="popLayout" initial={false}>
+          {!state.editing ? (
+            <motion.div
+              key="idle"
+              variants={variants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={transition}
             >
-              <Undo2 className="size-4" aria-hidden />
-            </TipButton>
-            <TipButton
-              label={t("admin.overview.customize.redo")}
-              disabled={!state.canRedo}
-              onClick={() =>
-                dispatchDashboardLayoutAction({ type: "redo" })
-              }
-            >
-              <Redo2 className="size-4" aria-hidden />
-            </TipButton>
-            <div className="relative">
               <TipButton
-                label={t("admin.overview.customize.add")}
-                active={state.catalogOpen}
+                label={t("admin.overview.customize.edit")}
                 onClick={() =>
-                  dispatchDashboardLayoutAction({ type: "toggleCatalog" })
+                  dispatchDashboardLayoutAction({ type: "toggleEdit" })
                 }
               >
-                <Plus className="size-4" aria-hidden />
+                <LayoutGrid className="size-4" aria-hidden />
               </TipButton>
-              {state.catalogOpen ? (
-                <DashboardWidgetCatalog
-                  missing={state.missing}
-                  onAdd={(id) =>
-                    dispatchDashboardLayoutAction({ type: "add", id })
+            </motion.div>
+          ) : (
+            <motion.div
+              key="editing"
+              variants={variants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={transition}
+              className="flex items-center gap-0.5"
+            >
+              <TipButton
+                label={t("admin.overview.customize.undo")}
+                disabled={!state.canUndo}
+                onClick={() =>
+                  dispatchDashboardLayoutAction({ type: "undo" })
+                }
+              >
+                <Undo2 className="size-4" aria-hidden />
+              </TipButton>
+              <TipButton
+                label={t("admin.overview.customize.redo")}
+                disabled={!state.canRedo}
+                onClick={() =>
+                  dispatchDashboardLayoutAction({ type: "redo" })
+                }
+              >
+                <Redo2 className="size-4" aria-hidden />
+              </TipButton>
+              <div className="relative">
+                <TipButton
+                  label={t("admin.overview.customize.add")}
+                  active={state.catalogOpen}
+                  onClick={() =>
+                    dispatchDashboardLayoutAction({ type: "toggleCatalog" })
                   }
-                  onClose={() =>
-                    dispatchDashboardLayoutAction({ type: "closeCatalog" })
-                  }
-                />
-              ) : null}
-            </div>
-            <TipButton
-              label={t("admin.overview.customize.reset")}
-              onClick={() =>
-                dispatchDashboardLayoutAction({ type: "reset" })
-              }
-            >
-              <RotateCcw className="size-4" aria-hidden />
-            </TipButton>
-            <TipButton
-              label={
-                state.saving
-                  ? t("admin.overview.customize.saving")
-                  : t("admin.overview.customize.save")
-              }
-              disabled={state.saving || !state.dirty}
-              onClick={() =>
-                dispatchDashboardLayoutAction({ type: "save" })
-              }
-            >
-              <Save className="size-4" aria-hidden />
-            </TipButton>
-            <TipButton
-              label={t("admin.cancel")}
-              onClick={() =>
-                dispatchDashboardLayoutAction({ type: "cancelEdit" })
-              }
-            >
-              <X className="size-4" aria-hidden />
-            </TipButton>
-          </>
-        )}
+                >
+                  <Plus className="size-4" aria-hidden />
+                </TipButton>
+                {state.catalogOpen ? (
+                  <DashboardWidgetCatalog
+                    missing={state.missing}
+                    onAdd={(id) =>
+                      dispatchDashboardLayoutAction({ type: "add", id })
+                    }
+                    onClose={() =>
+                      dispatchDashboardLayoutAction({ type: "closeCatalog" })
+                    }
+                  />
+                ) : null}
+              </div>
+              <TipButton
+                label={t("admin.overview.customize.reset")}
+                onClick={() =>
+                  dispatchDashboardLayoutAction({ type: "reset" })
+                }
+              >
+                <RotateCcw className="size-4" aria-hidden />
+              </TipButton>
+              <TipButton
+                label={
+                  state.saving
+                    ? t("admin.overview.customize.saving")
+                    : t("admin.overview.customize.save")
+                }
+                disabled={state.saving || !state.dirty}
+                onClick={() =>
+                  dispatchDashboardLayoutAction({ type: "save" })
+                }
+              >
+                <Save className="size-4" aria-hidden />
+              </TipButton>
+              <TipButton
+                label={t("admin.cancel")}
+                onClick={() =>
+                  dispatchDashboardLayoutAction({ type: "cancelEdit" })
+                }
+              >
+                <X className="size-4" aria-hidden />
+              </TipButton>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </TooltipProvider>
   );

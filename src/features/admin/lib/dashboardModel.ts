@@ -119,6 +119,28 @@ export function buildAttentionItems(
       tone: "blue",
     });
   }
+  const cancelled = active.filter((r) => r.status === "cancelled");
+  if (cancelled.length) {
+    items.push({
+      id: "cancelled",
+      titleKey: "admin.overview.attention.cancelled",
+      detail: `${cancelled.length}`,
+      urgency: "follow-up",
+      href: "/admin/reservations",
+      tone: "violet",
+    });
+  }
+  const noShows = active.filter((r) => r.status === "no_show");
+  if (noShows.length) {
+    items.push({
+      id: "noShow",
+      titleKey: "admin.overview.attention.noShow",
+      detail: `${noShows.length}`,
+      urgency: "review",
+      href: "/admin/reservations",
+      tone: "orange",
+    });
+  }
   return items;
 }
 
@@ -135,6 +157,7 @@ export const DASHBOARD_LIST_LIMIT = 5;
 export function buildDashboardKpis(
   reservations: Reservation[],
   serviceCount: number,
+  unreadChats = 0,
   now = new Date(),
 ): DashboardKpi[] {
   const stats = buildReservationStats(reservations, now);
@@ -163,6 +186,42 @@ export function buildDashboardKpis(
       value: String(serviceCount),
       trend: "—",
       up: true,
+    },
+    {
+      labelKey: "admin.overview.kpi.cancelled",
+      value: String(stats.cancelledCount),
+      trend: "—",
+      up: stats.cancelledCount === 0,
+    },
+    {
+      labelKey: "admin.overview.kpi.noShow",
+      value: String(stats.noShowCount),
+      trend: "—",
+      up: stats.noShowCount === 0,
+    },
+    {
+      labelKey: "admin.overview.kpi.completed",
+      value: String(stats.completedCount),
+      trend: "—",
+      up: true,
+    },
+    {
+      labelKey: "admin.overview.kpi.tomorrow",
+      value: String(stats.tomorrowCount),
+      trend: "—",
+      up: true,
+    },
+    {
+      labelKey: "admin.overview.kpi.weekTotal",
+      value: String(stats.weekTotalCount),
+      trend: "—",
+      up: true,
+    },
+    {
+      labelKey: "admin.overview.kpi.unreadChats",
+      value: String(unreadChats),
+      trend: "—",
+      up: unreadChats === 0,
     },
   ];
 }

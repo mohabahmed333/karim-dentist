@@ -1,12 +1,17 @@
 "use client";
 
 import { useRef, type DragEvent, type ReactNode } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   type DashboardColSpan,
   type DashboardDropEdge,
   type DashboardWidgetId,
   type DashboardWidgetPlacement,
 } from "@/features/admin/lib/dashboardLayout";
+import {
+  dashboardEditChromeTransition,
+  dashboardLayoutTransition,
+} from "@/features/admin/lib/dashboardLayoutMotion";
 import { DashboardDropPlaceholder } from "./DashboardDropPlaceholder";
 import { DashboardWidgetChrome } from "./DashboardWidgetChrome";
 import { DashboardWidgetHeightHandle } from "./DashboardWidgetHeightHandle";
@@ -56,6 +61,9 @@ export function DashboardWidgetFrame({
   children,
 }: Props) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+  const layoutTransition = dashboardLayoutTransition(reduced);
+  const chromeTransition = dashboardEditChromeTransition(reduced);
   const heightPx = placement.heightPx;
   const showPlace = editing && dragOver && !dragging && dropEdge != null;
   const showAbove = showPlace && dropEdge === "above";
@@ -64,7 +72,9 @@ export function DashboardWidgetFrame({
   const showRight = showPlace && dropEdge === "right";
 
   return (
-    <div
+    <motion.div
+      layout={!dragging && !reduced}
+      transition={layoutTransition}
       data-dash-widget-id={placement.id}
       className="flex h-full w-full min-w-0 flex-col [overflow-anchor:none]"
       onDragOver={
@@ -115,14 +125,24 @@ export function DashboardWidgetFrame({
         </div>
         {showBelow ? <DashboardDropPlaceholder /> : null}
       </div>
-      {editing ? (
-        <DashboardWidgetHeightHandle
-          heightPx={heightPx}
-          measureRef={bodyRef}
-          onHeightChange={(h) => onHeightChange(placement.id, h)}
-          onHeightCommit={onHeightCommit}
-        />
-      ) : null}
-    </div>
+      <AnimatePresence initial={false}>
+        {editing ? (
+          <motion.div
+            key="height-handle"
+            initial={reduced ? false : { opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={chromeTransition}
+          >
+            <DashboardWidgetHeightHandle
+              heightPx={heightPx}
+              measureRef={bodyRef}
+              onHeightChange={(h) => onHeightChange(placement.id, h)}
+              onHeightCommit={onHeightCommit}
+            />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </motion.div>
   );
 }
