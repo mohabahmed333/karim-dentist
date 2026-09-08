@@ -9,10 +9,12 @@ import {
   getStorageUsedBytes,
 } from "./sources";
 import { countKapsoMessages } from "./kapso";
+import { fetchVercelUsage, vercelConfig } from "./vercel";
 
 export async function getPlatformUsageReport(): Promise<PlatformUsageData> {
   return loadPlatformUsage({
     hasAccessToken: managementConfig() !== null,
+    hasVercelToken: vercelConfig() !== null,
     getStorageUsedBytes,
     fetchDatabaseSize,
     fetchEgress,
@@ -20,5 +22,6 @@ export async function getPlatformUsageReport(): Promise<PlatformUsageData> {
     fetchApiCounts,
     countAuthUsers,
     countKapsoMessages,
+    fetchVercelUsage,
   });
 }

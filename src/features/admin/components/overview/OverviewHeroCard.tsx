@@ -14,7 +14,7 @@ export function OverviewHeroCard({ stats }: Props) {
     delta === 0 ? "Same as yesterday" : `${delta > 0 ? "+" : ""}${delta} vs yesterday`;
 
   return (
-    <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-[#e6e8ec] lg:col-span-2">
+    <section className="rounded-3xl bg-[var(--admin-panel)] p-6 shadow-sm ring-1 ring-[#e6e8ec] lg:col-span-2">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm text-[#6b7280]">Today&apos;s appointments</p>
@@ -39,7 +39,7 @@ export function OverviewHeroCard({ stats }: Props) {
           { label: "Confirmed this week", value: stats.confirmedThisWeek },
           { label: "Cancelled", value: stats.cancelledCount },
         ].map((item) => (
-          <div key={item.label} className="rounded-2xl bg-white px-4 py-3">
+          <div key={item.label} className="rounded-2xl bg-[var(--admin-panel)] px-4 py-3">
             <p className="text-xs text-[#6b7280]">{item.label}</p>
             <p className="text-xl font-semibold text-[#0f2744]">{item.value}</p>
           </div>

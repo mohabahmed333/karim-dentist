@@ -19,6 +19,7 @@ import { formatReservationWhen } from "@/services/reservations/stats";
 import type { ReservationFormValues } from "@/services/reservations/schemas";
 import type { Reservation } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
+import { ReservationServiceLabel } from "@/features/admin/components/ReservationServiceLabel";
 
 export type BookingSaveMode = "new" | "replace";
 
@@ -76,8 +77,12 @@ export function ReservationFormDialog({
                 {t("admin.reservations.existingFound")}
               </p>
               <p className="text-[11px] text-[var(--admin-muted)]">
-                {replaceTarget.service_label} ·{" "}
-                {formatReservationWhen(replaceTarget.starts_at)}
+                <ReservationServiceLabel
+                  serviceId={replaceTarget.service_id}
+                  storedLabel={replaceTarget.service_label}
+                  services={services}
+                />{" "}
+                · {formatReservationWhen(replaceTarget.starts_at)}
               </p>
               <div className="flex flex-col gap-1.5 pt-1">
                 <ModeOption

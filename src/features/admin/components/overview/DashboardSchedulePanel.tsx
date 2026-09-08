@@ -1,11 +1,13 @@
 "use client";
 
 import type { Reservation } from "@/services/reservations/types";
+import type { Service } from "@/services/services/types";
 import {
   formatClock,
   groupUpcomingByDay,
 } from "@/features/admin/lib/dashboardModel";
 import { useTranslations } from "@/lib/i18n";
+import { ReservationServiceLabel } from "@/features/admin/components/ReservationServiceLabel";
 
 const bars = [
   "var(--admin-secondary)",
@@ -17,11 +19,13 @@ const bars = [
 
 type Props = {
   reservations: Reservation[];
+  services?: Service[];
   onPatientSelect?: (reservation: Reservation) => void;
 };
 
 export function DashboardSchedulePanel({
   reservations,
+  services = [],
   onPatientSelect,
 }: Props) {
   const t = useTranslations();
@@ -29,8 +33,8 @@ export function DashboardSchedulePanel({
   const count = groups.reduce((n, g) => n + g.items.length, 0);
 
   return (
-    <section className="admin-card flex h-full flex-col rounded-md border border-[var(--admin-border)] bg-white p-3.5">
-      <div className="mb-3 flex items-center gap-2">
+    <section className="admin-card flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel)] p-3.5">
+      <div className="mb-3 flex shrink-0 items-center gap-2">
         <h2 className="text-sm font-semibold text-[var(--admin-text)]">
           {t("admin.overview.upcomingSchedule")}
         </h2>
@@ -49,7 +53,11 @@ export function DashboardSchedulePanel({
               <p className="mb-2 text-xs font-medium text-[var(--admin-muted)]">
                 {group.label === "Today"
                   ? t("admin.overview.today")
-                  : group.label}
+                  : group.label === "Tomorrow"
+                    ? t("admin.overview.tomorrow")
+                    : group.label === "Day after tomorrow"
+                      ? t("admin.overview.afterTomorrow")
+                      : group.label}
               </p>
               <ul className="space-y-2">
                 {group.items.map((row, i) => {
@@ -68,7 +76,12 @@ export function DashboardSchedulePanel({
                         />
                         <div className="min-w-0">
                           <p className="text-xs text-[var(--admin-muted)]">
-                            {row.service_label} · {row.phone}
+                            <ReservationServiceLabel
+                              serviceId={row.service_id}
+                              storedLabel={row.service_label}
+                              services={services}
+                            />{" "}
+                            · {row.phone}
                           </p>
                           <p className="truncate text-sm font-semibold text-[var(--admin-text)]">
                             {row.patient_name}

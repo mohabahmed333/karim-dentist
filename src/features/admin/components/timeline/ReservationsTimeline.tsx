@@ -53,9 +53,8 @@ type Props = {
 
 export function ReservationsTimeline({
   reservations,
-  title: _title = "Appointments",
+  title = "Appointments",
 }: Props) {
-  void _title;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -313,7 +312,7 @@ export function ReservationsTimeline({
 
       <div className="flex flex-col gap-4 p-4 lg:flex-row">
         <div className="relative min-w-0 flex-1 overflow-hidden">
-          <AnimatePresence initial={false} custom={monthDir} mode="popLayout">
+          <AnimatePresence initial={false} custom={monthDir} mode="wait">
             <motion.div
               key={monthKey}
               custom={monthDir}

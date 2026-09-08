@@ -1,10 +1,12 @@
 import { assemblePlatformUsageReport, type PlatformUsageReport } from "./assemble";
 import type { ApiCountTotals } from "./parse";
+import type { VercelUsageTotals } from "./vercel";
 
 export type AuthUsageSource = "mau" | "users" | "unavailable";
 
 export type PlatformUsageDeps = {
   hasAccessToken: boolean;
+  hasVercelToken: boolean;
   getStorageUsedBytes: () => Promise<number | null>;
   fetchDatabaseSize: () => Promise<number | null>;
   fetchEgress: () => Promise<number | null>;
@@ -12,10 +14,12 @@ export type PlatformUsageDeps = {
   fetchApiCounts: () => Promise<ApiCountTotals | null>;
   countAuthUsers: () => Promise<number | null>;
   countKapsoMessages: () => Promise<number | null>;
+  fetchVercelUsage: () => Promise<VercelUsageTotals | null>;
 };
 
 export type PlatformUsageData = PlatformUsageReport & {
   hasAccessToken: boolean;
+  hasVercelToken: boolean;
   authSource: AuthUsageSource;
   apiCounts: ApiCountTotals | null;
 };
@@ -35,6 +39,7 @@ export async function loadPlatformUsage(
     mau !== null ? "mau" : users !== null ? "users" : "unavailable";
   const apiCounts = deps.hasAccessToken ? await deps.fetchApiCounts() : null;
   const kapsoMessagesUsed = await deps.countKapsoMessages();
+  const vercel = deps.hasVercelToken ? await deps.fetchVercelUsage() : null;
   return {
     ...assemblePlatformUsageReport({
       storageUsedBytes,
@@ -42,8 +47,12 @@ export async function loadPlatformUsage(
       egressUsedBytes,
       authMauUsed,
       kapsoMessagesUsed,
+      vercelFastDataTransferBytes: vercel?.fastDataTransferBytes ?? null,
+      vercelEdgeRequests: vercel?.edgeRequests ?? null,
+      vercelFunctionInvocations: vercel?.functionInvocations ?? null,
     }),
     hasAccessToken: deps.hasAccessToken,
+    hasVercelToken: deps.hasVercelToken,
     authSource,
     apiCounts,
   };

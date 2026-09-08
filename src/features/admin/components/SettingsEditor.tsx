@@ -60,7 +60,7 @@ export function SettingsEditor({ settings }: Props) {
         </Button>
       </div>
       {tab === "dashboard" ? (
-        <Card className="max-w-2xl gap-0 p-6">
+        <Card className="max-w-4xl gap-0 p-6">
           <SettingsDashboardForm settings={settings} />
         </Card>
       ) : tab === "hours" ? (
@@ -72,7 +72,7 @@ export function SettingsEditor({ settings }: Props) {
           <ChartingFeesEditor />
         </Card>
       ) : (
-        <Card className="max-w-2xl gap-0 p-6">
+        <Card className="w-full max-w-none gap-0 p-6">
           <SettingsSiteForm settings={settings} />
         </Card>
       )}

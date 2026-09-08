@@ -1,4 +1,5 @@
 import type { WhatsAppClient } from "@kapso/whatsapp-cloud-api";
+import { buildTemplateSendPayload } from "@kapso/whatsapp-cloud-api";
 import {
   CLINIC_LOCATION,
   clinicContactFromSettings,
@@ -18,7 +19,8 @@ export type SendKind =
   | "location"
   | "contacts"
   | "interactive_buttons"
-  | "interactive_cta";
+  | "interactive_cta"
+  | "template";
 
 export type KapsoSendResult = {
   wamid: string | null;
@@ -27,6 +29,13 @@ export type KapsoSendResult = {
   preview: string;
   media: MessageMediaItem[];
   flow: MessageFlowPayload | null;
+};
+
+export type TemplateSendInput = {
+  name: string;
+  language: string;
+  header?: { type: "text"; text: string; parameterName?: string }[];
+  body?: { type: "text"; text: string; parameterName?: string }[];
 };
 
 function extractWamid(result: unknown): string | null {
@@ -71,10 +80,66 @@ export async function sendKapsoPayload(input: {
     address: string;
   };
   contextMessageId?: string;
+  template?: TemplateSendInput;
 }): Promise<KapsoSendResult> {
   const { client, phoneNumberId, to, kind } = input;
   const text = input.text?.trim() ?? "";
   const base = { phoneNumberId, to };
+
+  if (kind === "template" && input.template) {
+    const tpl = input.template;
+    const sendInput: Parameters<typeof buildTemplateSendPayload>[0] = {
+      name: tpl.name,
+      language: tpl.language,
+    };
+    if (tpl.header?.length === 1) {
+      const h = tpl.header[0]!;
+      sendInput.header = {
+        type: "text",
+        text: h.text,
+        ...(h.parameterName ? { parameterName: h.parameterName } : {}),
+      };
+    } else if (tpl.header && tpl.header.length > 1) {
+      throw new Error("Multi-parameter text headers are not supported");
+    }
+    if (tpl.body?.length) {
+      sendInput.body = tpl.body.map((p) => ({
+        type: "text" as const,
+        text: p.text,
+        ...(p.parameterName ? { parameterName: p.parameterName } : {}),
+      }));
+    }
+    const built = buildTemplateSendPayload(sendInput);
+    const result = await client.messages.sendTemplate({
+      ...base,
+      template: built as unknown as {
+        name: string;
+        language: { code: string; policy?: "deterministic" };
+        components?: { type: string; [key: string]: unknown }[];
+      },
+    });
+    const filled = [
+      ...(tpl.header ?? []).map((p) => p.text),
+      ...(tpl.body ?? []).map((p) => p.text),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const preview = filled
+      ? `${tpl.name}: ${filled}`.slice(0, 240)
+      : `Template: ${tpl.name}`;
+    return {
+      wamid: extractWamid(result),
+      messageType: "template",
+      body: preview,
+      preview,
+      media: [],
+      flow: {
+        kind: "template",
+        title: tpl.name,
+        subtitle: tpl.language,
+      },
+    };
+  }
 
   if (kind === "text") {
     const result = await client.messages.sendText({

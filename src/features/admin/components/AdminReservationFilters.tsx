@@ -33,6 +33,7 @@ export function AdminReservationFilters({
     services,
     { showCompare, showCohort },
     t,
+    locale,
   );
   const pills = buildReservationFilterPills(
     query,

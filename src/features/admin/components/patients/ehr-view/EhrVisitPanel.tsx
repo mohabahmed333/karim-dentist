@@ -47,9 +47,11 @@ export function EhrVisitPanel({ group, visits, onSelect }: Props) {
       className="min-h-0 max-h-[280px] overflow-y-auto rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)] [&_td]:text-[var(--admin-primary)]"
     >
       <CollectionTable
+        tableId="ehr-visits"
         rows={rows}
         onRowClick={onSelect}
         emptyMessage="No visits yet."
+        defaultPageSize={8}
         columns={[
           {
             key: "patient",

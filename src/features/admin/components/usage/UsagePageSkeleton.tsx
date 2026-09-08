@@ -19,6 +19,9 @@ export function UsagePageSkeleton() {
         <Block className="h-48 rounded-xl" />
         <Block className="h-48 rounded-xl" />
         <Block className="h-48 rounded-xl" />
+        <Block className="h-48 rounded-xl" />
+        <Block className="h-48 rounded-xl" />
+        <Block className="h-48 rounded-xl" />
       </div>
       <Block className="h-56 rounded-xl" />
     </div>

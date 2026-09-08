@@ -10,7 +10,7 @@ export type MessageMediaItem = {
 };
 
 export type MessageFlowPayload = {
-  kind?: "flow" | "buttons" | "cta" | "location" | "contacts";
+  kind?: "flow" | "buttons" | "cta" | "location" | "contacts" | "template";
   title?: string;
   subtitle?: string;
   cta?: string;

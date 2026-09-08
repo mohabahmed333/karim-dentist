@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { Brand } from "./Brand";
 import { DentalPrimaryNav } from "./DentalPrimaryNav";
@@ -33,6 +33,7 @@ export function SiteHeader({
   contained = false,
 }: SiteHeaderProps) {
   const t = useTranslations();
+  const headerRef = useRef<HTMLElement>(null);
   const [internalOpen, setInternalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const controlled = typeof menuOpenProp === "boolean";
@@ -46,21 +47,26 @@ export function SiteHeader({
 
   useEffect(() => {
     if (pinned) return;
+    const header = headerRef.current;
+    const doc = header?.ownerDocument ?? document;
     const scrollRoot = contained
-      ? document.querySelector<HTMLElement>("[data-customize-preview-scroll]")
+      ? header?.closest<HTMLElement>("[data-customize-preview-scroll]") ??
+        doc.querySelector<HTMLElement>("[data-customize-preview-scroll]")
       : null;
     const onScroll = () => {
-      const y = scrollRoot ? scrollRoot.scrollTop : window.scrollY;
+      const y = scrollRoot ? scrollRoot.scrollTop : (doc.defaultView?.scrollY ?? 0);
       setScrolled(y > 120);
     };
     onScroll();
-    const target: HTMLElement | Window = scrollRoot ?? window;
+    const win = doc.defaultView;
+    const target: HTMLElement | Window = scrollRoot ?? win ?? window;
     target.addEventListener("scroll", onScroll, { passive: true });
     return () => target.removeEventListener("scroll", onScroll);
   }, [pinned, contained]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty(
+    const doc = headerRef.current?.ownerDocument ?? document;
+    doc.documentElement.style.setProperty(
       "--site-header-height",
       visible ? "72px" : "0px",
     );
@@ -69,6 +75,7 @@ export function SiteHeader({
   return (
     <>
       <header
+        ref={headerRef}
         id="site-header"
         className={cn(
           "bg-white/90 backdrop-blur-md transition-all duration-300",

@@ -6,11 +6,14 @@ import {
 } from "@/services/reservations/stats";
 import type { ReservationFormValues } from "@/services/reservations/schemas";
 import type { Reservation } from "@/services/reservations/types";
-import { useTranslations } from "@/lib/i18n";
+import type { Service } from "@/services/services/types";
+import { useLocale, useTranslations } from "@/lib/i18n";
+import { resolveServiceLabel } from "@/features/admin/lib/serviceDisplayName";
 
 type Props = {
   values: ReservationFormValues;
   reservation?: Reservation | null;
+  services?: Service[];
 };
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -44,18 +47,30 @@ function statusLabel(
   }
 }
 
-export function ReservationDrawerSummary({ values, reservation }: Props) {
+export function ReservationDrawerSummary({
+  values,
+  reservation,
+  services = [],
+}: Props) {
   const t = useTranslations();
+  const { locale } = useLocale();
   const when = reservation
     ? formatReservationWhen(reservation.starts_at)
     : [values.date, values.time].filter(Boolean).join(" · ");
+  const serviceLabel = resolveServiceLabel({
+    locale,
+    serviceId: values.service_id ?? reservation?.service_id,
+    storedLabel: values.service_label ?? reservation?.service_label,
+    services,
+    consultationLabel: t("admin.chat.generalConsultation"),
+  });
 
   return (
     <dl className="space-y-4">
       <Row label={t("admin.reservations.patient")} value={values.patient_name} />
       <Row label={t("admin.reservations.phone")} value={values.phone} />
       <Row label={t("admin.reservations.email")} value={values.email ?? ""} />
-      <Row label={t("admin.reservations.service")} value={values.service_label} />
+      <Row label={t("admin.reservations.service")} value={serviceLabel} />
       <Row label={t("admin.reservations.when")} value={when} />
       <div className="grid gap-0.5">
         <dt className="text-[11px] font-medium uppercase tracking-wide text-[var(--admin-muted)]">

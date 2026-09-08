@@ -6,6 +6,7 @@ import { Bot, ChevronDown, Search, Star, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/lib/i18n";
 import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SupportAvatar } from "./SupportAvatar";
 import { InboxMessagePreview } from "./chat/InboxMessagePreview";
 import { CLINIC_ASSIST_CHAT_ID } from "./clinicAssistChat";
@@ -15,6 +16,8 @@ import {
   unreadBadgePopAnimate,
   unreadBadgePopTransition,
 } from "./compactInboxMotion";
+import { ChatLayoutToggle } from "@/features/admin/components/ChatLayoutToggle";
+import type { AdminChatLayout } from "@/features/admin/hooks/useAdminChatLayout";
 
 export type InboxStatusFilter = "open" | "archived" | "all";
 export type InboxSort = "newest" | "unread" | "name";
@@ -35,6 +38,11 @@ type Props = {
   onClose?: () => void;
   /** Fixed pixel width when the column is resizable (desktop inbox). */
   widthPx?: number;
+  chatLayout?: AdminChatLayout;
+  onToggleChatLayout?: () => void;
+  onCollapseDock?: () => void;
+  /** Skeleton rows while status/sort/search refresh runs. */
+  loading?: boolean;
 };
 
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -71,6 +79,10 @@ export function SupportInboxColumn({
   compact = false,
   onClose,
   widthPx,
+  chatLayout,
+  onToggleChatLayout,
+  onCollapseDock,
+  loading = false,
 }: Props) {
   const t = useTranslations();
   const reduced = useReducedMotion();
@@ -164,6 +176,13 @@ export function SupportInboxColumn({
                 <Search className="h-4 w-4" />
               )}
             </button>
+            {chatLayout && onToggleChatLayout ? (
+              <ChatLayoutToggle
+                layout={chatLayout}
+                onToggleLayout={onToggleChatLayout}
+                onCollapseDock={onCollapseDock}
+              />
+            ) : null}
             {compact && onClose ? (
               <button
                 type="button"
@@ -270,13 +289,42 @@ export function SupportInboxColumn({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {conversations.length === 0 ? (
+      <div className="min-h-0 flex-1 overflow-y-auto" aria-busy={loading}>
+        {loading ? (
+          <div className="overflow-hidden" aria-hidden>
+            {Array.from({ length: compact ? 5 : 7 }).map((_, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "flex w-full gap-3.5 border-b border-[#E5E7EB]",
+                  compact ? "px-3 py-3" : "px-4 py-3.5",
+                )}
+              >
+                <Skeleton
+                  className={cn(
+                    "shrink-0 rounded-full bg-[#E8EAED]",
+                    compact ? "h-9 w-9" : "h-11 w-11",
+                  )}
+                />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <Skeleton className="h-4 w-32 bg-[#E8EAED]" />
+                    <Skeleton className="h-3.5 w-12 bg-[#E8EAED]" />
+                  </div>
+                  <Skeleton className="h-3.5 w-full bg-[#E8EAED]" />
+                  <Skeleton className="h-3.5 w-2/3 bg-[#E8EAED]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : conversations.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-[#9CA3AF]">
-            {t("admin.frontDesk.noMatch")}
+            {filter === "archived"
+              ? t("admin.frontDesk.emptyArchived")
+              : t("admin.frontDesk.noMatch")}
           </p>
-        ) : null}
-        {conversations.map((c) => {
+        ) : (
+          conversations.map((c) => {
           const active = c.id === selectedId;
           return (
             <button
@@ -362,7 +410,8 @@ export function SupportInboxColumn({
               </div>
             </button>
           );
-        })}
+        })
+        )}
       </div>
     </aside>
   );

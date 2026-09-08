@@ -53,6 +53,18 @@ describe("reservation stats", () => {
     assert.equal(stats.pendingCount, 2);
     assert.equal(stats.weekCounts.length, 7);
     assert.ok(stats.serviceMix.length >= 2);
+    assert.equal(stats.statusMix.find((s) => s.status === "pending")?.count, 2);
+    assert.equal(stats.statusMix.find((s) => s.status === "confirmed")?.count, 1);
+    assert.equal(stats.hourCounts.length, 12);
+    assert.equal(
+      stats.hourCounts.find((h) => h.hour === 10)?.count,
+      3,
+    );
+    assert.equal(stats.dayTrend.length, 30);
+    assert.equal(
+      stats.dayTrend[stats.dayTrend.length - 1]?.count,
+      2,
+    );
   });
 
   it("filters upcoming reservations", () => {

@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ConfirmDeleteDialog } from "@/features/admin/components/ConfirmDeleteDialog";
-import { textDirection } from "./chat/textDirection";
 import { sortNotes } from "./noteHelpers";
 import { SupportNoteCard } from "./SupportNoteCard";
 import type { SupportNote } from "./supportDummyData";
@@ -32,11 +31,7 @@ export function SupportNotesPanel({
   const [busy, setBusy] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const draftDir = draft.trim()
-    ? textDirection(draft)
-    : locale === "ar"
-      ? "rtl"
-      : "ltr";
+  const draftDir = locale === "ar" ? "rtl" : "ltr";
   const ordered = useMemo(() => sortNotes(notes), [notes]);
 
   async function saveDraft() {

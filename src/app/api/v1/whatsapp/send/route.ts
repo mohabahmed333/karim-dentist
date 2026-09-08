@@ -10,6 +10,8 @@ import {
   getConversation,
   insertOutboundMessage,
 } from "@/services/whatsapp";
+import { isWhatsappSessionOpen } from "@/services/whatsapp/sessionWindow";
+import { buildTemplateSendParts } from "@/services/whatsapp/templateFields";
 import {
   sendKapsoPayload,
   uploadMediaFile,
@@ -28,6 +30,7 @@ const jsonSchema = z
         "contacts",
         "interactive_buttons",
         "interactive_cta",
+        "template",
       ])
       .optional(),
     text: z.string().max(4000).optional(),
@@ -56,6 +59,23 @@ const jsonSchema = z
         authorName: z.string().min(1).max(120),
         body: z.string().max(500),
         messageType: z.string().optional(),
+      })
+      .optional(),
+    template: z
+      .object({
+        name: z.string().min(1).max(512),
+        language: z.string().min(1).max(32),
+        parameterFormat: z.enum(["POSITIONAL", "NAMED"]).optional(),
+        values: z.record(z.string(), z.string()).optional(),
+        fields: z
+          .array(
+            z.object({
+              section: z.enum(["header", "body"]),
+              key: z.string().min(1),
+              label: z.string().min(1),
+            }),
+          )
+          .optional(),
       })
       .optional(),
   })
@@ -125,6 +145,14 @@ export async function POST(request: Request) {
     let mime: string | undefined;
     let fileName: string | undefined;
     let localPreviewUrl: string | undefined;
+    let templatePayload:
+      | {
+          name: string;
+          language: string;
+          header?: { type: "text"; text: string; parameterName?: string }[];
+          body?: { type: "text"; text: string; parameterName?: string }[];
+        }
+      | undefined;
 
     if (contentType.includes("multipart/form-data")) {
       const form = await request.formData();
@@ -167,7 +195,33 @@ export async function POST(request: Request) {
       ctaUrl = parsed.data.ctaUrl;
       location = parsed.data.location;
       replyTo = parsed.data.replyTo;
-      if (kind === "text" && !text) {
+      if (kind === "template") {
+        const tpl = parsed.data.template;
+        if (!tpl?.name || !tpl.language) {
+          return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+        }
+        const fields = tpl.fields ?? [];
+        const values = tpl.values ?? {};
+        for (const field of fields) {
+          if (!(values[`${field.section}.${field.key}`] ?? "").trim()) {
+            return NextResponse.json(
+              { error: "Missing template parameters" },
+              { status: 400 },
+            );
+          }
+        }
+        const parts = buildTemplateSendParts({
+          fields,
+          values,
+          named: (tpl.parameterFormat ?? "POSITIONAL") === "NAMED",
+        });
+        templatePayload = {
+          name: tpl.name,
+          language: tpl.language,
+          header: parts.header,
+          body: parts.body,
+        };
+      } else if (kind === "text" && !text) {
         return NextResponse.json({ error: "Invalid body" }, { status: 400 });
       }
     }
@@ -175,6 +229,19 @@ export async function POST(request: Request) {
     const conversation = await getConversation(service, conversationId);
     if (!conversation) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    if (
+      kind !== "template" &&
+      !isWhatsappSessionOpen(conversation.last_inbound_at)
+    ) {
+      return NextResponse.json(
+        {
+          error: "Customer care window expired",
+          code: "SESSION_EXPIRED",
+        },
+        { status: 409 },
+      );
     }
 
     const to = conversation.phone_number.replace(/\D/g, "");
@@ -193,6 +260,7 @@ export async function POST(request: Request) {
       clinic,
       location,
       contextMessageId: replyTo?.wamid,
+      template: templatePayload,
     });
 
     if (localPreviewUrl && sent.media[0]) {

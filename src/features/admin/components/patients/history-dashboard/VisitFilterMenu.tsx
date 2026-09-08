@@ -2,11 +2,11 @@
 
 import { SlidersHorizontal } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  AdminDropdownMenu,
+  AdminDropdownMenuCheckboxItem,
+  AdminDropdownMenuContent,
+  AdminDropdownMenuTrigger,
+} from "@/features/admin/ui";
 import { type VisitCategory, VISIT_CATEGORIES } from "@/services/dental_chart/bento";
 
 type Props = {
@@ -31,21 +31,21 @@ export function VisitFilterMenu({ selected, onChange }: Props) {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="flex size-7 items-center justify-center rounded-full bg-[#111111] text-white">
+    <AdminDropdownMenu>
+      <AdminDropdownMenuTrigger className="flex size-7 items-center justify-center rounded-full bg-[#111111] text-white">
         <SlidersHorizontal className="size-3" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      </AdminDropdownMenuTrigger>
+      <AdminDropdownMenuContent align="end">
         {VISIT_CATEGORIES.map((category) => (
-          <DropdownMenuCheckboxItem
+          <AdminDropdownMenuCheckboxItem
             key={category}
             checked={selected.includes(category)}
             onCheckedChange={() => toggle(category)}
           >
             {LABELS[category]}
-          </DropdownMenuCheckboxItem>
+          </AdminDropdownMenuCheckboxItem>
         ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </AdminDropdownMenuContent>
+    </AdminDropdownMenu>
   );
 }

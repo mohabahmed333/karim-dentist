@@ -98,9 +98,6 @@ export function buildAttentionItems(
       new Date(r.starts_at) >= now &&
       r.status !== "cancelled",
   );
-  const noEmail = active.filter(
-    (r) => isUpcomingReservation(r, now) && !r.email,
-  );
   const items: AttentionItem[] = [];
   if (pending.length) {
     items.push({
@@ -122,17 +119,7 @@ export function buildAttentionItems(
       tone: "blue",
     });
   }
-  if (noEmail.length) {
-    items.push({
-      id: "intake",
-      titleKey: "admin.overview.attention.email",
-      detail: `${noEmail.length}`,
-      urgency: "intake",
-      href: "/admin/patients",
-      tone: "violet",
-    });
-  }
-  return items.slice(0, 3);
+  return items;
 }
 
 export type DashboardKpi = {
@@ -141,6 +128,9 @@ export type DashboardKpi = {
   trend: string;
   up: boolean;
 };
+
+/** Max rows shown in home list panels (bookings, recent, schedule, messages). */
+export const DASHBOARD_LIST_LIMIT = 5;
 
 export function buildDashboardKpis(
   reservations: Reservation[],
@@ -180,23 +170,33 @@ export function buildDashboardKpis(
 export function groupUpcomingByDay(
   reservations: Reservation[],
   now = new Date(),
-  limit = 8,
+  limit = DASHBOARD_LIST_LIMIT,
 ) {
   const upcoming = reservations
     .filter((r) => isUpcomingReservation(r, now))
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
     .slice(0, limit);
 
+  const tomorrow = new Date(now);
+  tomorrow.setHours(0, 0, 0, 0);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const afterTomorrow = new Date(tomorrow);
+  afterTomorrow.setDate(afterTomorrow.getDate() + 1);
+
   const groups: { label: string; items: Reservation[] }[] = [];
   for (const row of upcoming) {
     const d = new Date(row.starts_at);
     const label = isSameCalendarDay(d, now)
       ? "Today"
-      : d.toLocaleDateString(undefined, {
-          weekday: "long",
-          day: "numeric",
-          month: "short",
-        });
+      : isSameCalendarDay(d, tomorrow)
+        ? "Tomorrow"
+        : isSameCalendarDay(d, afterTomorrow)
+          ? "Day after tomorrow"
+          : d.toLocaleDateString(undefined, {
+              weekday: "long",
+              day: "numeric",
+              month: "short",
+            });
     const last = groups[groups.length - 1];
     if (last?.label === label) last.items.push(row);
     else groups.push({ label, items: [row] });

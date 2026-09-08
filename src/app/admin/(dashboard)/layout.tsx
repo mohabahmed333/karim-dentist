@@ -2,6 +2,7 @@ import { AdminShell } from "@/features/admin/components/AdminShell";
 import { Toaster } from "@/components/ui/sonner";
 import { createClient } from "@/lib/supabase/server";
 import {
+  DEFAULT_DASHBOARD_CANVAS,
   DEFAULT_DASHBOARD_PRIMARY,
   DEFAULT_DASHBOARD_SECONDARY,
   normalizeHexColor,
@@ -20,7 +21,9 @@ async function loadAdminChrome() {
       .is("deleted_at", null),
     supabase
       .from("site_settings")
-      .select("dashboard_primary_color, dashboard_secondary_color")
+      .select(
+        "dashboard_primary_color, dashboard_secondary_color, dashboard_canvas_color, dashboard_panel_color",
+      )
       .limit(1)
       .maybeSingle(),
   ]);
@@ -34,6 +37,14 @@ async function loadAdminChrome() {
       settings.data?.dashboard_secondary_color,
       DEFAULT_DASHBOARD_SECONDARY,
     ),
+    canvasColor: normalizeHexColor(
+      settings.data?.dashboard_canvas_color,
+      DEFAULT_DASHBOARD_CANVAS,
+    ),
+    contentColor: normalizeHexColor(
+      settings.data?.dashboard_panel_color,
+      DEFAULT_DASHBOARD_CANVAS,
+    ),
   };
 }
 
@@ -44,6 +55,8 @@ export default async function AdminLayout({
     pendingCount: 0,
     primaryColor: DEFAULT_DASHBOARD_PRIMARY,
     secondaryColor: DEFAULT_DASHBOARD_SECONDARY,
+    canvasColor: DEFAULT_DASHBOARD_CANVAS,
+    contentColor: DEFAULT_DASHBOARD_CANVAS,
   };
   try {
     chrome = await loadAdminChrome();
@@ -57,6 +70,8 @@ export default async function AdminLayout({
         pendingCount={chrome.pendingCount}
         primaryColor={chrome.primaryColor}
         secondaryColor={chrome.secondaryColor}
+        canvasColor={chrome.canvasColor}
+        contentColor={chrome.contentColor}
       >
         {children}
       </AdminShell>

@@ -37,6 +37,7 @@ export function SupportNoteCard({
   const t = useTranslations();
   const { locale } = useLocale();
   const bodyDir = noteBodyDir(n.body);
+  const inputDir = locale === "ar" ? "rtl" : "ltr";
   const edited =
     Boolean(n.updatedAt && n.createdAt && n.updatedAt !== n.createdAt);
 
@@ -111,7 +112,7 @@ export function SupportNoteCard({
           <textarea
             rows={3}
             value={editBody}
-            dir={noteBodyDir(editBody)}
+            dir={inputDir}
             onChange={(e) => onEditBody(e.target.value)}
             className="w-full resize-none rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#F59E0B]"
           />

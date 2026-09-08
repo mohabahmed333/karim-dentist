@@ -7,14 +7,18 @@ export function clampInboxWidth(value: number): number {
   return Math.min(INBOX_WIDTH_MAX, Math.max(INBOX_WIDTH_MIN, Math.round(value)));
 }
 
-/** Drag right shrinks; drag left grows (reversed relative to LTR edge). */
+/**
+ * Inbox sits before the handle in DOM. In LTR, drag right grows the column.
+ * In RTL the visual order flips, so drag right must shrink instead.
+ */
 export function nextInboxWidthFromDrag(
   startWidth: number,
   startX: number,
   clientX: number,
+  rtl = false,
 ): number {
   const delta = clientX - startX;
-  return clampInboxWidth(startWidth - delta);
+  return clampInboxWidth(startWidth + (rtl ? -delta : delta));
 }
 
 export function readStoredInboxWidth(): number {

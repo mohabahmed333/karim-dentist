@@ -4,6 +4,7 @@ export function getKapsoConfig() {
   const apiKey = process.env.KAPSO_API_KEY;
   const phoneNumberId = process.env.KAPSO_PHONE_NUMBER_ID;
   const webhookSecret = process.env.KAPSO_WEBHOOK_SECRET;
+  const businessAccountId = process.env.KAPSO_BUSINESS_ACCOUNT_ID;
   const baseHost = process.env.KAPSO_API_BASE_URL ?? "https://api.kapso.ai";
   if (!apiKey || !phoneNumberId) {
     throw new Error("Missing KAPSO_API_KEY or KAPSO_PHONE_NUMBER_ID");
@@ -11,6 +12,7 @@ export function getKapsoConfig() {
   return {
     apiKey,
     phoneNumberId,
+    businessAccountId: businessAccountId ?? "",
     webhookSecret: webhookSecret ?? "",
     baseUrl: `${baseHost.replace(/\/$/, "")}/meta/whatsapp`,
   };

@@ -8,8 +8,8 @@ import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AdminInput } from "@/features/admin/ui";
 
 export function LoginForm() {
   const router = useRouter();
@@ -61,11 +61,11 @@ export function LoginForm() {
       <form className="space-y-4" onSubmit={onSubmit}>
         <div className="space-y-2">
           <Label htmlFor="email">{t("admin.login.email")}</Label>
-          <Input id="email" name="email" type="email" required />
+          <AdminInput id="email" name="email" type="email" required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">{t("admin.login.password")}</Label>
-          <Input id="password" name="password" type="password" required />
+          <AdminInput id="password" name="password" type="password" required />
         </div>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         <Button type="submit" className="w-full" disabled={pending}>

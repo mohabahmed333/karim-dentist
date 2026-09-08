@@ -10,4 +10,7 @@ test("maps the Supabase free plan to official usage quotas", () => {
   assert.equal(quotas.egressBytes, 5 * BYTES_PER_GB);
   assert.equal(quotas.authMau, 50_000);
   assert.equal(quotas.kapsoMessages, 2_000);
+  assert.equal(quotas.vercelFastDataTransferBytes, 100 * BYTES_PER_GB);
+  assert.equal(quotas.vercelEdgeRequests, 1_000_000);
+  assert.equal(quotas.vercelFunctionInvocations, 1_000_000);
 });

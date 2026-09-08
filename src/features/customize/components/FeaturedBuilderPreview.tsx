@@ -12,7 +12,7 @@ type Props = {
   data: PortfolioData;
   featuredProjectId: string;
   device: PreviewDeviceId;
-  rootRef: React.RefObject<HTMLDivElement | null>;
+  rootRef: React.Ref<HTMLDivElement | null>;
 };
 
 export const FeaturedBuilderPreview = memo(function FeaturedBuilderPreview({

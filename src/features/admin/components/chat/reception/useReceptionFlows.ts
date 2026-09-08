@@ -18,7 +18,12 @@ import {
   buildStartsAt,
 } from "@/services/reservations";
 import { listPublishedServices } from "@/services/services";
-import { useTranslations } from "@/lib/i18n";
+import { useLocale, useTranslations } from "@/lib/i18n";
+import {
+  GENERAL_CONSULTATION_LABEL_EN,
+  persistServiceLabel,
+  serviceDisplayName,
+} from "@/features/admin/lib/serviceDisplayName";
 import {
   getNoteStamps,
   getStartActions,
@@ -102,6 +107,7 @@ function toActive(p: Record<string, string>): ActivePatient | null {
 
 export function useReceptionFlows(push: PushFn, options: Options = {}) {
   const t = useTranslations();
+  const { locale } = useLocale();
   const { initialPatient = null, onActivePatientChange } = options;
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState<ReceptionDraft>(() =>
@@ -183,19 +189,30 @@ export function useReceptionFlows(push: PushFn, options: Options = {}) {
   const openBookPanel = useCallback(
     async (seed: { name?: string; phone?: string; patientKey?: string }) => {
       const services = await listPublishedServices();
-      const options: BookPollOption[] = services.map((s) => ({
-        id: s.id,
-        label: s.title,
-        serviceId: s.id,
-        serviceLabel: s.title,
-      }));
+      const options: BookPollOption[] = services.map((s) => {
+        const label = serviceDisplayName(locale, s);
+        return {
+          id: s.id,
+          label,
+          serviceId: s.id,
+          serviceLabel: persistServiceLabel(s),
+          searchText: `${s.title} ${s.title_ar ?? ""}`,
+        };
+      });
       const general = t("admin.chat.generalConsultation");
-      if (!options.some((o) => o.serviceLabel === general || o.serviceLabel === "General consultation")) {
+      if (
+        !options.some(
+          (o) =>
+            o.serviceLabel === GENERAL_CONSULTATION_LABEL_EN ||
+            o.label === general,
+        )
+      ) {
         options.unshift({
           id: "general-consultation",
           label: general,
           serviceId: "",
-          serviceLabel: general,
+          serviceLabel: GENERAL_CONSULTATION_LABEL_EN,
+          searchText: `${general} ${GENERAL_CONSULTATION_LABEL_EN}`,
         });
       }
       const name = seed.name?.trim() ?? "";
@@ -219,7 +236,7 @@ export function useReceptionFlows(push: PushFn, options: Options = {}) {
         t("admin.chat.msg.enterNamePhone"),
       );
     },
-    [push, t],
+    [locale, push, t],
   );
 
   const offerSlots = useCallback(

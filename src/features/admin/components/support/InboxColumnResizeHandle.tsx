@@ -2,17 +2,23 @@
 
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useTranslations } from "@/lib/i18n";
+import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 import { cn } from "@/lib/utils";
-import { INBOX_WIDTH_MAX, INBOX_WIDTH_MIN } from "./inboxColumnWidth";
 
 type Props = {
   width: number;
+  min: number;
+  max: number;
+  labelKey: AdminMessageKey;
   onPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
   dragging?: boolean;
 };
 
 export function InboxColumnResizeHandle({
   width,
+  min,
+  max,
+  labelKey,
   onPointerDown,
   dragging,
 }: Props) {
@@ -21,10 +27,10 @@ export function InboxColumnResizeHandle({
     <div
       role="separator"
       aria-orientation="vertical"
-      aria-valuemin={INBOX_WIDTH_MIN}
-      aria-valuemax={INBOX_WIDTH_MAX}
+      aria-valuemin={min}
+      aria-valuemax={max}
       aria-valuenow={width}
-      aria-label={t("admin.frontDesk.resizeInbox")}
+      aria-label={t(labelKey)}
       onPointerDown={onPointerDown}
       className={cn(
         "group relative z-10 hidden h-full w-1.5 shrink-0 cursor-col-resize touch-none select-none sm:block",

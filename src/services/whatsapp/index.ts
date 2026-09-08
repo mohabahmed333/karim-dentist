@@ -10,7 +10,7 @@ export {
   listNotes,
   getConversation,
 } from "./queries";
-export type { MessageCursor } from "./queries";
+export type { MessageCursor, ConversationListFilters } from "./queries";
 export { processKapsoWebhook } from "./processWebhook";
 export {
   insertOutboundMessage,
@@ -19,6 +19,7 @@ export {
   upsertConversationFromKapso,
 } from "./mutations";
 export { resolveConversationStatus } from "./resolveConversationStatus";
+export { isWhatsappSessionOpen } from "./sessionWindow";
 export {
   listCannedReplies,
   createCannedReply,

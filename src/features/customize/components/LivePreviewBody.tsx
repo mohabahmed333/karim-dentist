@@ -17,7 +17,7 @@ type Props = {
   builderMode?: boolean;
   indexPreview: boolean;
   data: PortfolioData;
-  rootRef: React.RefObject<HTMLDivElement | null>;
+  rootRef: React.Ref<HTMLDivElement | null>;
 };
 
 export function LivePreviewBody({

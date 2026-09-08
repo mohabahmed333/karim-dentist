@@ -12,6 +12,7 @@ import {
   createPatientClinicalNote,
   listPatientClinicalNotes,
 } from "@/services/clinical_notes/mutations";
+import { ADMIN_OPEN_CLINICAL_NOTE_EVENT } from "@/features/admin/lib/adminShellEvents";
 
 function rowToNote(row: {
   id: string;
@@ -52,6 +53,16 @@ export function useClinicalNotes(patientKey?: string) {
     return () => {
       alive = false;
     };
+  }, [patientKey]);
+
+  useEffect(() => {
+    if (!patientKey) return;
+    function onOpenNote() {
+      setOpenTarget({ id: "visit", label: "Visit" });
+    }
+    window.addEventListener(ADMIN_OPEN_CLINICAL_NOTE_EVENT, onOpenNote);
+    return () =>
+      window.removeEventListener(ADMIN_OPEN_CLINICAL_NOTE_EVENT, onOpenNote);
   }, [patientKey]);
 
   async function onSave(note: ClinicalNote) {

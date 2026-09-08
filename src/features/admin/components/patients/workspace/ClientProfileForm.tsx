@@ -1,9 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { AdminInput, AdminTextarea } from "@/features/admin/ui";
 import type {
   PatientGender,
   PatientProfileUpsertValues,
@@ -44,19 +43,19 @@ export function ClientProfileForm({ value, onChange, readOnly }: Props) {
     <div className="space-y-5 px-5 pb-6 pt-1">
       <Section title="Identity">
         <Field label="Full name">
-          <Input
+          <AdminInput
             value={value.display_name}
             onChange={(e) => set("display_name", e.target.value)}
           />
         </Field>
         <Field label="Phone">
-          <Input
+          <AdminInput
             value={value.phone}
             onChange={(e) => set("phone", e.target.value)}
           />
         </Field>
         <Field label="Email">
-          <Input
+          <AdminInput
             type="email"
             value={value.email ?? ""}
             onChange={(e) => set("email", e.target.value || null)}
@@ -66,7 +65,7 @@ export function ClientProfileForm({ value, onChange, readOnly }: Props) {
 
       <Section title="Demographics">
         <Field label="Age (years)">
-          <Input
+          <AdminInput
             type="number"
             min={0}
             max={130}
@@ -85,7 +84,7 @@ export function ClientProfileForm({ value, onChange, readOnly }: Props) {
           onToggle={(chip) => set("age_years", Number(chip))}
         />
         <Field label="Date of birth">
-          <Input
+          <AdminInput
             type="date"
             value={value.date_of_birth ?? ""}
             onChange={(e) => set("date_of_birth", e.target.value || null)}
@@ -122,7 +121,7 @@ export function ClientProfileForm({ value, onChange, readOnly }: Props) {
       </Section>
 
       <Section title="Medications">
-        <Textarea
+        <AdminTextarea
           rows={3}
           placeholder="Current medications…"
           value={value.medications}
@@ -131,7 +130,7 @@ export function ClientProfileForm({ value, onChange, readOnly }: Props) {
       </Section>
 
       <Section title="Reception notes">
-        <Textarea
+        <AdminTextarea
           rows={4}
           placeholder="Intake notes for the clinician…"
           value={value.notes}

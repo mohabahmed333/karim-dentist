@@ -89,6 +89,13 @@ async function handleMessageEvent(
   }
 
   const direction = directionOf(message);
+  const at = message.timestamp
+    ? new Date(
+        /^\d+$/.test(message.timestamp)
+          ? Number(message.timestamp) * 1000
+          : message.timestamp,
+      ).toISOString()
+    : new Date().toISOString();
   const conv = await upsertConversationFromKapso(
     supabase,
     conversation ?? {
@@ -98,14 +105,9 @@ async function handleMessageEvent(
       preview: messagePreview(message),
       messageType: messageTypeOf(message),
       messageStatus: messageStatusOf(direction, message.kapso?.status),
-      at: message.timestamp
-        ? new Date(
-            /^\d+$/.test(message.timestamp)
-              ? Number(message.timestamp) * 1000
-              : message.timestamp,
-          ).toISOString()
-        : new Date().toISOString(),
+      at,
       bumpUnread: direction === "inbound",
+      lastInboundAt: direction === "inbound" ? at : undefined,
     },
   );
   await upsertMessageFromKapso(supabase, conv.id, message, direction);

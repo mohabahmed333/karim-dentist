@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { parseSectionBlockIdFromField } from "../lib/sectionField";
 import { SECTION_DOM_IDS } from "../sectionRegistry";
 import type { CustomizeSection } from "../types";
@@ -13,14 +13,17 @@ const SECTION_FRAME_NUDGE: Partial<Record<CustomizeSection, number>> = {
   "case-studies": 72,
 };
 
+function previewScrollRoot(root: HTMLElement): HTMLElement | null {
+  return (
+    root.closest<HTMLElement>("[data-customize-preview-scroll]") ??
+    root.closest<HTMLElement>(".customize-device-frame") ??
+    (root.ownerDocument.scrollingElement as HTMLElement | null)
+  );
+}
+
 function scrollPreviewToTop(root: HTMLElement) {
   root.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  root.closest<HTMLElement>(".customize-device-frame")?.scrollTo({
-    top: 0,
-    left: 0,
-    behavior: "auto",
-  });
-  root.closest<HTMLElement>("[data-customize-preview-scroll]")?.scrollTo({
+  previewScrollRoot(root)?.scrollTo({
     top: 0,
     left: 0,
     behavior: "auto",
@@ -40,7 +43,7 @@ function scrollDeviceFrameToSection(
   sectionId: string,
   section?: CustomizeSection,
 ) {
-  const frame = root.closest<HTMLElement>(".customize-device-frame");
+  const frame = previewScrollRoot(root);
   const target = root.querySelector<HTMLElement>(`#${CSS.escape(sectionId)}`);
   if (!frame || !target) return;
 
@@ -62,11 +65,17 @@ export function usePreviewScroll(
   freezeScroll?: boolean,
   sectionScrollOnly?: boolean,
 ) {
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [root, setRoot] = useState<HTMLDivElement | null>(null);
+  const rootRef = useCallback((node: HTMLDivElement | null) => {
+    setRoot(node);
+  }, []);
   const lastScrollKey = useRef<string | null>(null);
 
   useEffect(() => {
-    const root = rootRef.current;
+    lastScrollKey.current = null;
+  }, [root]);
+
+  useEffect(() => {
     if (!root) return;
 
     root.querySelectorAll<HTMLElement>("[data-customize-item]").forEach((el) => {
@@ -79,10 +88,9 @@ export function usePreviewScroll(
       .forEach((el) => {
         if (!el.hasAttribute("tabindex")) el.tabIndex = 0;
       });
-  }, []);
+  }, [root]);
 
   useEffect(() => {
-    const root = rootRef.current;
     if (!root) return;
 
     root.dataset.activeSection = section;
@@ -167,7 +175,7 @@ export function usePreviewScroll(
 
       scrollPreviewToTop(root);
     });
-  }, [section, itemId, builderMode, focusField, indexPreview, freezeScroll, sectionScrollOnly]);
+  }, [root, section, itemId, builderMode, focusField, indexPreview, freezeScroll, sectionScrollOnly]);
 
   return rootRef;
 }

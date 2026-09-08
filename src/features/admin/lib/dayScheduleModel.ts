@@ -4,7 +4,7 @@ import type { ReservationStatus } from "@/services/reservations/types";
 export const DAY_SCHEDULE_START_HOUR = 8;
 export const DAY_SCHEDULE_END_HOUR = 20;
 export const DAY_SCHEDULE_SLOT_MS = 60 * 60_000;
-export const DAY_SCHEDULE_PX_PER_HOUR = 56;
+export const DAY_SCHEDULE_PX_PER_HOUR = 52;
 
 export type DayScheduleBlock = {
   reservation: Reservation;
@@ -41,6 +41,35 @@ export function reservationsForDay(
     .filter((r) => !r.deleted_at && r.status !== "cancelled")
     .filter((r) => isSameCalendarDay(new Date(r.starts_at), day))
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+}
+
+/** Local-day bounds as ISO strings for Supabase range queries. */
+export function dayScheduleQueryBounds(day: Date): {
+  startIso: string;
+  endIso: string;
+} {
+  const start = startOfDay(day);
+  const end = new Date(start);
+  end.setHours(23, 59, 59, 999);
+  return { startIso: start.toISOString(), endIso: end.toISOString() };
+}
+
+/** YYYY-MM-DD in local time — for comparing against filter from/to. */
+export function dayScheduleDayIso(day: Date): string {
+  const y = day.getFullYear();
+  const m = String(day.getMonth() + 1).padStart(2, "0");
+  const d = String(day.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** True when the day is already included in the SSR/filter date window. */
+export function dayWithinCoverage(
+  day: Date,
+  coverageFrom: string,
+  coverageTo: string,
+): boolean {
+  const iso = dayScheduleDayIso(day);
+  return iso >= coverageFrom && iso <= coverageTo;
 }
 
 export function dayScheduleHours(): number[] {
@@ -83,12 +112,12 @@ export function packDayBlocks(rows: Reservation[]): {
     const topPx =
       ((startMs - dayStartMs) / (60 * 60_000)) * DAY_SCHEDULE_PX_PER_HOUR;
     const heightPx =
-      (DAY_SCHEDULE_SLOT_MS / (60 * 60_000)) * DAY_SCHEDULE_PX_PER_HOUR - 4;
+      (DAY_SCHEDULE_SLOT_MS / (60 * 60_000)) * DAY_SCHEDULE_PX_PER_HOUR - 6;
     blocks.push({
       reservation,
       lane,
       topPx: Math.max(0, topPx),
-      heightPx: Math.max(28, heightPx),
+      heightPx: Math.max(36, heightPx),
     });
   }
 
@@ -134,11 +163,33 @@ export function statusBlockStyle(status: ReservationStatus): {
   }
 }
 
+/** Inclusive YYYY-MM-DD — ensure Day Schedule can show tomorrow + day after. */
+export function expandCoverageThroughAfterTomorrow(
+  from: string,
+  to: string,
+  now = new Date(),
+): { from: string; to: string } {
+  const minTo = dayScheduleDayIso(addCalendarDays(now, 2));
+  return {
+    from,
+    to: to < minTo ? minTo : to,
+  };
+}
+
 export function dayScheduleTitle(day: Date, today = new Date()): string {
   if (isSameCalendarDay(day, today)) return "Today";
+  if (isSameCalendarDay(day, addCalendarDays(today, 1))) return "Tomorrow";
+  if (isSameCalendarDay(day, addCalendarDays(today, 2))) {
+    return "Day after tomorrow";
+  }
   return day.toLocaleDateString([], {
     weekday: "short",
     month: "short",
     day: "numeric",
   });
+}
+
+/** Tomorrow and the day after — prefetch targets for Day Schedule navigation. */
+export function daySchedulePrefetchDays(today = new Date()): Date[] {
+  return [addCalendarDays(today, 1), addCalendarDays(today, 2)];
 }

@@ -6,6 +6,7 @@ import {
   ImageIcon,
   MapPin,
   Contact,
+  LayoutTemplate,
   Video,
 } from "lucide-react";
 import type { ComposerSendPayload } from "./composerTypes";
@@ -16,9 +17,11 @@ import { useTranslations } from "@/lib/i18n";
 type Props = {
   onSend: (payload: ComposerSendPayload) => void;
   onClose: () => void;
+  /** Opens the WhatsApp template send panel (session still open). */
+  onOpenTemplate?: () => void;
 };
 
-export function AttachmentPopover({ onSend, onClose }: Props) {
+export function AttachmentPopover({ onSend, onClose, onOpenTemplate }: Props) {
   const t = useTranslations();
   const mediaRef = useRef<HTMLInputElement>(null);
   const docRef = useRef<HTMLInputElement>(null);
@@ -55,7 +58,7 @@ export function AttachmentPopover({ onSend, onClose }: Props) {
   return (
     <>
       {locationOpen ? null : (
-      <div className="absolute bottom-full start-0 z-20 mb-1.5 w-56 overflow-hidden rounded-lg border border-[#E5E7EB] bg-white py-1 shadow-lg">
+      <div className="absolute bottom-full start-0 z-50 mb-1.5 w-56 overflow-hidden rounded-lg border border-[#E5E7EB] bg-white py-1 shadow-lg">
         <input
           ref={mediaRef}
           type="file"
@@ -109,6 +112,16 @@ export function AttachmentPopover({ onSend, onClose }: Props) {
           label={t("admin.frontDesk.attachLocation")}
           onClick={() => setLocationOpen(true)}
         />
+        {onOpenTemplate ? (
+          <MenuItem
+            icon={<LayoutTemplate className="h-4 w-4" />}
+            label={t("admin.frontDesk.attachTemplate")}
+            onClick={() => {
+              onOpenTemplate();
+              onClose();
+            }}
+          />
+        ) : null}
         <Video className="hidden" />
       </div>
       )}

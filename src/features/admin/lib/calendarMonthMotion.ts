@@ -18,14 +18,16 @@ export function calendarMonthTitleTransition(
 export function calendarMonthGridVariants(rtl: boolean): Variants {
   const flip = rtl ? -1 : 1;
   return {
+    // Opacity 0 on enter/exit avoids a “already painted then slides” double flash
+    // (especially with AnimatePresence layout modes).
     enter: (dir: number) => ({
       x: `${28 * dir * flip}%`,
-      opacity: 0.92,
+      opacity: 0,
     }),
     center: { x: 0, opacity: 1 },
     exit: (dir: number) => ({
       x: `${-22 * dir * flip}%`,
-      opacity: 0.92,
+      opacity: 0,
     }),
   };
 }

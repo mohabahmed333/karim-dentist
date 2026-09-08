@@ -51,6 +51,7 @@ async function managementRequest(
         Authorization: `Bearer ${config.token}`,
         Accept: "application/json",
         "Content-Type": "application/json",
+        "User-Agent": "karim-dentist-admin-usage",
         ...init.headers,
       },
       cache: "no-store",

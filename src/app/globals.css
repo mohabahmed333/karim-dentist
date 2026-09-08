@@ -108,6 +108,7 @@ html:has(.customize-shell),
   --admin-primary: #5e6ad2;
   --admin-secondary: #3b82f6;
   --admin-canvas: #f7f8f8;
+  --admin-content: #f7f8f8;
   --admin-panel: #ffffff;
   --admin-border: #e6e6e6;
   --admin-text: #1a1a1a;
@@ -201,14 +202,33 @@ html:has(.admin-shell) [data-slot="popover-content"] *:not(svg *) {
   --tw-ring-offset-width: 0px !important;
 }
 
-/* Portaled menus sit outside .admin-shell — force opaque panel fill */
+/* Portaled menus sit outside .admin-shell — force opaque panel fill + Slack menu look */
 html:has(.admin-shell) [data-slot="dropdown-menu-content"],
 html:has(.admin-shell) [data-slot="select-content"],
 html:has(.admin-shell) [data-slot="popover-content"],
 html:has(.admin-shell) [data-slot="dialog-content"] {
   background-color: var(--admin-panel, #ffffff) !important;
-  border-color: var(--admin-border, #e6e6e6) !important;
-  color: var(--admin-text, #1a1a1a) !important;
+  border-color: #e8e8e8 !important;
+  color: #1d1c1d !important;
+}
+
+html:has(.admin-shell) [data-slot="dropdown-menu-content"],
+html:has(.admin-shell) [data-slot="select-content"] {
+  border-radius: 10px !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12) !important;
+}
+
+html:has(.admin-shell) [data-slot="dropdown-menu-item"],
+html:has(.admin-shell) [data-slot="dropdown-menu-checkbox-item"],
+html:has(.admin-shell) [data-slot="select-item"] {
+  border-radius: 6px !important;
+}
+
+html:has(.admin-shell) [data-slot="dropdown-menu-item"][data-highlighted],
+html:has(.admin-shell) [data-slot="dropdown-menu-checkbox-item"][data-highlighted],
+html:has(.admin-shell) [data-slot="select-item"][data-highlighted] {
+  background-color: #f2f2f2 !important;
+  color: #1d1c1d !important;
 }
 
 /* Linear-style card: hairline border, almost flat */

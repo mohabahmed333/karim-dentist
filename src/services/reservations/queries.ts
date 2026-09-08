@@ -4,6 +4,7 @@ import {
   isReservationStatus,
   sanitizeIlike,
   type ReservationListFilters,
+  type ReservationSortKey,
 } from "./listFilters";
 
 export async function listReservations(): Promise<Reservation[]> {
@@ -33,23 +34,20 @@ type ServerClient = Awaited<
   ReturnType<typeof import("@/lib/supabase/server").createClient>
 >;
 
-export async function listReservationsServer(
-  supabase: ServerClient,
+function applyReservationFilters(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  query: any,
   filters?: Partial<ReservationListFilters> | null,
-): Promise<Reservation[]> {
-  let query = supabase
-    .from("reservations")
-    .select("*")
-    .is("deleted_at", null)
-    .order("starts_at", { ascending: true });
-
-  if (filters?.from) {
+  opts?: { applyDate?: boolean },
+) {
+  const applyDate = opts?.applyDate !== false;
+  if (applyDate && filters?.from) {
     query = query.gte(
       "starts_at",
       new Date(`${filters.from}T00:00:00`).toISOString(),
     );
   }
-  if (filters?.to) {
+  if (applyDate && filters?.to) {
     query = query.lte(
       "starts_at",
       new Date(`${filters.to}T23:59:59.999`).toISOString(),
@@ -64,13 +62,72 @@ export async function listReservationsServer(
   if (filters?.q) {
     const safe = sanitizeIlike(filters.q);
     if (safe) {
-      query = query.or(`patient_name.ilike.%${safe}%,phone.ilike.%${safe}%`);
+      query = query.or(
+        `patient_name.ilike.%${safe}%,phone.ilike.%${safe}%,service_label.ilike.%${safe}%`,
+      );
     }
   }
+  return query;
+}
+
+function sortColumn(sort?: ReservationSortKey): string {
+  switch (sort) {
+    case "patient_name":
+    case "phone":
+    case "service_label":
+    case "status":
+    case "starts_at":
+      return sort;
+    default:
+      return "starts_at";
+  }
+}
+
+/** Full list (calendar / history). Optional filters; no pagination. */
+export async function listReservationsServer(
+  supabase: ServerClient,
+  filters?: Partial<ReservationListFilters> | null,
+): Promise<Reservation[]> {
+  let query = supabase
+    .from("reservations")
+    .select("*")
+    .is("deleted_at", null);
+
+  query = applyReservationFilters(query, filters);
+  query = query.order(sortColumn(filters?.sort), {
+    ascending: (filters?.dir ?? "asc") === "asc",
+  });
 
   const { data, error } = await query;
   if (error) throw error;
   return data ?? [];
+}
+
+/** Paginated table rows + exact total for the same filters. */
+export async function listReservationsPageServer(
+  supabase: ServerClient,
+  filters: Partial<ReservationListFilters>,
+): Promise<{ items: Reservation[]; total: number }> {
+  const page = Math.max(1, filters.page ?? 1);
+  const limit = Math.min(100, Math.max(1, filters.limit ?? 8));
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  let query = supabase
+    .from("reservations")
+    .select("*", { count: "exact" })
+    .is("deleted_at", null);
+
+  query = applyReservationFilters(query, filters);
+  query = query
+    .order(sortColumn(filters.sort), {
+      ascending: (filters.dir ?? "desc") === "asc",
+    })
+    .range(from, to);
+
+  const { data, error, count } = await query;
+  if (error) throw error;
+  return { items: data ?? [], total: count ?? 0 };
 }
 
 export async function countPendingReservationsServer(

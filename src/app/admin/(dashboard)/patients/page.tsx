@@ -1,16 +1,11 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
 import { PatientDirectory } from "@/features/admin/components/patients/PatientDirectory";
 import { PatientsPageSkeleton } from "@/features/admin/components/patients/PatientsPageSkeleton";
-import {
-  reservationFiltersCache,
-  resolveReservationFilters,
-} from "@/features/admin/lib/reservationFilters";
-import {
-  filterPatientGroups,
-  groupReservationsByPatient,
-} from "@/services/reservations/patientHistory";
+import { reservationFiltersCache } from "@/features/admin/lib/reservationFilters";
+import { parseServiceFilter } from "@/features/admin/lib/serviceFilter";
+import { groupReservationsByPatient } from "@/services/reservations/patientHistory";
+import { pagePatientGroups } from "@/services/reservations/patientDirectoryPage";
 import { listReservationsServer } from "@/services/reservations/queries";
 
 export const dynamic = "force-dynamic";
@@ -21,16 +16,17 @@ type PageProps = {
 
 export default async function AdminPatientsPage({ searchParams }: PageProps) {
   const raw = await reservationFiltersCache.parse(searchParams);
-  const filters = resolveReservationFilters(raw);
   const cohort = raw.cohort;
+  const dateActive = Boolean(raw.from && raw.to);
+  const q = (raw.q ?? "").trim();
 
   const supabase = await createClient();
   const [reservations, services] = await Promise.all([
-    // Patient directory needs full visit history — do not clamp to the overview date range.
+    // Full visit history — no date clamp; status/service/q at SQL.
     listReservationsServer(supabase, {
-      status: filters.status,
-      serviceIds: filters.serviceIds,
-      q: filters.q,
+      status: raw.status,
+      serviceIds: parseServiceFilter(raw.service),
+      q,
     }).catch(() => []),
     supabase
       .from("services")
@@ -39,24 +35,24 @@ export default async function AdminPatientsPage({ searchParams }: PageProps) {
       .order("sort_order", { ascending: true }),
   ]);
 
-  const groups = filterPatientGroups(
-    groupReservationsByPatient(reservations),
+  const page = pagePatientGroups(groupReservationsByPatient(reservations), {
     cohort,
-    "",
-  );
+    q: "",
+    from: dateActive ? raw.from : null,
+    to: dateActive ? raw.to : null,
+    sort: raw.sort,
+    dir: raw.dir,
+    page: raw.page,
+    limit: raw.limit,
+  });
 
   return (
-    <>
-      <LocalizedAdminPageHeader
-        titleKey="admin.patients.title"
-        descriptionKey="admin.patients.description"
+    <Suspense fallback={<PatientsPageSkeleton />}>
+      <PatientDirectory
+        groups={page.items}
+        total={page.total}
+        services={services.data ?? []}
       />
-      <Suspense fallback={<PatientsPageSkeleton />}>
-        <PatientDirectory
-          groups={groups}
-          services={services.data ?? []}
-        />
-      </Suspense>
-    </>
+    </Suspense>
   );
 }

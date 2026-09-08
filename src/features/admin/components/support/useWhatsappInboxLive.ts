@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   groupReservationsByPatient,
@@ -11,6 +11,10 @@ import type {
   WhatsappMessage,
   WhatsappNote,
 } from "@/services/whatsapp";
+import {
+  listConversations,
+  type ConversationListFilters,
+} from "@/services/whatsapp/queries";
 import {
   mapWhatsappMessage,
   mapWhatsappToSupportUi,
@@ -33,8 +37,22 @@ export function useWhatsappInboxLive(
   enabled: boolean,
   initial: LiveInbox,
   agentName = "Front desk",
+  conversationFilters?: ConversationListFilters | null,
 ) {
+  const instanceId = useId().replace(/:/g, "");
   const [live, setLive] = useState(initial);
+  const [filterLoading, setFilterLoading] = useState(false);
+  const prevFilterKeyRef = useRef<string | null>(null);
+  const filterKey = JSON.stringify(conversationFilters ?? null);
+  const filters = useMemo((): ConversationListFilters | null => {
+    if (!conversationFilters) return null;
+    return {
+      q: conversationFilters.q,
+      status: conversationFilters.status,
+      sort: conversationFilters.sort,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stabilize by filterKey
+  }, [filterKey]);
 
   useEffect(() => {
     setLive((prev) => ({
@@ -59,15 +77,16 @@ export function useWhatsappInboxLive(
 
   const refreshConversations = useCallback(async () => {
     const supabase = createClient();
-    const { data: conversations, error } = await supabase
-      .from("whatsapp_conversations")
-      .select("*")
-      .order("last_message_at", { ascending: false, nullsFirst: false });
-    if (error || !conversations) return;
+    let conversations: WhatsappConversation[] = [];
+    try {
+      conversations = await listConversations(supabase, filters);
+    } catch {
+      return;
+    }
 
     const notesByConversation: Record<string, WhatsappNote[]> = {};
     await Promise.all(
-      (conversations as WhatsappConversation[]).slice(0, 40).map(async (c) => {
+      conversations.slice(0, 40).map(async (c) => {
         const { data } = await supabase
           .from("whatsapp_notes")
           .select("*")
@@ -90,7 +109,7 @@ export function useWhatsappInboxLive(
 
     setLive((prev) => {
       const mapped = mapWhatsappToSupportUi(
-        conversations as WhatsappConversation[],
+        conversations,
         {},
         notesByConversation,
         patientGroups,
@@ -103,7 +122,7 @@ export function useWhatsappInboxLive(
         openCount: mapped.openCount,
       };
     });
-  }, [agentName]);
+  }, [agentName, filters]);
 
   const prependPage = useCallback(
     (
@@ -204,15 +223,27 @@ export function useWhatsappInboxLive(
 
   useEffect(() => {
     if (!enabled) return;
-    void refreshConversations();
-  }, [enabled, refreshConversations]);
+    const isFilterChange =
+      prevFilterKeyRef.current !== null &&
+      prevFilterKeyRef.current !== filterKey;
+    prevFilterKeyRef.current = filterKey;
+
+    let cancelled = false;
+    if (isFilterChange) setFilterLoading(true);
+    void refreshConversations().finally(() => {
+      if (!cancelled && isFilterChange) setFilterLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, filterKey, refreshConversations]);
 
   useEffect(() => {
     if (!enabled) return;
 
     const supabase = createClient();
     const channel = supabase
-      .channel("whatsapp-inbox-live")
+      .channel(`whatsapp-inbox-live-${instanceId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "whatsapp_messages" },
@@ -320,7 +351,7 @@ export function useWhatsappInboxLive(
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [enabled, refreshConversations, agentName]);
+  }, [enabled, refreshConversations, agentName, instanceId]);
 
   const replaceConversationMessages = useCallback(
     (
@@ -343,6 +374,8 @@ export function useWhatsappInboxLive(
   const state = enabled ? live : initial;
   return {
     ...state,
+    filterLoading: enabled ? filterLoading : false,
+    refreshConversations,
     prependPage,
     replaceConversationMessages,
     patchDetails,

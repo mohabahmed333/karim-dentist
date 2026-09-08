@@ -15,6 +15,27 @@ export const FILTER_STATUS_VALUES = [
   "no_show",
 ] as const satisfies readonly FilterStatus[];
 
+export const RESERVATION_SORT_VALUES = [
+  "starts_at",
+  "patient_name",
+  "phone",
+  "service_label",
+  "status",
+] as const;
+
+export type ReservationSortKey = (typeof RESERVATION_SORT_VALUES)[number];
+
+/** Shared URL `sort` values across reservations + patients tables. */
+export const TABLE_SORT_VALUES = [
+  ...RESERVATION_SORT_VALUES,
+  "name",
+  "treatments",
+  "lastVisit",
+  "nextVisit",
+] as const;
+
+export type TableSortKey = (typeof TABLE_SORT_VALUES)[number];
+
 export type ReservationListFilters = {
   from: string;
   to: string;
@@ -22,6 +43,10 @@ export type ReservationListFilters = {
   /** Empty = all services. */
   serviceIds: string[];
   q: string;
+  sort: ReservationSortKey;
+  dir: "asc" | "desc";
+  page: number;
+  limit: number;
 };
 
 export function sanitizeIlike(q: string): string {

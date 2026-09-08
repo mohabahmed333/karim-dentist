@@ -9,10 +9,17 @@ import {
   listOpenAppointmentSlots,
   regenerateOpenSlots,
 } from "@/services/clinic_schedule";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { AdminInput, AdminNativeSelect, AdminTextarea } from "@/features/admin/ui";
 import { useTranslations } from "@/lib/i18n";
+import {
+  GENERAL_CONSULTATION_LABEL_EN,
+  persistServiceLabel,
+} from "@/features/admin/lib/serviceDisplayName";
+import {
+  SERVICE_PICKER_CONSULT_VALUE,
+  ServicePicker,
+} from "@/features/admin/components/ServicePicker";
 
 type Props = {
   values: ReservationFormValues;
@@ -22,10 +29,6 @@ type Props = {
 };
 
 type SlotDto = { id: string; starts_at: string; ends_at?: string };
-
-const CONSULT_LABEL = "General consultation";
-const FIELD_CLASS =
-  "h-9 rounded-lg border border-[var(--admin-border,#e5e7eb)] bg-[var(--admin-panel,#fff)] px-3 text-sm text-[var(--admin-text,#1a1a1a)] shadow-none outline-none focus-visible:border-[var(--admin-border,#d1d5db)] focus-visible:ring-2 focus-visible:ring-[var(--admin-border,#e5e7eb)]";
 
 function dayKey(iso: string): string {
   const d = new Date(iso);
@@ -138,15 +141,6 @@ export function ReservationFormFields({
     };
   }, []);
 
-  const ourServices = useMemo(
-    () => services.filter((s) => s.kind !== "laser"),
-    [services],
-  );
-  const laserServices = useMemo(
-    () => services.filter((s) => s.kind === "laser"),
-    [services],
-  );
-
   const dates = useMemo(() => {
     const byDay = new Map<string, string>();
     for (const slot of slots) {
@@ -171,14 +165,17 @@ export function ReservationFormFields({
   }
 
   function onServiceChange(serviceValue: string) {
-    if (serviceValue === "consultation") {
-      patch({ service_id: null, service_label: CONSULT_LABEL });
+    if (serviceValue === SERVICE_PICKER_CONSULT_VALUE) {
+      patch({
+        service_id: null,
+        service_label: GENERAL_CONSULTATION_LABEL_EN,
+      });
       return;
     }
     const service = services.find((item) => item.id === serviceValue);
     patch({
       service_id: service?.id ?? null,
-      service_label: service?.title ?? CONSULT_LABEL,
+      service_label: persistServiceLabel(service),
     });
   }
 
@@ -194,7 +191,10 @@ export function ReservationFormFields({
 
   const serviceValue =
     values.service_id ??
-    (values.service_label === CONSULT_LABEL ? "consultation" : "");
+    (values.service_label &&
+    values.service_label !== GENERAL_CONSULTATION_LABEL_EN
+      ? ""
+      : SERVICE_PICKER_CONSULT_VALUE);
 
   const selectedSlotId =
     values.slot_id ??
@@ -217,7 +217,7 @@ export function ReservationFormFields({
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2">
           <Label htmlFor="patient_name">{t("admin.reservations.patientName")}</Label>
-          <Input
+          <AdminInput
             id="patient_name"
             value={values.patient_name}
             disabled={pending}
@@ -226,7 +226,7 @@ export function ReservationFormFields({
         </label>
         <label className="grid gap-2">
           <Label htmlFor="phone">{t("admin.reservations.phone")}</Label>
-          <Input
+          <AdminInput
             id="phone"
             value={values.phone}
             disabled={pending}
@@ -235,7 +235,7 @@ export function ReservationFormFields({
         </label>
         <label className="grid gap-2 sm:col-span-2">
           <Label htmlFor="email">{t("admin.reservations.email")}</Label>
-          <Input
+          <AdminInput
             id="email"
             type="email"
             value={values.email ?? ""}
@@ -245,39 +245,18 @@ export function ReservationFormFields({
         </label>
         <label className="grid gap-2 sm:col-span-2">
           <Label htmlFor="service">{t("admin.reservations.service")}</Label>
-          <select
+          <ServicePicker
             id="service"
-            className={FIELD_CLASS}
-            value={serviceValue}
+            services={services}
+            value={serviceValue || SERVICE_PICKER_CONSULT_VALUE}
             disabled={pending}
-            onChange={(event) => onServiceChange(event.target.value)}
-          >
-            <option value="consultation">{CONSULT_LABEL}</option>
-            {ourServices.length > 0 ? (
-              <optgroup label="Our Services">
-                {ourServices.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.title}
-                  </option>
-                ))}
-              </optgroup>
-            ) : null}
-            {laserServices.length > 0 ? (
-              <optgroup label="Laser treatments">
-                {laserServices.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.title}
-                  </option>
-                ))}
-              </optgroup>
-            ) : null}
-          </select>
+            onChange={onServiceChange}
+          />
         </label>
         <label className="grid gap-2">
           <Label htmlFor="date">{t("admin.reservations.date")}</Label>
-          <select
+          <AdminNativeSelect
             id="date"
-            className={FIELD_CLASS}
             value={values.date}
             disabled={fieldsDisabled}
             onChange={(event) =>
@@ -296,13 +275,12 @@ export function ReservationFormFields({
                 {day.label}
               </option>
             ))}
-          </select>
+          </AdminNativeSelect>
         </label>
         <label className="grid gap-2">
           <Label htmlFor="slot">{t("admin.reservations.openSlot")}</Label>
-          <select
+          <AdminNativeSelect
             id="slot"
-            className={FIELD_CLASS}
             value={selectedSlotId}
             disabled={fieldsDisabled || !values.date}
             onChange={(event) => onSlotPick(event.target.value)}
@@ -324,13 +302,12 @@ export function ReservationFormFields({
             {values.time && !selectedSlotId ? (
               <option value="">{values.time} (existing)</option>
             ) : null}
-          </select>
+          </AdminNativeSelect>
         </label>
         <label className="grid gap-2 sm:col-span-2">
           <Label htmlFor="status">{t("admin.reservations.status")}</Label>
-          <select
+          <AdminNativeSelect
             id="status"
-            className={FIELD_CLASS}
             value={values.status}
             disabled={pending}
             onChange={(event) =>
@@ -354,12 +331,12 @@ export function ReservationFormFields({
                           : status}
               </option>
             ))}
-          </select>
+          </AdminNativeSelect>
         </label>
       </div>
       <label className="grid gap-2">
         <Label htmlFor="notes">{t("admin.reservations.notes")}</Label>
-        <Textarea
+        <AdminTextarea
           id="notes"
           rows={3}
           value={values.notes ?? ""}
@@ -377,7 +354,7 @@ export function emptyReservationForm(): ReservationFormValues {
     phone: "",
     email: "",
     service_id: null,
-    service_label: CONSULT_LABEL,
+    service_label: GENERAL_CONSULTATION_LABEL_EN,
     date: "",
     time: "",
     slot_id: null,

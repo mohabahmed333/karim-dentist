@@ -13,6 +13,14 @@ import {
   COMPARE_OPTIONS,
 } from "@/features/admin/lib/dateRangeModel";
 import { DashboardDateRangePicker } from "./DashboardDateRangePicker";
+import {
+  AdminDropdownMenu,
+  AdminDropdownMenuContent,
+  AdminDropdownMenuItem,
+  AdminDropdownMenuTrigger,
+  AdminFieldButton,
+  adminFieldButtonClass,
+} from "@/features/admin/ui";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 
@@ -33,7 +41,6 @@ export function DashboardFiltersBar({
   const { locale } = useLocale();
   const dateLocale = locale === "ar" ? "ar-EG" : "en-US";
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [compareOpen, setCompareOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const presetId = presetIdForRange(range);
   const presetLabel =
@@ -48,7 +55,6 @@ export function DashboardFiltersBar({
     function onDoc(e: MouseEvent) {
       if (!rootRef.current?.contains(e.target as Node)) {
         setPickerOpen(false);
-        setCompareOpen(false);
       }
     }
     document.addEventListener("mousedown", onDoc);
@@ -56,31 +62,24 @@ export function DashboardFiltersBar({
   }, []);
 
   return (
-    <div
-      ref={rootRef}
-      className="relative flex flex-wrap items-center gap-2"
-    >
+    <div ref={rootRef} className="relative flex flex-wrap items-center gap-2">
       <div className="relative">
-        <button
-          type="button"
-          onClick={() => {
-            setPickerOpen((v) => !v);
-            setCompareOpen(false);
-          }}
-          className="admin-card inline-flex items-center gap-2 rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel,#ffffff)] px-3 py-2 text-sm text-[var(--admin-text)]"
+        <AdminFieldButton
+          onClick={() => setPickerOpen((v) => !v)}
+          aria-expanded={pickerOpen}
         >
           <span className="font-medium">{presetLabel}</span>
           <ChevronDown className="size-3.5 text-[var(--admin-muted)]" />
           <span className="h-4 w-px bg-[var(--admin-border)]" />
           <CalendarDays className="size-3.5 text-[var(--admin-muted)]" />
           <span>{formatSingleDate(range.start, dateLocale)}</span>
-        </button>
+        </AdminFieldButton>
         <DashboardDateRangePicker
           open={pickerOpen}
           value={range}
           onClose={() => setPickerOpen(false)}
-          onApply={(next, presetId) => {
-            onRangeChange(next, presetId);
+          onApply={(next, nextPreset) => {
+            onRangeChange(next, nextPreset);
             setPickerOpen(false);
           }}
         />
@@ -90,40 +89,33 @@ export function DashboardFiltersBar({
         {t("admin.filters.compare")}
       </span>
 
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => {
-            setCompareOpen((v) => !v);
-            setPickerOpen(false);
-          }}
-          className="admin-card inline-flex items-center gap-2 rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel,#ffffff)] px-3 py-2 text-sm text-[var(--admin-text)]"
+      <AdminDropdownMenu
+        onOpenChange={(open) => {
+          if (open) setPickerOpen(false);
+        }}
+      >
+        <AdminDropdownMenuTrigger
+          className={`${adminFieldButtonClass} gap-2`}
         >
           <span>{compareLabel}</span>
           <ChevronDown className="size-3.5 text-[var(--admin-muted)]" />
-        </button>
-        {compareOpen ? (
-          <div className="admin-card absolute top-[calc(100%+8px)] start-0 z-50 min-w-[12rem] rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel,#ffffff)] py-1">
-            {COMPARE_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => {
-                  onCompareChange(opt.id);
-                  setCompareOpen(false);
-                }}
-                className={`block w-full px-3 py-2 text-start text-sm hover:bg-[var(--admin-hover)] ${
-                  compare === opt.id
-                    ? "font-semibold text-[var(--admin-text)]"
-                    : "text-[var(--admin-muted)]"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
-      </div>
+        </AdminDropdownMenuTrigger>
+        <AdminDropdownMenuContent align="start" className="min-w-[12rem]">
+          {COMPARE_OPTIONS.map((opt) => (
+            <AdminDropdownMenuItem
+              key={opt.id}
+              onClick={() => onCompareChange(opt.id)}
+              className={
+                compare === opt.id
+                  ? "font-semibold"
+                  : "text-[var(--admin-muted)]"
+              }
+            >
+              {opt.label}
+            </AdminDropdownMenuItem>
+          ))}
+        </AdminDropdownMenuContent>
+      </AdminDropdownMenu>
     </div>
   );
 }

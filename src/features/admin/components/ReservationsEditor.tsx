@@ -13,6 +13,11 @@ export function ReservationsEditor({
   services: Service[];
 }) {
   return (
-    <ReservationsPageView reservations={initial} services={services} />
+    <ReservationsPageView
+      reservations={initial}
+      tableRows={initial}
+      tableTotal={initial.length}
+      services={services}
+    />
   );
 }

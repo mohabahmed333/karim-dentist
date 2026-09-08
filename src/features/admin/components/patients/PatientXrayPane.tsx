@@ -9,15 +9,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { AdminInput } from "@/features/admin/ui";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  AdminSelect,
+  AdminSelectContent,
+  AdminSelectItem,
+  AdminSelectTrigger,
+  AdminSelectValue,
+} from "@/features/admin/ui";
 import type { ImagingKind, PatientImaging } from "@/services/patient_imaging";
 import type { usePatientImaging } from "./usePatientImaging";
 
@@ -59,7 +59,7 @@ export function PatientXrayPane({ chart }: Props) {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="xray-title">Title</Label>
-            <Input
+            <AdminInput
               id="xray-title"
               value={draft.title}
               onChange={(e) => setDraft({ ...draft, title: e.target.value })}
@@ -68,26 +68,26 @@ export function PatientXrayPane({ chart }: Props) {
           </div>
           <div className="space-y-1.5">
             <Label>Kind</Label>
-            <Select
+            <AdminSelect
               value={draft.kind}
               onValueChange={(value) => {
                 if (!value) return;
                 setDraft({ ...draft, kind: value as ImagingKind });
               }}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="xray">X-ray</SelectItem>
-                <SelectItem value="cbct">CBCT</SelectItem>
-                <SelectItem value="photo">Photo</SelectItem>
-              </SelectContent>
-            </Select>
+              <AdminSelectTrigger className="w-full">
+                <AdminSelectValue />
+              </AdminSelectTrigger>
+              <AdminSelectContent>
+                <AdminSelectItem value="xray">X-ray</AdminSelectItem>
+                <AdminSelectItem value="cbct">CBCT</AdminSelectItem>
+                <AdminSelectItem value="photo">Photo</AdminSelectItem>
+              </AdminSelectContent>
+            </AdminSelect>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="xray-tooth">Tooth # (optional)</Label>
-            <Input
+            <AdminInput
               id="xray-tooth"
               inputMode="numeric"
               value={draft.toothNumber}
@@ -99,7 +99,7 @@ export function PatientXrayPane({ chart }: Props) {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="xray-taken">Taken date</Label>
-            <Input
+            <AdminInput
               id="xray-taken"
               type="date"
               value={draft.takenAt}
@@ -108,7 +108,7 @@ export function PatientXrayPane({ chart }: Props) {
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="xray-file">File (image or PDF)</Label>
-            <Input
+            <AdminInput
               id="xray-file"
               type="file"
               accept="image/*,application/pdf"

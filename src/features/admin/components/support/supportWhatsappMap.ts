@@ -14,6 +14,7 @@ import type {
   WhatsappNote,
 } from "@/services/whatsapp/types";
 import { sanitizeWhatsappBody } from "@/services/whatsapp/messageMedia";
+import { isWhatsappSessionOpen } from "@/services/whatsapp/sessionWindow";
 import type {
   SupportConversation,
   SupportDetails,
@@ -346,6 +347,8 @@ export function mapWhatsappToSupportUi(
       lastMessageType: c.last_message_type || undefined,
       lastMessageAt: c.last_message_at ?? undefined,
       lastMessageStatus: (c.last_message_status as SupportMessage["status"]) || undefined,
+      lastInboundAt: c.last_inbound_at,
+      sessionOpen: isWhatsappSessionOpen(c.last_inbound_at),
       timestamp: formatTime(c.last_message_at),
       status: c.status,
       tags: [

@@ -48,6 +48,7 @@ export function ClientsEditor({ items: initial }: Props) {
         list={
           <div className="p-2">
             <CollectionTable
+              tableId="clients"
               rows={board.items}
               selectedId={board.selected?.id}
               emptyMessage={t("admin.pages.clients.empty")}

@@ -15,6 +15,9 @@ const TITLE_KEYS: Record<UsageMetricId, AdminMessageKey> = {
   egress: "admin.usage.egress",
   authMau: "admin.usage.authMau",
   kapsoMessages: "admin.usage.whatsapp",
+  vercelFastDataTransfer: "admin.usage.vercelTransfer",
+  vercelEdgeRequests: "admin.usage.vercelEdgeRequests",
+  vercelFunctionInvocations: "admin.usage.vercelInvocations",
 };
 
 export function UsageDashboard({ data }: Props) {
@@ -22,8 +25,13 @@ export function UsageDashboard({ data }: Props) {
   return (
     <div className="space-y-4">
       {data.hasAccessToken ? null : (
-        <p className="rounded-md border border-[var(--admin-border)] bg-white px-3 py-2 text-sm text-[var(--admin-muted)]">
+        <p className="rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel)] px-3 py-2 text-sm text-[var(--admin-muted)]">
           {t("admin.usage.needsToken")}
+        </p>
+      )}
+      {data.hasVercelToken ? null : (
+        <p className="rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel)] px-3 py-2 text-sm text-[var(--admin-muted)]">
+          {t("admin.usage.needsVercelToken")}
         </p>
       )}
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">

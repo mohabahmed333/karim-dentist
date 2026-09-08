@@ -99,10 +99,17 @@ describe("reservation timeline", () => {
 
   it("builds a monday-first calendar grid", () => {
     const grid = buildCalendarGrid(new Date(2026, 7, 1));
-    assert.equal(grid.length % 7, 0);
+    assert.equal(grid.length, 42);
     assert.equal(grid[0]?.weekday.slice(0, 3), "Mon");
     const inMonth = grid.filter((day) => day.isCurrentMonth);
     assert.equal(inMonth.length, 31);
+  });
+
+  it("keeps a fixed 6-week height for short months", () => {
+    // Feb 2026 starts on Sunday → still pads to 42 cells
+    const grid = buildCalendarGrid(new Date(2026, 1, 1));
+    assert.equal(grid.length, 42);
+    assert.equal(grid.filter((day) => day.isCurrentMonth).length, 28);
   });
 
   it("groups reservations by calendar day", () => {

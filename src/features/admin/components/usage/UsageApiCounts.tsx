@@ -29,7 +29,7 @@ export function UsageApiCounts({
   ] as const;
 
   return (
-    <section className="admin-card rounded-md border border-[var(--admin-border)] bg-white p-4">
+    <section className="admin-card rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel)] p-4">
       <h2 className="text-sm font-semibold text-[var(--admin-text)]">{title}</h2>
       <p className="mt-1 text-xs text-[var(--admin-muted)]">{totalLabel}</p>
       <ul className="mt-4 space-y-3">

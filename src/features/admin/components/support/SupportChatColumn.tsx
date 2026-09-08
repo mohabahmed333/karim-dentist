@@ -23,11 +23,13 @@ import { ChatMessageBubble } from "./chat/ChatMessageBubble";
 import { ChatThreadSearch } from "./chat/ChatThreadSearch";
 import { collectConversationMedia } from "./chat/collectConversationMedia";
 import type { ComposerSendPayload } from "./chat/composerTypes";
+import { SessionExpiredTemplatePanel } from "./chat/SessionExpiredTemplatePanel";
 import { useChatScroll } from "./chat/useChatScroll";
 import type {
   SupportConversation,
   SupportMessage,
 } from "./supportDummyData";
+import type { TemplateField } from "@/services/whatsapp/templateFields";
 
 type Props = {
   conversation: SupportConversation;
@@ -35,6 +37,13 @@ type Props = {
   draft: string;
   onDraftChange: (value: string) => void;
   onSend: (payload: ComposerSendPayload) => void;
+  onSendTemplate?: (payload: {
+    name: string;
+    language: string;
+    parameterFormat: "POSITIONAL" | "NAMED";
+    fields: TemplateField[];
+    values: Record<string, string>;
+  }) => Promise<boolean>;
   onLoadMore?: () => void;
   loadingMore?: boolean;
   sending?: boolean;
@@ -58,6 +67,7 @@ export function SupportChatColumn({
   draft,
   onDraftChange,
   onSend,
+  onSendTemplate,
   onLoadMore,
   loadingMore,
   sending,
@@ -288,14 +298,24 @@ export function SupportChatColumn({
         ))}
       </div>
 
-      <ChatComposer
-        draft={draft}
-        onDraftChange={onDraftChange}
-        onSend={onSend}
-        disabled={sending}
-        replyTo={replyTo}
-        onClearReply={onClearReply}
-      />
+      {conversation.sessionOpen === false && onSendTemplate ? (
+        <SessionExpiredTemplatePanel
+          conversationId={conversation.id}
+          sending={sending}
+          onSendTemplate={onSendTemplate}
+        />
+      ) : (
+        <ChatComposer
+          draft={draft}
+          onDraftChange={onDraftChange}
+          onSend={onSend}
+          disabled={sending}
+          replyTo={replyTo}
+          onClearReply={onClearReply}
+          conversationId={conversation.id}
+          onSendTemplate={onSendTemplate}
+        />
+      )}
     </section>
     </ChatGalleryProvider>
   );

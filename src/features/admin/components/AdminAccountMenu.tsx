@@ -2,12 +2,14 @@
 
 import { Check, ChevronDown, CircleUser, LogOut } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  AdminDropdownMenu,
+  AdminDropdownMenuContent,
+  AdminDropdownMenuGroup,
+  AdminDropdownMenuItem,
+  AdminDropdownMenuLabel,
+  AdminDropdownMenuSeparator,
+  AdminDropdownMenuTrigger,
+} from "@/features/admin/ui";
 import { useAdminLogout } from "@/features/admin/hooks/useAdminLogout";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -20,8 +22,8 @@ export function AdminAccountMenu({ compact = false }: Props) {
   const { logout, pending } = useAdminLogout();
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
+    <AdminDropdownMenu>
+      <AdminDropdownMenuTrigger
         className={cn(
           compact
             ? "flex size-7 items-center justify-center rounded-md text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]"
@@ -40,39 +42,39 @@ export function AdminAccountMenu({ compact = false }: Props) {
             <ChevronDown className="size-3.5 shrink-0 opacity-70" aria-hidden />
           </>
         )}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
+      </AdminDropdownMenuTrigger>
+      <AdminDropdownMenuContent
         side={compact ? "right" : "top"}
         align={compact ? "end" : "start"}
         className="min-w-44 w-auto"
       >
-        <p className="px-1.5 py-1 text-xs font-medium text-muted-foreground">
-          {t("admin.language")}
-        </p>
-        <DropdownMenuItem onClick={() => setLocale("en")}>
-          <Check
-            className={cn("size-4", locale === "en" ? "opacity-100" : "opacity-0")}
-            aria-hidden
-          />
-          {t("admin.language.english")}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setLocale("ar")}>
-          <Check
-            className={cn("size-4", locale === "ar" ? "opacity-100" : "opacity-0")}
-            aria-hidden
-          />
-          {t("admin.language.arabic")}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
+        <AdminDropdownMenuGroup>
+          <AdminDropdownMenuLabel>{t("admin.language")}</AdminDropdownMenuLabel>
+          <AdminDropdownMenuItem onClick={() => setLocale("en")}>
+            <Check
+              className={cn("size-4", locale === "en" ? "opacity-100" : "opacity-0")}
+              aria-hidden
+            />
+            {t("admin.language.english")}
+          </AdminDropdownMenuItem>
+          <AdminDropdownMenuItem onClick={() => setLocale("ar")}>
+            <Check
+              className={cn("size-4", locale === "ar" ? "opacity-100" : "opacity-0")}
+              aria-hidden
+            />
+            {t("admin.language.arabic")}
+          </AdminDropdownMenuItem>
+        </AdminDropdownMenuGroup>
+        <AdminDropdownMenuSeparator />
+        <AdminDropdownMenuItem
           variant="destructive"
           disabled={pending}
           onClick={() => void logout()}
         >
           <LogOut aria-hidden />
           {pending ? t("admin.settings.loggingOut") : t("admin.settings.logout")}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </AdminDropdownMenuItem>
+      </AdminDropdownMenuContent>
+    </AdminDropdownMenu>
   );
 }

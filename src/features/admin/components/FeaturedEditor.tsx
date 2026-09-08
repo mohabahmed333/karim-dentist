@@ -67,6 +67,7 @@ export function FeaturedEditor({
         list={
           <div className="p-2">
             <CollectionTable
+              tableId="featured"
               rows={board.items}
               selectedId={board.selected?.id}
               emptyMessage={t(emptyKey)}

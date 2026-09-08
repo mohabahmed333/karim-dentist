@@ -24,6 +24,10 @@ export type SupportConversation = {
   lastMessageAt?: string;
   /** Delivery status of the last message (Kapso ticks for outbound). */
   lastMessageStatus?: SupportMessage["status"];
+  /** Last inbound WhatsApp message ISO time (Meta 24h window). */
+  lastInboundAt?: string | null;
+  /** True while Meta customer-care window is open. */
+  sessionOpen?: boolean;
 };
 
 export type SupportMessage = {

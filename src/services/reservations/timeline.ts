@@ -331,25 +331,23 @@ export type CalendarGridDay = TimelineDay & {
 };
 
 export const CALENDAR_WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+/** Always 6 weeks so month slides keep a stable height. */
+export const CALENDAR_GRID_WEEKS = 6;
+export const CALENDAR_GRID_DAYS = CALENDAR_GRID_WEEKS * 7;
 
 export function buildCalendarGrid(
   anchor: Date,
   now = new Date(),
 ): CalendarGridDay[] {
-  const { start: monthStart, end: monthEnd } = getMonthRange(anchor);
+  const { start: monthStart } = getMonthRange(anchor);
   const gridStart = new Date(monthStart);
   const startDow = gridStart.getDay();
   const mondayOffset = startDow === 0 ? -6 : 1 - startDow;
   gridStart.setDate(gridStart.getDate() + mondayOffset);
 
-  const gridEnd = new Date(monthEnd);
-  const endDow = gridEnd.getDay();
-  const sundayOffset = endDow === 0 ? 0 : 7 - endDow;
-  gridEnd.setDate(gridEnd.getDate() + sundayOffset);
-
   const days: CalendarGridDay[] = [];
   const cursor = new Date(gridStart);
-  while (cursor <= gridEnd) {
+  for (let i = 0; i < CALENDAR_GRID_DAYS; i += 1) {
     const day = cursor.getDay();
     days.push({
       date: new Date(cursor),

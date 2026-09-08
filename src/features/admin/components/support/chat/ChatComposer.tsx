@@ -14,14 +14,20 @@ import {
 import { SlashCommandMenu, type CannedReply } from "./SlashCommandMenu";
 import { VoiceRecorderBar } from "./VoiceRecorderBar";
 import { ReplyComposerBar } from "./ReplyComposerBar";
+import {
+  SessionExpiredTemplatePanel,
+  type TemplateSendPayload,
+} from "./SessionExpiredTemplatePanel";
 import type { ComposerSendPayload } from "./composerTypes";
 import {
   composeRowVariants,
   composerSwapTransition,
   recordRowVariants,
 } from "./composerRecordMotion";
-import { textDirection } from "./textDirection";
+import { lastStrongLocale } from "./textDirection";
+import { useDismissOnOutsidePointer } from "./useDismissOnOutsidePointer";
 import type { SupportMessage } from "../supportDummyData";
+import type { Locale } from "@/lib/i18n/LocaleProvider";
 
 type Props = {
   draft: string;
@@ -30,6 +36,8 @@ type Props = {
   disabled?: boolean;
   replyTo?: SupportMessage | null;
   onClearReply?: () => void;
+  conversationId?: string;
+  onSendTemplate?: (payload: TemplateSendPayload) => Promise<boolean>;
 };
 
 function insertAtCaret(
@@ -49,31 +57,56 @@ export function ChatComposer({
   disabled,
   replyTo,
   onClearReply,
+  conversationId,
+  onSendTemplate,
 }: Props) {
   const t = useTranslations();
   const { locale } = useLocale();
   const reduced = useReducedMotion();
   const swap = composerSwapTransition(reduced);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const attachRef = useRef<HTMLDivElement>(null);
+  const emojiRef = useRef<HTMLDivElement>(null);
+  const slashRef = useRef<HTMLDivElement>(null);
+  const templateRef = useRef<HTMLDivElement>(null);
   const [attachOpen, setAttachOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [templateOpen, setTemplateOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const [interactive, setInteractive] = useState<InteractiveDraft | null>(
     null,
   );
   const [slashIndex, setSlashIndex] = useState(0);
-  const contentDir = textDirection(draft);
-  const dir = draft.trim()
-    ? contentDir
-    : locale === "ar"
-      ? "rtl"
-      : "ltr";
+  /** Sticky keyboard language — chrome stays on app locale, text follows this. */
+  const [inputLocale, setInputLocale] = useState<Locale>(() =>
+    locale === "ar" ? "ar" : "en",
+  );
+  const textDir = inputLocale === "ar" ? "rtl" : "ltr";
 
   const slash = useMemo(() => {
-    const m = /(^|\s)\/([a-z0-9_-]*)$/i.exec(draft);
+    const m = /(^|\s)\/([\p{L}\p{N}_-]*)$/u.exec(draft);
     if (!m) return null;
     return { query: m[2] ?? "", start: m.index + (m[1]?.length ?? 0) };
   }, [draft]);
+
+  function updateDraft(value: string) {
+    const detected = lastStrongLocale(value);
+    if (detected) setInputLocale(detected);
+    onDraftChange(value);
+  }
+
+  function clearSlashCommand() {
+    updateDraft(draft.replace(/(^|\s)\/[\p{L}\p{N}_-]*$/u, "$1"));
+  }
+
+  useDismissOnOutsidePointer(attachOpen, attachRef, () => setAttachOpen(false));
+  useDismissOnOutsidePointer(emojiOpen, emojiRef, () => setEmojiOpen(false));
+  useDismissOnOutsidePointer(Boolean(slash), slashRef, clearSlashCommand, [
+    taRef,
+  ]);
+  useDismissOnOutsidePointer(templateOpen, templateRef, () =>
+    setTemplateOpen(false),
+  );
 
   const canSend =
     Boolean(draft.trim()) ||
@@ -85,7 +118,7 @@ export function ChatComposer({
     const start = el?.selectionStart ?? draft.length;
     const end = el?.selectionEnd ?? draft.length;
     const { next, caret } = insertAtCaret(draft, start, end, emoji);
-    onDraftChange(next);
+    updateDraft(next);
     setEmojiOpen(false);
     requestAnimationFrame(() => {
       el?.focus();
@@ -97,7 +130,7 @@ export function ChatComposer({
     if (!slash) return;
     const before = draft.slice(0, slash.start);
     const after = draft.slice(slash.start + 1 + slash.query.length);
-    onDraftChange(`${before}${reply.body}${after}`);
+    updateDraft(`${before}${reply.body}${after}`);
   }
 
   function withReply(payload: ComposerSendPayload): ComposerSendPayload {
@@ -204,7 +237,19 @@ export function ChatComposer({
   }
 
   return (
-    <div className="shrink-0 overflow-hidden border-t border-[#E5E7EB] bg-[#F7F8FA] px-3 py-2.5">
+    <div className="relative z-20 shrink-0 overflow-visible border-t border-[#E5E7EB] bg-[#F7F8FA]">
+      {templateOpen && conversationId && onSendTemplate ? (
+        <div ref={templateRef}>
+          <SessionExpiredTemplatePanel
+            conversationId={conversationId}
+            sending={disabled}
+            mode="optional"
+            onDismiss={() => setTemplateOpen(false)}
+            onSendTemplate={onSendTemplate}
+          />
+        </div>
+      ) : null}
+      <div className="px-3 py-2.5">
       <AnimatePresence mode="wait" initial={false}>
         {recording ? (
           <motion.div
@@ -241,15 +286,18 @@ export function ChatComposer({
             ) : null}
             <InteractiveBuilder value={interactive} onChange={setInteractive} />
             <div className="relative flex flex-col gap-1.5">
-              <SlashCommandMenu
-                open={Boolean(slash)}
-                query={slash?.query ?? ""}
-                selectedIndex={slashIndex}
-                onSelectedIndexChange={setSlashIndex}
-                onSelect={injectCanned}
-              />
+              <div ref={slashRef}>
+                <SlashCommandMenu
+                  open={Boolean(slash)}
+                  query={slash?.query ?? ""}
+                  contentLocale={inputLocale}
+                  selectedIndex={slashIndex}
+                  onSelectedIndexChange={setSlashIndex}
+                  onSelect={injectCanned}
+                />
+              </div>
               <div className="flex items-end gap-2">
-                <div className="relative mb-0.5 shrink-0">
+                <div ref={attachRef} className="relative z-30 mb-0.5 shrink-0">
                   <button
                     type="button"
                     className="flex size-10 items-center justify-center rounded-full text-[#54656F] hover:bg-[#E9EDEF]"
@@ -265,6 +313,11 @@ export function ChatComposer({
                   {attachOpen ? (
                     <AttachmentPopover
                       onClose={() => setAttachOpen(false)}
+                      onOpenTemplate={
+                        onSendTemplate && conversationId
+                          ? () => setTemplateOpen(true)
+                          : undefined
+                      }
                       onSend={(payload) => {
                         onSend(withReply(payload));
                         setAttachOpen(false);
@@ -273,21 +326,20 @@ export function ChatComposer({
                     />
                   ) : null}
                 </div>
-                <div
-                  className="relative flex min-w-0 flex-1 items-end gap-1 rounded-[24px] bg-[#E9EDEF] ps-3 pe-1.5 py-1.5"
-                  dir={dir}
-                >
+                <div className="relative flex min-w-0 flex-1 items-end gap-1 rounded-[24px] bg-[#E9EDEF] ps-3 pe-1.5 py-1.5">
                   <textarea
                     ref={taRef}
                     value={draft}
                     disabled={disabled}
-                    dir={dir}
-                    lang={dir === "rtl" ? "ar" : "en"}
+                    dir={textDir}
+                    lang={inputLocale}
                     onChange={(e) => {
-                      onDraftChange(e.target.value);
+                      updateDraft(e.target.value);
                       requestAnimationFrame(autoSize);
                     }}
                     onKeyDown={(e) => {
+                      const fromKey = lastStrongLocale(e.key);
+                      if (fromKey) setInputLocale(fromKey);
                       if (slash && e.key === "ArrowDown") {
                         e.preventDefault();
                         setSlashIndex((i) => i + 1);
@@ -300,9 +352,7 @@ export function ChatComposer({
                       }
                       if (slash && e.key === "Escape") {
                         e.preventDefault();
-                        onDraftChange(
-                          draft.replace(/(^|\s)\/[a-z0-9_-]*$/i, "$1"),
-                        );
+                        clearSlashCommand();
                         return;
                       }
                       if (slash && e.key === "Enter" && !e.shiftKey) {
@@ -321,14 +371,14 @@ export function ChatComposer({
                     rows={1}
                     className={cn(
                       "max-h-[140px] min-h-[28px] min-w-0 flex-1 resize-none bg-transparent py-1.5 text-[15px] leading-5 text-[#111B21] outline-none placeholder:text-[#8696A0]",
-                      dir === "rtl"
+                      textDir === "rtl"
                         ? "text-right placeholder:text-right"
                         : "text-left placeholder:text-left",
                     )}
                     placeholder={t("admin.frontDesk.writeMessage")}
                     aria-label={t("admin.frontDesk.message")}
                   />
-                  <div className="relative mb-0.5 shrink-0">
+                  <div ref={emojiRef} className="relative z-10 mb-0.5 shrink-0">
                     <button
                       type="button"
                       className={cn(
@@ -383,6 +433,7 @@ export function ChatComposer({
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }

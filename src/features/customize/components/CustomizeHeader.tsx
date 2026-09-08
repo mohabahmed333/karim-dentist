@@ -6,7 +6,6 @@ import {
   useCustomizeStatus,
 } from "../context/CustomizeContext";
 import type { CustomizeSection, SaveStatus } from "../types";
-import { LanguageSwitcher } from "@/features/portfolio/components/dental/LanguageSwitcher";
 import { useTranslations } from "@/lib/i18n";
 import type { AdminMessageKey } from "@/lib/i18n";
 import { CustomizeHistoryControls } from "./CustomizeHistoryControls";
@@ -79,7 +78,6 @@ export function CustomizeHeader({ active, itemId, onStartGuide }: Props) {
         <CustomizeVisibilityMenu />
 
         <div className="ms-auto flex shrink-0 items-center gap-1.5">
-          <LanguageSwitcher />
           <CustomizeTranslateControls activeSection={active} />
           <TourGuidesMenu onStartGuide={onStartGuide} />
           <button

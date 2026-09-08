@@ -6,6 +6,8 @@ import { useTranslations } from "@/lib/i18n";
 type Props = {
   onWhatsapp: () => void;
   onAssist: () => void;
+  /** When true, menu is not absolutely positioned (parent places it). */
+  staticPosition?: boolean;
 };
 
 function WhatsAppMenuIcon({ className }: { className?: string }) {
@@ -21,13 +23,21 @@ function WhatsAppMenuIcon({ className }: { className?: string }) {
   );
 }
 
-export function AdminBubbleChooser({ onWhatsapp, onAssist }: Props) {
+export function AdminBubbleChooser({
+  onWhatsapp,
+  onAssist,
+  staticPosition = false,
+}: Props) {
   const t = useTranslations();
 
   return (
     <div
       role="menu"
-      className="absolute bottom-[calc(100%+0.75rem)] end-0 w-56 overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)] py-1 shadow-[0_12px_32px_rgba(0,0,0,0.14)]"
+      className={
+        staticPosition
+          ? "w-56 overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)] py-1 shadow-[0_12px_32px_rgba(0,0,0,0.14)]"
+          : "absolute bottom-[calc(100%+0.75rem)] end-0 w-56 overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)] py-1 shadow-[0_12px_32px_rgba(0,0,0,0.14)]"
+      }
     >
       <button
         type="button"

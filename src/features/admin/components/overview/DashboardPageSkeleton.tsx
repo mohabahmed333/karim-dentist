@@ -23,18 +23,26 @@ export function DashboardPageSkeleton() {
         <Block className="h-24 rounded-xl" />
         <Block className="h-24 rounded-xl" />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Block className="h-20 rounded-xl" />
-        <Block className="h-20 rounded-xl" />
-        <Block className="h-20 rounded-xl" />
-        <Block className="h-20 rounded-xl" />
+      <div className="flex gap-3 overflow-hidden">
+        <Block className="h-28 w-[15.5rem] shrink-0 rounded-xl" />
+        <Block className="h-28 w-[15.5rem] shrink-0 rounded-xl" />
+        <Block className="h-28 w-[15.5rem] shrink-0 rounded-xl" />
+        <Block className="h-28 w-[15.5rem] shrink-0 rounded-xl" />
       </div>
       <Block className="h-72 rounded-xl" />
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Block className="h-80 rounded-xl" />
         <Block className="h-80 rounded-xl" />
         <Block className="h-80 rounded-xl" />
         <Block className="h-80 rounded-xl" />
       </div>
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Block className="h-64 rounded-xl" />
+        <Block className="h-64 rounded-xl" />
+        <Block className="h-64 rounded-xl" />
+        <Block className="h-64 rounded-xl" />
+      </div>
+      <Block className="h-48 rounded-xl" />
     </div>
   );
 }

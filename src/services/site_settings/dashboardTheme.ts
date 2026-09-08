@@ -8,12 +8,16 @@ export const hexColorSchema = z
 export const dashboardThemeSchema = z.object({
   dashboard_primary_color: hexColorSchema,
   dashboard_secondary_color: hexColorSchema,
+  dashboard_canvas_color: hexColorSchema,
+  dashboard_panel_color: hexColorSchema,
 });
 
 export type DashboardThemeValues = z.infer<typeof dashboardThemeSchema>;
 
 export const DEFAULT_DASHBOARD_PRIMARY = "#5E6AD2";
 export const DEFAULT_DASHBOARD_SECONDARY = "#3B82F6";
+export const DEFAULT_DASHBOARD_CANVAS = "#F7F8F8";
+export const DEFAULT_DASHBOARD_PANEL = "#FFFFFF";
 
 export function normalizeHexColor(value: string | null | undefined, fallback: string) {
   const raw = (value ?? "").trim();

@@ -96,6 +96,7 @@ Add to `.env.local` (never commit):
 KAPSO_API_KEY=...
 KAPSO_PHONE_NUMBER_ID=...
 KAPSO_WEBHOOK_SECRET=...   # same secret_key you set in Kapso
+KAPSO_BUSINESS_ACCOUNT_ID=...  # WhatsApp Business Account (WABA) id — list templates
 ```
 
 Webhook path (Kapso → your app → Supabase):

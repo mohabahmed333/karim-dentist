@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SupportInboxView } from "@/features/admin/components/support";
 import { mapWhatsappToSupportUi } from "@/features/admin/components/support/supportWhatsappMap";
 import { firstNameFromEmail } from "@/features/admin/lib/dashboardModel";
+import { inboxFiltersCache } from "@/features/admin/lib/inboxFilters";
 import { groupReservationsByPatient } from "@/services/reservations/patientHistory";
 import { listReservationsServer } from "@/services/reservations/queries";
 import {
@@ -15,7 +16,12 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminSupportPage() {
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminSupportPage({ searchParams }: PageProps) {
+  const inbox = await inboxFiltersCache.parse(searchParams);
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   const agentName = auth.user?.email
@@ -24,7 +30,11 @@ export default async function AdminSupportPage() {
 
   let conversations: WhatsappConversation[] = [];
   try {
-    conversations = await listConversations(supabase);
+    conversations = await listConversations(supabase, {
+      q: inbox.iq,
+      status: inbox.istatus,
+      sort: inbox.isort,
+    });
   } catch {
     conversations = [];
   }
@@ -78,6 +88,9 @@ export default async function AdminSupportPage() {
       initialCursors={cursorsById}
       useKapso
       agentName={agentName}
+      inboxQ={inbox.iq}
+      inboxStatus={inbox.istatus}
+      inboxSort={inbox.isort}
     />
   );
 }

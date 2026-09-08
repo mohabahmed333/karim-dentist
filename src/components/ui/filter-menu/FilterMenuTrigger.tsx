@@ -28,7 +28,7 @@ export function FilterMenuTrigger({
     <DropdownMenuTrigger
       nativeButton={false}
       render={<div />}
-      className="admin-card inline-flex min-h-9 w-full max-w-full cursor-pointer flex-wrap items-center gap-1.5 rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel)] px-2.5 py-1.5 text-sm text-[var(--admin-text)] outline-none hover:bg-[var(--admin-hover)] sm:w-auto sm:min-w-[14rem] sm:max-w-xl"
+      className="admin-card inline-flex min-h-9 w-auto max-w-full cursor-pointer flex-wrap items-center gap-1.5 rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel)] px-2.5 py-1.5 text-sm text-[var(--admin-text)] outline-none hover:bg-[var(--admin-hover)] sm:min-w-[14rem] sm:max-w-xl"
     >
       <ListFilter className="size-3.5 shrink-0 text-[var(--admin-muted)]" />
       {!hasPills ? <span className="font-medium">{label}</span> : null}

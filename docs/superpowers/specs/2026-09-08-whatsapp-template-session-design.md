@@ -139,3 +139,7 @@ On inbound message upsert:
 2. Staff can list approved Kapso templates (all languages) and send one (with or without variables).
 3. After the patient replies, the free-form composer unlocks without a page reload (live inbox).
 4. Server rejects free-form sends when the window is closed even if the client is bypassed.
+
+## Addendum — templates while session open (2026-09-08)
+
+**Approach A (approved):** While the 24h window is **open**, staff can still send templates via **+ → Template**. That opens the same pick/fill/send panel above the free-form composer (dismissible). When the window is **closed**, free-form stays locked and only the required template panel is shown.

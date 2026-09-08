@@ -5,7 +5,10 @@ export type UsageMetricId =
   | "database"
   | "egress"
   | "authMau"
-  | "kapsoMessages";
+  | "kapsoMessages"
+  | "vercelFastDataTransfer"
+  | "vercelEdgeRequests"
+  | "vercelFunctionInvocations";
 
 export type UsageUnit = "bytes" | "count";
 

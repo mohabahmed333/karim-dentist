@@ -92,6 +92,8 @@ export async function upsertConversationFromKapso(
     messageStatus?: string;
     at?: string;
     bumpUnread?: boolean;
+    /** ISO timestamp of inbound message — updates last_inbound_at. */
+    lastInboundAt?: string;
   },
 ): Promise<WhatsappConversation> {
   const kapsoId = conversation.id ?? null;
@@ -132,6 +134,8 @@ export async function upsertConversationFromKapso(
       bumpUnread: extras?.bumpUnread,
     }),
     last_message_at: extras?.at ?? existing?.last_message_at ?? null,
+    last_inbound_at:
+      extras?.lastInboundAt ?? existing?.last_inbound_at ?? null,
     last_message_preview:
       extras?.preview ?? existing?.last_message_preview ?? "",
     last_message_type:

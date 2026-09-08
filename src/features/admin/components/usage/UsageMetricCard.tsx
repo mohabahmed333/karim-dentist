@@ -24,7 +24,7 @@ export function UsageMetricCard({
     : `${title}: ${metric.percentLabel} ${usedLabel}`;
 
   return (
-    <article className="admin-card flex flex-col gap-4 rounded-md border border-[var(--admin-border)] bg-white p-4">
+    <article className="admin-card flex flex-col gap-4 rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel)] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-[var(--admin-text)]">

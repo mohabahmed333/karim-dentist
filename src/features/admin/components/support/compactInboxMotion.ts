@@ -39,6 +39,6 @@ export function unreadBadgePopTransition(
 }
 
 export const unreadBadgePopAnimate = {
-  scale: [1, 1.15, 0],
-  opacity: [1, 1, 0],
-} as const;
+  scale: [1, 1.15, 0] as number[],
+  opacity: [1, 1, 0] as number[],
+};

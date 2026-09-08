@@ -32,6 +32,8 @@ import {
   bookOpenSlotMatchingStartsAt,
   releaseAppointmentSlot,
 } from "@/services/clinic_schedule";
+import { useLocale } from "@/lib/i18n";
+import { serviceDisplayName } from "@/features/admin/lib/serviceDisplayName";
 
 type Chart = ReturnType<typeof usePatientTreatments>;
 
@@ -63,6 +65,7 @@ export function WorkspaceTreatmentsPane({
   onWizardLaunchApplied,
   onApplyAiDraft,
 }: Props) {
+  const { locale } = useLocale();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardSeed, setWizardSeed] = useState<WizardDraft | null>(null);
   const [wizardTreatmentId, setWizardTreatmentId] = useState<
@@ -158,7 +161,9 @@ export function WorkspaceTreatmentsPane({
       title: n.category,
       body: n.content,
     })),
-    services: services.map((s) => ({ label: s.title })),
+    services: services.map((s) => ({
+      label: serviceDisplayName(locale, s),
+    })),
     imageUrls: [],
   };
 

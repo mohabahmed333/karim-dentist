@@ -8,14 +8,19 @@ function Block({ className }: { className?: string }) {
   );
 }
 
-export function PatientsPageSkeleton() {
+export function PatientsPageSkeleton({
+  tableOnly = false,
+}: {
+  tableOnly?: boolean;
+}) {
   return (
     <div className="space-y-4" aria-busy aria-label="Loading patients">
-      <Block className="h-9 w-full" />
-      <div className="flex flex-wrap gap-2">
-        <Block className="h-7 w-28 rounded-full" />
-        <Block className="h-7 w-24 rounded-full" />
-      </div>
+      {tableOnly ? null : (
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <Block className="h-8 w-40" />
+          <Block className="h-9 w-56 rounded-md" />
+        </div>
+      )}
       <div className="overflow-hidden rounded-2xl border border-[var(--admin-border)]">
         <div className="space-y-0">
           {Array.from({ length: 8 }).map((_, i) => (

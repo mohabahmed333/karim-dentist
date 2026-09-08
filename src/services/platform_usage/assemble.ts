@@ -7,6 +7,9 @@ export type PlatformUsageSources = {
   egressUsedBytes: number | null;
   authMauUsed: number | null;
   kapsoMessagesUsed: number | null;
+  vercelFastDataTransferBytes: number | null;
+  vercelEdgeRequests: number | null;
+  vercelFunctionInvocations: number | null;
 };
 
 export type PlatformUsageReport = {
@@ -49,6 +52,24 @@ export function assemblePlatformUsageReport(
         id: "kapsoMessages",
         used: sources.kapsoMessagesUsed,
         quota: quotas.kapsoMessages,
+        unit: "count",
+      }),
+      buildUsageMetric({
+        id: "vercelFastDataTransfer",
+        used: sources.vercelFastDataTransferBytes,
+        quota: quotas.vercelFastDataTransferBytes,
+        unit: "bytes",
+      }),
+      buildUsageMetric({
+        id: "vercelEdgeRequests",
+        used: sources.vercelEdgeRequests,
+        quota: quotas.vercelEdgeRequests,
+        unit: "count",
+      }),
+      buildUsageMetric({
+        id: "vercelFunctionInvocations",
+        used: sources.vercelFunctionInvocations,
+        quota: quotas.vercelFunctionInvocations,
         unit: "count",
       }),
     ],

@@ -9,12 +9,14 @@ import {
   writeStoredInboxWidth,
 } from "./inboxColumnWidth";
 
-export function useInboxColumnWidth() {
+export function useInboxColumnWidth(rtl = false) {
   const [width, setWidth] = useState(INBOX_WIDTH_DEFAULT);
   const [hydrated, setHydrated] = useState(false);
   const [dragging, setDragging] = useState(false);
   const startX = useRef(0);
   const startWidth = useRef(width);
+  const rtlRef = useRef(rtl);
+  rtlRef.current = rtl;
 
   useEffect(() => {
     setWidth(readStoredInboxWidth());
@@ -28,7 +30,12 @@ export function useInboxColumnWidth() {
 
   const onPointerMove = useCallback((event: PointerEvent) => {
     setWidth(
-      nextInboxWidthFromDrag(startWidth.current, startX.current, event.clientX),
+      nextInboxWidthFromDrag(
+        startWidth.current,
+        startX.current,
+        event.clientX,
+        rtlRef.current,
+      ),
     );
   }, []);
 

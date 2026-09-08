@@ -101,6 +101,7 @@ export type Database = {
           patient_key: string | null;
           status: "active" | "ended" | "archived";
           last_message_at: string | null;
+          last_inbound_at: string | null;
           last_message_preview: string;
           last_message_type: string;
           last_message_status: string;
@@ -117,6 +118,7 @@ export type Database = {
           patient_key?: string | null;
           status?: "active" | "ended" | "archived";
           last_message_at?: string | null;
+          last_inbound_at?: string | null;
           last_message_preview?: string;
           last_message_type?: string;
           last_message_status?: string;
@@ -133,6 +135,7 @@ export type Database = {
           patient_key?: string | null;
           status?: "active" | "ended" | "archived";
           last_message_at?: string | null;
+          last_inbound_at?: string | null;
           last_message_preview?: string;
           last_message_type?: string;
           last_message_status?: string;
@@ -421,6 +424,9 @@ export type Database = {
           homepage_hidden_sections: string[];
           dashboard_primary_color: string;
           dashboard_secondary_color: string;
+          dashboard_canvas_color: string;
+          dashboard_panel_color: string;
+          dashboard_layout: Json;
           footer_tagline_ar: string;
           contact_headline_ar: string;
           contact_blurb_ar: string;
@@ -493,6 +499,9 @@ export type Database = {
           homepage_hidden_sections?: string[];
           dashboard_primary_color?: string;
           dashboard_secondary_color?: string;
+          dashboard_canvas_color?: string;
+          dashboard_panel_color?: string;
+          dashboard_layout?: Json;
           footer_tagline_ar?: string;
           contact_headline_ar?: string;
           contact_blurb_ar?: string;
@@ -565,6 +574,9 @@ export type Database = {
           homepage_hidden_sections?: string[];
           dashboard_primary_color?: string;
           dashboard_secondary_color?: string;
+          dashboard_canvas_color?: string;
+          dashboard_panel_color?: string;
+          dashboard_layout?: Json;
           footer_tagline_ar?: string;
           contact_headline_ar?: string;
           contact_blurb_ar?: string;

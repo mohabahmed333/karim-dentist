@@ -1,3 +1,4 @@
+import type { Locale } from "@/lib/i18n/LocaleProvider";
 import {
   Briefcase,
   CalendarDays,
@@ -21,6 +22,7 @@ import {
   serializeServiceFilter,
   toggleServiceId,
 } from "@/features/admin/lib/serviceFilter";
+import { serviceDisplayName } from "@/features/admin/lib/serviceDisplayName";
 import type { Service } from "@/services/services/types";
 import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 import type { useReservationFilterQuery } from "@/features/admin/lib/useReservationFilterQuery";
@@ -36,6 +38,7 @@ export function buildReservationFilterFields(
   services: Service[],
   flags: { showCompare: boolean; showCohort: boolean },
   t: T,
+  locale: Locale,
 ): FilterField[] {
   const { filters, setFilters } = query;
   const defaults = defaultFromTo();
@@ -48,8 +51,14 @@ export function buildReservationFilterFields(
     selectedServiceIds.length === 0
       ? undefined
       : selectedServiceIds.length === 1
-        ? (services.find((s) => s.id === selectedServiceIds[0])?.title ??
-          t("admin.reservations.service"))
+        ? (() => {
+            const service = services.find(
+              (s) => s.id === selectedServiceIds[0],
+            );
+            return service
+              ? serviceDisplayName(locale, service)
+              : t("admin.reservations.service");
+          })()
         : t("admin.filters.servicesSelected").replace(
             "{count}",
             String(selectedServiceIds.length),
@@ -105,7 +114,7 @@ export function buildReservationFilterFields(
       values: selectedServiceIds,
       options: services.map((service) => ({
         id: service.id,
-        label: service.title,
+        label: serviceDisplayName(locale, service),
       })),
       searchPlaceholder: t("admin.filters.searchServices"),
       emptyLabel: t("admin.filters.noMatches"),

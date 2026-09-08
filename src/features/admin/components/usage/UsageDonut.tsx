@@ -16,7 +16,7 @@ export function UsageDonut({ ratio, label, unavailable = false }: Props) {
         background: `conic-gradient(var(--admin-primary) ${usedDeg}deg, #ECEEF3 0deg)`,
       }}
     >
-      <div className="absolute inset-[0.55rem] flex items-center justify-center rounded-full bg-white text-sm font-semibold text-[var(--admin-text)]">
+      <div className="absolute inset-[0.55rem] flex items-center justify-center rounded-full bg-[var(--admin-panel)] text-sm font-semibold text-[var(--admin-text)]">
         {unavailable ? "—" : `${percent}%`}
       </div>
     </div>

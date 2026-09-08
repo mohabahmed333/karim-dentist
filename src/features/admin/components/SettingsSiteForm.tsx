@@ -60,36 +60,42 @@ export function SettingsSiteForm({ settings: initial }: Props) {
   }
 
   return (
-    <form className="space-y-4" onSubmit={(e) => void onSubmit(e)}>
-      <MediaUploadField
-        label="Header logo (PNG)"
-        bucket="about"
-        folder="brand"
-        mediaType="image"
-        onMediaTypeChange={() => undefined}
-        value={logoUrl || null}
-        onChange={(url) => setLogoUrl(url ?? "")}
-      />
-      {logoUrl ? (
-        <Button type="button" variant="ghost" size="sm" onClick={() => setLogoUrl("")}>
-          Remove logo
-        </Button>
-      ) : null}
-      <div className="space-y-2">
-        <Label htmlFor="brand_name">Brand name</Label>
-        <Input id="brand_name" name="brand_name" defaultValue={settings?.brand_name ?? ""} />
-      </div>
-      <div className="space-y-2">
-        <FooterTaglineImageField
-          value={taglineImage || null}
-          onChange={(url) => setTaglineImage(url ?? "")}
-        />
-        <Label htmlFor="footer_tagline">Footer tagline (text fallback)</Label>
-        <Input
-          id="footer_tagline"
-          name="footer_tagline"
-          defaultValue={settings?.footer_tagline ?? ""}
-        />
+    <form className="w-full space-y-6" onSubmit={(e) => void onSubmit(e)}>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-2">
+          <MediaUploadField
+            label="Header logo (PNG)"
+            bucket="about"
+            folder="brand"
+            mediaType="image"
+            onMediaTypeChange={() => undefined}
+            value={logoUrl || null}
+            onChange={(url) => setLogoUrl(url ?? "")}
+          />
+          {logoUrl ? (
+            <Button type="button" variant="ghost" size="sm" onClick={() => setLogoUrl("")}>
+              Remove logo
+            </Button>
+          ) : null}
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="brand_name">Brand name</Label>
+            <Input id="brand_name" name="brand_name" defaultValue={settings?.brand_name ?? ""} />
+          </div>
+          <div className="space-y-2">
+            <FooterTaglineImageField
+              value={taglineImage || null}
+              onChange={(url) => setTaglineImage(url ?? "")}
+            />
+            <Label htmlFor="footer_tagline">Footer tagline (text fallback)</Label>
+            <Input
+              id="footer_tagline"
+              name="footer_tagline"
+              defaultValue={settings?.footer_tagline ?? ""}
+            />
+          </div>
+        </div>
       </div>
       <SettingsContactFields settings={settings} />
       <Button type="submit" disabled={pending}>

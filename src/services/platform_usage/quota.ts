@@ -7,6 +7,9 @@ export type FreePlanQuotas = {
   egressBytes: number;
   authMau: number;
   kapsoMessages: number;
+  vercelFastDataTransferBytes: number;
+  vercelEdgeRequests: number;
+  vercelFunctionInvocations: number;
 };
 
 export function freePlanQuotas(): FreePlanQuotas {
@@ -16,5 +19,8 @@ export function freePlanQuotas(): FreePlanQuotas {
     egressBytes: 5 * BYTES_PER_GB,
     authMau: 50_000,
     kapsoMessages: 2_000,
+    vercelFastDataTransferBytes: 100 * BYTES_PER_GB,
+    vercelEdgeRequests: 1_000_000,
+    vercelFunctionInvocations: 1_000_000,
   };
 }

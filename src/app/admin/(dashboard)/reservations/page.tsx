@@ -7,7 +7,10 @@ import {
   resolveReservationFilters,
   defaultMonthFromTo,
 } from "@/features/admin/lib/reservationFilters";
-import { listReservationsServer } from "@/services/reservations/queries";
+import {
+  listReservationsPageServer,
+  listReservationsServer,
+} from "@/services/reservations/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +25,22 @@ export default async function AdminReservationsPage({
   const filters = resolveReservationFilters(raw, defaultMonthFromTo());
 
   const supabase = await createClient();
-  const [reservations, services] = await Promise.all([
-    listReservationsServer(supabase, filters),
+  // Calendar / today rail: month (+ status/service), ignore search + pagination.
+  const calendarFilters = {
+    from: filters.from,
+    to: filters.to,
+    status: filters.status,
+    serviceIds: filters.serviceIds,
+    q: "",
+    sort: "starts_at" as const,
+    dir: "asc" as const,
+    page: 1,
+    limit: 8,
+  };
+
+  const [calendarReservations, tablePage, services] = await Promise.all([
+    listReservationsServer(supabase, calendarFilters),
+    listReservationsPageServer(supabase, filters),
     supabase
       .from("services")
       .select("*")
@@ -34,7 +51,9 @@ export default async function AdminReservationsPage({
   return (
     <Suspense fallback={<ReservationsPageSkeleton />}>
       <ReservationsPageView
-        reservations={reservations}
+        reservations={calendarReservations}
+        tableRows={tablePage.items}
+        tableTotal={tablePage.total}
         services={services.data ?? []}
       />
     </Suspense>

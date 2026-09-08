@@ -7,11 +7,13 @@ import {
   isUpcomingReservation,
   statusBadgeClass,
 } from "@/services/reservations/stats";
-import { relativeTimeLabel } from "@/features/admin/lib/dashboardModel";
+import { relativeTimeLabel, DASHBOARD_LIST_LIMIT } from "@/features/admin/lib/dashboardModel";
 import { useTranslations } from "@/lib/i18n";
+import { ReservationServiceLabel } from "@/features/admin/components/ReservationServiceLabel";
 
 type Props = {
   reservations: Reservation[];
+  services?: import("@/services/services/types").Service[];
   onPatientSelect?: (reservation: Reservation) => void;
 };
 
@@ -37,6 +39,7 @@ function statusLabel(
 
 export function DashboardBookingsPanel({
   reservations,
+  services = [],
   onPatientSelect,
 }: Props) {
   const t = useTranslations();
@@ -61,11 +64,11 @@ export function DashboardBookingsPanel({
         .sort((a, b) => b.starts_at.localeCompare(a.starts_at)),
     [reservations],
   );
-  const rows = (tab === "active" ? active : closed).slice(0, 8);
+  const rows = (tab === "active" ? active : closed).slice(0, DASHBOARD_LIST_LIMIT);
 
   return (
-    <section className="admin-card flex h-full flex-col rounded-md border border-[var(--admin-border)] bg-white p-3.5">
-      <div className="mb-3 flex items-center gap-4 border-b border-[var(--admin-border)] pb-2">
+    <section className="admin-card flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel)] p-3.5">
+      <div className="mb-3 flex shrink-0 items-center gap-4 border-b border-[var(--admin-border)] pb-2">
         <button
           type="button"
           onClick={() => setTab("active")}
@@ -122,7 +125,11 @@ export function DashboardBookingsPanel({
                     </span>
                   </div>
                   <p className="truncate text-xs text-[var(--admin-muted)]">
-                    {row.service_label}
+                    <ReservationServiceLabel
+                      serviceId={row.service_id}
+                      storedLabel={row.service_label}
+                      services={services}
+                    />
                   </p>
                   <span
                     className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadgeClass(row.status)}`}

@@ -74,6 +74,9 @@ type Props = {
   onClose?: () => void;
   /** Prefill Clinic Assist with this contact (e.g. from Front desk Ask AI). */
   initialPatient?: ActivePatient | null;
+  chatLayout?: import("@/features/admin/hooks/useAdminChatLayout").AdminChatLayout;
+  onToggleChatLayout?: () => void;
+  onCollapseDock?: () => void;
 };
 
 type View = "chat" | "history";
@@ -141,6 +144,9 @@ export function ReceptionChat({
   className,
   onClose,
   initialPatient = null,
+  chatLayout,
+  onToggleChatLayout,
+  onCollapseDock,
 }: Props) {
   const t = useTranslations();
   const reduced = useReducedMotion();
@@ -598,6 +604,9 @@ export function ReceptionChat({
             : t("admin.chat.frontDesk")
         }
         onClose={onClose}
+        chatLayout={chatLayout}
+        onToggleChatLayout={onToggleChatLayout}
+        onCollapseDock={onCollapseDock}
         onNewChat={() => void onNewChat()}
         menuActions={[
           {

@@ -22,6 +22,7 @@ import {
 } from "@/services/reservations/patientHistory";
 import type { Reservation } from "@/services/reservations/types";
 import { PatientEhrView } from "@/features/admin/components/patients/ehr-view/PatientEhrView";
+import { HomePatientClinicDrawerSkeleton } from "./HomePatientClinicDrawerSkeleton";
 import { ADMIN_THEME_EVENT } from "@/features/admin/lib/adminThemeEvent";
 import { useAdminDrawerSide } from "@/features/admin/hooks/useAdminDrawerSide";
 import { cn } from "@/lib/utils";
@@ -87,12 +88,13 @@ export function HomePatientClinicDrawer({
   const group = patientKey ? getPatientGroup(directory, patientKey) : null;
 
   const [mounted, setMounted] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [themeVars, setThemeVars] = useState<AdminThemeVars>(FALLBACK_THEME);
   const [notes, setNotes] = useState<PatientToothNote[]>([]);
   const [imaging, setImaging] = useState<PatientImaging[]>([]);
   const [treatments, setTreatments] = useState<TreatmentItem[]>([]);
   const drawer = useAdminDrawerSide();
+  const loading = Boolean(open && patientKey && loadedKey !== patientKey);
 
   useEffect(() => {
     setMounted(true);
@@ -109,9 +111,15 @@ export function HomePatientClinicDrawer({
   }, [open]);
 
   useEffect(() => {
-    if (!open || !patientKey) return;
+    if (!open) {
+      setLoadedKey(null);
+      return;
+    }
+    if (!patientKey) return;
     let alive = true;
-    setLoading(true);
+    setNotes([]);
+    setImaging([]);
+    setTreatments([]);
     void Promise.all([
       listToothNotes(patientKey),
       listPatientImaging(patientKey),
@@ -124,14 +132,14 @@ export function HomePatientClinicDrawer({
         setTreatments(
           (rows as PatientTreatmentRow[]).map((row) => toTreatmentItem(row)),
         );
+        setLoadedKey(patientKey);
       })
       .catch((err) => {
+        if (!alive) return;
         toast.error(
           err instanceof Error ? err.message : "Could not load Clinical",
         );
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
+        setLoadedKey(patientKey);
       });
     return () => {
       alive = false;
@@ -208,9 +216,7 @@ export function HomePatientClinicDrawer({
               }}
             >
               {loading ? (
-                <p className="p-6 text-sm text-[var(--admin-muted)]">
-                  Loading Clinical…
-                </p>
+                <HomePatientClinicDrawerSkeleton />
               ) : (
                 <PatientEhrView
                   key={group.patientKey}

@@ -72,7 +72,7 @@ export function CalendarDayCell({
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
       className={cn(
-        "flex min-h-[6.5rem] cursor-pointer flex-col border-b border-e border-[#e6e8ec] p-2 text-start transition",
+        "flex h-[6.5rem] cursor-pointer flex-col overflow-hidden border-b border-e border-[#e6e8ec] p-2 text-start transition",
         isSelected && "bg-[#7c5cff]/8",
         !day.isCurrentMonth && "bg-white",
         day.isToday && !isSelected && "bg-[#0f2744]/[0.03]",

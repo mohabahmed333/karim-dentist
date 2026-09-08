@@ -10,7 +10,7 @@ import type { PreviewDeviceId } from "../lib/previewDevices";
 type Props = {
   data: PortfolioData;
   device: PreviewDeviceId;
-  rootRef: React.RefObject<HTMLDivElement | null>;
+  rootRef: React.Ref<HTMLDivElement | null>;
 };
 
 export const ServicesIndexPreview = memo(function ServicesIndexPreview({

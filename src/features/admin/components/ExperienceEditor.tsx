@@ -48,6 +48,7 @@ export function ExperienceEditor({ items: initial }: Props) {
         list={
           <div className="p-2">
             <CollectionTable
+              tableId="experience"
               rows={board.items}
               selectedId={board.selected?.id}
               emptyMessage={t("admin.pages.experience.empty")}

@@ -22,10 +22,10 @@ function Section() {
   );
 }
 
-/** Details column — same 300px shell as SupportDetailsColumn. */
+/** Details column — width matches the resizable panel default. */
 export function SupportDetailsColumnSkeleton() {
   return (
-    <aside className="flex h-full min-h-0 w-[300px] shrink-0 flex-col border-l border-[#E5E7EB] bg-white">
+    <aside className="flex h-full min-h-0 w-full min-w-[260px] max-w-[480px] shrink-0 flex-col border-s border-[#E5E7EB] bg-white">
       <header className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
         <Block className="h-4 w-28" />
         <Block className="size-8 rounded-md" />

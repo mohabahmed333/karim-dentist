@@ -6,6 +6,8 @@ import { useTranslations } from "@/lib/i18n";
 import { ChatActionsMenu, type ChatHeaderAction } from "./ChatActionsMenu";
 import { chatTransition } from "./chatMotion";
 import { CHAT_HEADER } from "./chatSkin";
+import { ChatLayoutToggle } from "@/features/admin/components/ChatLayoutToggle";
+import type { AdminChatLayout } from "@/features/admin/hooks/useAdminChatLayout";
 
 export type ChatPanelTab = "chat" | "attachments" | "details";
 
@@ -21,12 +23,13 @@ type Props = {
   onClear?: () => void;
   canClear?: boolean;
   clearLabel?: string;
-  /** Primary header action (e.g. New chat). */
   onNewChat?: () => void;
   newChatLabel?: string;
-  /** Dropdown with multiple chat actions (e.g. Clear / History). */
   menuActions?: ChatHeaderAction[];
   onClose?: () => void;
+  chatLayout?: AdminChatLayout;
+  onToggleChatLayout?: () => void;
+  onCollapseDock?: () => void;
 };
 
 export function ChatPanelHeader({
@@ -43,6 +46,9 @@ export function ChatPanelHeader({
   newChatLabel,
   menuActions,
   onClose,
+  chatLayout,
+  onToggleChatLayout,
+  onCollapseDock,
 }: Props) {
   const t = useTranslations();
   const reduced = useReducedMotion();
@@ -90,6 +96,13 @@ export function ChatPanelHeader({
             >
               {resolvedClear}
             </button>
+          ) : null}
+          {chatLayout && onToggleChatLayout ? (
+            <ChatLayoutToggle
+              layout={chatLayout}
+              onToggleLayout={onToggleChatLayout}
+              onCollapseDock={onCollapseDock}
+            />
           ) : null}
           {onClose ? (
             <button

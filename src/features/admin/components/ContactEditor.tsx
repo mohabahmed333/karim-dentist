@@ -74,7 +74,7 @@ export function ContactEditor({ settings: initial }: Props) {
           </Button>
         }
       />
-      <Card className="max-w-2xl gap-0 p-6">
+      <Card className="w-full max-w-none gap-0 p-6">
         <form id="contact-form" className="space-y-4" onSubmit={(e) => void onSubmit(e)}>
           <SettingsContactFields settings={settings} />
           <ContactCardAdminFields

@@ -15,7 +15,12 @@ test("clamps inbox width between min and max", () => {
   assert.equal(clampInboxWidth(INBOX_WIDTH_DEFAULT), INBOX_WIDTH_DEFAULT);
 });
 
-test("drag right shrinks the inbox (reversed resize)", () => {
-  assert.equal(nextInboxWidthFromDrag(400, 100, 140), 360);
-  assert.equal(nextInboxWidthFromDrag(400, 100, 60), 440);
+test("drag right grows the inbox in LTR", () => {
+  assert.equal(nextInboxWidthFromDrag(400, 100, 140, false), 440);
+  assert.equal(nextInboxWidthFromDrag(400, 100, 60, false), 360);
+});
+
+test("drag right shrinks the inbox in RTL", () => {
+  assert.equal(nextInboxWidthFromDrag(400, 100, 140, true), 360);
+  assert.equal(nextInboxWidthFromDrag(400, 100, 60, true), 440);
 });

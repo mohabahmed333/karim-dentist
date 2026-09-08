@@ -59,8 +59,11 @@ export const CMS_SINGLETONS = {
     "featured_title",
     "featured_description",
     "homepage_section_order",
+    "dashboard_layout",
     "dashboard_primary_color",
     "dashboard_secondary_color",
+    "dashboard_canvas_color",
+    "dashboard_panel_color",
   ],
   gallery_showcase: ["image_url", "alt_text"],
 } as const;

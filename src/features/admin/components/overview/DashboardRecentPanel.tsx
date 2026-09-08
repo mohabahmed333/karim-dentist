@@ -1,16 +1,20 @@
 "use client";
 
 import type { Reservation } from "@/services/reservations/types";
-import { relativeTimeLabel } from "@/features/admin/lib/dashboardModel";
+import type { Service } from "@/services/services/types";
+import { relativeTimeLabel, DASHBOARD_LIST_LIMIT } from "@/features/admin/lib/dashboardModel";
 import { useTranslations } from "@/lib/i18n";
+import { ReservationServiceLabel } from "@/features/admin/components/ReservationServiceLabel";
 
 type Props = {
   reservations: Reservation[];
+  services?: Service[];
   onPatientSelect?: (reservation: Reservation) => void;
 };
 
 export function DashboardRecentPanel({
   reservations,
+  services = [],
   onPatientSelect,
 }: Props) {
   const t = useTranslations();
@@ -21,12 +25,12 @@ export function DashboardRecentPanel({
         a.updated_at || a.created_at,
       ),
     )
-    .slice(0, 7);
+    .slice(0, DASHBOARD_LIST_LIMIT);
   const unreadish = recent.filter((r) => r.status === "pending").length;
 
   return (
-    <section className="admin-card flex h-full flex-col rounded-md border border-[var(--admin-border)] bg-white p-3.5">
-      <div className="mb-3 flex items-center gap-2">
+    <section className="admin-card flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel)] p-3.5">
+      <div className="mb-3 flex shrink-0 items-center gap-2">
         <h2 className="text-sm font-semibold text-[var(--admin-text)]">
           {t("admin.overview.recentActivity")}
         </h2>
@@ -72,7 +76,12 @@ export function DashboardRecentPanel({
                       </span>
                     </div>
                     <p className="truncate text-xs text-[var(--admin-muted)]">
-                      {row.service_label} · {row.phone}
+                      <ReservationServiceLabel
+                        serviceId={row.service_id}
+                        storedLabel={row.service_label}
+                        services={services}
+                      />{" "}
+                      · {row.phone}
                     </p>
                     <p className="mt-0.5 truncate text-xs text-[var(--admin-muted)]">
                       {row.notes?.trim() || t("admin.overview.noNotes")}

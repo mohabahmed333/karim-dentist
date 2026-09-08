@@ -8,6 +8,11 @@ export type ReservationStats = {
   cancelledCount: number;
   weekCounts: { label: string; count: number }[];
   serviceMix: { label: string; count: number; percent: number }[];
+  statusMix: { status: ReservationStatus; count: number; percent: number }[];
+  /** Clinic window hours 8–19 inclusive. */
+  hourCounts: { hour: number; count: number }[];
+  /** Oldest → newest, 30 calendar days ending today. */
+  dayTrend: { dateKey: string; count: number }[];
 };
 
 function startOfDay(date: Date): Date {
@@ -96,6 +101,49 @@ export function buildReservationStats(
     }))
     .sort((a, b) => b.count - a.count);
 
+  const statusOrder: ReservationStatus[] = [
+    "pending",
+    "confirmed",
+    "completed",
+    "cancelled",
+    "no_show",
+  ];
+  const statusTotals = new Map<ReservationStatus, number>();
+  for (const row of active) {
+    statusTotals.set(row.status, (statusTotals.get(row.status) ?? 0) + 1);
+  }
+  const statusMix = statusOrder
+    .map((status) => {
+      const count = statusTotals.get(status) ?? 0;
+      return {
+        status,
+        count,
+        percent: Math.round((count / total) * 100),
+      };
+    })
+    .filter((item) => item.count > 0);
+
+  const hourCounts = Array.from({ length: 12 }, (_, index) => {
+    const hour = 8 + index;
+    return {
+      hour,
+      count: active.filter((row) => new Date(row.starts_at).getHours() === hour)
+        .length,
+    };
+  });
+
+  const dayTrend = Array.from({ length: 30 }, (_, index) => {
+    const day = new Date(today);
+    day.setDate(today.getDate() - (29 - index));
+    const y = day.getFullYear();
+    const m = String(day.getMonth() + 1).padStart(2, "0");
+    const d = String(day.getDate()).padStart(2, "0");
+    return {
+      dateKey: `${y}-${m}-${d}`,
+      count: countReservationsForDay(active, day),
+    };
+  });
+
   return {
     todayCount,
     yesterdayCount,
@@ -104,6 +152,9 @@ export function buildReservationStats(
     cancelledCount,
     weekCounts,
     serviceMix,
+    statusMix,
+    hourCounts,
+    dayTrend,
   };
 }
 

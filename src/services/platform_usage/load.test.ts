@@ -19,8 +19,15 @@ test("keeps storage when the Management API token is missing", async () => {
     }),
     countAuthUsers: async () => 7,
     countKapsoMessages: async () => 40,
+    hasVercelToken: true,
+    fetchVercelUsage: async () => ({
+      fastDataTransferBytes: 11,
+      edgeRequests: 22,
+      functionInvocations: 33,
+    }),
   });
   assert.equal(data.hasAccessToken, false);
+  assert.equal(data.hasVercelToken, true);
   assert.equal(data.metrics.find((m) => m.id === "storage")?.used, 2048);
   assert.equal(data.metrics.find((m) => m.id === "database")?.status, "unavailable");
   assert.equal(data.metrics.find((m) => m.id === "egress")?.status, "unavailable");
@@ -28,6 +35,9 @@ test("keeps storage when the Management API token is missing", async () => {
   assert.equal(data.metrics.find((m) => m.id === "authMau")?.used, 7);
   assert.equal(data.apiCounts, null);
   assert.equal(data.metrics.find((m) => m.id === "kapsoMessages")?.used, 40);
+  assert.equal(data.metrics.find((m) => m.id === "vercelFastDataTransfer")?.used, 11);
+  assert.equal(data.metrics.find((m) => m.id === "vercelEdgeRequests")?.used, 22);
+  assert.equal(data.metrics.find((m) => m.id === "vercelFunctionInvocations")?.used, 33);
 });
 
 test("prefers analytics MAU over stored auth user count", async () => {
@@ -40,9 +50,16 @@ test("prefers analytics MAU over stored auth user count", async () => {
     fetchApiCounts: async () => null,
     countAuthUsers: async () => 100,
     countKapsoMessages: async () => null,
+    hasVercelToken: false,
+    fetchVercelUsage: async () => null,
   });
   assert.equal(data.authSource, "mau");
+  assert.equal(data.hasVercelToken, false);
   assert.equal(data.metrics.find((m) => m.id === "authMau")?.used, 42);
   assert.equal(data.metrics.find((m) => m.id === "database")?.used, 10);
   assert.equal(data.metrics.find((m) => m.id === "kapsoMessages")?.status, "unavailable");
+  assert.equal(
+    data.metrics.find((m) => m.id === "vercelFastDataTransfer")?.status,
+    "unavailable",
+  );
 });

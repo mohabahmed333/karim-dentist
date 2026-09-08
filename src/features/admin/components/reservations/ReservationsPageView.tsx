@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { AdminReservationFilters } from "@/features/admin/components/AdminReservationFilters";
 import { CollectionTable } from "@/features/admin/components/CollectionTable";
@@ -13,12 +14,23 @@ import { ReservationsPageSkeleton } from "@/features/admin/components/reservatio
 import { ReservationsTodayRail } from "@/features/admin/components/reservations/ReservationsTodayRail";
 import { CalendarMonthGrid } from "@/features/admin/components/timeline/CalendarMonthGrid";
 import { useReservationEditor } from "@/features/admin/hooks/useReservationEditor";
-import { Button } from "@/components/ui/button";
+import {
+  calendarMonthGridVariants,
+  calendarMonthMotionKey,
+  calendarMonthSlideDir,
+  calendarMonthTitleTransition,
+  calendarMonthTitleVariants,
+  calendarMonthTransition,
+} from "@/features/admin/lib/calendarMonthMotion";
 import {
   bookOpenSlotMatchingStartsAt,
+  listOpenAppointmentSlots,
   releaseAppointmentSlot,
 } from "@/services/clinic_schedule";
-import { rescheduleReservation } from "@/services/reservations/mutations";
+import {
+  rescheduleReservation,
+  softDeleteReservation,
+} from "@/services/reservations/mutations";
 import {
   formatReservationWhen,
   statusBadgeClass,
@@ -31,44 +43,88 @@ import {
 } from "@/services/reservations/timeline";
 import type { Reservation } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
-import { listOpenAppointmentSlots } from "@/services/clinic_schedule";
 import {
   calendarDayBookingBlockReason,
   localTodayIso,
   openSlotDaySet,
 } from "@/features/admin/lib/calendarDayBooking";
 import { useLocale, useTranslations } from "@/lib/i18n";
+import { ReservationServiceLabel } from "@/features/admin/components/ReservationServiceLabel";
+import { useReservationFilterQuery } from "@/features/admin/lib/useReservationFilterQuery";
+import { useReservationTableServerFiltering } from "@/features/admin/lib/useReservationTableServerFiltering";
 
 type Props = {
+  /** Month calendar + today rail (no search / pagination). */
   reservations: Reservation[];
+  /** Current table page from Supabase. */
+  tableRows: Reservation[];
+  tableTotal: number;
   services: Service[];
 };
 
-export function ReservationsPageView({ reservations, services }: Props) {
+export function ReservationsPageView({
+  reservations,
+  tableRows,
+  tableTotal,
+  services,
+}: Props) {
   const t = useTranslations();
   const { locale } = useLocale();
-  const editor = useReservationEditor(reservations);
+  const reduced = useReducedMotion();
+  const rtl = locale === "ar";
   const router = useRouter();
+  const editor = useReservationEditor(reservations);
   const searchParams = useSearchParams();
   const [month, setMonth] = useState(() => new Date());
+  const [monthDir, setMonthDir] = useState(1);
   const [selectedDayIso, setSelectedDayIso] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [filtering, setFiltering] = useState(false);
-  const [openSlotDays, setOpenSlotDays] = useState<Set<string>>(() => new Set());
+  const [openSlotDays, setOpenSlotDays] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const filterQuery = useReservationFilterQuery(setFiltering);
+  const serverFiltering = useReservationTableServerFiltering(
+    tableTotal,
+    filterQuery,
+  );
 
+  const dateParam = searchParams.get("date");
+  const monthRef = useRef(month);
+  monthRef.current = month;
+
+  // Only follow the `date` query — other filter params must not reset the viewed month
+  // (that caused: next month paints → URL churn → snap/remount → paint again).
   useEffect(() => {
-    const date = searchParams.get("date");
-    if (date) {
-      setSelectedDayIso(date);
-      setMonth(new Date(`${date}T12:00:00`));
+    if (!dateParam) return;
+    setSelectedDayIso(dateParam);
+    const next = new Date(`${dateParam}T12:00:00`);
+    const prev = monthRef.current;
+    if (
+      prev.getFullYear() === next.getFullYear() &&
+      prev.getMonth() === next.getMonth()
+    ) {
+      return;
     }
-  }, [searchParams]);
+    setMonthDir(calendarMonthSlideDir(prev, next));
+    setMonth(next);
+  }, [dateParam]);
 
   const calendarDays = useMemo(() => buildCalendarGrid(month), [month]);
+  const monthKey = calendarMonthMotionKey(month);
+  const gridVariants = useMemo(() => calendarMonthGridVariants(rtl), [rtl]);
+  const gridTransition = calendarMonthTransition(reduced);
+  const titleTransition = calendarMonthTitleTransition(reduced);
+  const titleVariants = calendarMonthTitleVariants();
   const eventsByDay = useMemo(
     () => groupReservationsByDay(editor.items),
     [editor.items],
   );
+
+  function shiftCalendarMonth(delta: -1 | 1) {
+    setMonthDir(delta);
+    setMonth((m) => shiftMonth(m, delta));
+  }
 
   useEffect(() => {
     if (calendarDays.length === 0) return;
@@ -150,7 +206,9 @@ export function ReservationsPageView({ reservations, services }: Props) {
       });
       editor.upsertItem(updated);
       setSelectedDayIso(targetDate);
-      setMonth(new Date(`${targetDate}T12:00:00`));
+      const next = new Date(`${targetDate}T12:00:00`);
+      setMonthDir(calendarMonthSlideDir(month, next));
+      setMonth(next);
       toast.success(t("admin.reservations.moved"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("admin.reservations.moveFailed"));
@@ -167,71 +225,89 @@ export function ReservationsPageView({ reservations, services }: Props) {
             type="button"
             aria-label={t("admin.reservations.prevMonth")}
             className="rounded-lg border border-[var(--admin-border)] p-2 text-[var(--admin-muted)] hover:bg-[var(--admin-hover)]"
-            onClick={() => setMonth((m) => shiftMonth(m, -1))}
+            onClick={() => shiftCalendarMonth(-1)}
           >
             <ChevronLeft className="size-4 rtl:rotate-180" />
           </button>
-          <h1 className="min-w-[10rem] text-center text-lg font-semibold text-[var(--admin-text)]">
-            {month.toLocaleDateString(locale === "ar" ? "ar" : "en", {
-              month: "long",
-              year: "numeric",
-            })}
-          </h1>
+          <div className="relative flex min-h-[1.75rem] min-w-[10rem] items-center justify-center overflow-hidden">
+            <AnimatePresence initial={false} mode="wait">
+              <motion.h1
+                key={monthKey}
+                variants={titleVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={titleTransition}
+                className="text-center text-lg font-semibold text-[var(--admin-text)]"
+              >
+                {month.toLocaleDateString(locale === "ar" ? "ar" : "en", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </motion.h1>
+            </AnimatePresence>
+          </div>
           <button
             type="button"
             aria-label={t("admin.reservations.nextMonth")}
             className="rounded-lg border border-[var(--admin-border)] p-2 text-[var(--admin-muted)] hover:bg-[var(--admin-hover)]"
-            onClick={() => setMonth((m) => shiftMonth(m, 1))}
+            onClick={() => shiftCalendarMonth(1)}
           >
             <ChevronRight className="size-4 rtl:rotate-180" />
           </button>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            disabled={editor.pending}
-            onClick={() => editor.openNew(selectedDayIso ?? undefined)}
-            className="bg-[var(--admin-primary)] text-white hover:opacity-90"
-          >
-            <Plus className="size-4" />
-            {t("admin.reservations.new")}
-          </Button>
+          <AdminReservationFilters
+            services={services}
+            onPendingChange={setFiltering}
+          />
         </div>
       </header>
 
-      <AdminReservationFilters
-        services={services}
-        onPendingChange={setFiltering}
-      />
-
       {filtering ? (
-        <ReservationsPageSkeleton />
+        <ReservationsPageSkeleton includeHeader={false} />
       ) : (
         <>
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(16rem,0.7fr)]">
-            <div className="min-w-0 overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)]">
-              <CalendarMonthGrid
-                days={calendarDays}
-                eventsByDay={eventsByDay}
-                selectedDayIso={selectedDayIso}
-                selectedReservationId={
-                  editor.selectedId && editor.selectedId !== "new"
-                    ? editor.selectedId
-                    : null
-                }
-                movingReservationId={movingId}
-                eventLabel={(r) => r.patient_name}
-                onSelectDay={onCalendarDayClick}
-                onSelectReservation={editor.openRow}
-                onMoveReservation={(id, date) => {
-                  void moveReservationToDay(id, date);
-                }}
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(16rem,0.7fr)] lg:items-stretch">
+            <div className="relative min-w-0 overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)]">
+              <AnimatePresence initial={false} custom={monthDir} mode="wait">
+                <motion.div
+                  key={monthKey}
+                  custom={monthDir}
+                  variants={gridVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={gridTransition}
+                >
+                  <CalendarMonthGrid
+                    days={calendarDays}
+                    eventsByDay={eventsByDay}
+                    selectedDayIso={selectedDayIso}
+                    selectedReservationId={
+                      editor.selectedId && editor.selectedId !== "new"
+                        ? editor.selectedId
+                        : null
+                    }
+                    movingReservationId={movingId}
+                    eventLabel={(r) => r.patient_name}
+                    onSelectDay={onCalendarDayClick}
+                    onSelectReservation={editor.openRow}
+                    onMoveReservation={(id, date) => {
+                      void moveReservationToDay(id, date);
+                    }}
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            {/* h-0 + min-h-full: row height follows the calendar; rail scrolls inside */}
+            <div className="min-h-[20rem] lg:h-0 lg:min-h-full">
+              <ReservationsTodayRail
+                reservations={editor.items}
+                onSelect={editor.openRow}
+                services={services}
               />
             </div>
-            <ReservationsTodayRail
-              reservations={editor.items}
-              onSelect={editor.openRow}
-            />
           </div>
 
           <section className="space-y-2">
@@ -240,20 +316,70 @@ export function ReservationsPageView({ reservations, services }: Props) {
                 {t("admin.reservations.all")}
               </h2>
               <p className="text-[12px] text-[var(--admin-muted)]">
-                {t("admin.reservations.total").replace("{count}", String(editor.items.length))}
+                {t("admin.reservations.total").replace(
+                  "{count}",
+                  String(tableTotal),
+                )}
               </p>
             </div>
             <div className="overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)]">
               <CollectionTable
-                rows={[...editor.items].sort((a, b) =>
-                  b.starts_at.localeCompare(a.starts_at),
-                )}
+                tableId="reservations"
+                framed={false}
+                rows={tableRows}
+                serverFiltering={serverFiltering}
                 onRowClick={editor.openRow}
                 emptyMessage={t("admin.reservations.empty")}
+                searchPlaceholder={t("admin.reservations.patient")}
+                bulkEntityLabel={t("admin.reservations.title").toLowerCase()}
+                rowActions={[
+                  {
+                    id: "edit",
+                    label: t("admin.edit"),
+                    icon: "edit",
+                    onClick: (r) => editor.openRow(r.id),
+                  },
+                  {
+                    id: "delete",
+                    label: t("admin.delete"),
+                    icon: "delete",
+                    tone: "danger",
+                    onClick: (r) => {
+                      editor.openRow(r.id);
+                      editor.setDeleteOpen(true);
+                    },
+                  },
+                ]}
+                bulkActions={[
+                  {
+                    id: "delete",
+                    label: t("admin.table.bulkDelete"),
+                    tone: "danger",
+                    onClick: async (selected) => {
+                      try {
+                        for (const row of selected) {
+                          await releaseAppointmentSlot(row.id);
+                          await softDeleteReservation(row.id);
+                        }
+                        toast.success(t("admin.delete"));
+                        router.refresh();
+                      } catch (error) {
+                        toast.error(
+                          error instanceof Error
+                            ? error.message
+                            : t("admin.table.bulkDelete"),
+                        );
+                      }
+                    },
+                  },
+                ]}
                 columns={[
                   {
                     key: "patient",
                     header: t("admin.reservations.patient"),
+                    sortValue: (r) => r.patient_name,
+                    searchValue: (r) =>
+                      `${r.patient_name} ${r.phone ?? ""} ${r.service_label}`,
                     cell: (r) => (
                       <span className="font-medium">{r.patient_name}</span>
                     ),
@@ -261,21 +387,31 @@ export function ReservationsPageView({ reservations, services }: Props) {
                   {
                     key: "phone",
                     header: t("admin.reservations.phone"),
+                    sortValue: (r) => r.phone ?? "",
                     cell: (r) => r.phone || "—",
                   },
                   {
                     key: "service",
                     header: t("admin.reservations.service"),
-                    cell: (r) => r.service_label,
+                    sortValue: (r) => r.service_label,
+                    cell: (r) => (
+                      <ReservationServiceLabel
+                        serviceId={r.service_id}
+                        storedLabel={r.service_label}
+                        services={services}
+                      />
+                    ),
                   },
                   {
                     key: "when",
                     header: t("admin.reservations.when"),
+                    sortValue: (r) => r.starts_at,
                     cell: (r) => formatReservationWhen(r.starts_at),
                   },
                   {
                     key: "status",
                     header: t("admin.status"),
+                    sortValue: (r) => r.status,
                     cell: (r) => (
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs capitalize ${statusBadgeClass(r.status)}`}

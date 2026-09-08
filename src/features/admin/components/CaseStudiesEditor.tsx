@@ -57,6 +57,7 @@ export function CaseStudiesEditor({ items: initial }: Props) {
         list={
           <div className="p-2">
             <CollectionTable
+              tableId="casestudies"
               rows={board.items}
               selectedId={board.selected?.id}
               emptyMessage={t("admin.pages.caseStudies.empty")}

@@ -65,11 +65,20 @@ export async function createSettings(
         "experience",
         "clients",
       ],
+      ...(payload.dashboard_layout != null
+        ? { dashboard_layout: payload.dashboard_layout }
+        : {}),
       ...(payload.dashboard_primary_color
         ? { dashboard_primary_color: payload.dashboard_primary_color }
         : {}),
       ...(payload.dashboard_secondary_color
         ? { dashboard_secondary_color: payload.dashboard_secondary_color }
+        : {}),
+      ...(payload.dashboard_canvas_color
+        ? { dashboard_canvas_color: payload.dashboard_canvas_color }
+        : {}),
+      ...(payload.dashboard_panel_color
+        ? { dashboard_panel_color: payload.dashboard_panel_color }
         : {}),
     })
     .select()

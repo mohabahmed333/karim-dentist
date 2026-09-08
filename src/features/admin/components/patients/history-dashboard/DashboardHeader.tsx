@@ -13,7 +13,7 @@ type Props = {
 
 export function DashboardHeader({ group, directory, onAddNote }: Props) {
   return (
-    <header className="relative z-40 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <header className="relative z-40 flex items-center justify-between gap-3">
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-[#111111]">
           {group.displayName}

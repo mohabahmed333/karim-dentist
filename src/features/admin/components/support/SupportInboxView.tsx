@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useQueryStates } from "nuqs";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { inboxFilterParsers } from "@/features/admin/lib/inboxFilters";
+import type { ConversationListFilters } from "@/services/whatsapp";
 import { SupportChatColumn } from "./SupportChatColumn";
+import { SupportChatColumnSkeleton } from "./SupportChatColumnSkeleton";
 import { SupportDetailsColumn } from "./SupportDetailsColumn";
 import {
   SupportInboxColumn,
@@ -58,6 +62,12 @@ type Props = {
   onClose?: () => void;
   /** Pin Clinic Assist as first inbox row (default true on full page). */
   showClinicAssist?: boolean;
+  inboxQ?: string;
+  inboxStatus?: InboxStatusFilter;
+  inboxSort?: InboxSort;
+  chatLayout?: import("@/features/admin/hooks/useAdminChatLayout").AdminChatLayout;
+  onToggleChatLayout?: () => void;
+  onCollapseDock?: () => void;
 };
 
 export function SupportInboxView({
@@ -71,6 +81,12 @@ export function SupportInboxView({
   compact = false,
   onClose,
   showClinicAssist = true,
+  inboxQ: inboxQProp = "",
+  inboxStatus: inboxStatusProp = "open",
+  inboxSort: inboxSortProp = "newest",
+  chatLayout,
+  onToggleChatLayout,
+  onCollapseDock,
 }: Props) {
   const t = useTranslations();
   const { locale } = useLocale();
@@ -97,19 +113,57 @@ export function SupportInboxView({
     ],
   );
 
-  const live = useWhatsappInboxLive(useKapso, initial, agentName);
+  const [isFilterPending, startTransition] = useTransition();
+  const [urlInbox, setUrlInbox] = useQueryStates(inboxFilterParsers, {
+    shallow: false,
+    history: "replace",
+    startTransition,
+  });
+
+  // Compact bubble keeps local filters (avoid writing iq/istatus onto unrelated routes).
+  const [localFilter, setLocalFilter] =
+    useState<InboxStatusFilter>(inboxStatusProp);
+  const [localSort, setLocalSort] = useState<InboxSort>(inboxSortProp);
+  const [localSearch, setLocalSearch] = useState(inboxQProp);
+  const [searchDraft, setSearchDraft] = useState(
+    compact ? inboxQProp : urlInbox.iq || inboxQProp,
+  );
+
+  const inboxFilter: InboxStatusFilter = compact
+    ? localFilter
+    : urlInbox.istatus;
+  const inboxSort: InboxSort = compact ? localSort : urlInbox.isort;
+  const inboxSearch = compact ? localSearch : urlInbox.iq;
+
+  const conversationFilters = useMemo<ConversationListFilters>(
+    () => ({
+      q: inboxSearch,
+      status: inboxFilter,
+      sort: inboxSort,
+    }),
+    [inboxFilter, inboxSearch, inboxSort],
+  );
+
+  const live = useWhatsappInboxLive(
+    useKapso,
+    initial,
+    agentName,
+    conversationFilters,
+  );
   const {
     conversations,
     detailsById,
     messagesById,
     openCount,
     cursorsById,
+    filterLoading,
     prependPage,
     replaceConversationMessages,
     patchDetails,
     patchConversationStatus,
     touchConversation,
   } = live;
+  const listLoading = useKapso && (filterLoading || isFilterPending);
 
   const reduced = useReducedMotion();
   const {
@@ -119,9 +173,6 @@ export function SupportInboxView({
   } = useInboxColumnWidth();
   const [selectedId, setSelectedId] = useState(conversations[0]?.id ?? "");
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [inboxFilter, setInboxFilter] = useState<InboxStatusFilter>("open");
-  const [inboxSort, setInboxSort] = useState<InboxSort>("newest");
-  const [inboxSearch, setInboxSearch] = useState("");
   const [extraMessages, setExtraMessages] = useState<
     Record<string, SupportMessage[]>
   >({});
@@ -140,6 +191,36 @@ export function SupportInboxView({
   const [compactPane, setCompactPane] = useState<"list" | "thread">("list");
   /** +1 open thread, -1 back to list — drives slide direction. */
   const [paneDir, setPaneDir] = useState(1);
+
+  useEffect(() => {
+    setSearchDraft(inboxSearch);
+  }, [inboxSearch]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      if (searchDraft === inboxSearch) return;
+      if (compact) {
+        setLocalSearch(searchDraft);
+      } else {
+        void setUrlInbox({ iq: searchDraft });
+      }
+    }, 350);
+    return () => window.clearTimeout(handle);
+  }, [compact, inboxSearch, searchDraft, setUrlInbox]);
+
+  function setInboxFilter(next: InboxStatusFilter) {
+    if (compact) startTransition(() => setLocalFilter(next));
+    else void setUrlInbox({ istatus: next });
+  }
+
+  function setInboxSort(next: InboxSort) {
+    if (compact) startTransition(() => setLocalSort(next));
+    else void setUrlInbox({ isort: next });
+  }
+
+  function setInboxSearch(next: string) {
+    setSearchDraft(next);
+  }
 
   function goToThread() {
     setPaneDir(1);
@@ -234,47 +315,17 @@ export function SupportInboxView({
   );
 
   const filteredConversations = useMemo(() => {
-    const q = inboxSearch.trim().toLowerCase();
+    // Client filter keeps the tab correct while live refresh catches up to URL filters.
     let list = conversations;
     if (inboxFilter === "open") {
-      list = conversations.filter((c) => (c.status ?? "active") === "active");
+      list = conversations.filter(
+        (c) => c.status === "active" || c.status === "ended" || !c.status,
+      );
     } else if (inboxFilter === "archived") {
       list = conversations.filter((c) => c.status === "archived");
     }
 
-    if (q) {
-      list = list.filter((c) => {
-        const hay = [
-          c.name,
-          c.phone,
-          c.preview,
-          c.tags.map((tag) => tag.label).join(" "),
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return hay.includes(q);
-      });
-    }
-
-    const sorted = [...list];
-    if (inboxSort === "name") {
-      sorted.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (inboxSort === "unread") {
-      sorted.sort((a, b) => {
-        const au = Number(a.unread?.replace("+", "") || 0);
-        const bu = Number(b.unread?.replace("+", "") || 0);
-        if (bu !== au) return bu - au;
-        return (b.lastMessageAt || b.timestamp || "").localeCompare(
-          a.lastMessageAt || a.timestamp || "",
-        );
-      });
-    } else {
-      sorted.sort((a, b) =>
-        (b.lastMessageAt || "").localeCompare(a.lastMessageAt || ""),
-      );
-    }
-
+    const q = inboxSearch.trim().toLowerCase();
     const aiHay = [
       clinicAssistConversation.name,
       clinicAssistConversation.preview,
@@ -286,13 +337,12 @@ export function SupportInboxView({
       showClinicAssist &&
       inboxFilter !== "archived" &&
       (!q || aiHay.includes(q));
-    return showAi ? [clinicAssistConversation, ...sorted] : sorted;
+    return showAi ? [clinicAssistConversation, ...list] : list;
   }, [
     clinicAssistConversation,
     conversations,
     inboxFilter,
     inboxSearch,
-    inboxSort,
     showClinicAssist,
   ]);
 
@@ -303,16 +353,10 @@ export function SupportInboxView({
       }
       return (
         filteredConversations.find((c) => c.id === selectedId) ??
-        filteredConversations[0] ??
-        conversations[0]
+        filteredConversations[0]
       );
     },
-    [
-      clinicAssistConversation,
-      conversations,
-      filteredConversations,
-      selectedId,
-    ],
+    [clinicAssistConversation, filteredConversations, selectedId],
   );
   const isAiChat = conversation?.id === CLINIC_ASSIST_CHAT_ID;
 
@@ -471,7 +515,15 @@ export function SupportInboxView({
           }),
         });
       }
-      if (!res.ok) throw new Error("send failed");
+      if (!res.ok) {
+        const err = (await res.json().catch(() => null)) as {
+          code?: string;
+        } | null;
+        if (err?.code === "SESSION_EXPIRED") {
+          toast.error(t("admin.frontDesk.sessionExpiredTitle"));
+        }
+        throw new Error("send failed");
+      }
       const data = (await res.json()) as { message?: WhatsappMessage };
       if (data.message) {
         const mapped = mapWhatsappMessage(
@@ -506,6 +558,64 @@ export function SupportInboxView({
         ),
       }));
       touchConversation(id, { lastMessageStatus: "failed" });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleSendTemplate(payload: {
+    name: string;
+    language: string;
+    parameterFormat: "POSITIONAL" | "NAMED";
+    fields: { section: "header" | "body"; key: string; label: string }[];
+    values: Record<string, string>;
+  }): Promise<boolean> {
+    if (!useKapso || !selectedId || selectedId === CLINIC_ASSIST_CHAT_ID) {
+      return false;
+    }
+    const id = selectedId;
+    setSending(true);
+    try {
+      const res = await fetch("/api/v1/whatsapp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId: id,
+          kind: "template",
+          template: payload,
+        }),
+      });
+      if (!res.ok) {
+        toast.error(t("admin.frontDesk.templateSendFail"));
+        return false;
+      }
+      const data = (await res.json()) as { message?: WhatsappMessage };
+      if (data.message) {
+        const mapped = mapWhatsappMessage(
+          data.message,
+          conversation?.name ?? t("admin.frontDesk.patient"),
+          agentName,
+        );
+        mapped.author = "agent";
+        mapped.authorName = agentName;
+        setExtraMessages((prev) => ({
+          ...prev,
+          [id]: [...(prev[id] ?? []), mapped],
+        }));
+        const timeLabel = mapped.time || "";
+        touchConversation(id, {
+          preview: mapped.body || `Template: ${payload.name}`,
+          lastMessageType: "template",
+          lastMessageAt: mapped.waTimestamp,
+          lastMessageStatus: mapped.status ?? "sent",
+          timestamp: timeLabel,
+        });
+      }
+      toast.success(t("admin.frontDesk.templateSendOk"));
+      return true;
+    } catch {
+      toast.error(t("admin.frontDesk.templateSendFail"));
+      return false;
     } finally {
       setSending(false);
     }
@@ -652,25 +762,12 @@ export function SupportInboxView({
     toast.success(t("admin.frontDesk.noteDeleted"));
   }
 
-  if (!conversation) {
-    return (
-      <div className="relative flex h-full flex-1 flex-col items-center justify-center bg-white px-6 text-center text-sm text-[#6B7280]">
-        {compact && onClose ? (
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute end-2 top-2 rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6]"
-            aria-label={t("admin.frontDesk.closeBubble")}
-          >
-            <span className="text-lg leading-none">×</span>
-          </button>
-        ) : null}
-        {useKapso
-          ? t("admin.frontDesk.emptyKapso")
-          : t("admin.frontDesk.emptyClinic")}
-      </div>
-    );
-  }
+  const emptyFilterCopy =
+    inboxFilter === "archived"
+      ? t("admin.frontDesk.emptyArchived")
+      : useKapso
+        ? t("admin.frontDesk.emptyKapso")
+        : t("admin.frontDesk.emptyClinic");
 
   return (
     <div
@@ -681,7 +778,7 @@ export function SupportInboxView({
     >
       {compact ? (
         <AnimatePresence initial={false} custom={paneDir}>
-          {compactPane === "list" ? (
+          {compactPane === "list" || !conversation ? (
             <motion.div
               key="compact-list"
               className="absolute inset-0 flex min-h-0 flex-col"
@@ -699,7 +796,7 @@ export function SupportInboxView({
                   String(openCount),
                 )}
                 conversations={filteredConversations}
-                selectedId={selectedId || conversation.id}
+                selectedId={selectedId || conversation?.id || ""}
                 onSelect={(id) => {
                   if (id === CLINIC_ASSIST_CHAT_ID) {
                     setAssistPatient(null);
@@ -711,10 +808,14 @@ export function SupportInboxView({
                 onFilterChange={setInboxFilter}
                 sort={inboxSort}
                 onSortChange={setInboxSort}
-                search={inboxSearch}
+                search={searchDraft}
                 onSearchChange={setInboxSearch}
                 compact
+                loading={listLoading}
                 onClose={onClose}
+                chatLayout={chatLayout}
+                onToggleChatLayout={onToggleChatLayout}
+                onCollapseDock={onCollapseDock}
               />
             </motion.div>
           ) : isAiChat ? (
@@ -737,6 +838,9 @@ export function SupportInboxView({
                 className="h-full min-h-0"
                 statsSummary={t("admin.chat.title")}
                 initialPatient={assistPatient}
+                chatLayout={chatLayout}
+                onToggleChatLayout={onToggleChatLayout}
+                onCollapseDock={onCollapseDock}
                 onClose={() => {
                   setAssistPatient(null);
                   setAssistReturnId("");
@@ -801,6 +905,11 @@ export function SupportInboxView({
                   if (sending) return;
                   void handleSend(payload);
                 }}
+                onSendTemplate={
+                  useKapso
+                    ? (payload) => handleSendTemplate(payload)
+                    : undefined
+                }
               />
             </motion.div>
           )}
@@ -815,7 +924,7 @@ export function SupportInboxView({
                 String(openCount),
               )}
               conversations={filteredConversations}
-              selectedId={selectedId || conversation.id}
+              selectedId={selectedId || conversation?.id || ""}
               onSelect={(id) => {
                 if (id === CLINIC_ASSIST_CHAT_ID) {
                   setAssistPatient(null);
@@ -826,9 +935,10 @@ export function SupportInboxView({
               onFilterChange={setInboxFilter}
               sort={inboxSort}
               onSortChange={setInboxSort}
-              search={inboxSearch}
+              search={searchDraft}
               onSearchChange={setInboxSearch}
               widthPx={inboxWidth}
+              loading={listLoading}
             />
           </div>
           <InboxColumnResizeHandle
@@ -836,7 +946,9 @@ export function SupportInboxView({
             dragging={inboxResizing}
             onPointerDown={startInboxResize}
           />
-          {isAiChat ? (
+          {listLoading ? (
+            <SupportChatColumnSkeleton />
+          ) : isAiChat ? (
             <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
               <ReceptionChat
                 key={
@@ -849,7 +961,7 @@ export function SupportInboxView({
                 initialPatient={assistPatient}
               />
             </div>
-          ) : (
+          ) : conversation ? (
             <>
               <SupportChatColumn
                 conversation={conversation}
@@ -895,6 +1007,11 @@ export function SupportInboxView({
                   if (sending) return;
                   void handleSend(payload);
                 }}
+                onSendTemplate={
+                  useKapso
+                    ? (payload) => handleSendTemplate(payload)
+                    : undefined
+                }
               />
               <AnimatePresence initial={false}>
                 {detailsOpen ? (
@@ -925,6 +1042,10 @@ export function SupportInboxView({
                 ) : null}
               </AnimatePresence>
             </>
+          ) : (
+            <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-white px-6 text-center text-sm text-[#6B7280]">
+              {emptyFilterCopy}
+            </div>
           )}
         </>
       )}

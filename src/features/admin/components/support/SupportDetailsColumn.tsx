@@ -34,7 +34,7 @@ export function SupportDetailsColumn({
   });
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col border-l border-[#E5E7EB] bg-white">
+    <aside className="flex h-full min-h-0 w-full flex-col border-s border-[#E5E7EB] bg-white">
       <header className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
         <h2 className="text-sm font-semibold text-[#111827]">
           {t("admin.frontDesk.patientDetails")}
