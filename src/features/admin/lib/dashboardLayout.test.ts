@@ -276,6 +276,64 @@ describe("dashboardLayout", () => {
     assert.equal(layout[0]?.rowId, layout[1]?.rowId);
   });
 
+  it("swaps same-row stacks left/right without changing widths", () => {
+    const base = [
+      { id: "chartVisitsWeek" as const, colSpan: 6 as const, rowId: "row-a" },
+      { id: "chartBookingMix" as const, colSpan: 6 as const, rowId: "row-a" },
+      { id: "bookings" as const, colSpan: 12 as const, rowId: "row-b" },
+    ];
+    const swapped = placeDashboardWidget(base, 0, 1, "right");
+    assert.deepEqual(
+      swapped.map((w) => ({ id: w.id, colSpan: w.colSpan })),
+      [
+        { id: "chartBookingMix", colSpan: 6 },
+        { id: "chartVisitsWeek", colSpan: 6 },
+        { id: "bookings", colSpan: 12 },
+      ],
+    );
+    assert.equal(swapped[0]?.rowId, "row-a");
+    assert.equal(swapped[1]?.rowId, "row-a");
+
+    const back = placeDashboardWidget(swapped, 1, 0, "left");
+    assert.deepEqual(
+      back.map((w) => ({ id: w.id, colSpan: w.colSpan })),
+      [
+        { id: "chartVisitsWeek", colSpan: 6 },
+        { id: "chartBookingMix", colSpan: 6 },
+        { id: "bookings", colSpan: 12 },
+      ],
+    );
+  });
+
+  it("moves an entire stack when swapping beside a neighbor", () => {
+    const base = [
+      {
+        id: "attentionPending" as const,
+        colSpan: 6 as const,
+        stackId: "left",
+        rowId: "row-a",
+      },
+      {
+        id: "chartVisitsWeek" as const,
+        colSpan: 6 as const,
+        stackId: "left",
+        rowId: "row-a",
+      },
+      { id: "bookings" as const, colSpan: 6 as const, rowId: "row-a" },
+    ];
+    const swapped = placeDashboardWidget(base, 0, 2, "right");
+    assert.deepEqual(
+      swapped.map((w) => w.id),
+      ["bookings", "attentionPending", "chartVisitsWeek"],
+    );
+    assert.equal(swapped.find((w) => w.id === "attentionPending")?.colSpan, 6);
+    assert.equal(swapped.find((w) => w.id === "chartVisitsWeek")?.colSpan, 6);
+    assert.equal(
+      swapped.find((w) => w.id === "chartVisitsWeek")?.stackId,
+      "left",
+    );
+  });
+
   it("appends into a stack empty footer", () => {
     const layout = appendToDashboardStack(
       [
@@ -368,6 +426,9 @@ describe("dashboardLayout", () => {
     // Short KPI cards: prefer stack (above/below) over beside
     assert.equal(dropEdgeFromRatios(0.2, 0.5, 0.4), "above");
     assert.equal(dropEdgeFromRatios(0.8, 0.6, 0.4), "below");
+    // Same-row swap: middle of card prefers left/right
+    assert.equal(dropEdgeFromRatios(0.2, 0.5, 1, true), "left");
+    assert.equal(dropEdgeFromRatios(0.8, 0.5, 1, true), "right");
   });
 
   it("expands legacy charts into individual cards", () => {

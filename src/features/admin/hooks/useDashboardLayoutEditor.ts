@@ -275,6 +275,38 @@ export function useDashboardLayoutEditor(
     setDragOverEnd(false);
   }
 
+  function sameRowNeighbor(
+    fromId: DashboardWidgetId,
+    toId: DashboardWidgetId,
+  ): boolean {
+    const layout = editingRef.current
+      ? draftRef.current
+      : savedLayoutRef.current;
+    const from = layout.find((w) => w.id === fromId);
+    const to = layout.find((w) => w.id === toId);
+    if (!from?.rowId || !to?.rowId || from.rowId !== to.rowId) return false;
+    const fromKey = from.stackId ?? `widget:${from.id}`;
+    const toKey = to.stackId ?? `widget:${to.id}`;
+    return fromKey !== toKey;
+  }
+
+  function edgeForWidgetDrop(
+    fromId: DashboardWidgetId,
+    toId: DashboardWidgetId,
+    event: DragEvent<HTMLElement>,
+  ): DashboardDropEdge {
+    const host = event.currentTarget.closest("[data-dash-widget-id]");
+    const body =
+      host?.querySelector("[data-dash-widget-body]") ?? event.currentTarget;
+    const rect = body.getBoundingClientRect();
+    return dropEdgeFromRatios(
+      (event.clientX - rect.left) / rect.width,
+      (event.clientY - rect.top) / rect.height,
+      rect.height / Math.max(rect.width, 1),
+      sameRowNeighbor(fromId, toId),
+    );
+  }
+
   function setWidgetTarget(id: DashboardWidgetId, edge: DashboardDropEdge) {
     dropTargetRef.current = { kind: "widget", id, edge };
     setDragOverId(id);
@@ -558,16 +590,7 @@ export function useDashboardLayoutEditor(
       event.preventDefault();
       event.dataTransfer.dropEffect = "move";
       autoScrollRef.current.notePointer(event.clientY);
-      const host = event.currentTarget.closest("[data-dash-widget-id]");
-      const body =
-        host?.querySelector("[data-dash-widget-body]") ?? event.currentTarget;
-      const rect = body.getBoundingClientRect();
-      const edge = dropEdgeFromRatios(
-        (event.clientX - rect.left) / rect.width,
-        (event.clientY - rect.top) / rect.height,
-        rect.height / Math.max(rect.width, 1),
-      );
-      setWidgetTarget(id, edge);
+      setWidgetTarget(id, edgeForWidgetDrop(fromId, id, event));
     },
     onDrop: (
       id: DashboardWidgetId,
@@ -583,18 +606,7 @@ export function useDashboardLayoutEditor(
         return;
       }
       dragFromRef.current = fromId;
-      const host = event.currentTarget.closest("[data-dash-widget-id]");
-      const body =
-        host?.querySelector("[data-dash-widget-body]") ?? event.currentTarget;
-      const rect = body.getBoundingClientRect();
-      setWidgetTarget(
-        id,
-        dropEdgeFromRatios(
-          (event.clientX - rect.left) / rect.width,
-          (event.clientY - rect.top) / rect.height,
-          rect.height / Math.max(rect.width, 1),
-        ),
-      );
+      setWidgetTarget(id, edgeForWidgetDrop(fromId, id, event));
       commitDrop();
     },
     onStackDragOver: (stackId: string, event: DragEvent<HTMLElement>) => {

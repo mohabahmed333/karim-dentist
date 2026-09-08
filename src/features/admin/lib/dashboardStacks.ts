@@ -202,9 +202,25 @@ function insertBesideStack(
   const base = ensureDashboardRowIds(layout);
   const dragged = base[fromIndex]!;
   const target = base[targetIndex]!;
+  if (stackKey(dragged) === stackKey(target)) return layout;
+
+  const draggedIds = stackMembers(base, dragged);
   const targetIds = stackMembers(base, target);
+  const draggedSet = new Set(draggedIds);
+  const targetSet = new Set(targetIds);
   const rowId = target.rowId ?? newRowId(target.id);
-  const without = base.filter((_, index) => index !== fromIndex);
+  const sameRow =
+    typeof dragged.rowId === "string" &&
+    dragged.rowId.length > 0 &&
+    dragged.rowId === target.rowId;
+
+  const draggedBlock = base
+    .filter((item) => draggedSet.has(item.id))
+    .map((item) => omitLegacy(item));
+  const without = base
+    .filter((item) => !draggedSet.has(item.id))
+    .map(omitLegacy);
+
   const targetPositions = targetIds
     .map((id) => without.findIndex((item) => item.id === id))
     .filter((index) => index >= 0);
@@ -214,21 +230,30 @@ function insertBesideStack(
     edge === "left"
       ? resolveRowPairSpans(dragged.colSpan, target.colSpan)
       : resolveRowPairSpans(target.colSpan, dragged.colSpan);
-  const targetWidth = edge === "left" ? pair.right : pair.left;
-  const draggedWidth = edge === "left" ? pair.left : pair.right;
+  const targetWidth = sameRow
+    ? target.colSpan
+    : edge === "left"
+      ? pair.right
+      : pair.left;
+  const draggedWidth = sameRow
+    ? dragged.colSpan
+    : edge === "left"
+      ? pair.left
+      : pair.right;
+
   const resized = setStackWidth(without, targetIds, targetWidth).map((item) =>
-    targetIds.includes(item.id) ? { ...item, rowId } : item,
+    targetSet.has(item.id) ? { ...item, rowId } : item,
   );
   const insertAt =
     edge === "left"
       ? Math.min(...targetPositions)
       : Math.max(...targetPositions) + 1;
-  resized.splice(insertAt, 0, {
-    id: dragged.id,
+  const moving = draggedBlock.map((item) => ({
+    ...item,
     colSpan: draggedWidth,
     rowId,
-    ...(dragged.heightPx != null ? { heightPx: dragged.heightPx } : {}),
-  });
+  }));
+  resized.splice(insertAt, 0, ...moving);
   return resized;
 }
 

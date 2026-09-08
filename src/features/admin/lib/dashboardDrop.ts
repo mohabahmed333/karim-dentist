@@ -48,14 +48,22 @@ export function resolveRowPairSpans(
 /**
  * Drop zone bands: top/bottom strips stack; middle is left/right.
  * Short cards (KPIs) use taller bands so stack drops are easy to hit.
+ * Same-row neighbors prefer a thinner vertical band so left/right swap is easy.
  */
 export function dropEdgeFromRatios(
   xRatio: number,
   yRatio: number,
   aspectHeightOverWidth = 1,
+  preferHorizontal = false,
 ): DashboardDropEdge {
   const x = Math.min(1, Math.max(0, xRatio));
   const y = Math.min(1, Math.max(0, yRatio));
+  if (preferHorizontal) {
+    const band = 0.18;
+    if (y <= band) return "above";
+    if (y >= 1 - band) return "below";
+    return x < 0.5 ? "left" : "right";
+  }
   const shortCard = aspectHeightOverWidth < 0.75;
   const band = shortCard ? 0.5 : 0.33;
   if (y <= band) return "above";
