@@ -1,14 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { SHOWREEL_SLIDES } from "./showreelSlides";
+import { SHOWREEL_SLIDES, type ShowreelSlide } from "./showreelSlides";
 
-export function useShowreelDeck(autoStart = false) {
+export function useShowreelDeck(
+  autoStart = false,
+  slides: ShowreelSlide[] = SHOWREEL_SLIDES,
+) {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(autoStart);
 
-  const slide = SHOWREEL_SLIDES[index] ?? SHOWREEL_SLIDES[0];
-  const total = SHOWREEL_SLIDES.length;
+  const slide = slides[index] ?? slides[0];
+  const total = slides.length;
 
   const goTo = useCallback((next: number) => {
     setIndex((next + total) % total);

@@ -12,26 +12,34 @@ import {
   getShowreelDeviceIds,
   SHOWREEL_SLIDES,
   type ShowreelDeviceVariant,
+  type ShowreelSlide,
 } from "./showreelSlides";
 
 type Props = {
   videoDesktop?: string | null;
   videoMobile?: string | null;
+  /** Defaults to the full deck; pass a curated list (e.g. the highlights
+      cut) to play a different sequence through the same components. */
+  slides?: ShowreelSlide[];
 };
 
-export function ShowreelDeck({ videoDesktop, videoMobile }: Props) {
-  const { slide, total, playing, setPlaying } = useShowreelDeck();
+export function ShowreelDeck({
+  videoDesktop,
+  videoMobile,
+  slides = SHOWREEL_SLIDES,
+}: Props) {
+  const { slide, total, playing, setPlaying } = useShowreelDeck(false, slides);
   const sceneRef = useRef<HTMLDivElement>(null);
   const renderSlide = useShowreelSlideTransition(slide, { sceneRef });
   // The stage lags `slide` by the exit timeline, so pace the rail off what is
   // actually on screen.
   const renderIndex = Math.max(
-    SHOWREEL_SLIDES.findIndex((item) => item.id === renderSlide.id),
+    slides.findIndex((item) => item.id === renderSlide.id),
     0,
   );
   const deviceIds = useMemo(
-    () => getShowreelDeviceIds(SHOWREEL_SLIDES),
-    [],
+    () => getShowreelDeviceIds(slides),
+    [slides],
   );
   const [readyDeviceIds, setReadyDeviceIds] = useState<Set<string>>(
     () => new Set(),
@@ -65,7 +73,7 @@ export function ShowreelDeck({ videoDesktop, videoMobile }: Props) {
       />
       <div className="showreel-stage">
         <div className="showreel-slide" ref={sceneRef}>
-          {SHOWREEL_SLIDES.map((item, itemIndex) => {
+          {slides.map((item, itemIndex) => {
             const active = item.id === renderSlide.id;
 
             return (
@@ -97,7 +105,7 @@ export function ShowreelDeck({ videoDesktop, videoMobile }: Props) {
         </div>
       </div>
       <ShowreelProgressRail
-        slides={SHOWREEL_SLIDES}
+        slides={slides}
         index={renderIndex}
         playing={playing}
       />
