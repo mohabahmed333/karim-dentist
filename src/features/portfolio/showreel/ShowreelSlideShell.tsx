@@ -1,34 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
+import { ShowreelAnimatedText } from "./ShowreelAnimatedText";
 import type { ShowreelCopySlide, ShowreelFeatureSlide } from "./showreelSlides";
-
-function splitWords(text: string) {
-  return text.split(/\s+/).filter(Boolean);
-}
-
-function ShowreelWordLines({
-  text,
-  className,
-}: {
-  text: string;
-  className: string;
-}) {
-  const words = splitWords(text);
-
-  return (
-    <h2 className={className} aria-label={text}>
-      {words.map((word, i) => (
-        <span
-          key={`${word}-${i}`}
-          className="showreel-anim-word"
-          style={{ "--word-i": i } as CSSProperties}
-          aria-hidden="true"
-        >
-          {word}
-        </span>
-      ))}
-    </h2>
-  );
-}
 
 type ShellProps = {
   index: number;
@@ -54,7 +26,9 @@ export function ShowreelSlideShell({
       <p className="showreel-kicker showreel-anim-kicker">{kicker}</p>
 
       {!compact ? (
-        <h2 className="showreel-headline showreel-anim-title">{title}</h2>
+        <h2 className="showreel-headline showreel-anim-title">
+          <ShowreelAnimatedText text={title} />
+        </h2>
       ) : null}
 
       {!compact && body ? (
@@ -109,7 +83,7 @@ export function ShowreelSlideCopy({ slide, index, total }: CopyProps) {
                   } showreel-anim-keyword`}
                   style={{ "--line-i": i } as CSSProperties}
                 >
-                  {tag}
+                  <ShowreelAnimatedText text={tag} />
                 </li>
               ))}
             </ul>
@@ -129,11 +103,15 @@ export function ShowreelSlideCopy({ slide, index, total }: CopyProps) {
         <div className="showreel-scene-copy showreel-outro-core">
           <div className="showreel-outro-lines">
             <p className="showreel-outro-line showreel-outro-line--credit">
-              <span className="showreel-outro-label">{slide.kicker}</span>
-              <span className="showreel-outro-name">{slide.title}</span>
+              <span className="showreel-outro-label showreel-anim-kicker">
+                {slide.kicker}
+              </span>
+              <span className="showreel-outro-name">
+                <ShowreelAnimatedText text={slide.title} />
+              </span>
             </p>
             {slide.body ? (
-              <p className="showreel-outro-line showreel-outro-line--next">
+              <p className="showreel-outro-line showreel-outro-line--next showreel-anim-body">
                 {slide.body}
               </p>
             ) : null}

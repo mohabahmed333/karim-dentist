@@ -443,6 +443,10 @@ body:has(.showreel-page) {
   will-change: transform, opacity;
 }
 
+.showreel-anim-word {
+  display: inline-block;
+}
+
 .showreel-device-stage {
   position: relative;
   display: flex;

@@ -57,13 +57,13 @@ export const SHOWREEL_SLIDES: ShowreelSlide[] = [
     "site",
     "Public site",
     "Your clinic online",
-    "Desktop and mobile website with booking, services, and bilingual care.",
+    "Website with booking, services, and bilingual care.",
     ["Website", "Booking", "Bilingual"],
     {
       durationMs: 9000,
       desktopSrc: "/showreel/demo?mode=site",
       mobileSrc: SITE_MOBILE,
-      desktopOnly: false,
+      desktopOnly: true,
       scroll: true,
       scrollDepth: 1,
       scrollHeroFirst: true,
@@ -76,7 +76,7 @@ export const SHOWREEL_SLIDES: ShowreelSlide[] = [
     "site-to-chat",
     "Website booking",
     "From site to chat",
-    "Customer books on the public site — then reply from the WhatsApp Front desk page.",
+    "Customer books on the site — then reply from WhatsApp.",
     ["Book", "WhatsApp page", "Reply"],
     {
       // 26s: room for the reply to type itself out before Send fires.
@@ -89,7 +89,7 @@ export const SHOWREEL_SLIDES: ShowreelSlide[] = [
     "ai-booking",
     "AI front desk",
     "Book with AI",
-    "Clinic Assist extracts patient, service, and slot — then waits for review before creating the reservation.",
+    "Extracts patient, service, and slot — then waits for review.",
     ["Patient", "Slot", "Review"],
     {
       durationMs: 18000,
@@ -114,7 +114,7 @@ export const SHOWREEL_SLIDES: ShowreelSlide[] = [
     "clinical-ai",
     "Clinical AI",
     "Describe the case",
-    "Write a clinical note, attach imaging once, confirm the proposal, then open Details.",
+    "Write a clinical note, attach imaging, confirm the proposal, then open Details.",
     ["Note", "Upload", "Details"],
     {
       // 22s: room for the note to type itself out before Send fires.

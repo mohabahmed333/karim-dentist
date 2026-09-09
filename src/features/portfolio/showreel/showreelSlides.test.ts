@@ -6,31 +6,49 @@ import {
 } from "./showreelSlideHelpers.ts";
 import { SHOWREEL_SLIDES } from "./showreelSlideData.ts";
 
-test("tracks every desktop and mobile device before playback", () => {
-  const ids = getShowreelDeviceIds(SHOWREEL_SLIDES);
-
+test("dental showreel order and approximate runtime", () => {
+  const ids = SHOWREEL_SLIDES.map((s) => s.id);
   assert.deepEqual(ids, [
-    "site:desktop",
-    "site:mobile",
-    "hero-cms:desktop",
-    "case-edit-cms:desktop",
-    "order-cms:desktop",
+    "intro",
+    "site",
+    "site-to-chat",
+    "ai-booking",
+    "whatsapp",
+    "clinical-ai",
+    "smart-ux",
+    "dashboard",
+    "customize",
+    "outro",
   ]);
+  const totalMs = SHOWREEL_SLIDES.reduce((sum, s) => sum + s.durationMs, 0);
+  assert.ok(totalMs >= 110_000 && totalMs <= 160_000, `runtime ${totalMs}`);
+});
+
+test("AI scenes require human review flags", () => {
+  for (const id of ["ai-booking", "clinical-ai"] as const) {
+    const slide = SHOWREEL_SLIDES.find((s) => s.id === id);
+    assert.ok(slide && slide.kind === "feature");
+    assert.equal(slide.requiresAiReview, true);
+    assert.ok(slide.productScene);
+  }
+});
+
+test("tracks devices before playback for site + product + customize", () => {
+  const ids = getShowreelDeviceIds(SHOWREEL_SLIDES);
+  assert.ok(ids.includes("site:desktop"));
+  // The public-site scene is the real-app scrolling demo and is desktop/web
+  // only — it should never track a mobile device.
+  assert.ok(!ids.includes("site:mobile"));
+  assert.ok(ids.includes("site-to-chat:desktop"));
+  assert.ok(ids.includes("ai-booking:desktop"));
+  assert.ok(ids.includes("customize:desktop"));
   assert.equal(areShowreelDevicesReady(ids, new Set(ids.slice(0, -1))), false);
   assert.equal(areShowreelDevicesReady(ids, new Set(ids)), true);
 });
 
-test("includes scripted case-title and homepage-order customize slides", () => {
-  const caseEdit = SHOWREEL_SLIDES.find((slide) => slide.id === "case-edit-cms");
-  const order = SHOWREEL_SLIDES.find((slide) => slide.id === "order-cms");
-
-  assert.ok(caseEdit && caseEdit.kind === "feature");
-  assert.equal(caseEdit.customizeScript, "case-title");
-  assert.match(caseEdit.desktopSrc, /item=first/);
-  assert.match(caseEdit.desktopSrc, /focus=title/);
-
-  assert.ok(order && order.kind === "feature");
-  assert.equal(order.customizeScript, "homepage-order");
-  assert.match(order.desktopSrc, /section=settings/);
-  assert.match(order.desktopSrc, /view=order/);
+test("customize slide stays English (no locale flip)", () => {
+  const slide = SHOWREEL_SLIDES.find((s) => s.id === "customize");
+  assert.ok(slide && slide.kind === "feature");
+  assert.equal(slide.customizeScript, "translate-all");
+  assert.match(slide.body, /English stays/i);
 });

@@ -67,15 +67,25 @@ function staggerEnter(root: HTMLElement) {
     root,
     ".showreel-anim-device:not(.is-device-pending)",
   );
-  const lines = targets(
-    root,
-    ".showreel-intro-line, .showreel-outro-line, .showreel-keywords .showreel-anim-keyword, .showreel-anim-word, .showreel-anim-title",
-  );
+  // Hero text (title, intro lines, outro name) now reveals word-by-word via
+  // child .showreel-anim-word spans instead of animating the whole line as
+  // one block — the parent (h2/li/span) is intentionally not targeted here.
+  const words = targets(root, ".showreel-anim-word");
+  // Feature-slide tag chips are already one word per element, so they keep
+  // the coarser per-chip stagger.
+  const chips = targets(root, ".showreel-keywords .showreel-anim-keyword");
 
   fromToIf(tl, kickers, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35 }, 0);
   fromToIf(
     tl,
-    lines,
+    words,
+    { opacity: 0, y: 14 },
+    { opacity: 1, y: 0, duration: 0.32, stagger: 0.03 },
+    0.05,
+  );
+  fromToIf(
+    tl,
+    chips,
     { opacity: 0, y: 18 },
     { opacity: 1, y: 0, duration: 0.45, stagger: 0.05 },
     0.05,
