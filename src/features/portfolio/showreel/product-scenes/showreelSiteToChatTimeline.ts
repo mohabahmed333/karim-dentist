@@ -77,6 +77,7 @@ export const SHOWREEL_SITE_TO_CHAT_CURSOR_STEPS: ShowreelCursorStep[] = [
     id: "wait-success",
     at: 8800,
     waitForSelector: '[data-showreel-action="booking-success"]',
+    highlight: '[data-showreel-action="booking-success"]',
   },
   {
     id: "hold-reservation",
@@ -139,6 +140,7 @@ export const SHOWREEL_SITE_TO_CHAT_CURSOR_STEPS: ShowreelCursorStep[] = [
     selector:
       '[data-showreel-action="whatsapp-page"] [data-showreel-action="whatsapp-send"]',
     click: true,
+    highlight: '[data-showreel-action="whatsapp-page"]',
     dispatch: {
       name: "showreel-whatsapp",
       detail: {
