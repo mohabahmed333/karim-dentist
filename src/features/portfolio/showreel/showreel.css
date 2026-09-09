@@ -219,16 +219,24 @@ body:has(.showreel-page) {
 }
 
 .showreel-feature-title-card .showreel-headline {
-  font-size: clamp(2.25rem, 4.75vw, 4rem);
+  /* One line, deliberately: the longest title ("SEARCH AND CHAT LAYOUT",
+     22 chars) fits inside the card at this size even at the 901px
+     breakpoint, so nowrap can't overflow. Every rem freed here goes to the
+     device card below. */
+  font-size: clamp(1.4rem, 2.4vw, 2.4rem);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: -0.01em;
-  line-height: 0.98;
+  line-height: 1.05;
+  white-space: nowrap;
 }
 
 .showreel-feature-title-card .showreel-lede {
   margin: 0 0 0 auto;
-  max-width: 26rem;
+  /* 34rem, not 26rem: the longest body wrapped to three lines at the
+     narrower measure, which ate the height this change is meant to give
+     back. Wider measure = two lines, no copy lost to truncation. */
+  max-width: 34rem;
   font-size: clamp(0.92rem, 1.2vw, 1rem);
 }
 
@@ -829,7 +837,12 @@ body:has(.showreel-page) {
      different height on every slide. */
   .showreel-scene--feature.showreel-scene--desktop-only,
   .showreel-scene--feature.showreel-scene--dashboard {
-    grid-template-rows: clamp(8.5rem, 22vh, 12rem) minmax(0, 1fr);
+    /* minmax(band, auto), not a fixed band: every slide whose header fits
+       gets exactly the same height (so the device card starts at the same
+       Y), but a header that would overflow grows instead of clipping.
+       Budget at max clamp: kicker 1.81 + title 3.37 + two-line lede 3.30
+       = 8.48rem against a 9rem band. */
+    grid-template-rows: minmax(clamp(6.75rem, 16vh, 9rem), auto) minmax(0, 1fr);
   }
 
   /* Fill the row the header leaves. This used to be a fixed
