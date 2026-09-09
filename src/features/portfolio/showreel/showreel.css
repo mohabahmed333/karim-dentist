@@ -76,7 +76,7 @@ body:has(.showreel-page) {
   display: inline-flex;
   align-items: baseline;
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  font-size: clamp(1.2rem, 1.9vw, 1.45rem);
   font-weight: 650;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -89,7 +89,7 @@ body:has(.showreel-page) {
 }
 
 .showreel-brand-by {
-  font-size: 0.58rem;
+  font-size: 0.64rem;
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -243,7 +243,7 @@ body:has(.showreel-page) {
   align-items: center;
   gap: 0.75rem;
   margin: 0 0 clamp(1.5rem, 4vh, 2.5rem);
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -266,7 +266,7 @@ body:has(.showreel-page) {
 .showreel-intro-line {
   margin: 0;
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(2rem, 5.5vw, 3.75rem);
+  font-size: clamp(2.5rem, 6.5vw, 4.5rem);
   font-weight: 650;
   line-height: 1.05;
   letter-spacing: -0.03em;
@@ -282,7 +282,7 @@ body:has(.showreel-page) {
 .showreel-intro-line--3,
 .showreel-intro-line--4,
 .showreel-intro-line--5 {
-  font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+  font-size: clamp(1.3rem, 2.6vw, 1.75rem);
   font-weight: 500;
   color: var(--sr-ink-soft);
   padding-left: 0;
@@ -290,16 +290,16 @@ body:has(.showreel-page) {
 
 .showreel-intro-body {
   margin: clamp(1.5rem, 4vh, 2.5rem) 0 0;
-  max-width: 28rem;
+  max-width: 32rem;
   padding-left: 1rem;
   border-left: 2px solid var(--sr-gold);
-  font-size: clamp(0.95rem, 1.3vw, 1.05rem);
+  font-size: clamp(1.1rem, 1.7vw, 1.3rem);
   line-height: 1.65;
   color: var(--sr-ink-soft);
 }
 
 .showreel-outro-label {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -310,7 +310,7 @@ body:has(.showreel-page) {
   display: block;
   margin-top: 0.5rem;
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-size: clamp(2.5rem, 6vw, 4rem);
   font-weight: 650;
   letter-spacing: -0.03em;
   color: var(--sr-ink);
@@ -319,7 +319,7 @@ body:has(.showreel-page) {
 
 .showreel-outro-line--next {
   margin-top: clamp(1.5rem, 4vh, 2.5rem);
-  font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+  font-size: clamp(1.1rem, 1.7vw, 1.3rem);
   font-weight: 500;
   color: var(--sr-accent);
 }
@@ -349,7 +349,7 @@ body:has(.showreel-page) {
   align-items: center;
   gap: 0.6rem;
   margin: 0 0 0.75rem;
-  font-size: 0.66rem;
+  font-size: 0.76rem;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -380,7 +380,7 @@ body:has(.showreel-page) {
 .showreel-headline {
   margin: 0 0 0.85rem;
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(2rem, 4.5vw, 3.25rem);
+  font-size: clamp(2.4rem, 5.5vw, 4rem);
   font-weight: 650;
   line-height: 1.05;
   letter-spacing: -0.035em;
@@ -390,8 +390,8 @@ body:has(.showreel-page) {
 
 .showreel-lede {
   margin: 0 auto 1.25rem;
-  max-width: 34rem;
-  font-size: 0.95rem;
+  max-width: 36rem;
+  font-size: clamp(1.05rem, 1.6vw, 1.2rem);
   line-height: 1.65;
   color: var(--sr-ink-soft);
   text-wrap: pretty;
@@ -408,7 +408,7 @@ body:has(.showreel-page) {
 
 .showreel-keywords li {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(1.75rem, 4.5vw, 3.25rem);
+  font-size: clamp(2.1rem, 5.5vw, 4rem);
   font-weight: 650;
   line-height: 1.05;
   letter-spacing: -0.03em;
@@ -416,11 +416,11 @@ body:has(.showreel-page) {
 }
 
 .showreel-scene--feature .showreel-keywords li {
-  font-size: clamp(1.5rem, 3.5vw, 2.75rem);
+  font-size: clamp(1.8rem, 4.5vw, 3.4rem);
 }
 
 .showreel-scene-copy.is-compact .showreel-keywords li {
-  font-size: clamp(1.35rem, 3vw, 2.35rem);
+  font-size: clamp(1.6rem, 3.6vw, 2.9rem);
 }
 
 .showreel-keywords li:nth-child(2) {
@@ -819,7 +819,7 @@ body:has(.showreel-page) {
   }
 
   .showreel-intro-line {
-    font-size: clamp(1.75rem, 8vw, 2.75rem);
+    font-size: clamp(2.1rem, 9vw, 3.2rem);
   }
 }
 
@@ -1067,7 +1067,7 @@ body:has(.showreel-page) {
 
 .showreel-caption-text {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(0.82rem, 1.5vw, 0.95rem);
+  font-size: clamp(0.92rem, 1.7vw, 1.05rem);
   font-weight: 600;
   line-height: 1.4;
   letter-spacing: -0.01em;
