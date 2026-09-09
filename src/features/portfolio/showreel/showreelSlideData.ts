@@ -76,11 +76,11 @@ export const SHOWREEL_SLIDES: ShowreelSlide[] = [
     "site-to-chat",
     "Website booking",
     "From site to chat",
-    "Customer books on the site — then reply from WhatsApp.",
+    "Customer books on the site, replies from WhatsApp — photos, voice notes, and PDFs all land in the same thread.",
     ["Book", "WhatsApp page", "Reply"],
     {
-      // 26s: room for the reply to type itself out before Send fires.
-      durationMs: 26000,
+      // 33.5s: room for the reply to type itself out, then browse a few threads.
+      durationMs: 33500,
       desktopSrc: PRODUCT("site-to-chat"),
       productScene: "site-to-chat",
     },
@@ -92,7 +92,8 @@ export const SHOWREEL_SLIDES: ShowreelSlide[] = [
     "Extracts patient, service, and slot — then waits for review.",
     ["Patient", "Slot", "Review"],
     {
-      durationMs: 18000,
+      // 23.5s: room for the staff follow-up (typed + AI ack) after booking.
+      durationMs: 23500,
       desktopSrc: PRODUCT("ai-booking"),
       productScene: "ai-booking",
       requiresAiReview: true,

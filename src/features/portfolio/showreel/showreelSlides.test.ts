@@ -21,7 +21,9 @@ test("dental showreel order and approximate runtime", () => {
     "outro",
   ]);
   const totalMs = SHOWREEL_SLIDES.reduce((sum, s) => sum + s.durationMs, 0);
-  assert.ok(totalMs >= 110_000 && totalMs <= 160_000, `runtime ${totalMs}`);
+  // Upper bound covers site-to-chat's Nour/Youssef/Mariam thread browsing
+  // and ai-booking's staff follow-up turn (typed reply + AI ack).
+  assert.ok(totalMs >= 110_000 && totalMs <= 180_000, `runtime ${totalMs}`);
 });
 
 test("AI scenes require human review flags", () => {

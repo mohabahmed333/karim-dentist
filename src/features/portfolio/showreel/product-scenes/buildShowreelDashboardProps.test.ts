@@ -24,13 +24,12 @@ test("showreel dashboard uses the full default layout", () => {
   assert.ok(props.initialLayout.some((w) => w.id === "chartDayTrend"));
 });
 
-test("dashboard cursor timeline covers patient then whatsapp flow", () => {
+test("dashboard cursor timeline covers schedule, charts, then whatsapp flow", () => {
   const ids = showreelCursorStepIds();
   assert.deepEqual(ids, [
     "scroll-schedule",
-    "click-appointment",
-    "wait-drawer",
-    "click-drawer-close",
+    "scroll-charts",
+    "hold-charts",
     "scroll-messages",
     "click-front-desk",
     "wait-whatsapp",
@@ -103,6 +102,9 @@ test("smart-ux / clinical / ai-booking / whatsapp cursor timelines are ordered",
     "review-card",
     "confirm-review",
     "hold-created",
+    "type-followup",
+    "send-followup",
+    "hold-followup",
   ]);
   assert.deepEqual(showreelCursorStepIds(SHOWREEL_WHATSAPP_CURSOR_STEPS), [
     "wait-whatsapp",

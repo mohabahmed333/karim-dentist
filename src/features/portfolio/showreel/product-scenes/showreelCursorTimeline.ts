@@ -37,22 +37,15 @@ export const SHOWREEL_DASHBOARD_CURSOR_STEPS: ShowreelCursorStep[] = [
     beat: "Today's schedule at a glance",
   },
   {
-    id: "click-appointment",
+    id: "scroll-charts",
     at: 2000,
-    selector: '[data-showreel-action="schedule-appointment"][data-reservation-id="res-nour"]',
-    click: true,
-    beat: "Open a patient without leaving the dashboard",
+    scrollSelector: '[data-dash-widget-id="chartVisitsWeek"]',
+    beat: "Visits trending at a glance",
   },
   {
-    id: "wait-drawer",
-    at: 2800,
-    waitForSelector: '[data-showreel-action="clinic-drawer"]',
-  },
-  {
-    id: "click-drawer-close",
-    at: 5500,
-    selector: '[data-showreel-action="clinic-drawer-close"]',
-    click: true,
+    id: "hold-charts",
+    at: 5000,
+    selector: '[data-dash-widget-id="chartVisitsWeek"]',
   },
   {
     id: "scroll-messages",
@@ -444,6 +437,31 @@ export const SHOWREEL_AI_BOOKING_CURSOR_STEPS: ShowreelCursorStep[] = [
   {
     id: "hold-created",
     at: 15500,
+    selector: '[data-showreel-action="assist-panel"]',
+  },
+  {
+    id: "type-followup",
+    at: 16200,
+    selector: '[data-showreel-action="assist-composer"]',
+    click: true,
+    typeMs: 1600,
+    beat: "Staff follows up without leaving the chat",
+    dispatch: {
+      name: "showreel-assist",
+      detail: {
+        type: "compose-followup",
+        text: "Please confirm with her by WhatsApp too",
+      },
+    },
+  },
+  {
+    id: "send-followup",
+    at: 19300,
+    dispatch: { name: "showreel-assist", detail: { type: "send-followup" } },
+  },
+  {
+    id: "hold-followup",
+    at: 21500,
     selector: '[data-showreel-action="assist-panel"]',
   },
 ];
