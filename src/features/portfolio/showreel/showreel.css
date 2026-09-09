@@ -203,15 +203,20 @@ body:has(.showreel-page) {
 
 .showreel-feature-title-card {
   width: 100%;
-  max-width: 52rem;
+  /* 40rem, not 52rem: with LTR text the block's LEFT edge is where the eye
+     starts, so a narrower card keeps it anchored near the right rather
+     than starting mid-screen. Still ~21% wider than the longest title
+     needs at max size, so nowrap stays safe. */
+  max-width: 40rem;
   margin-inline-start: auto;
   padding-inline: clamp(1rem, 4vw, 2rem);
-  text-align: right;
+  text-align: left;
   align-self: end;
 }
 
 .showreel-feature-title-card .showreel-kicker {
-  justify-content: flex-end;
+  justify-content: flex-start;
+  font-size: 0.68rem;
 }
 
 .showreel-feature-title-card .showreel-kicker::before {
@@ -223,7 +228,7 @@ body:has(.showreel-page) {
      22 chars) fits inside the card at this size even at the 901px
      breakpoint, so nowrap can't overflow. Every rem freed here goes to the
      device card below. */
-  font-size: clamp(1.4rem, 2.4vw, 2.4rem);
+  font-size: clamp(1.2rem, 1.9vw, 1.9rem);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: -0.01em;
@@ -232,12 +237,12 @@ body:has(.showreel-page) {
 }
 
 .showreel-feature-title-card .showreel-lede {
-  margin: 0 0 0 auto;
+  margin: 0 auto 0 0;
   /* 34rem, not 26rem: the longest body wrapped to three lines at the
      narrower measure, which ate the height this change is meant to give
      back. Wider measure = two lines, no copy lost to truncation. */
   max-width: 34rem;
-  font-size: clamp(0.92rem, 1.2vw, 1rem);
+  font-size: clamp(0.85rem, 1.05vw, 0.92rem);
 }
 
 .showreel-scene--desktop-only {
@@ -842,7 +847,7 @@ body:has(.showreel-page) {
        Y), but a header that would overflow grows instead of clipping.
        Budget at max clamp: kicker 1.81 + title 3.37 + two-line lede 3.30
        = 8.48rem against a 9rem band. */
-    grid-template-rows: minmax(clamp(6.75rem, 16vh, 9rem), auto) minmax(0, 1fr);
+    grid-template-rows: minmax(clamp(6rem, 14vh, 8.25rem), auto) minmax(0, 1fr);
   }
 
   /* Fill the row the header leaves. This used to be a fixed
