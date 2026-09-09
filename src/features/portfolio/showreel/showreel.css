@@ -76,7 +76,7 @@ body:has(.showreel-page) {
   display: inline-flex;
   align-items: baseline;
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(1.55rem, 2.4vw, 2.05rem);
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
   font-weight: 650;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -89,7 +89,7 @@ body:has(.showreel-page) {
 }
 
 .showreel-brand-by {
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -222,15 +222,6 @@ body:has(.showreel-page) {
   align-self: end;
 }
 
-.showreel-feature-title-card .showreel-kicker {
-  justify-content: flex-start;
-  font-size: 0.68rem;
-}
-
-.showreel-feature-title-card .showreel-kicker::before {
-  display: none;
-}
-
 .showreel-feature-title-card .showreel-headline {
   /* One line, deliberately: the longest title ("SEARCH AND CHAT LAYOUT",
      22 chars) fits inside the card at this size even at the 901px
@@ -242,19 +233,6 @@ body:has(.showreel-page) {
   letter-spacing: -0.01em;
   line-height: 1.05;
   white-space: nowrap;
-}
-
-.showreel-feature-title-card .showreel-lede {
-  margin: 0 auto 0 0;
-  /* 34rem, not 26rem: the longest body wrapped to three lines at the
-     narrower measure, which ate the height this change is meant to give
-     back. Wider measure = two lines, no copy lost to truncation. */
-  max-width: 34rem;
-  font-size: clamp(0.85rem, 1.05vw, 0.92rem);
-  /* Two lines' worth regardless of copy length: without this a one-line
-     body made that slide's header shorter, so its device card started at a
-     different height than its neighbours'. */
-  min-height: calc(2 * 1.65em);
 }
 
 .showreel-scene--desktop-only {

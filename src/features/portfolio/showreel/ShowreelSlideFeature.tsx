@@ -38,10 +38,11 @@ export function ShowreelSlideFeature({
       ? CUSTOMIZE_DEMO_SRC
       : slide.desktopSrc;
   const desktopScrollRef = useMemo(() => [desktopRef], [desktopRef]);
-  const { showTitleCard, demoLive } = useShowreelFeatureTitleCard(
-    active,
-    playing,
-  );
+  // showTitleCard used to gate a separate "title only" beat before the demo
+  // frame appeared; now the title header and the device card render
+  // together for the whole slide, so only the script-gating half (demoLive)
+  // is still needed.
+  const { demoLive } = useShowreelFeatureTitleCard(active, playing);
   const [desktopReady, setDesktopReady] = useState(false);
   const prevDesktopSrc = useRef(desktopSrc);
 
@@ -100,27 +101,20 @@ export function ShowreelSlideFeature({
     "showreel-scene--feature",
     desktopOnly ? "showreel-scene--desktop-only" : "",
     isProductFull ? "showreel-scene--dashboard" : "",
-    showTitleCard ? "is-title-card" : "is-demo",
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
-    <div className={sceneClass}>
-      {showTitleCard ? (
-        <ShowreelFeatureTitleCard
-          kicker={slide.kicker}
-          title={slide.title}
-          body={slide.body}
-        />
-      ) : null}
+    <div className={sceneClass} data-slide-id={slide.id}>
+      <ShowreelFeatureTitleCard title={slide.title} />
       <ShowreelFeatureDeviceStage
         desktopOnly={desktopOnly}
         desktopSrc={desktopSrc}
         mobileSrc={slide.mobileSrc}
         desktopRef={desktopRef}
         mobileRef={mobileRef}
-        hidden={showTitleCard}
+        hidden={false}
         onDesktopReady={() => {
           setDesktopReady(true);
           onDeviceReady("desktop");
