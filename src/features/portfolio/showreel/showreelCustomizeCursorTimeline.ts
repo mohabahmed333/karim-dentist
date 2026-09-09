@@ -1,5 +1,6 @@
 import { CUSTOMIZE_TRANSLATE_FIXTURE } from "./product-scenes/fixtures/customizeTranslateFixtures";
 import type { ShowreelCursorStep } from "./product-scenes/showreelCursorTimeline";
+import { typewriterFrames } from "./product-scenes/typewriterFrames";
 import {
   SHOWREEL_CUSTOMIZE_DEMO,
   type ShowreelCustomizeDemoMessage,
@@ -7,7 +8,8 @@ import {
 
 const { heroBefore, heroEdit, heroAfter } = CUSTOMIZE_TRANSLATE_FIXTURE;
 
-const SIDEBAR = ".showreel-demo-customize aside";
+const HEADLINE_FIELD = '.showreel-demo-customize aside [data-editor-field="headline"]';
+const BODY_FIELD = '.showreel-demo-customize aside [data-editor-field="body"]';
 const PREVIEW = ".showreel-demo-customize [data-customize-preview-scroll]";
 
 function localPatch(
@@ -20,20 +22,44 @@ function localPatch(
   };
 }
 
+/** patchHero/simulateTranslate only apply payload keys that are present, so a
+    burst of growing-prefix dispatches for a single field reads as live
+    typing without touching the other fields. */
+function typedFieldSteps(
+  idPrefix: string,
+  atStart: number,
+  durationMs: number,
+  action: ShowreelCustomizeDemoMessage["action"],
+  field: "headline" | "body" | "headlineAr" | "bodyAr",
+  text: string,
+  highlight?: string,
+): ShowreelCursorStep[] {
+  const frames = typewriterFrames(text, { durationMs });
+  return frames.map((frame, i) => ({
+    id: `${idPrefix}-${i}`,
+    at: atStart + frame.at,
+    dispatch: localPatch(action, { [field]: frame.text }),
+    // Only the LAST frame pulses — "this field just finished updating",
+    // not every intermediate keystroke.
+    ...(highlight && i === frames.length - 1 ? { highlight } : {}),
+  }));
+}
+
 /**
- * Cursor-driven customize demo: aims/hovers the sidebar as each edit lands
- * (dispatched on arrival via the same message shape ShowreelCustomizeDemoBridge
- * already applies, just delivered same-document instead of cross-frame — see
- * ShowreelCustomizeDemoBridge's local-dispatch listener), scrolls the live
- * preview, and does REAL clicks on the device switcher (it already has a
- * genuine onClick + data-showreel-action, unlike the sidebar's real CMS
- * fields, which are never clicked or typed into for real here).
+ * Cursor-driven customize demo: aims/hovers the specific hero field as each
+ * edit lands (dispatched on arrival via the same message shape
+ * ShowreelCustomizeDemoBridge already applies, just delivered same-document
+ * instead of cross-frame — see ShowreelCustomizeDemoBridge's local-dispatch
+ * listener), scrolls the live preview, and does REAL clicks on the device
+ * switcher (it already has a genuine onClick + data-showreel-action, unlike
+ * the sidebar's real CMS fields, which are never clicked or typed into for
+ * real here).
  */
 export const SHOWREEL_CUSTOMIZE_CURSOR_STEPS: ShowreelCursorStep[] = [
   {
     id: "edit-headline",
     at: 700,
-    selector: SIDEBAR,
+    selector: HEADLINE_FIELD,
     beat: "Live-edit the hero",
     dispatch: localPatch("patchHero", {
       headline: heroBefore.headline,
@@ -42,42 +68,71 @@ export const SHOWREEL_CUSTOMIZE_CURSOR_STEPS: ShowreelCursorStep[] = [
     }),
   },
   {
-    id: "edit-headline-live",
+    id: "edit-headline-live-aim",
     at: 2400,
-    selector: SIDEBAR,
-    dispatch: localPatch("patchHero", {
-      headline: heroEdit.headline,
-      body: heroBefore.body,
-      cta: heroBefore.cta,
-    }),
+    selector: HEADLINE_FIELD,
+  },
+  ...typedFieldSteps(
+    "edit-headline-live-type",
+    2400,
+    900,
+    "patchHero",
+    "headline",
+    heroEdit.headline,
+    HEADLINE_FIELD,
+  ),
+  {
+    id: "edit-body-aim",
+    at: 4200,
+    selector: BODY_FIELD,
+    beat: "Every change previews instantly",
   },
   {
-    id: "edit-body",
+    id: "edit-body-cta",
     at: 4200,
-    selector: SIDEBAR,
-    beat: "Every change previews instantly",
-    dispatch: localPatch("patchHero", {
-      headline: heroEdit.headline,
-      body: heroEdit.body,
-      cta: heroEdit.cta,
-    }),
+    dispatch: localPatch("patchHero", { cta: heroEdit.cta }),
   },
+  ...typedFieldSteps(
+    "edit-body-type",
+    4200,
+    1100,
+    "patchHero",
+    "body",
+    heroEdit.body,
+    BODY_FIELD,
+  ),
   {
     id: "scroll-preview",
     at: 5600,
     scrollWithin: { selector: PREVIEW, top: 220 },
   },
   {
-    id: "translate",
+    id: "translate-aim",
     at: 6600,
-    selector: SIDEBAR,
+    selector: HEADLINE_FIELD,
     beat: "Translate every module in one pass",
-    dispatch: localPatch("simulateTranslate", {
-      headlineAr: heroAfter.headline,
-      bodyAr: heroAfter.body,
-      ctaAr: heroAfter.cta,
-    }),
   },
+  {
+    id: "translate-cta",
+    at: 6600,
+    dispatch: localPatch("simulateTranslate", { ctaAr: heroAfter.cta }),
+  },
+  ...typedFieldSteps(
+    "translate-headline",
+    6600,
+    1400,
+    "simulateTranslate",
+    "headlineAr",
+    heroAfter.headline,
+  ),
+  ...typedFieldSteps(
+    "translate-body",
+    6600,
+    1400,
+    "simulateTranslate",
+    "bodyAr",
+    heroAfter.body,
+  ),
   {
     id: "settle-preview",
     at: 8600,
@@ -88,6 +143,7 @@ export const SHOWREEL_CUSTOMIZE_CURSOR_STEPS: ShowreelCursorStep[] = [
     at: 9600,
     selector: '[data-showreel-action="customize-device-mobile"]',
     click: true,
+    highlight: PREVIEW,
     beat: "Preview on mobile",
   },
   {
@@ -95,11 +151,12 @@ export const SHOWREEL_CUSTOMIZE_CURSOR_STEPS: ShowreelCursorStep[] = [
     at: 12200,
     selector: '[data-showreel-action="customize-device-desktop"]',
     click: true,
+    highlight: PREVIEW,
     beat: "Back to desktop",
   },
   {
     id: "hold",
     at: 14200,
-    selector: SIDEBAR,
+    selector: HEADLINE_FIELD,
   },
 ];
