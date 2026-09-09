@@ -25,6 +25,7 @@ import {
   ShowreelMotionBubble,
   ShowreelWorkingIndicator,
 } from "./ShowreelMotionBubble";
+import { scrollContainerToBottom } from "./scrollWithinContainer";
 import { useShowreelPhase } from "./useShowreelPhase";
 
 type Props = {
@@ -142,7 +143,9 @@ export function ShowreelAssistBookingPanel({
   }, [active]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    // Scroll the message list itself rather than bottomRef.scrollIntoView(),
+    // which also scrolled the panel's ancestors and pushed the scene up.
+    scrollContainerToBottom(bottomRef.current?.parentElement ?? null);
   }, [step, confirmed, followupSent, showAck]);
 
   return (

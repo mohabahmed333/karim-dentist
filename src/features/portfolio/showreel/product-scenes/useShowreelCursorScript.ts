@@ -13,6 +13,7 @@ import {
   type SpringConfig,
 } from "./showreelCursorMotion";
 import { pollForTarget } from "./pollForTarget";
+import { scrollIntoContainerView } from "./scrollWithinContainer";
 import { typewriterFrames } from "./typewriterFrames";
 import {
   SHOWREEL_DASHBOARD_CURSOR_STEPS,
@@ -108,7 +109,7 @@ export function useShowreelCursorScript(
   });
 
   // Motion loop: follows the live rect of the current target so a smooth
-  // scrollIntoView can move the element out from under the pointer.
+  // scroll can move the element out from under the pointer.
   useEffect(() => {
     if (!running) return;
     const reduced = prefersReducedMotion();
@@ -387,7 +388,10 @@ export function useShowreelCursorScript(
 
       if (step.scrollSelector) {
         withTarget(step.scrollSelector, SELECTOR_TIMEOUT_MS, (el) => {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Not scrollIntoView: that scrolls every scrollable ancestor up
+          // to the document, which shifted the whole scene (and the
+          // cursor's frame of reference) instead of just the panel.
+          scrollIntoContainerView(el);
           aim(centerOf(el), el);
         });
         return;
