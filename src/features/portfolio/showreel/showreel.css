@@ -97,15 +97,20 @@ body:has(.showreel-page) {
 }
 
 .showreel-deck {
+  /* Exported so the scene height below is derived from the real padding
+     instead of a hardcoded guess that drifts at most viewport heights. */
+  --sr-deck-pad-top: clamp(1.5rem, 3vh, 2.25rem);
+  --sr-deck-pad-bottom: clamp(0.5rem, 1.2vh, 0.85rem);
+
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: 1fr;
   min-height: 100vh;
   padding:
-    clamp(2.5rem, 4.5vh, 3.25rem)
+    var(--sr-deck-pad-top)
     clamp(0.65rem, 1.6vw, 1.25rem)
-    clamp(1rem, 2.5vh, 1.75rem);
+    var(--sr-deck-pad-bottom);
 }
 
 .showreel-stage {
@@ -243,6 +248,10 @@ body:has(.showreel-page) {
      back. Wider measure = two lines, no copy lost to truncation. */
   max-width: 34rem;
   font-size: clamp(0.85rem, 1.05vw, 0.92rem);
+  /* Two lines' worth regardless of copy length: without this a one-line
+     body made that slide's header shorter, so its device card started at a
+     different height than its neighbours'. */
+  min-height: calc(2 * 1.65em);
 }
 
 .showreel-scene--desktop-only {
@@ -831,8 +840,12 @@ body:has(.showreel-page) {
   .showreel-scene--dashboard {
     /* Definite height so the device row's minmax(0, 1fr) has something to
        resolve against; min-height: 0 clears the base 84vh/94vh floors that
-       would otherwise re-introduce the overflow. */
-    height: calc(100dvh - 5rem);
+       would otherwise re-introduce the overflow. Derived from the deck's
+       own padding so the scene fills the stage exactly — the old hardcoded
+       5rem left slack that got centred as dead space top and bottom. */
+    height: calc(
+      100dvh - var(--sr-deck-pad-top) - var(--sr-deck-pad-bottom)
+    );
     min-height: 0;
     width: min(100%, 148rem);
   }
@@ -842,12 +855,11 @@ body:has(.showreel-page) {
      different height on every slide. */
   .showreel-scene--feature.showreel-scene--desktop-only,
   .showreel-scene--feature.showreel-scene--dashboard {
-    /* minmax(band, auto), not a fixed band: every slide whose header fits
-       gets exactly the same height (so the device card starts at the same
-       Y), but a header that would overflow grows instead of clipping.
-       Budget at max clamp: kicker 1.81 + title 3.37 + two-line lede 3.30
-       = 8.48rem against a 9rem band. */
-    grid-template-rows: minmax(clamp(6rem, 14vh, 8.25rem), auto) minmax(0, 1fr);
+    /* auto, not a reserved band: the lede below is normalised to two lines
+       so every header is already the same height, which is what the fixed
+       band was faking. A reserved band just left dead space above the
+       kicker on slides whose lede ran to one line. */
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
   /* Fill the row the header leaves. This used to be a fixed
