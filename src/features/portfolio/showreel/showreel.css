@@ -142,57 +142,94 @@ body:has(.showreel-page) {
   align-items: center;
 }
 
+/* Title header + device card render together for the whole slide (a case-
+   study cover, not a title-then-demo two-beat reveal): kicker + big bold
+   title pinned to the right, device card below. */
 .showreel-scene--feature {
-  grid-template-columns: minmax(200px, 28%) 1fr;
-  gap: clamp(0.75rem, 1.8vw, 1.5rem);
+  position: relative;
+  grid-template-columns: 1fr;
+  /* Header row + device row. minmax(0, 1fr) lets the device shrink to the
+     space the header leaves instead of overflowing the slide. */
+  grid-template-rows: auto minmax(0, 1fr);
+  row-gap: clamp(1rem, 2.5vh, 1.75rem);
   min-height: min(84vh, 960px);
+}
+
+/* Soft per-slide wash behind the header, so the tint changes as the deck
+   advances instead of every slide sharing the same flat background. */
+.showreel-scene--feature::before {
+  content: "";
+  position: absolute;
+  inset: -10% -6%;
+  background: radial-gradient(
+    58% 52% at 84% 6%,
+    var(--sr-slide-tint, transparent),
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+.showreel-scene--feature[data-slide-id="site"] {
+  --sr-slide-tint: color-mix(in srgb, #5e6ad2 26%, transparent);
+}
+.showreel-scene--feature[data-slide-id="site-to-chat"] {
+  --sr-slide-tint: color-mix(in srgb, #22c55e 22%, transparent);
+}
+.showreel-scene--feature[data-slide-id="ai-booking"] {
+  --sr-slide-tint: color-mix(in srgb, #c9a962 28%, transparent);
+}
+.showreel-scene--feature[data-slide-id="whatsapp"] {
+  --sr-slide-tint: color-mix(in srgb, #25d366 24%, transparent);
+}
+.showreel-scene--feature[data-slide-id="clinical-ai"] {
+  --sr-slide-tint: color-mix(in srgb, #f97362 22%, transparent);
+}
+.showreel-scene--feature[data-slide-id="smart-ux"] {
+  --sr-slide-tint: color-mix(in srgb, #a78bfa 26%, transparent);
+}
+.showreel-scene--feature[data-slide-id="dashboard"] {
+  --sr-slide-tint: color-mix(in srgb, #38bdf8 22%, transparent);
+}
+.showreel-scene--feature[data-slide-id="customize"] {
+  --sr-slide-tint: color-mix(in srgb, #fb923c 26%, transparent);
 }
 
 .showreel-scene--feature:not(.showreel-scene--desktop-only) {
   width: min(100%, 132rem);
   max-width: 100%;
-  grid-template-columns: minmax(132px, 14%) minmax(0, 1fr);
   box-sizing: border-box;
   padding-inline: 0.15rem;
 }
 
-.showreel-scene--feature.is-title-card {
-  grid-template-columns: 1fr;
-  width: min(100%, 48rem);
-  margin-inline: auto;
-  min-height: min(70vh, 720px);
-  justify-items: center;
-}
-
 .showreel-feature-title-card {
   width: 100%;
-  max-width: 36rem;
+  max-width: 52rem;
+  margin-inline-start: auto;
   padding-inline: clamp(1rem, 4vw, 2rem);
-  text-align: center;
+  text-align: right;
+  align-self: end;
+}
+
+.showreel-feature-title-card .showreel-kicker {
+  justify-content: flex-end;
+}
+
+.showreel-feature-title-card .showreel-kicker::before {
+  display: none;
+}
+
+.showreel-feature-title-card .showreel-headline {
+  font-size: clamp(2.25rem, 4.75vw, 4rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 0.98;
 }
 
 .showreel-feature-title-card .showreel-lede {
-  margin-inline: auto;
-}
-
-.showreel-scene--feature.is-title-card .showreel-device-stage {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.showreel-scene--feature.is-demo {
-  /* devices own the frame; no keyword column */
-  grid-template-columns: 1fr;
-}
-
-.showreel-scene--feature.is-demo:not(.showreel-scene--desktop-only) {
-  width: min(100%, 132rem);
+  margin: 0 0 0 auto;
+  max-width: 26rem;
+  font-size: clamp(0.92rem, 1.2vw, 1rem);
 }
 
 .showreel-scene--desktop-only {
@@ -411,14 +448,12 @@ body:has(.showreel-page) {
 
 /* A leading rule reads as an orphan on centered scenes. */
 .showreel-scene--hero .showreel-kicker,
-.showreel-scene--outro .showreel-kicker,
-.showreel-feature-title-card .showreel-kicker {
+.showreel-scene--outro .showreel-kicker {
   justify-content: center;
 }
 
 .showreel-scene--hero .showreel-kicker::before,
-.showreel-scene--outro .showreel-kicker::before,
-.showreel-feature-title-card .showreel-kicker::before {
+.showreel-scene--outro .showreel-kicker::before {
   display: none;
 }
 
@@ -781,14 +816,33 @@ body:has(.showreel-page) {
 @media (min-width: 901px) {
   .showreel-scene--feature.showreel-scene--desktop-only,
   .showreel-scene--dashboard {
-    min-height: calc(100dvh - 5rem);
+    /* Definite height so the device row's minmax(0, 1fr) has something to
+       resolve against; min-height: 0 clears the base 84vh/94vh floors that
+       would otherwise re-introduce the overflow. */
+    height: calc(100dvh - 5rem);
+    min-height: 0;
     width: min(100%, 148rem);
   }
 
+  /* A fixed header band, not auto: title/body wrap to a different number of
+     lines per slide, and an auto row made the device card start at a
+     different height on every slide. */
+  .showreel-scene--feature.showreel-scene--desktop-only,
+  .showreel-scene--feature.showreel-scene--dashboard {
+    grid-template-rows: clamp(8.5rem, 22vh, 12rem) minmax(0, 1fr);
+  }
+
+  /* Fill the row the header leaves. This used to be a fixed
+     calc(100dvh - 5.35rem) — correct when the device was the only thing in
+     the slide, but with a header stacked above it that overflowed the
+     viewport and clipped the card. */
   .showreel-scene--desktop-only .showreel-device-stage,
   .showreel-scene--dashboard .showreel-device-stage {
-    min-height: calc(100dvh - 5.35rem);
-    height: calc(100dvh - 5.35rem);
+    min-height: 0;
+    height: 100%;
+    /* The scene sets align-items: center, so the stage would size to its
+       content rather than fill the row — stretch it explicitly. */
+    align-self: stretch;
   }
 
   .showreel-scene--desktop-only .showreel-device--desktop,
