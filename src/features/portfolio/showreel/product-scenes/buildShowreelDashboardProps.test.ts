@@ -24,16 +24,25 @@ test("showreel dashboard uses the full default layout", () => {
   assert.ok(props.initialLayout.some((w) => w.id === "chartDayTrend"));
 });
 
-test("dashboard cursor timeline covers schedule, charts, then whatsapp flow", () => {
+test("dashboard cursor timeline covers schedule, charts, then widget customize flow", () => {
   const ids = showreelCursorStepIds();
   assert.deepEqual(ids, [
     "scroll-schedule",
     "scroll-charts",
     "hold-charts",
     "scroll-messages",
-    "click-front-desk",
-    "wait-whatsapp",
-    "hold-whatsapp",
+    "click-customize",
+    "wait-edit-mode",
+    "click-add",
+    "wait-catalog",
+    "pick-widget",
+    "reveal-added",
+    "hold-added",
+    "aim-source",
+    "grab-widget",
+    "drag-right",
+    "drop-left",
+    "hold-swapped",
   ]);
   const times = SHOWREEL_DASHBOARD_CURSOR_STEPS.map((s) => s.at);
   for (let i = 1; i < times.length; i += 1) {
@@ -71,16 +80,12 @@ test("smart-ux / clinical / ai-booking / whatsapp cursor timelines are ordered",
     "demo-hits",
     "select-page",
     "wait-page",
-    "open-fab",
-    "wait-chooser",
-    "open-whatsapp",
-    "wait-composer",
-    "compose-message",
-    "send-message",
-    "hold-sent",
-    "toggle-dock",
-    "collapse-dock",
-    "hold-collapsed",
+    "open-calendar-day",
+    "wait-reservation-modal",
+    "fill-reservation-name",
+    "fill-reservation-phone",
+    "create-reservation",
+    "hold-created",
   ]);
   assert.deepEqual(showreelCursorStepIds(SHOWREEL_CLINICAL_CURSOR_STEPS), [
     "focus-chart",

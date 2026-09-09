@@ -14,6 +14,18 @@ import {
 } from "./showreelCursorMotion";
 import { pollForTarget } from "./pollForTarget";
 import { scrollIntoContainerView } from "./scrollWithinContainer";
+import {
+  cancelShowreelDrag,
+  documentOrderFlipped,
+  dragOrderProbe,
+  finishShowreelDrag,
+  moveShowreelDrag,
+  ratioPointInRect,
+  startShowreelDrag,
+  type ShowreelCarry,
+  type ShowreelCarryView,
+  type ShowreelDragRatio,
+} from "./showreelDragCarry";
 import { typewriterFrames } from "./typewriterFrames";
 import {
   SHOWREEL_DASHBOARD_CURSOR_STEPS,
@@ -37,10 +49,21 @@ const MAX_FRAME_S = 1 / 30;
 const FOLLOW_WINDOW_MS = 1500;
 /** Velocity (px/s) at which the travel-direction tilt reaches full lean. */
 const TILT_FULL_SPEED = 200;
+/** Hit-test + dragover cadence while carrying (elementFromPoint forces
+    layout, and the app only needs to re-resolve the drop edge, not paint). */
+const DRAG_OVER_MS = 60;
+/** Let the placeholder settle under the pointer before releasing. */
+const DROP_SETTLE_MS = 420;
+/** Grace period for the drop's re-render before checking it actually moved. */
+const DROP_VERIFY_MS = 260;
+const CENTER: ShowreelDragRatio = { x: 0.5, y: 0.5 };
+
+function pointIn(el: Element, ratio: ShowreelDragRatio): Point {
+  return ratioPointInRect(el.getBoundingClientRect(), ratio);
+}
 
 function centerOf(el: Element): Point {
-  const r = el.getBoundingClientRect();
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  return pointIn(el, CENTER);
 }
 
 function fireClick(el: Element) {
@@ -84,11 +107,17 @@ export function useShowreelCursorScript(
   const [pressing, setPressing] = useState(false);
   const [visible, setVisible] = useState(false);
   const [beat, setBeat] = useState<string | null>(null);
+  const [carry, setCarry] = useState<ShowreelCarryView | null>(null);
 
   // Written by the step scheduler, read by the rAF loop.
   const targetRef = useRef<Point>({ ...START });
   const followRef = useRef<Element | null>(null);
+  // Follow point inside the followed element. Center for a plain move; a
+  // drag aims at an edge, because that is what decides the drop position.
+  const followRatioRef = useRef<ShowreelDragRatio>(CENTER);
   const hoverRef = useRef<Element | null>(null);
+  const carryRef = useRef<ShowreelCarry | null>(null);
+  const dragOverAtRef = useRef(0);
   const followUntilRef = useRef(0);
   const configRef = useRef<SpringConfig>(springConfigFor(0));
   const travelRef = useRef(0);
@@ -125,7 +154,7 @@ export function useShowreelCursorScript(
         if (follow.isConnected) {
           const rect = follow.getBoundingClientRect();
           if (rect.width > 0 || rect.height > 0) {
-            targetRef.current = centerOf(follow);
+            targetRef.current = ratioPointInRect(rect, followRatioRef.current);
           }
         }
       } else if (follow) {
@@ -158,6 +187,15 @@ export function useShowreelCursorScript(
 
       x.set(nx);
       y.set(ny);
+
+      // Carrying: keep telling the app where the pointer is, so its own drop
+      // placeholder opens where the card would land — the drag position is
+      // resolved by the real editor, not drawn by the reel.
+      const carried = carryRef.current;
+      if (carried && now - dragOverAtRef.current >= DRAG_OVER_MS) {
+        dragOverAtRef.current = now;
+        moveShowreelDrag(carried, nx, ny);
+      }
 
       const travel = travelRef.current;
       if (reduced || travel <= 0) {
@@ -209,6 +247,7 @@ export function useShowreelCursorScript(
     targetRef.current = { ...START };
     travelRef.current = 0;
     followRef.current = null;
+    followRatioRef.current = CENTER;
     followUntilRef.current = 0;
     arriveRef.current = null;
     velocityRef.current.x = 0;
@@ -258,12 +297,14 @@ export function useShowreelCursorScript(
       point: Point,
       follow: Element | null,
       onArrive?: () => void,
+      ratio: ShowreelDragRatio = CENTER,
     ) => {
       const distance = Math.hypot(point.x - x.get(), point.y - y.get());
       targetRef.current = point;
       travelRef.current = distance;
       configRef.current = springConfigFor(distance);
       followRef.current = follow;
+      followRatioRef.current = ratio;
       setHover(follow);
       followUntilRef.current = performance.now() + FOLLOW_WINDOW_MS;
       arriveRef.current = onArrive ?? null;
@@ -335,6 +376,77 @@ export function useShowreelCursorScript(
       });
     };
 
+    /** Press the handle and pick the widget up for real. The cursor stays
+        pressed for the whole carry — mouse button down is the drag. */
+    const grabWhenThere = (el: Element) => {
+      aim(centerOf(el), el, () => {
+        if (cancelled) return;
+        setPressing(true);
+        el.classList.add("showreel-press");
+        after(PRESS_DELAY_MS, () => {
+          if (cancelled) return;
+          const started = startShowreelDrag(el, x.get(), y.get());
+          if (!started) {
+            setPressing(false);
+            return;
+          }
+          carryRef.current = started.carry;
+          setCarry(started.view);
+        });
+        after(PRESS_RELEASE_MS, () => {
+          el.classList.remove("showreel-press");
+        });
+      });
+    };
+
+    /** Release the carried widget over `el` at the aimed ratio. */
+    const dropWhenThere = (
+      el: Element,
+      ratio: ShowreelDragRatio,
+      fallback?: { name: string; detail?: unknown },
+    ) => {
+      aim(
+        pointIn(el, ratio),
+        el,
+        () => {
+          if (cancelled) return;
+          // Hold on the drop position long enough to read it before the
+          // layout moves.
+          after(DROP_SETTLE_MS, () => {
+            if (cancelled) return;
+            const carried = carryRef.current;
+            if (!carried) {
+              // Nothing was ever picked up (no constructable DataTransfer).
+              if (fallback) fireDispatch(fallback);
+              setPressing(false);
+              return;
+            }
+            const before = dragOrderProbe(carried, el);
+            finishShowreelDrag(carried, el, x.get(), y.get());
+            carryRef.current = null;
+            setCarry(null);
+            setPressing(false);
+            if (!fallback) return;
+            // Safety net for a reel that has to run unattended: if the real
+            // drop left the order untouched, script the same move so the
+            // slide still shows the result. Re-applying a move that already
+            // landed is a no-op in the editor.
+            after(DROP_VERIFY_MS, () => {
+              if (cancelled || !el.isConnected) return;
+              // Re-flowing the row remounts its subtree, so a detached source
+              // node is itself proof the drop landed.
+              if (!carried.source.isConnected) return;
+              const settled = dragOrderProbe(carried, el);
+              if (!documentOrderFlipped(before, settled)) {
+                fireDispatch(fallback);
+              }
+            });
+          });
+        },
+        ratio,
+      );
+    };
+
     /** Look the element up with retries, then hand it to `use`. */
     const withTarget = (
       selector: string,
@@ -360,8 +472,10 @@ export function useShowreelCursorScript(
         const highlightSelector = step.highlight;
         // Let the primary action (click + its effect) settle before pulsing,
         // so the highlight reads as "this just landed", not "this is about
-        // to happen".
-        after(step.click ? 500 : 300, () => {
+        // to happen". A drop lands last of all: the cursor still has to
+        // travel, then hold on the drop position before releasing.
+        const highlightDelay = step.dragDrop ? 900 : step.click ? 500 : 300;
+        after(highlightDelay, () => {
           if (cancelled) return;
           const el = resolveTarget(getRoot(), highlightSelector);
           if (!el) return;
@@ -408,8 +522,20 @@ export function useShowreelCursorScript(
 
       if (step.selector) {
         const selector = step.selector;
+        const { dragGrab, dragAim, dragDrop } = step;
         withTarget(selector, SELECTOR_TIMEOUT_MS, (el) => {
-          if (step.click) {
+          if (dragGrab) {
+            grabWhenThere(el);
+          } else if (dragDrop) {
+            dropWhenThere(
+              el,
+              { x: dragDrop.xRatio, y: dragDrop.yRatio },
+              step.dispatch,
+            );
+          } else if (dragAim) {
+            const ratio = { x: dragAim.xRatio, y: dragAim.yRatio };
+            aim(pointIn(el, ratio), el, undefined, ratio);
+          } else if (step.click) {
             clickWhenThere(selector, el, step.dispatch, step.typeMs);
           } else if (step.dispatch) {
             const dispatch = step.dispatch;
@@ -466,13 +592,23 @@ export function useShowreelCursorScript(
             "showreel-highlight-pulse",
           ),
         );
+      // A scene torn down mid-drag would leave the editor holding a phantom
+      // widget (source stuck at opacity-30, placeholder open) on the next
+      // replay, so end the drag the way the browser would.
+      const carried = carryRef.current;
+      if (carried) {
+        cancelShowreelDrag(carried);
+        carryRef.current = null;
+      }
       followRef.current = null;
+      followRatioRef.current = CENTER;
       arriveRef.current = null;
+      setCarry(null);
       setPressing(false);
       setVisible(false);
       setBeat(null);
     };
   }, [running, runId, stepsKey, rootSelector, x, y]);
 
-  return { x, y, arc, tilt, pressing, visible, beat };
+  return { x, y, arc, tilt, pressing, visible, beat, carry };
 }

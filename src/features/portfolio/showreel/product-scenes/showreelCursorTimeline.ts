@@ -1,3 +1,5 @@
+import { SHOWREEL_RESERVATION_EVENT } from "./showreelReservationEvents";
+
 export type ShowreelCursorStep = {
   id: string;
   at: number;
@@ -30,6 +32,19 @@ export type ShowreelCursorStep = {
       matching this selector shortly after the step's own action lands. CSS
       only (.showreel-highlight-pulse) — no component render logic touched. */
   highlight?: string;
+  /** Pick `selector` up as a real HTML5 drag (dragstart + a live dragover
+      under the moving pointer), so the app's own drop placeholder tracks the
+      cursor instead of the layout teleporting. Held until a `dragDrop` step
+      releases it. */
+  dragGrab?: boolean;
+  /** While carrying, hover `selector` at this fraction of its box. The app
+      resolves the drop edge from the pointer position, so 0.78 opens the
+      placeholder on the right and 0.22 flips it to the left. */
+  dragAim?: { xRatio: number; yRatio: number };
+  /** Release the carried element over `selector` at this fraction of its box.
+      If no drag is in flight (a browser without constructable DataTransfer),
+      the step's `dispatch` fires instead as a scripted fallback. */
+  dragDrop?: { xRatio: number; yRatio: number };
 };
 
 /** Deterministic operations beat for the real dashboard showreel. */
@@ -42,63 +57,95 @@ export const SHOWREEL_DASHBOARD_CURSOR_STEPS: ShowreelCursorStep[] = [
   },
   {
     id: "scroll-charts",
-    at: 2000,
+    at: 1800,
     scrollSelector: '[data-dash-widget-id="chartVisitsWeek"]',
     beat: "Visits trending at a glance",
   },
   {
     id: "hold-charts",
-    at: 5000,
+    at: 3200,
     selector: '[data-dash-widget-id="chartVisitsWeek"]',
   },
   {
     id: "scroll-messages",
-    at: 7000,
+    at: 4600,
     scrollSelector: '[data-dash-widget-id="messages"]',
     beat: "Unread patient messages",
   },
   {
     id: "click-customize",
-    at: 8500,
+    at: 5800,
     selector: '[data-showreel-action="dashboard-customize"]',
     click: true,
     beat: "Rearrange the dashboard your way",
   },
   {
     id: "wait-edit-mode",
-    at: 9300,
+    at: 6500,
     waitForSelector: '[data-dash-widget-drag-surface]',
   },
   {
     id: "click-add",
-    at: 10200,
+    at: 7300,
     selector: '[data-showreel-action="dashboard-add-widget"]',
     click: true,
     beat: "Add a widget in one click",
   },
   {
     id: "wait-catalog",
-    at: 11000,
+    at: 8000,
     waitForSelector: '[data-dash-widget-catalog-item="kpiUnreadChats"]',
   },
   {
     id: "pick-widget",
-    at: 11800,
+    at: 8700,
     selector: '[data-dash-widget-catalog-item="kpiUnreadChats"]',
     click: true,
+  },
+  {
+    // addDashboardWidget appends to the END of the layout, so the new card
+    // lands below the fold — the old highlight-on-click pulsed a widget
+    // nobody could see. Ride down to it first, then pulse.
+    id: "reveal-added",
+    at: 9500,
+    scrollSelector: '[data-dash-widget-id="kpiUnreadChats"]',
     highlight: '[data-dash-widget-id="kpiUnreadChats"]',
+    beat: "The new card lands on the board",
   },
   {
     id: "hold-added",
-    at: 13300,
+    at: 10700,
     selector: '[data-dash-widget-id="kpiUnreadChats"]',
   },
   {
-    id: "swap-widgets",
-    at: 14800,
-    selector: '[data-dash-widget-id="kpiPending"]',
-    beat: "Or drag to reorder",
-    highlight: '[data-dash-widget-id="kpiTodayVisits"]',
+    id: "aim-source",
+    at: 11900,
+    scrollSelector: '[data-dash-widget-id="kpiPending"]',
+    beat: "Drag any card to a new spot",
+  },
+  {
+    id: "grab-widget",
+    at: 13000,
+    selector:
+      '[data-dash-widget-id="kpiPending"] [data-dash-widget-drag-surface]',
+    dragGrab: true,
+  },
+  {
+    id: "drag-right",
+    at: 14200,
+    selector: '[data-dash-widget-id="kpiTodayVisits"]',
+    dragAim: { xRatio: 0.78, yRatio: 0.5 },
+    beat: "The drop zone follows the pointer",
+  },
+  {
+    id: "drop-left",
+    at: 15500,
+    selector: '[data-dash-widget-id="kpiTodayVisits"]',
+    dragDrop: { xRatio: 0.22, yRatio: 0.5 },
+    highlight: '[data-dash-widget-id="kpiPending"]',
+    beat: "Release — the row re-flows",
+    // Fallback only: fires if the drag never started (no constructable
+    // DataTransfer), so the reel still shows the reordered layout.
     dispatch: {
       name: "admin-dashboard-layout-action",
       detail: {
@@ -111,8 +158,8 @@ export const SHOWREEL_DASHBOARD_CURSOR_STEPS: ShowreelCursorStep[] = [
   },
   {
     id: "hold-swapped",
-    at: 16800,
-    selector: '[data-dash-widget-id="kpiTodayVisits"]',
+    at: 16900,
+    selector: '[data-dash-widget-id="kpiPending"]',
   },
 ];
 
@@ -157,80 +204,50 @@ export const SHOWREEL_SMART_UX_CURSOR_STEPS: ShowreelCursorStep[] = [
     waitForSelector: '[data-showreel-action="demo-page-reservations"]',
   },
   {
-    id: "open-fab",
-    at: 6000,
-    selector: '[data-showreel-action="chat-fab"]',
+    id: "open-calendar-day",
+    at: 6200,
+    selector:
+      '[data-showreel-action="calendar-day"][data-showreel-today="true"]',
     click: true,
-    beat: "Chat follows you across the app",
+    beat: "Book straight from the calendar",
   },
   {
-    id: "wait-chooser",
-    at: 7000,
-    waitForSelector: '[data-showreel-action="bubble-whatsapp"]',
+    id: "wait-reservation-modal",
+    at: 7200,
+    waitForSelector: '[data-showreel-action="reservation-form-modal"]',
+    beat: "One click opens a new reservation",
   },
   {
-    id: "open-whatsapp",
-    at: 7600,
-    selector: '[data-showreel-action="bubble-whatsapp"]',
+    id: "fill-reservation-name",
+    at: 9000,
+    selector: '[data-showreel-action="reservation-patient-name"]',
     click: true,
-  },
-  {
-    id: "wait-composer",
-    at: 8800,
-    waitForSelector:
-      '[data-showreel-action="whatsapp-panel"]:not([aria-hidden="true"]) [data-showreel-action="whatsapp-composer"]',
-  },
-  {
-    id: "compose-message",
-    at: 9800,
-    selector: '[data-showreel-action="whatsapp-composer"]',
-    click: true,
-    typeMs: 900,
-    beat: "Reply to the patient in place",
     dispatch: {
-      name: "showreel-whatsapp",
-      detail: {
-        type: "compose-message",
-        text: "Tue 10:30 works — see you then!",
-      },
+      name: SHOWREEL_RESERVATION_EVENT,
+      detail: { type: "fill", field: "patient_name" },
     },
   },
   {
-    id: "send-message",
-    at: 12020,
-    selector: '[data-showreel-action="whatsapp-send"]',
+    id: "fill-reservation-phone",
+    at: 10200,
+    selector: '[data-showreel-action="reservation-phone"]',
     click: true,
-    highlight: '[data-showreel-action="whatsapp-panel"]',
     dispatch: {
-      name: "showreel-whatsapp",
-      detail: {
-        type: "send-message",
-        text: "Tue 10:30 works — see you then!",
-      },
+      name: SHOWREEL_RESERVATION_EVENT,
+      detail: { type: "fill", field: "phone" },
     },
   },
   {
-    id: "hold-sent",
-    at: 13620,
-    waitForSelector: '[data-showreel-action="whatsapp-composer"]',
-  },
-  {
-    id: "toggle-dock",
-    at: 15020,
-    selector: '[data-showreel-action="chat-layout-toggle"]',
+    id: "create-reservation",
+    at: 11800,
+    selector: '[data-showreel-action="reservation-create"]',
     click: true,
-    beat: "Dock it, or get it out of the way",
+    beat: "Create it — done",
   },
   {
-    id: "collapse-dock",
-    at: 17020,
-    selector: '[data-showreel-action="chat-collapse"]',
-    click: true,
-  },
-  {
-    id: "hold-collapsed",
-    at: 18820,
-    selector: '[data-showreel-action="chat-fab"], [data-showreel-action="chat-collapse"]',
+    id: "hold-created",
+    at: 13500,
+    selector: '[data-showreel-action="demo-page-reservations"]',
   },
 ];
 

@@ -59,6 +59,40 @@ describe("showreel timeline integrity", () => {
       }
     });
 
+    it(`${productScene}: every scripted drag is grabbed then released`, () => {
+      let carrying: string | null = null;
+      for (const step of steps) {
+        if (step.dragGrab) {
+          assert.equal(
+            carrying,
+            null,
+            `${productScene}:${step.id} grabs while ${carrying} is still held`,
+          );
+          assert.ok(
+            step.selector,
+            `${productScene}:${step.id} sets dragGrab without a selector`,
+          );
+          carrying = step.id;
+        }
+        if (step.dragAim || step.dragDrop) {
+          assert.ok(
+            carrying,
+            `${productScene}:${step.id} aims/drops with nothing carried`,
+          );
+          assert.ok(
+            step.selector,
+            `${productScene}:${step.id} needs a drop target selector`,
+          );
+        }
+        if (step.dragDrop) carrying = null;
+      }
+      assert.equal(
+        carrying,
+        null,
+        `${productScene}: ${carrying} is never dropped`,
+      );
+    });
+
     it(`${productScene}: typeMs only appears on a text-carrying dispatch`, () => {
       for (const step of steps) {
         if (step.typeMs === undefined) continue;

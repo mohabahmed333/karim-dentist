@@ -128,9 +128,9 @@ export const SHOWREEL_SLIDES: ShowreelSlide[] = [
   FEATURE(
     "smart-ux",
     "Smart UX",
-    "Search and chat layout",
-    "⌘K AI search, open WhatsApp, send a confirmation, then float → dock → collapse.",
-    ["⌘K", "Send", "Dock"],
+    "Search and book",
+    "⌘K AI search jumps to Reservations, then book straight from the calendar.",
+    ["⌘K", "Calendar", "Book"],
     {
       durationMs: 20000,
       desktopSrc: PRODUCT("smart-ux"),
@@ -144,7 +144,9 @@ export const SHOWREEL_SLIDES: ShowreelSlide[] = [
     "Visits, unread chats, pending queue, and booking trend on one canvas.",
     ["KPI", "Schedule", "Trend"],
     {
-      durationMs: 16000,
+      // 18.5s: the widget-edit beat now shows the added card where it lands
+      // and a real carried drag (grab -> hover right -> drop left).
+      durationMs: 18500,
       desktopSrc: PRODUCT("dashboard"),
       productScene: "dashboard",
     },

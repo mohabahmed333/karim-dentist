@@ -1,6 +1,12 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion, type MotionValue } from "framer-motion";
+import { DashboardDragGhost } from "@/features/admin/components/overview/DashboardDragGhost";
+import {
+  SHOWREEL_GHOST_OFFSET,
+  type ShowreelCarryView,
+} from "./showreelDragCarry";
 
 export type ShowreelCursorView = {
   x: MotionValue<number>;
@@ -10,6 +16,8 @@ export type ShowreelCursorView = {
   pressing: boolean;
   visible: boolean;
   beat: string | null;
+  /** Set while the script is carrying something (scripted drag). */
+  carry?: ShowreelCarryView | null;
 };
 
 /** Visible pointer + action caption for scripted showreel demos. */
@@ -21,7 +29,31 @@ export function ShowreelCursorOverlay({
   pressing,
   visible,
   beat,
+  carry = null,
 }: ShowreelCursorView) {
+  const ghostRef = useRef<HTMLDivElement>(null);
+
+  // Synthetic drag events get no browser drag image, so the carried card is
+  // ours to move. Written straight to the node (like the real drag ghost) —
+  // a state update per frame would re-render the scene 60x a second.
+  useEffect(() => {
+    if (!carry) return;
+    const write = () => {
+      const node = ghostRef.current;
+      if (!node) return;
+      node.style.transform = `translate(${x.get() - SHOWREEL_GHOST_OFFSET}px, ${
+        y.get() - SHOWREEL_GHOST_OFFSET
+      }px)`;
+    };
+    write();
+    const stopX = x.on("change", write);
+    const stopY = y.on("change", write);
+    return () => {
+      stopX();
+      stopY();
+    };
+  }, [carry, x, y]);
+
   return (
     <div className="showreel-cursor-layer" aria-hidden>
       <AnimatePresence mode="wait">
@@ -39,6 +71,17 @@ export function ShowreelCursorOverlay({
           </motion.div>
         ) : null}
       </AnimatePresence>
+      {/* Not wrapped in a motion.div: an animated transform on an ancestor
+          becomes the containing block for the ghost's own `fixed`
+          positioning, which would offset it from the pointer. */}
+      {visible && carry ? (
+        <DashboardDragGhost
+          ref={ghostRef}
+          label={carry.label}
+          width={carry.width}
+          height={carry.height}
+        />
+      ) : null}
       <AnimatePresence>
         {visible ? (
           <motion.div
