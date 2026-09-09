@@ -66,9 +66,11 @@ body:has(.showreel-page) {
   left: clamp(1.25rem, 3vw, 2.25rem);
   z-index: 25;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.2rem;
+  /* Single-line lockup: mark, rule, name. Being one line (not two) it also
+     sits level with the slide title on the opposite side of the band. */
+  flex-direction: row;
+  align-items: center;
+  gap: 0.7rem;
   pointer-events: none;
 }
 
@@ -80,7 +82,10 @@ body:has(.showreel-page) {
   font-weight: 650;
   line-height: 1;
   letter-spacing: -0.03em;
-  color: var(--sr-ink);
+  /* Brand black, not the deck's navy ink — #111111 is the same black the
+     admin chat surfaces already use, so it reads as deliberate rather than
+     a one-off hex. */
+  color: #111111;
 }
 
 .showreel-me-mark-letter--e {
@@ -89,11 +94,25 @@ body:has(.showreel-page) {
 }
 
 .showreel-brand-by {
-  font-size: 0.78rem;
+  position: relative;
+  padding-left: 0.7rem;
+  font-size: 0.85rem;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--sr-ink-soft);
+}
+
+.showreel-brand-by::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1px;
+  height: 1.6em;
+  transform: translateY(-50%);
+  background: color-mix(in srgb, var(--sr-ink-soft) 40%, transparent);
 }
 
 .showreel-deck {
