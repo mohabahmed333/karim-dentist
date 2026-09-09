@@ -26,6 +26,10 @@ export type ShowreelCursorStep = {
       element is already on screen; this scrolls what's inside it, e.g. a
       live-preview panel). The cursor rides along via aim(). */
   scrollWithin?: { selector: string; top: number };
+  /** A "this just succeeded" story beat: briefly ring-pulses the element
+      matching this selector shortly after the step's own action lands. CSS
+      only (.showreel-highlight-pulse) — no component render logic touched. */
+  highlight?: string;
 };
 
 /** Deterministic operations beat for the real dashboard showreel. */
@@ -54,22 +58,59 @@ export const SHOWREEL_DASHBOARD_CURSOR_STEPS: ShowreelCursorStep[] = [
     beat: "Unread patient messages",
   },
   {
-    id: "click-front-desk",
+    id: "click-customize",
     at: 8500,
-    selector: '[data-showreel-action="open-front-desk"]',
+    selector: '[data-showreel-action="dashboard-customize"]',
     click: true,
-    beat: "Jump straight to the front desk",
+    beat: "Rearrange the dashboard your way",
   },
   {
-    id: "wait-whatsapp",
-    at: 10000,
-    waitForSelector:
-      '[data-showreel-action="whatsapp-panel"]:not([aria-hidden="true"])',
+    id: "wait-edit-mode",
+    at: 9300,
+    waitForSelector: '[data-dash-widget-drag-surface]',
   },
   {
-    id: "hold-whatsapp",
-    at: 13000,
-    selector: '[data-showreel-action="whatsapp-panel"]',
+    id: "click-add",
+    at: 10200,
+    selector: '[data-showreel-action="dashboard-add-widget"]',
+    click: true,
+    beat: "Add a widget in one click",
+  },
+  {
+    id: "wait-catalog",
+    at: 11000,
+    waitForSelector: '[data-dash-widget-catalog-item="kpiUnreadChats"]',
+  },
+  {
+    id: "pick-widget",
+    at: 11800,
+    selector: '[data-dash-widget-catalog-item="kpiUnreadChats"]',
+    click: true,
+  },
+  {
+    id: "hold-added",
+    at: 13300,
+    selector: '[data-dash-widget-id="kpiUnreadChats"]',
+  },
+  {
+    id: "swap-widgets",
+    at: 14800,
+    selector: '[data-dash-widget-id="kpiPending"]',
+    beat: "Or drag to reorder",
+    dispatch: {
+      name: "admin-dashboard-layout-action",
+      detail: {
+        type: "move",
+        fromId: "kpiPending",
+        targetId: "kpiTodayVisits",
+        edge: "left",
+      },
+    },
+  },
+  {
+    id: "hold-swapped",
+    at: 16800,
+    selector: '[data-dash-widget-id="kpiTodayVisits"]',
   },
 ];
 
@@ -267,6 +308,7 @@ export const SHOWREEL_CLINICAL_CURSOR_STEPS: ShowreelCursorStep[] = [
     at: 15700,
     selector: '[data-showreel-action="clinical-review-apply"]',
     click: true,
+    highlight: '[data-showreel-action="clinical-review-apply"]',
     beat: "Clinician reviews before anything is saved",
   },
   {
@@ -432,6 +474,7 @@ export const SHOWREEL_AI_BOOKING_CURSOR_STEPS: ShowreelCursorStep[] = [
     at: 12500,
     selector: '[data-showreel-action="clinical-review-apply"]',
     click: true,
+    highlight: '[data-showreel-action="clinical-review-apply"]',
     beat: "Staff confirms — nothing auto-books",
   },
   {

@@ -1077,6 +1077,31 @@ body:has(.showreel-page) {
   }
 }
 
+/* "This just succeeded" story beat — a ring pulse on the element a step
+   just landed on (a reservation created, a widget added, a hero edited).
+   Same visual language as ShowreelHighlightPulse (React), as pure CSS so
+   it can be triggered from the cursor hook without touching any real
+   component's render logic. */
+@keyframes showreel-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(94, 106, 210, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(94, 106, 210, 0);
+  }
+}
+
+.showreel-highlight-pulse {
+  animation: showreel-highlight-pulse 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  border-radius: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .showreel-highlight-pulse {
+    animation: none;
+  }
+}
+
 /* Scripted-demo action caption — narrates what the cursor is doing. */
 .showreel-caption {
   position: fixed;

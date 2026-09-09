@@ -355,6 +355,22 @@ export function useShowreelCursorScript(
     const runStep = (step: ShowreelCursorStep) => {
       if (step.beat) setBeat(step.beat);
 
+      if (step.highlight) {
+        const highlightSelector = step.highlight;
+        // Let the primary action (click + its effect) settle before pulsing,
+        // so the highlight reads as "this just landed", not "this is about
+        // to happen".
+        after(step.click ? 500 : 300, () => {
+          if (cancelled) return;
+          const el = resolveTarget(getRoot(), highlightSelector);
+          if (!el) return;
+          el.classList.add("showreel-highlight-pulse");
+          after(750, () => {
+            el.classList.remove("showreel-highlight-pulse");
+          });
+        });
+      }
+
       // A dispatch paired with a selector is caused by cursor arrival (via
       // clickWhenThere's press, or aim's onArrive below) instead of firing
       // blind at step start — the fix for actions that used to teleport the
@@ -436,9 +452,15 @@ export function useShowreelCursorScript(
       // hoverRef, so sweep the document as well as clearing the ref.
       hoverRef.current = null;
       document
-        .querySelectorAll(".showreel-hover, .showreel-press")
+        .querySelectorAll(
+          ".showreel-hover, .showreel-press, .showreel-highlight-pulse",
+        )
         .forEach((el) =>
-          el.classList.remove("showreel-hover", "showreel-press"),
+          el.classList.remove(
+            "showreel-hover",
+            "showreel-press",
+            "showreel-highlight-pulse",
+          ),
         );
       followRef.current = null;
       arriveRef.current = null;
