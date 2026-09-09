@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ShowreelSlideCopy } from "./ShowreelSlideShell";
 import { ShowreelSlideFeature } from "./ShowreelSlideFeature";
 import { ShowreelPrefetch } from "./ShowreelPrefetch";
-import { ShowreelProgressRail } from "./ShowreelProgressRail";
 import { useShowreelDeck } from "./useShowreelDeck";
 import { useShowreelSlideTransition } from "./useShowreelSlideTransition";
 import {
@@ -31,20 +30,22 @@ export function ShowreelDeck({
   const { slide, total, playing, setPlaying } = useShowreelDeck(false, slides);
   const sceneRef = useRef<HTMLDivElement>(null);
   const renderSlide = useShowreelSlideTransition(slide, { sceneRef });
-  // The stage lags `slide` by the exit timeline, so pace the rail off what is
-  // actually on screen.
-  const renderIndex = Math.max(
-    slides.findIndex((item) => item.id === renderSlide.id),
-    0,
-  );
-  const deviceIds = useMemo(
-    () => getShowreelDeviceIds(slides),
+  // Every slide mounts (and starts loading) up front, but only the FIRST
+  // slide's device needs to be ready before playback starts — the rest get
+  // that slide's full durationMs as a head start to finish loading in the
+  // background. Gating on every slide in the deck made the opening wait as
+  // long as the slowest of them combined.
+  const firstSlideDeviceIds = useMemo(
+    () => getShowreelDeviceIds(slides.slice(0, 1)),
     [slides],
   );
   const [readyDeviceIds, setReadyDeviceIds] = useState<Set<string>>(
     () => new Set(),
   );
-  const allDevicesReady = areShowreelDevicesReady(deviceIds, readyDeviceIds);
+  const firstSlideReady = areShowreelDevicesReady(
+    firstSlideDeviceIds,
+    readyDeviceIds,
+  );
 
   const markDeviceReady = useCallback(
     (slideId: string, variant: ShowreelDeviceVariant) => {
@@ -58,10 +59,10 @@ export function ShowreelDeck({
   );
 
   useEffect(() => {
-    if (!allDevicesReady) return;
+    if (!firstSlideReady) return;
     const timer = window.setTimeout(() => setPlaying(true), 800);
     return () => window.clearTimeout(timer);
-  }, [allDevicesReady, setPlaying]);
+  }, [firstSlideReady, setPlaying]);
 
   return (
     <div className="showreel-deck">
@@ -105,11 +106,6 @@ export function ShowreelDeck({
           })}
         </div>
       </div>
-      <ShowreelProgressRail
-        slides={slides}
-        index={renderIndex}
-        playing={playing}
-      />
     </div>
   );
 }
