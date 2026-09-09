@@ -377,6 +377,15 @@ export function useShowreelCursorScript(
         return;
       }
 
+      if (step.scrollWithin) {
+        const { selector, top } = step.scrollWithin;
+        withTarget(selector, SELECTOR_TIMEOUT_MS, (el) => {
+          el.scrollTo({ top, behavior: "smooth" });
+          aim(centerOf(el), el);
+        });
+        return;
+      }
+
       if (step.selector) {
         const selector = step.selector;
         withTarget(selector, SELECTOR_TIMEOUT_MS, (el) => {

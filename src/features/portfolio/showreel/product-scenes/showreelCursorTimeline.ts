@@ -22,6 +22,10 @@ export type ShowreelCursorStep = {
   /** Caption text that starts here and holds until the next step with a
       `beat`. Steps without one inherit the current caption. */
   beat?: string;
+  /** Scroll the CONTENTS of `selector` to `top` (not scrollIntoView — the
+      element is already on screen; this scrolls what's inside it, e.g. a
+      live-preview panel). The cursor rides along via aim(). */
+  scrollWithin?: { selector: string; top: number };
 };
 
 /** Deterministic operations beat for the real dashboard showreel. */

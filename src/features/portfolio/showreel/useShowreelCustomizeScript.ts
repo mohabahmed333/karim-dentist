@@ -41,7 +41,6 @@ export function useShowreelCustomizeScript(
     }
 
     if (script === "homepage-order") {
-      // Swap case-studies (1) with featured (2) in default order.
       later(600, () => {
         postShowreelCustomizeDemo(iframe(), "reorderHomepage", {
           fromIndex: 1,
@@ -55,6 +54,12 @@ export function useShowreelCustomizeScript(
         });
       });
     }
+
+    // "translate-all" has no timer block here — SHOWREEL_CUSTOMIZE_CURSOR_STEPS
+    // (rendered inside the customize iframe via ShowreelCustomizeEmbed) now
+    // drives that sequence, dispatching each patch on cursor arrival instead
+    // of on a blind parent-side timer. Only the unconditional reset above
+    // still runs from here.
 
     return () => {
       timers.forEach((id) => window.clearTimeout(id));

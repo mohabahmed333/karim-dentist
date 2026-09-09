@@ -9,6 +9,7 @@ import {
   type ShowreelCursorStep,
 } from "./showreelCursorTimeline.ts";
 import { SHOWREEL_SITE_TO_CHAT_CURSOR_STEPS } from "./showreelSiteToChatTimeline.ts";
+import { SHOWREEL_CUSTOMIZE_CURSOR_STEPS } from "../showreelCustomizeCursorTimeline.ts";
 import { SHOWREEL_SLIDES } from "../showreelSlides.ts";
 
 const TIMELINES: Record<string, ShowreelCursorStep[]> = {
@@ -18,7 +19,18 @@ const TIMELINES: Record<string, ShowreelCursorStep[]> = {
   whatsapp: SHOWREEL_WHATSAPP_CURSOR_STEPS,
   "ai-booking": SHOWREEL_AI_BOOKING_CURSOR_STEPS,
   "site-to-chat": SHOWREEL_SITE_TO_CHAT_CURSOR_STEPS,
+  // Not a real productScene (it's identified by customizeScript/URL
+  // instead) — findSlide below falls back to matching by id for this one.
+  customize: SHOWREEL_CUSTOMIZE_CURSOR_STEPS,
 };
+
+function findSlide(productScene: string) {
+  return SHOWREEL_SLIDES.find(
+    (s) =>
+      s.kind === "feature" &&
+      (s.productScene === productScene || s.id === productScene),
+  );
+}
 
 function lastAt(steps: ShowreelCursorStep[]): number {
   return steps.reduce((max, step) => Math.max(max, step.at), 0);
@@ -27,9 +39,7 @@ function lastAt(steps: ShowreelCursorStep[]): number {
 describe("showreel timeline integrity", () => {
   for (const [productScene, steps] of Object.entries(TIMELINES)) {
     it(`${productScene}: slide durationMs outlasts its last cursor step`, () => {
-      const slide = SHOWREEL_SLIDES.find(
-        (s) => s.kind === "feature" && s.productScene === productScene,
-      );
+      const slide = findSlide(productScene);
       assert.ok(slide, `no slide wired to productScene "${productScene}"`);
       assert.ok(
         slide!.durationMs > lastAt(steps),

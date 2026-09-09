@@ -2,11 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { useCustomize } from "@/features/customize/context/CustomizeContext";
-import {
-  moveHomepageSection,
-  normalizeHomepageSectionOrder,
-} from "@/features/portfolio/lib/homepageSectionOrder";
 import type { PortfolioData } from "@/services/portfolio";
+import { applyShowreelCustomizeDemo } from "./applyShowreelCustomizeDemo";
 import {
   SHOWREEL_CUSTOMIZE_DEMO,
   type ShowreelCustomizeDemoMessage,
@@ -30,7 +27,7 @@ export function ShowreelCustomizeDemoBridge({
   initial,
   settingsOrderTab,
 }: Props) {
-  const { data, patchCollectionItem, patchSettings } = useCustomize();
+  const { data, patchCollectionItem, patchSettings, patchHero } = useCustomize();
   const initialRef = useRef(initial);
   const dataRef = useRef(data);
 
@@ -56,48 +53,42 @@ export function ShowreelCustomizeDemoBridge({
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       if (!isDemoMessage(event.data)) return;
-
-      const snapshot = initialRef.current;
-      const live = dataRef.current;
-      const firstId = snapshot.caseStudies[0]?.id;
-
-      if (event.data.action === "reset") {
-        if (firstId) {
-          patchCollectionItem("case-studies", firstId, {
-            title: snapshot.caseStudies[0]?.title ?? "",
-          });
-        }
-        patchSettings({
-          homepage_section_order: normalizeHomepageSectionOrder(
-            snapshot.settings?.homepage_section_order,
-          ),
-        });
-        return;
-      }
-
-      if (event.data.action === "patchCaseStudy") {
-        const id = event.data.payload?.id ?? firstId;
-        const title = event.data.payload?.title;
-        if (!id || title === undefined) return;
-        patchCollectionItem("case-studies", id, { title });
-        return;
-      }
-
-      if (event.data.action === "reorderHomepage") {
-        const { fromIndex, toIndex } = event.data.payload ?? {};
-        if (fromIndex === undefined || toIndex === undefined) return;
-        const order = normalizeHomepageSectionOrder(
-          live.settings?.homepage_section_order,
-        );
-        patchSettings({
-          homepage_section_order: moveHomepageSection(order, fromIndex, toIndex),
-        });
-      }
+      applyShowreelCustomizeDemo(
+        event.data,
+        initialRef.current,
+        dataRef.current,
+        { patchCollectionItem, patchSettings, patchHero },
+      );
     };
-
     window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [patchCollectionItem, patchSettings]);
+
+    // Same-document counterpart to the postMessage path above: the in-iframe
+    // customize cursor (SHOWREEL_CUSTOMIZE_CURSOR_STEPS) dispatches this
+    // CustomEvent directly on arrival instead of round-tripping through the
+    // parent window, so a patch is genuinely caused by the visible cursor
+    // rather than landing on a blind timer.
+    const onLocalDemo = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (!isDemoMessage(detail)) return;
+      applyShowreelCustomizeDemo(
+        detail,
+        initialRef.current,
+        dataRef.current,
+        { patchCollectionItem, patchSettings, patchHero },
+      );
+    };
+    window.addEventListener(SHOWREEL_CUSTOMIZE_DEMO, onLocalDemo);
+
+    return () => {
+      window.removeEventListener("message", onMessage);
+      window.removeEventListener(SHOWREEL_CUSTOMIZE_DEMO, onLocalDemo);
+    };
+  }, [patchCollectionItem, patchHero, patchSettings]);
 
   return null;
 }
+
+export {
+  SHOWREEL_CUSTOMIZE_UI_EVENT,
+  type ShowreelCustomizeUiDetail,
+} from "./showreelCustomizeUi";
