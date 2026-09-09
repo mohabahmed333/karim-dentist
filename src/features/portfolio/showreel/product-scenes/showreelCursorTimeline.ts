@@ -86,6 +86,7 @@ export const SHOWREEL_DASHBOARD_CURSOR_STEPS: ShowreelCursorStep[] = [
     at: 11800,
     selector: '[data-dash-widget-catalog-item="kpiUnreadChats"]',
     click: true,
+    highlight: '[data-dash-widget-id="kpiUnreadChats"]',
   },
   {
     id: "hold-added",
@@ -97,6 +98,7 @@ export const SHOWREEL_DASHBOARD_CURSOR_STEPS: ShowreelCursorStep[] = [
     at: 14800,
     selector: '[data-dash-widget-id="kpiPending"]',
     beat: "Or drag to reorder",
+    highlight: '[data-dash-widget-id="kpiTodayVisits"]',
     dispatch: {
       name: "admin-dashboard-layout-action",
       detail: {
