@@ -60,16 +60,25 @@ export function ShowreelSlideFeature({
       !slide.productScene,
   );
   useEffect(() => {
-    if (!slide.productScene) return;
+    // "customize" is a fixed scene id (not a real productScene) so its
+    // in-iframe cursor gets the same activate signal every product scene
+    // already uses.
+    const scene = slide.productScene ?? (slide.customizeScript ? "customize" : null);
+    if (!scene) return;
     postShowreelProductActivate(
       desktopRef.current,
-      slide.productScene,
+      scene,
       demoLive && desktopReady,
     );
-  }, [demoLive, desktopReady, desktopRef, slide.productScene]);
+  }, [demoLive, desktopReady, desktopRef, slide.productScene, slide.customizeScript]);
   useShowreelScrollOnce(
     desktopScrollRef,
-    demoLive && Boolean(slide.scroll) && desktopReady && !desktopOnly,
+    // !desktopOnly used to be redundant (only "site" ever set scroll:true,
+    // and it was the only non-desktopOnly slide) until site became
+    // desktopOnly too — which silently killed its own auto-scroll. No other
+    // slide sets scroll:true, so dropping this clause can't re-enable
+    // scrolling anywhere it shouldn't.
+    demoLive && Boolean(slide.scroll) && desktopReady,
     {
       scrollMs: slide.scrollMs ?? 2800,
       maxProgress: slide.scrollDepth ?? 0.18,
