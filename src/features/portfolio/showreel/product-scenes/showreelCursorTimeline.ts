@@ -198,6 +198,7 @@ export const SHOWREEL_SMART_UX_CURSOR_STEPS: ShowreelCursorStep[] = [
     at: 12020,
     selector: '[data-showreel-action="whatsapp-send"]',
     click: true,
+    highlight: '[data-showreel-action="whatsapp-panel"]',
     dispatch: {
       name: "showreel-whatsapp",
       detail: {
