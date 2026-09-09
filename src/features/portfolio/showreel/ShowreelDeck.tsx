@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ShowreelSlideCopy } from "./ShowreelSlideShell";
 import { ShowreelSlideFeature } from "./ShowreelSlideFeature";
 import { ShowreelPrefetch } from "./ShowreelPrefetch";
+import { ShowreelProgressRail } from "./ShowreelProgressRail";
 import { useShowreelDeck } from "./useShowreelDeck";
 import { useShowreelSlideTransition } from "./useShowreelSlideTransition";
 import {
@@ -22,6 +23,12 @@ export function ShowreelDeck({ videoDesktop, videoMobile }: Props) {
   const { slide, total, playing, setPlaying } = useShowreelDeck();
   const sceneRef = useRef<HTMLDivElement>(null);
   const renderSlide = useShowreelSlideTransition(slide, { sceneRef });
+  // The stage lags `slide` by the exit timeline, so pace the rail off what is
+  // actually on screen.
+  const renderIndex = Math.max(
+    SHOWREEL_SLIDES.findIndex((item) => item.id === renderSlide.id),
+    0,
+  );
   const deviceIds = useMemo(
     () => getShowreelDeviceIds(SHOWREEL_SLIDES),
     [],
@@ -71,8 +78,6 @@ export function ShowreelDeck({ videoDesktop, videoMobile }: Props) {
                 {item.kind === "feature" ? (
                   <ShowreelSlideFeature
                     slide={item}
-                    index={itemIndex}
-                    total={total}
                     playing={playing}
                     active={active}
                     onDeviceReady={(variant) =>
@@ -91,6 +96,11 @@ export function ShowreelDeck({ videoDesktop, videoMobile }: Props) {
           })}
         </div>
       </div>
+      <ShowreelProgressRail
+        slides={SHOWREEL_SLIDES}
+        index={renderIndex}
+        playing={playing}
+      />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import type { ShowreelFeatureSlide, ShowreelSlide } from "./showreelSlideTypes";
 
 const SITE_MOBILE = "/showreel/demo?mode=site&viewport=mobile";
+const PRODUCT = (scene: NonNullable<ShowreelFeatureSlide["productScene"]>) =>
+  `/showreel/demo?mode=product&scene=${scene}`;
 
 const FEATURE = (
   id: string,
@@ -8,10 +10,13 @@ const FEATURE = (
   title: string,
   body: string,
   tags: string[],
-  desktopQuery: string,
-  opts?: Partial<ShowreelFeatureSlide>,
+  opts: Partial<ShowreelFeatureSlide> & {
+    desktopSrc: string;
+    durationMs: number;
+  },
 ): ShowreelFeatureSlide => {
-  const isCustomize = desktopQuery.includes("mode=customize");
+  const isCustomize = opts.desktopSrc.includes("mode=customize");
+  const isProduct = opts.desktopSrc.includes("mode=product");
 
   return {
     id,
@@ -20,80 +25,147 @@ const FEATURE = (
     title,
     body,
     tags,
-    durationMs: opts?.durationMs ?? 4800,
-    desktopSrc: `/showreel/demo?${desktopQuery}`,
-    mobileSrc: opts?.mobileSrc ?? SITE_MOBILE,
-    scroll: opts?.scroll ?? false,
-    scrollDepth: opts?.scrollDepth ?? 0.18,
-    scrollMs: opts?.scrollMs ?? 3800,
-    desktopOnly: isCustomize,
-    customizeScript: opts?.customizeScript,
-    scrollDelayMs: opts?.scrollDelayMs,
-    scrollTarget: opts?.scrollTarget,
-    scrollHeroFirst: opts?.scrollHeroFirst,
-    scrollHeroPhaseRatio: opts?.scrollHeroPhaseRatio,
+    durationMs: opts.durationMs,
+    desktopSrc: opts.desktopSrc,
+    mobileSrc: opts.mobileSrc ?? SITE_MOBILE,
+    scroll: opts.scroll ?? false,
+    scrollDepth: opts.scrollDepth ?? 0.18,
+    scrollMs: opts.scrollMs ?? 3800,
+    desktopOnly: isCustomize || isProduct || opts.desktopOnly,
+    customizeScript: opts.customizeScript,
+    productScene: opts.productScene,
+    requiresAiReview: opts.requiresAiReview,
+    scrollDelayMs: opts.scrollDelayMs,
+    scrollTarget: opts.scrollTarget,
+    scrollHeroFirst: opts.scrollHeroFirst,
+    scrollHeroPhaseRatio: opts.scrollHeroPhaseRatio,
   };
 };
 
+/** ~2 min dental product reel for LinkedIn screen recording. */
 export const SHOWREEL_SLIDES: ShowreelSlide[] = [
   {
     id: "intro",
     kind: "copy",
-    durationMs: 5500,
-    kicker: "Mohab Elbasiry",
-    title: "A portfolio shaped like a film.",
-    body: "You bring the idea. We imagine it together — then design, build, and choreograph every scene.",
-    tags: ["Have an idea?", "Let's imagine together"],
+    durationMs: 5000,
+    kicker: "Dental Lounge",
+    title: "One connected clinic",
+    body: "From first WhatsApp message to treatment plan — with human review at every AI step.",
+    tags: ["One connected clinic.", "From first message to treatment plan."],
   },
   FEATURE(
     "site",
-    "Act I",
-    "The opening frame",
-    "Hero film, negative space, and slow reveals — the homepage breathes before it speaks.",
-    ["Cinema", "Silence", "Depth"],
-    "mode=site",
+    "Public site",
+    "Your clinic online",
+    "Desktop and mobile website with booking, services, and bilingual care.",
+    ["Website", "Booking", "Bilingual"],
     {
-      durationMs: 11200,
+      durationMs: 9000,
+      desktopSrc: "/showreel/demo?mode=site",
+      mobileSrc: SITE_MOBILE,
+      desktopOnly: false,
       scroll: true,
       scrollDepth: 1,
       scrollHeroFirst: true,
-      scrollHeroPhaseRatio: 0.82,
-      scrollMs: 10000,
-      scrollDelayMs: 900,
+      scrollHeroPhaseRatio: 0.4,
+      scrollMs: 7000,
+      scrollDelayMs: 400,
     },
   ),
   FEATURE(
-    "hero-cms",
-    "Behind the lens",
-    "First light",
-    "The hero is tuned like a key frame — contrast, headline, and motion held in balance.",
-    ["Contrast", "Focus", "Presence"],
-    "mode=customize&section=hero",
+    "site-to-chat",
+    "Website booking",
+    "From site to chat",
+    "Customer books on the public site — then reply from the WhatsApp Front desk page.",
+    ["Book", "WhatsApp page", "Reply"],
+    {
+      // 26s: room for the reply to type itself out before Send fires.
+      durationMs: 26000,
+      desktopSrc: PRODUCT("site-to-chat"),
+      productScene: "site-to-chat",
+    },
   ),
   FEATURE(
-    "case-edit-cms",
-    "Behind the lens",
-    "Edit the chapter",
-    "Change a case study title and watch the live preview catch up in the same breath.",
-    ["Live", "Title", "Preview"],
-    "mode=customize&section=case-studies&item=first&focus=title",
-    { durationMs: 8200, customizeScript: "case-title" },
+    "ai-booking",
+    "AI front desk",
+    "Book with AI",
+    "Clinic Assist extracts patient, service, and slot — then waits for review before creating the reservation.",
+    ["Patient", "Slot", "Review"],
+    {
+      durationMs: 18000,
+      desktopSrc: PRODUCT("ai-booking"),
+      productScene: "ai-booking",
+      requiresAiReview: true,
+    },
   ),
   FEATURE(
-    "order-cms",
-    "Behind the lens",
-    "Reorder the reel",
-    "Drag homepage sections into a new sequence — the site reshapes as you decide.",
-    ["Order", "Flow", "Live"],
-    "mode=customize&section=settings&view=order",
-    { durationMs: 7800, customizeScript: "homepage-order" },
+    "whatsapp",
+    "WhatsApp",
+    "Live front desk",
+    "Workspace chart, offer slots, confirm Tue 10:30, send a voice note, then close the chat.",
+    ["Workspace", "Slots", "Voice"],
+    {
+      durationMs: 22500,
+      desktopSrc: PRODUCT("whatsapp"),
+      productScene: "whatsapp",
+    },
+  ),
+  FEATURE(
+    "clinical-ai",
+    "Clinical AI",
+    "Describe the case",
+    "Write a clinical note, attach imaging once, confirm the proposal, then open Details.",
+    ["Note", "Upload", "Details"],
+    {
+      // 22s: room for the note to type itself out before Send fires.
+      durationMs: 22000,
+      desktopSrc: PRODUCT("clinical-ai"),
+      productScene: "clinical-ai",
+      requiresAiReview: true,
+    },
+  ),
+  FEATURE(
+    "smart-ux",
+    "Smart UX",
+    "Search and chat layout",
+    "⌘K AI search, open WhatsApp, send a confirmation, then float → dock → collapse.",
+    ["⌘K", "Send", "Dock"],
+    {
+      durationMs: 20000,
+      desktopSrc: PRODUCT("smart-ux"),
+      productScene: "smart-ux",
+    },
+  ),
+  FEATURE(
+    "dashboard",
+    "Operations",
+    "Today at a glance",
+    "Visits, unread chats, pending queue, and booking trend on one canvas.",
+    ["KPI", "Schedule", "Trend"],
+    {
+      durationMs: 16000,
+      desktopSrc: PRODUCT("dashboard"),
+      productScene: "dashboard",
+    },
+  ),
+  FEATURE(
+    "customize",
+    "Customize",
+    "Edit and preview",
+    "Live-edit the hero, then preview mobile and desktop — English stays on.",
+    ["Edit", "Preview", "Devices"],
+    {
+      durationMs: 16000,
+      desktopSrc: "/showreel/demo?mode=customize&section=hero",
+      customizeScript: "translate-all",
+    },
   ),
   {
     id: "outro",
     kind: "outro",
-    durationMs: 5500,
+    durationMs: 5000,
     kicker: "Designed and developed by",
     title: "Mohab Elbasiry",
-    body: "What's next?",
+    body: "Next.js · Supabase · WhatsApp · AI-assisted workflows",
   },
 ];
