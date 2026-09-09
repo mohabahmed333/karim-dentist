@@ -68,6 +68,7 @@ export function ShowreelDeck({
       <ShowreelPrefetch
         prefetchVideo
         prefetchCustomize={false}
+        prefetchBookingSlots
         videoDesktop={videoDesktop}
         videoMobile={videoMobile}
       />

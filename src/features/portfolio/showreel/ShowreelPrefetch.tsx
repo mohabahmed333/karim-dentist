@@ -2,14 +2,25 @@
 
 import { useEffect } from "react";
 import { CUSTOMIZE_DEMO_SRC, SITE_DEMO_SRC } from "./showreelEmbedMessage";
+import { prefetchShowreelBookingSlots } from "./showreelBookingSlotsPrefetch";
 
 type Props = {
   prefetchVideo: boolean;
   prefetchCustomize: boolean;
   prefetchSite?: boolean;
+  /** Warms /api/v1/booking/slots so the site-to-chat scene's BookingForm
+      doesn't show a loading flash the moment it mounts. */
+  prefetchBookingSlots?: boolean;
   videoDesktop?: string | null;
   videoMobile?: string | null;
 };
+
+function useBookingSlotsPrefetch(on = false) {
+  useEffect(() => {
+    if (!on) return;
+    prefetchShowreelBookingSlots();
+  }, [on]);
+}
 
 function usePreloadVideos(desktop?: string | null, mobile?: string | null, on = false) {
   useEffect(() => {
@@ -45,15 +56,17 @@ function usePreloadVideos(desktop?: string | null, mobile?: string | null, on = 
   }, [desktop, mobile, on]);
 }
 
-/** Warm hero video + customize iframe before they appear on screen. */
+/** Warm hero video + customize iframe + booking slots before they appear on screen. */
 export function ShowreelPrefetch({
   prefetchVideo,
   prefetchCustomize,
   prefetchSite = false,
+  prefetchBookingSlots = false,
   videoDesktop,
   videoMobile,
 }: Props) {
   usePreloadVideos(videoDesktop, videoMobile, prefetchVideo);
+  useBookingSlotsPrefetch(prefetchBookingSlots);
 
   if (!prefetchCustomize && !prefetchSite) return null;
 

@@ -9,6 +9,7 @@ import {
   type BookingDateOption,
 } from "./BookingSchedulePicker";
 import { DentalButton } from "./DentalButton";
+import { useBookingFormShowreel } from "./useBookingFormShowreel";
 
 type SlotDto = {
   id: string;
@@ -29,6 +30,7 @@ type BookingFormProps = {
 export function BookingForm({ services }: BookingFormProps) {
   const t = useTranslations();
   const { locale } = useLocale();
+  const [showreel, setShowreel] = useState(false);
   const [slots, setSlots] = useState<SlotDto[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState("");
@@ -36,6 +38,14 @@ export function BookingForm({ services }: BookingFormProps) {
   const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [serviceId, setServiceId] = useState("");
+
+  useEffect(() => {
+    setShowreel(document.documentElement.dataset.showreelDemo === "1");
+  }, []);
 
   const ourServices = useMemo(
     () =>
@@ -59,15 +69,46 @@ export function BookingForm({ services }: BookingFormProps) {
   async function loadSlots() {
     setSlotsLoading(true);
     try {
-      const res = await fetch("/api/v1/booking/slots");
-      const body = (await res.json()) as {
-        slots?: SlotDto[];
-        error?: string;
-      };
+      const isShowreel = document.documentElement.dataset.showreelDemo === "1";
+      let body: { slots?: SlotDto[]; error?: string };
+      if (isShowreel) {
+        // The site-to-chat scene primes this before it ever mounts
+        // BookingForm (see ShowreelPrefetch's prefetchBookingSlots), so the
+        // date picker doesn't show a loading flash the moment it appears.
+        // Falls back to a normal fetch if nothing was primed (e.g. this
+        // route loaded on its own, outside the full deck).
+        const { getShowreelBookingSlotsPrefetch } = await import(
+          "@/features/portfolio/showreel/showreelBookingSlotsPrefetch"
+        );
+        const prefetched = getShowreelBookingSlotsPrefetch();
+        body = prefetched
+          ? await prefetched
+          : ((await (await fetch("/api/v1/booking/slots")).json()) as {
+              slots?: SlotDto[];
+              error?: string;
+            });
+      } else {
+        const res = await fetch("/api/v1/booking/slots");
+        body = (await res.json()) as { slots?: SlotDto[]; error?: string };
+      }
       if (body.error) throw new Error(body.error);
-      setSlots(body.slots ?? []);
+      let next = body.slots ?? [];
+      if (isShowreel) {
+        const { ensureOpenBookingSlots } = await import(
+          "@/features/portfolio/showreel/product-scenes/buildShowreelBookingSlots"
+        );
+        next = ensureOpenBookingSlots(next);
+      }
+      setSlots(next);
     } catch {
-      setSlots([]);
+      if (document.documentElement.dataset.showreelDemo === "1") {
+        const { buildShowreelBookingSlots } = await import(
+          "@/features/portfolio/showreel/product-scenes/buildShowreelBookingSlots"
+        );
+        setSlots(buildShowreelBookingSlots());
+      } else {
+        setSlots([]);
+      }
     } finally {
       setSlotsLoading(false);
     }
@@ -76,6 +117,24 @@ export function BookingForm({ services }: BookingFormProps) {
   useEffect(() => {
     void loadSlots();
   }, []);
+
+  useBookingFormShowreel({
+    enabled: showreel,
+    slots,
+    serviceOptions: [...ourServices, ...laserServices].map((s) => ({
+      id: s.id,
+      title: s.title,
+    })),
+    setSlots,
+    setSelectedDate,
+    setSelectedSlotId,
+    setSuccess,
+    setError,
+    setName,
+    setPhone,
+    setEmail,
+    setServiceId,
+  });
 
   const dates = useMemo((): BookingDateOption[] => {
     const byDay = new Map<string, BookingDateOption>();
@@ -109,8 +168,14 @@ export function BookingForm({ services }: BookingFormProps) {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const serviceId = String(form.get("service") || "").trim();
+
+    // Showreel first — scripted click must not hit live field validation.
+    if (document.documentElement.dataset.showreelDemo === "1") {
+      setSuccess(true);
+      setError(null);
+      return;
+    }
+
     const service =
       services.find((s) => s.id === serviceId) ??
       (serviceId === "consultation" ? null : undefined);
@@ -118,7 +183,7 @@ export function BookingForm({ services }: BookingFormProps) {
       setError(t("bookingError"));
       return;
     }
-    if (!selectedSlotId) {
+    if (!name.trim() || !phone.trim() || !selectedSlotId) {
       setError(t("bookingError"));
       return;
     }
@@ -129,6 +194,7 @@ export function BookingForm({ services }: BookingFormProps) {
       setSelectedSlotId("");
       return;
     }
+
     setPending(true);
     setError(null);
     setSuccess(false);
@@ -138,12 +204,14 @@ export function BookingForm({ services }: BookingFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slot_id: selectedSlotId,
-          patient_name: String(form.get("name") || "").trim(),
-          phone: String(form.get("phone") || "").trim(),
-          email: String(form.get("email") || "").trim(),
+          patient_name: name.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
           service_id: service?.id ?? null,
           service_label: service?.title ?? "General consultation",
-          notes: String(form.get("notes") || "").trim(),
+          notes: String(
+            new FormData(event.currentTarget).get("notes") || "",
+          ).trim(),
         }),
       });
       const body = (await res.json()) as { error?: string };
@@ -175,6 +243,7 @@ export function BookingForm({ services }: BookingFormProps) {
   return (
     <form
       id="booking-form"
+      data-showreel-action="booking-form"
       className="space-y-6"
       onSubmit={(e) => void onSubmit(e)}
       noValidate
@@ -192,6 +261,9 @@ export function BookingForm({ services }: BookingFormProps) {
           <input
             name="name"
             required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            data-showreel-action="booking-name"
             placeholder={t("bookingNamePlaceholder")}
             className="rounded-[16px] border border-[#e6e8ec] px-4 py-3"
           />
@@ -204,6 +276,9 @@ export function BookingForm({ services }: BookingFormProps) {
             inputMode="tel"
             autoComplete="tel"
             required
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            data-showreel-action="booking-phone"
             placeholder={t("bookingPhonePlaceholder")}
             className="rounded-[16px] border border-[#e6e8ec] px-4 py-3"
           />
@@ -214,6 +289,9 @@ export function BookingForm({ services }: BookingFormProps) {
           <input
             name="email"
             type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            data-showreel-action="booking-email"
             placeholder={t("bookingEmailPlaceholder")}
             className="rounded-[16px] border border-[#e6e8ec] px-4 py-3"
           />
@@ -223,8 +301,10 @@ export function BookingForm({ services }: BookingFormProps) {
           <select
             name="service"
             required
+            value={serviceId}
+            onChange={(e) => setServiceId(e.target.value)}
+            data-showreel-action="booking-service"
             className="rounded-[16px] border border-[#e6e8ec] px-4 py-3"
-            defaultValue=""
           >
             <option value="">{t("bookingServicePlaceholder")}</option>
             <option value="consultation">{t("bookingServiceConsult")}</option>
@@ -288,7 +368,11 @@ export function BookingForm({ services }: BookingFormProps) {
       </label>
 
       <div className="flex flex-wrap gap-3">
-        <DentalButton type="submit" disabled={pending}>
+        <DentalButton
+          type="submit"
+          disabled={pending}
+          data-showreel-action="booking-submit"
+        >
           {pending ? t("bookingPending") : t("bookingSubmit")}
         </DentalButton>
         <DentalButton href="https://wa.me/201111922252" variant="secondary">
@@ -297,7 +381,12 @@ export function BookingForm({ services }: BookingFormProps) {
       </div>
 
       {success ? (
-        <p id="booking-success" className="text-sm text-green-700" role="status">
+        <p
+          id="booking-success"
+          data-showreel-action="booking-success"
+          className="text-sm text-green-700"
+          role="status"
+        >
           {t("bookingSuccess")}
         </p>
       ) : null}
