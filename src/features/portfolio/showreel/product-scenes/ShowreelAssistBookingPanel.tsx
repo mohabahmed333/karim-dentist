@@ -8,12 +8,8 @@ import {
 } from "@/features/admin/components/chat/ActionReviewCard";
 import { ChatPanelHeader } from "@/features/admin/components/chat/ChatPanelHeader";
 import { ChatShell } from "@/features/admin/components/chat/ChatShell";
-import { CHAT_BUBBLE, CHAT_META } from "@/features/admin/components/chat/chatSkin";
-import {
-  chatTransition,
-  messageVariants,
-  workingVariants,
-} from "@/features/admin/components/chat/chatMotion";
+import { CHAT_META } from "@/features/admin/components/chat/chatSkin";
+import { chatTransition, messageVariants } from "@/features/admin/components/chat/chatMotion";
 import type { AdminChatLayout } from "@/features/admin/hooks/useAdminChatLayout";
 import { useTranslations } from "@/lib/i18n";
 import {
@@ -24,6 +20,11 @@ import {
   SHOWREEL_ASSIST_EVENT,
   type ShowreelAssistDetail,
 } from "./showreelAssistEvents";
+import {
+  ShowreelHighlightPulse,
+  ShowreelMotionBubble,
+  ShowreelWorkingIndicator,
+} from "./ShowreelMotionBubble";
 import { useShowreelPhase } from "./useShowreelPhase";
 
 type Props = {
@@ -83,44 +84,6 @@ function bookingReview(
     ],
     actions: [],
   };
-}
-
-/** A message bubble that fades/slides in exactly like the real chat's own messages. */
-function MotionBubble({
-  isUser,
-  className = "",
-  children,
-}: {
-  isUser?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <motion.div
-      className={`${CHAT_BUBBLE} ${isUser ? "ms-8" : ""} ${className}`}
-      custom={isUser}
-      variants={messageVariants}
-      initial="hidden"
-      animate="show"
-      transition={chatTransition(false)}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-function WorkingIndicator({ label }: { label: string }) {
-  return (
-    <motion.p
-      className={`text-[12px] ${CHAT_META}`}
-      variants={workingVariants}
-      initial="hidden"
-      animate="show"
-      exit="exit"
-    >
-      {label}
-    </motion.p>
-  );
 }
 
 /** Scripted Clinic Assist body for the float/dock panel (same chrome as dashboard). */
@@ -194,35 +157,44 @@ export function ShowreelAssistBookingPanel({
       />
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
         <AnimatePresence initial={false}>
-          <MotionBubble
+          <ShowreelMotionBubble
             key="request"
             isUser
             className="bg-[var(--admin-primary)] text-white"
           >
             Book Sara for teeth whitening this week
-          </MotionBubble>
+          </ShowreelMotionBubble>
 
           {step === "working-extract" ? (
-            <WorkingIndicator key="working-extract" label={t("admin.chat.working")} />
+            <ShowreelWorkingIndicator
+              key="working-extract"
+              label={t("admin.chat.working")}
+            />
           ) : null}
           {showExtract ? (
-            <MotionBubble key="extract">
+            <ShowreelMotionBubble key="extract">
               Extracted · {patient.patientName} · {patient.serviceLabel} ·{" "}
               {patient.phone}
-            </MotionBubble>
+            </ShowreelMotionBubble>
           ) : null}
 
           {step === "working-slot" ? (
-            <WorkingIndicator key="working-slot" label={t("admin.chat.working")} />
+            <ShowreelWorkingIndicator
+              key="working-slot"
+              label={t("admin.chat.working")}
+            />
           ) : null}
           {showSlot ? (
-            <MotionBubble key="slot">
+            <ShowreelMotionBubble key="slot">
               Suggested slot · {slot.label}
-            </MotionBubble>
+            </ShowreelMotionBubble>
           ) : null}
 
           {step === "working-review" ? (
-            <WorkingIndicator key="working-review" label={t("admin.chat.working")} />
+            <ShowreelWorkingIndicator
+              key="working-review"
+              label={t("admin.chat.working")}
+            />
           ) : null}
           {showReview ? (
             <motion.div
@@ -242,24 +214,29 @@ export function ShowreelAssistBookingPanel({
           ) : null}
 
           {showCreated ? (
-            <MotionBubble key="created">
-              Reservation created — pending confirmation.
-            </MotionBubble>
+            // Story beat: this is the moment the AI's proposal actually
+            // becomes a real reservation — worth a highlight, not just
+            // another bubble sliding in like everything before it.
+            <ShowreelHighlightPulse key="created" className="rounded-2xl">
+              <ShowreelMotionBubble className="border-[color-mix(in_srgb,var(--admin-primary)_35%,#E8EAED)]">
+                Reservation created — pending confirmation.
+              </ShowreelMotionBubble>
+            </ShowreelHighlightPulse>
           ) : null}
 
           {followupSent ? (
-            <MotionBubble
+            <ShowreelMotionBubble
               key="followup"
               isUser
               className="bg-[var(--admin-primary)] text-white"
             >
               {followupText}
-            </MotionBubble>
+            </ShowreelMotionBubble>
           ) : null}
           {showAck ? (
-            <MotionBubble key="ack">
+            <ShowreelMotionBubble key="ack">
               Sent — Sara will get a WhatsApp confirmation too.
-            </MotionBubble>
+            </ShowreelMotionBubble>
           ) : null}
         </AnimatePresence>
         <div ref={bottomRef} />
