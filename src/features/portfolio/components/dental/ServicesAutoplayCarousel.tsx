@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { Tables } from "@/lib/supabase/database.types";
 import { pickLocalized, useLocale, useTranslations } from "@/lib/i18n";
 import {
@@ -7,6 +8,7 @@ import {
   hasVisibleServiceTitle,
 } from "@/features/portfolio/lib/serviceKindGroups";
 import { HorizontalCarousel } from "../HorizontalCarousel";
+import { localePath } from "@/lib/i18n/localePath";
 import { repeatForInfiniteLoop } from "../../lib/carouselAutoplay";
 
 type Service = Tables<"services">;
@@ -42,6 +44,18 @@ function ServiceCard({
       {/* Real card contributes a heading; clones use inert markup. */}
       {duplicate ? (
         <p className="text-lg font-semibold text-[#0f2744]">{title}</p>
+      ) : service.slug ? (
+        <h4
+          className="text-lg font-semibold text-[#0f2744]"
+          data-customize-field="title"
+        >
+          <Link
+            href={localePath(locale, `/services/${service.slug}`)}
+            className="hover:underline"
+          >
+            {title}
+          </Link>
+        </h4>
       ) : (
         <h4
           className="text-lg font-semibold text-[#0f2744]"

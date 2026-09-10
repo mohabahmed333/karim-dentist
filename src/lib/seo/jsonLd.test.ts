@@ -49,6 +49,7 @@ const SERVICES = [
     description_ar: "",
     kind: "our_services",
     sort_order: 1,
+    slug: "teeth-whitening",
   },
   {
     id: "s2",
@@ -58,6 +59,7 @@ const SERVICES = [
     description_ar: "",
     kind: "laser",
     sort_order: 1,
+    slug: null,
   },
   {
     id: "s3",
@@ -325,4 +327,31 @@ test("wrapGraph produces a standalone context+graph from loose nodes", () => {
   const graph = wrapGraph([{ "@type": "BreadcrumbList" }, { "@type": "Article" }]);
   assert.equal(graph["@context"], "https://schema.org");
   assert.equal(graph["@graph"].length, 2);
+});
+
+test("MedicalProcedure gets its own url when the service has a slug", () => {
+  const graph = buildClinicGraph({
+    locale: "en",
+    siteUrl: "https://thedentallounge.com",
+    settings: SETTINGS,
+    hours: HOURS,
+    services: SERVICES,
+  });
+  const withSlug = graph["@graph"].find((n: { "@id"?: string }) => n["@id"]?.endsWith("#service-s1"));
+  assert.equal(withSlug.url, "https://thedentallounge.com/services/teeth-whitening");
+
+  const withoutSlug = graph["@graph"].find((n: { "@id"?: string }) => n["@id"]?.endsWith("#service-s2"));
+  assert.equal(withoutSlug.url, undefined);
+});
+
+test("the service url reflects the current locale", () => {
+  const graph = buildClinicGraph({
+    locale: "ar",
+    siteUrl: "https://thedentallounge.com",
+    settings: SETTINGS,
+    hours: HOURS,
+    services: SERVICES,
+  });
+  const withSlug = graph["@graph"].find((n: { "@id"?: string }) => n["@id"]?.endsWith("#service-s1"));
+  assert.equal(withSlug.url, "https://thedentallounge.com/ar/services/teeth-whitening");
 });

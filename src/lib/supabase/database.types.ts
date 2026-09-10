@@ -1536,6 +1536,7 @@ export type Database = {
           kind: "our_services" | "laser";
           image_url: string | null;
           media_type: "image" | "video";
+          slug: string | null;
           sort_order: number;
           is_published: boolean;
           created_at: string;
@@ -1552,6 +1553,7 @@ export type Database = {
           kind?: "our_services" | "laser";
           image_url?: string | null;
           media_type?: "image" | "video";
+          slug?: string | null;
           sort_order?: number;
           is_published?: boolean;
           created_at?: string;
@@ -1568,6 +1570,7 @@ export type Database = {
           kind?: "our_services" | "laser";
           image_url?: string | null;
           media_type?: "image" | "video";
+          slug?: string | null;
           sort_order?: number;
           is_published?: boolean;
           created_at?: string;

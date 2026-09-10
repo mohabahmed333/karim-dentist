@@ -86,7 +86,7 @@ export function isHomepageNavHrefVisible(
 }
 
 export function isSitePageSectionVisible(
-  key: "case-studies" | "featured",
+  key: HomepageSectionKey,
   hidden: string[] | null | undefined,
 ): boolean {
   return !isHomepageSectionHidden(hidden, key);

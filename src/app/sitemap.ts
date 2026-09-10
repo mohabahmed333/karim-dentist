@@ -20,5 +20,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     hiddenSections: portfolio.settings?.homepage_hidden_sections,
     caseStudies: portfolio.caseStudies,
     featuredProjects: portfolio.featured,
+    services: portfolio.services,
   });
 }

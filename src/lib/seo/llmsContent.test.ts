@@ -36,6 +36,7 @@ const SERVICES = [
     description_ar: "",
     kind: "our_services",
     sort_order: 1,
+    slug: "teeth-whitening",
   },
   {
     id: "s2",
@@ -128,4 +129,17 @@ test("full dump skips unpublished case studies", () => {
     caseStudies: [{ ...CASE_STUDIES[0], is_published: false }],
   });
   assert.ok(!text.includes("Example case"));
+});
+
+test("index links each service to its own page when it has a slug", () => {
+  const text = buildLlmsIndex({
+    siteUrl: "https://thedentallounge.com",
+    settings: SETTINGS,
+    hours: HOURS,
+    services: SERVICES,
+  });
+  assert.match(
+    text,
+    /- \[Teeth whitening\]\(https:\/\/thedentallounge\.com\/services\/teeth-whitening\)/,
+  );
 });

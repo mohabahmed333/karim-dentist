@@ -1,4 +1,5 @@
 import { isSitePageSectionVisible } from "@/features/portfolio/lib/homepageSectionNav";
+import { hasVisibleServiceTitle } from "@/features/portfolio/lib/serviceKindGroups";
 import { localePath } from "@/lib/i18n/localePath";
 import type { Locale } from "@/lib/i18n/localeStorage";
 
@@ -24,11 +25,14 @@ type SlugRecord = {
   updated_at: string;
 };
 
+type ServiceSlugRecord = SlugRecord & { title: string | null };
+
 type BuildSitemapInput = {
   siteUrl: string;
   hiddenSections: string[] | null | undefined;
   caseStudies: SlugRecord[];
   featuredProjects: SlugRecord[];
+  services?: ServiceSlugRecord[];
 };
 
 const LOCALES: readonly Locale[] = ["en", "ar"];
@@ -102,6 +106,24 @@ export function buildSitemapEntries(input: BuildSitemapInput): SitemapEntry[] {
       entries.push(
         ...entriesForPath(siteUrl, `/featured/${project.slug}`, {
           lastModified: project.updated_at,
+          changeFrequency: "monthly",
+          priority: 0.6,
+        }),
+      );
+    }
+  }
+
+  // Individual service pages. Gated on the same "services" homepage
+  // section toggle as the catalogue itself, and on a real (non-placeholder)
+  // title — a page titled "Untitled" is not worth advertising to Google.
+  if (isSitePageSectionVisible("services", hiddenSections)) {
+    for (const service of (input.services ?? []).filter(
+      (s): s is ServiceSlugRecord & { slug: string } =>
+        isLive(s) && hasVisibleServiceTitle(s.title),
+    )) {
+      entries.push(
+        ...entriesForPath(siteUrl, `/services/${service.slug}`, {
+          lastModified: service.updated_at,
           changeFrequency: "monthly",
           priority: 0.6,
         }),

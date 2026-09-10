@@ -35,6 +35,7 @@ type ServiceInput = {
   description?: string | null;
   kind?: string | null;
   sort_order: number;
+  slug?: string | null;
 };
 
 type CaseStudyInput = {
@@ -121,7 +122,12 @@ export function buildLlmsIndex(input: IndexInput): string {
     lines.push("");
     lines.push("## Services");
     for (const service of services) {
-      lines.push(`- ${text(service.title)}`);
+      const name = text(service.title);
+      lines.push(
+        service.slug
+          ? `- [${name}](${input.siteUrl}/services/${service.slug})`
+          : `- ${name}`,
+      );
     }
   }
 
@@ -165,6 +171,7 @@ export function buildLlmsFull(input: FullInput): string {
     for (const service of services) {
       const description = text(service.description);
       lines.push("", `### ${text(service.title)}`);
+      if (service.slug) lines.push(`${input.siteUrl}/services/${service.slug}`);
       if (description) lines.push(description);
     }
   }

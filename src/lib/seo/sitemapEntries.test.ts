@@ -125,3 +125,61 @@ test("hiding a section removes both its English and Arabic entries", () => {
   const urls = entries.map((e) => e.url);
   assert.ok(!urls.some((u) => u.includes("case-studies")));
 });
+
+test("lists every published service with a slug and a real title", () => {
+  const entries = buildSitemapEntries({
+    siteUrl: "https://thedentallounge.com",
+    hiddenSections: [],
+    caseStudies: [],
+    featuredProjects: [],
+    services: [
+      {
+        title: "Teeth whitening",
+        slug: "teeth-whitening",
+        is_published: true,
+        deleted_at: null,
+        updated_at: NOW.toISOString(),
+      },
+      {
+        title: "Untitled",
+        slug: "untitled",
+        is_published: true,
+        deleted_at: null,
+        updated_at: NOW.toISOString(),
+      },
+      {
+        title: "Draft service",
+        slug: null,
+        is_published: true,
+        deleted_at: null,
+        updated_at: NOW.toISOString(),
+      },
+    ],
+  });
+  const urls = entries.map((e) => e.url);
+  assert.ok(urls.includes("https://thedentallounge.com/services/teeth-whitening"));
+  assert.ok(urls.includes("https://thedentallounge.com/ar/services/teeth-whitening"));
+  // Placeholder title and slugless drafts never get a page listed.
+  assert.ok(!urls.some((u) => u.includes("untitled")));
+  assert.ok(!urls.some((u) => u.includes("draft")));
+});
+
+test("omits services entirely when that homepage section is hidden", () => {
+  const entries = buildSitemapEntries({
+    siteUrl: "https://thedentallounge.com",
+    hiddenSections: ["services"],
+    caseStudies: [],
+    featuredProjects: [],
+    services: [
+      {
+        title: "Teeth whitening",
+        slug: "teeth-whitening",
+        is_published: true,
+        deleted_at: null,
+        updated_at: NOW.toISOString(),
+      },
+    ],
+  });
+  const urls = entries.map((e) => e.url);
+  assert.ok(!urls.some((u) => u.includes("services/teeth-whitening")));
+});

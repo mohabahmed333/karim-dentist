@@ -1,5 +1,6 @@
 import type { Locale } from "@/lib/i18n/LocaleProvider";
 import { pickLocalized } from "@/lib/i18n/pickLocalized";
+import { localePath } from "@/lib/i18n/localePath";
 import { hasVisibleServiceTitle } from "@/features/portfolio/lib/serviceKindGroups";
 import {
   externalHref,
@@ -57,6 +58,7 @@ export type ClinicServiceInput = {
   description_ar?: string | null;
   kind?: string | null;
   sort_order: number;
+  slug?: string | null;
 };
 
 type BuildClinicGraphInput = {
@@ -243,6 +245,9 @@ function buildServicesGraph(
       description: description || undefined,
       provider: { "@id": clinicId },
       procedureType: service.kind === "laser" ? "Laser dentistry" : undefined,
+      url: service.slug
+        ? resolveAssetUrl(siteUrl, localePath(locale, `/services/${service.slug}`))
+        : undefined,
     };
   });
 
