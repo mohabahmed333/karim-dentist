@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Bot, ChevronDown, Search, Star, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AiModeSwitch } from "./AiModeSwitch";
 import { useTranslations } from "@/lib/i18n";
 import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -162,7 +163,8 @@ export function SupportInboxColumn({
           >
             {heading}
           </h1>
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1.5">
+            {showreelDemo ? null : <AiModeSwitch compact={compact} />}
             <button
               type="button"
               className={cn(
