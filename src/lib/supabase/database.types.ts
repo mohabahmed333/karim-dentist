@@ -1439,6 +1439,8 @@ export type Database = {
           sent_at: string | null;
           outbound_message_id: string | null;
           last_error: string | null;
+          waitlist_id: string | null;
+          slot_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -1465,6 +1467,8 @@ export type Database = {
           sent_at?: string | null;
           outbound_message_id?: string | null;
           last_error?: string | null;
+          waitlist_id?: string | null;
+          slot_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1491,6 +1495,8 @@ export type Database = {
           sent_at?: string | null;
           outbound_message_id?: string | null;
           last_error?: string | null;
+          waitlist_id?: string | null;
+          slot_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1920,6 +1926,56 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           deleted_at?: string | null;
+        };
+        Relationships: [];
+      };
+      appointment_waitlist: {
+        Row: {
+          id: string;
+          patient_name: string;
+          phone: string;
+          /** Generated column: last 8 digits of `phone`. Never write it. */
+          phone_suffix: string | null;
+          service_id: string | null;
+          service_label: string;
+          preferred_from: string | null;
+          preferred_to: string | null;
+          notes: string;
+          status: string;
+          offered_slot_id: string | null;
+          offered_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          patient_name: string;
+          phone: string;
+          service_id?: string | null;
+          service_label?: string;
+          preferred_from?: string | null;
+          preferred_to?: string | null;
+          notes?: string;
+          status?: string;
+          offered_slot_id?: string | null;
+          offered_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          patient_name?: string;
+          phone?: string;
+          service_id?: string | null;
+          service_label?: string;
+          preferred_from?: string | null;
+          preferred_to?: string | null;
+          notes?: string;
+          status?: string;
+          offered_slot_id?: string | null;
+          offered_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
