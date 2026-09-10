@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { openContactPopup } from "../lib/contactPopupBus";
 import { scrollToElement } from "../lib/drawerScrollLock";
+import { stripLocale } from "@/lib/i18n/localePath";
 
 /** Hash routing: contact popup on any page; homepage section scroll on `/`. */
 export function HomeHashScroll() {
@@ -19,7 +20,8 @@ export function HomeHashScroll() {
         return;
       }
 
-      if (pathname !== "/" && pathname !== "") return;
+      // "/" and "/ar" are both home — the section IDs only exist there.
+      if (stripLocale(pathname).path !== "/") return;
 
       scrollToElement(id);
     };

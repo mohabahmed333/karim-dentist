@@ -7,6 +7,7 @@ import type { DentalSectionCopy } from "@/features/portfolio/lib/homepageSection
 import { dentalSectionY } from "@/features/portfolio/lib/dentalLayout";
 import { mediaSrc } from "@/features/portfolio/lib/mediaSrc";
 import { localizedCms, useLocale, useTranslations } from "@/lib/i18n";
+import { localizeMixedHref } from "@/lib/i18n/localePath";
 import { cn } from "@/lib/utils";
 import { DentalButton } from "./DentalButton";
 import { ScrollReveal } from "./ScrollReveal";
@@ -112,7 +113,7 @@ export function DentalSolutionsSection({
                         {title}
                       </h3>
                       <DentalButton
-                        href={panel.link_href || "#contact"}
+                        href={localizeMixedHref(locale, panel.link_href || "#contact")}
                         className="min-h-12 rounded-[4px] bg-white px-[1.45rem] py-[0.85rem] font-bold text-[#111] hover:bg-[#f3f4f6]"
                       >
                         {t("solutionsBook")}
@@ -122,7 +123,7 @@ export function DentalSolutionsSection({
                 ) : (
                   <>
                     <a
-                      href={panel.link_href || "#gallery"}
+                      href={localizeMixedHref(locale, panel.link_href || "#gallery")}
                       className="absolute end-[1.15rem] top-[1.15rem] z-[2] grid size-10 place-items-center rounded-[6px] border border-white/12 bg-black/40 text-[1.05rem]"
                       aria-label={
                         index === 0

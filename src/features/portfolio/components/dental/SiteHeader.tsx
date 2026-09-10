@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useTranslations } from "@/lib/i18n";
+import { useLocale, useTranslations } from "@/lib/i18n";
+import { localePath } from "@/lib/i18n/localePath";
 import { Brand } from "./Brand";
 import { DentalPrimaryNav } from "./DentalPrimaryNav";
 import { LanguageSwitcher } from "./LanguageSwitcher";
@@ -33,6 +34,7 @@ export function SiteHeader({
   contained = false,
 }: SiteHeaderProps) {
   const t = useTranslations();
+  const { locale } = useLocale();
   const headerRef = useRef<HTMLElement>(null);
   const [internalOpen, setInternalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -95,7 +97,7 @@ export function SiteHeader({
           <Brand
             name={brand}
             logoUrl={brandLogo}
-            href={pinned ? "/" : "#home"}
+            href={pinned ? localePath(locale, "/") : "#home"}
             ariaLabel={t("brandAria")}
           />
           <div className="flex items-center gap-3">

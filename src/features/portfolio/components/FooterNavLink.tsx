@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Tables } from "@/lib/supabase/database.types";
 import { pickLocalized, useLocale } from "@/lib/i18n";
+import { localePath, localizeMixedHref, stripLocale } from "@/lib/i18n/localePath";
 import { openContactPopup } from "../lib/contactPopupBus";
 import {
   isContactFooterLink,
@@ -17,9 +18,9 @@ type Props = {
   link: Tables<"footer_links">;
 };
 
-function scrollHomeToTop() {
+function scrollHomeToTop(homeHref: string) {
   window.scrollTo({ top: 0, behavior: "smooth" });
-  window.history.replaceState(null, "", "/");
+  window.history.replaceState(null, "", homeHref);
 }
 
 export function FooterNavLink({ link }: Props) {
@@ -30,7 +31,8 @@ export function FooterNavLink({ link }: Props) {
   const isIcon = link.display_mode === "icon";
   const className = isIcon ? "footer-icon-link" : undefined;
   const content = <FooterLinkContent link={link} />;
-  const onHome = pathname === "/" || pathname === "";
+  const homeHref = localePath(locale, "/");
+  const onHome = stripLocale(pathname).path === "/";
 
   if (isContactFooterLink(link)) {
     return (
@@ -63,13 +65,13 @@ export function FooterNavLink({ link }: Props) {
   if (isHomeFooterHref(resolved.href)) {
     return (
       <Link
-        href="/"
+        href={homeHref}
         className={className}
         aria-label={isIcon ? label : undefined}
         onClick={(event) => {
           if (!onHome) return;
           event.preventDefault();
-          scrollHomeToTop();
+          scrollHomeToTop(homeHref);
         }}
       >
         {content}
@@ -79,7 +81,7 @@ export function FooterNavLink({ link }: Props) {
 
   return (
     <Link
-      href={resolved.href}
+      href={localizeMixedHref(locale, resolved.href)}
       className={className}
       aria-label={isIcon ? label : undefined}
     >

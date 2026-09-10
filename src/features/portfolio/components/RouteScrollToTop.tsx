@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { stripLocale } from "@/lib/i18n/localePath";
 
 function scrollKey(pathname: string) {
   return `scroll-y:${pathname}`;
@@ -44,7 +45,9 @@ export function RouteScrollToTop() {
   }, [pathname]);
 
   useEffect(() => {
-    if (pathname === "/" && window.location.hash) return;
+    // "/" and "/ar" are both home for this check — landing on either with
+    // a hash means HomeHashScroll is about to handle it, not us.
+    if (stripLocale(pathname).path === "/" && window.location.hash) return;
 
     if (isFirstMount.current) {
       isFirstMount.current = false;

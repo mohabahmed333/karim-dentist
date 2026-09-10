@@ -29,6 +29,9 @@ type LocaleContextValue = {
   setLocale: (locale: Locale) => void;
   t: (key: AnyMessageKey) => string;
   dir: "ltr" | "rtl";
+  /** "url" on the public site (LanguageSwitcher must navigate, not just set
+   * state); "cookie" everywhere else (admin login can switch in place). */
+  source: "cookie" | "url";
 };
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
@@ -39,16 +42,35 @@ const arCatalog: Record<string, string> = { ...ar, ...adminAr };
 type Props = {
   children: React.ReactNode;
   initialLocale?: Locale;
+  /**
+   * "cookie" (default): admin + showreel — locale can change without
+   * navigation, migrates an older localStorage preference into state on
+   * mount, and mutates document.documentElement client-side.
+   *
+   * "url": the public site. The route segment ("/" vs "/ar") is the only
+   * source of truth for content language, so this provider must never
+   * silently show Arabic at an English URL (or vice versa) just because a
+   * cookie or localStorage says otherwise:
+   *  - no localStorage migration on mount,
+   *  - no client-side document.documentElement mutation (SSR already
+   *    emitted the correct lang/dir for this URL),
+   *  - setLocale() only persists a cookie hint for a later admin visit; it
+   *    does not change what's rendered. Actually changing language means
+   *    navigating to the mirrored URL (see LanguageSwitcher).
+   */
+  source?: "cookie" | "url";
 };
 
 export function LocaleProvider({
   children,
   initialLocale = "en",
+  source = "cookie",
 }: Props) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
   // Migrate older localStorage-only preference into cookie + state once.
   useEffect(() => {
+    if (source !== "cookie") return;
     if (isShowreelDemoLocaleLock()) {
       setLocaleState("en");
       return;
@@ -64,21 +86,29 @@ export function LocaleProvider({
     } catch {
       persistLocale(initialLocale);
     }
-  }, [initialLocale]);
+  }, [initialLocale, source]);
 
   useEffect(() => {
+    if (source !== "cookie") return;
     document.documentElement.lang = locale;
     document.documentElement.dir = localeDir(locale);
     document.body.classList.toggle(
       "font-[family-name:var(--font-arabic)]",
       locale === "ar",
     );
-  }, [locale]);
+  }, [locale, source]);
 
-  const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next);
-    persistLocale(next);
-  }, []);
+  const setLocale = useCallback(
+    (next: Locale) => {
+      if (source === "url") {
+        persistLocale(next);
+        return;
+      }
+      setLocaleState(next);
+      persistLocale(next);
+    },
+    [source],
+  );
 
   const value = useMemo<LocaleContextValue>(
     () => ({
@@ -89,8 +119,9 @@ export function LocaleProvider({
         return catalog[key] ?? String(key);
       },
       dir: localeDir(locale),
+      source,
     }),
-    [locale, setLocale],
+    [locale, setLocale, source],
   );
 
   return (

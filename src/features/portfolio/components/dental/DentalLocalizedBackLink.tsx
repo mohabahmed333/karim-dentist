@@ -2,6 +2,7 @@
 
 import { DentalBackLink } from "./DentalBackLink";
 import { pickLocalized, useLocale } from "@/lib/i18n";
+import { localePath } from "@/lib/i18n/localePath";
 
 type Props = {
   href: string;
@@ -19,7 +20,7 @@ export function DentalLocalizedBackLink({
   const { locale } = useLocale();
   return (
     <DentalBackLink
-      href={href}
+      href={localePath(locale, href)}
       label={pickLocalized(locale, label, labelAr) || label}
       onBackClick={onBackClick}
     />

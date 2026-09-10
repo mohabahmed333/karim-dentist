@@ -47,7 +47,7 @@ test("the product demo does not statically pull all six scenes", () => {
 // the full 18-query getPortfolioData() under force-dynamic on every load.
 test("the product branch of the demo route uses the narrow booking fetch", () => {
   const source = readFileSync(
-    join(here, "../../../app/showreel/demo/page.tsx"),
+    join(here, "../../../app/(internal)/showreel/demo/page.tsx"),
     "utf8",
   );
   const productBranch = source.slice(source.indexOf('if (mode === "product")'));

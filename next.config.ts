@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
     return [
       { source: "/services", destination: "/#services", permanent: true },
       { source: "/experience", destination: "/", permanent: true },
+      // "/en" is the proxy's internal rewrite target for the default
+      // locale (see src/lib/i18n/publicRewrite.ts) — it must never be
+      // reachable as a second public URL for the same content as "/".
+      { source: "/en", destination: "/", permanent: true },
+      { source: "/en/:path*", destination: "/:path*", permanent: true },
     ];
   },
   images: {
