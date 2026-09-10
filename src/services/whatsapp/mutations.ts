@@ -15,6 +15,8 @@ import {
   replyToJson,
   type MessageReplyTo,
 } from "./messageReply";
+import { phonesMatch } from "@/services/reservations/patientHistory";
+import { phoneSuffixForLookup } from "@/services/reservations/phoneSuffix";
 import { resolvePatientKeyByPhone } from "./patientLink";
 import { resolveConversationStatus } from "./resolveConversationStatus";
 import { laterIsoTimestamp } from "./sessionWindow";
@@ -110,14 +112,24 @@ export async function upsertConversationFromKapso(
     existing = data;
   }
   if (!existing && phone) {
-    const { data } = await supabase
-      .from("whatsapp_conversations")
-      .select("*")
-      .eq("phone_number", phone)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    existing = data;
+    // Narrow on the indexed suffix, then let phonesMatch decide — the same
+    // pattern as resolvePatientKeyByPhone. An exact match on phone_number used
+    // to be enough when every row came from Kapso in one shape, but the
+    // notification dispatcher can create a conversation for a patient who has
+    // never written, from a phone number typed into a booking form. Matching
+    // exactly would then start a second thread on that patient's first reply,
+    // leaving the reminder in one and the answer in the other.
+    const suffix = phoneSuffixForLookup(phone);
+    if (suffix) {
+      const { data } = await supabase
+        .from("whatsapp_conversations")
+        .select("*")
+        .eq("phone_suffix", suffix)
+        .order("updated_at", { ascending: false })
+        .limit(20);
+      // The suffix is only 8 digits, so unrelated foreign numbers can collide.
+      existing = (data ?? []).find((row) => phonesMatch(row.phone_number, phone)) ?? null;
+    }
   }
 
   const patientKey =
