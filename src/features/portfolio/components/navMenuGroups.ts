@@ -6,8 +6,6 @@ export const MENU_GROUPS = [
     links: [
       { href: "/case-studies", label: "Case studies" },
       { href: "/featured", label: "Featured" },
-      { href: "/services", label: "Services" },
-      { href: "/experience", label: "Experience" },
     ],
   },
   {
@@ -37,8 +35,6 @@ export function buildWorkNavLinks(
   if (featuredCount > 0) {
     links.push({ href: "/featured", label: "Featured" });
   }
-  links.push({ href: "/services", label: "Services" });
-  links.push({ href: "/experience", label: "Experience" });
   return links;
 }
 
