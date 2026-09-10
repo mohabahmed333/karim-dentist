@@ -1,6 +1,7 @@
 import type { Reservation } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
 import { RESERVATION_FIXTURES } from "./fixtures/reservationFixtures";
+import { phoneSuffixForLookup } from "@/services/reservations/phoneSuffix";
 
 export function buildShowreelReservations(): Reservation[] {
   const now = new Date().toISOString();
@@ -8,6 +9,7 @@ export function buildShowreelReservations(): Reservation[] {
     id: row.id,
     patient_name: row.patientName,
     phone: row.phone,
+    phone_suffix: phoneSuffixForLookup(row.phone) ?? "",
     email: null,
     service_id: null,
     service_label: row.serviceLabel,

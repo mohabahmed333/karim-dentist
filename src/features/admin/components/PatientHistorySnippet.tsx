@@ -10,6 +10,7 @@ import {
 } from "@/services/reservations/patientHistory";
 import { formatReservationWhen, statusBadgeClass } from "@/services/reservations/stats";
 import type { Reservation } from "@/services/reservations/types";
+import { phoneSuffixForLookup } from "@/services/reservations/phoneSuffix";
 
 type Props = {
   reservations: Reservation[];
@@ -32,6 +33,7 @@ export function PatientHistorySnippet({
     id: excludeId ?? "probe",
     patient_name: patientName,
     phone,
+    phone_suffix: phoneSuffixForLookup(phone) ?? "",
     email: null,
     service_id: null,
     service_label: "",

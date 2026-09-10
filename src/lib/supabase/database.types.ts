@@ -1083,6 +1083,8 @@ export type Database = {
           id: string;
           patient_name: string;
           phone: string;
+          /** Generated: last 8 digits of `phone`. Read-only, indexed. */
+          phone_suffix: string;
           email: string | null;
           service_id: string | null;
           service_label: string;

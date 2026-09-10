@@ -31,6 +31,7 @@ import {
 } from "@/features/admin/components/ReservationFormFields";
 import { expandDateRangeToInclude } from "@/features/admin/lib/reservationDateRange";
 import { defaultMonthFromTo } from "@/features/admin/lib/reservationFilters";
+import { phoneSuffixForLookup } from "@/services/reservations/phoneSuffix";
 
 export type ReservationFilter = "upcoming" | "today" | "pending" | "all";
 
@@ -221,6 +222,7 @@ export function useReservationEditor(initial: Reservation[]) {
         id: crypto.randomUUID(),
         patient_name: form.patient_name || "New patient",
         phone: form.phone,
+        phone_suffix: phoneSuffixForLookup(form.phone) ?? "",
         email: form.email || null,
         service_id: form.service_id ?? null,
         service_label: form.service_label || "General consultation",

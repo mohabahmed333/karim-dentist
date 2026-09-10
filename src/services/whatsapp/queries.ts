@@ -2,6 +2,7 @@ import type { createClient as createBrowserClient } from "@/lib/supabase/client"
 import type { createServiceClient } from "@/lib/supabase/service";
 import { sanitizeIlike } from "@/services/reservations/listFilters";
 import type { WhatsappConversation, WhatsappMessage } from "./types";
+import { buildMessageCursorFilter } from "./messageCursor";
 
 type AnySupabase =
   | ReturnType<typeof createServiceClient>
@@ -95,9 +96,11 @@ export async function listMessagesPage(
     .order("id", { ascending: false })
     .limit(limit + 1);
 
-  if (opts?.before) {
-    // Strictly older than cursor (timestamp, then id)
-    query = query.lt("wa_timestamp", opts.before.waTimestamp);
+  const cursorFilter = buildMessageCursorFilter(opts?.before);
+  if (cursorFilter) {
+    // Composite keyset: strictly older, or same instant with a smaller id.
+    // A timestamp-only bound skips messages sharing the boundary instant.
+    query = query.or(cursorFilter);
   }
 
   const { data, error } = await query;
