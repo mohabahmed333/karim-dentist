@@ -148,16 +148,33 @@ recalled.
 from `mode`. A "you're due a check-up" message is marketing in Meta's
 classification and in the patient's eyes, and needs its own template and consent.
 
+### Review requests
+
+Queued by the same scan, under the same `recall_enabled` switch, only when a
+patient replies to their follow-up and the assistant classifies that reply as
+`feedback_positive`. Any `feedback_negative` reply in the same three-day window
+vetoes it — a patient who says "the filling is fine but I waited an hour" is not
+someone to send to a public review page. Dedupe key: `<followup>:review_request`.
+
+### Opt-outs — `/admin/outbox`
+
+A patient who texts a whole-message opt-out — `STOP`, `unsubscribe`, `إيقاف`,
+`إلغاء الاشتراك` — is added to `patient_notification_optouts` before the model
+ever sees the message, and anything already queued for them is withdrawn. It
+only stops business-initiated messages: if they write to the clinic later, the
+assistant still answers. `الغاء` on its own is deliberately **not** an opt-out,
+because a patient replying it to a reminder is cancelling an appointment.
+
+`/admin/outbox` also lists the last 100 queued messages with their outcome and
+`skip_reason`, and lets staff add or remove an opt-out by hand.
+
 ### Templates still missing
 
 Every kind below queues correctly and records `no_approved_template` until its
 template is approved and added to `PATIENT_TEMPLATES` / `buildTemplateForKind`:
 
-`cancellation` · `reschedule` · `waitlist_offer` · `followup` · `recall_6m` (MARKETING)
-
-Review requests after a good follow-up reply are **not built**: they need the
-assistant to judge a reply's sentiment, which is a change to its decision logic
-rather than to this pipeline.
+`cancellation` · `reschedule` · `waitlist_offer` · `followup` ·
+`recall_6m` (MARKETING) · `review_request` (MARKETING)
 
 ## If nothing is being sent
 

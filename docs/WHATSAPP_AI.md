@@ -71,6 +71,14 @@ cancels it; with more than one the assistant must ask. `booking_cancel` needs 0.
 confidence, and a cancel emitted while `needs` still contains `reservation_id` is
 drafted as `ambiguous_reservation`.
 
+**Replying to a follow-up.** `feedback_positive` auto-sends a thank-you at 0.8
+confidence; `feedback_negative` always drafts, like `complaint`. The label is
+load-bearing: `feedback_positive` is what permits a review request, so pain
+reported alongside thanks must still be `clinical_question`.
+
+**STOP.** A whole-message opt-out keyword is recorded and the job ends as
+`opted_out_keyword` before any model call.
+
 ## Operating it
 
 ```sql
