@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/api/requireAdmin";
 import { createServiceClient } from "@/lib/supabase/service";
+import { recordDraftOutcome } from "@/services/whatsapp_ai/recordCorrection";
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import { sendWhatsappMessage, WhatsappSessionClosedError } from "@/services/whatsapp/sendMessage";
 
@@ -64,6 +65,13 @@ export async function PATCH(request: Request, context: Params) {
       // toward the AI rate limit, which is correct.
       senderKind: "ai",
       text,
+    });
+    // Capture what the assistant proposed against what staff actually sent,
+    // before the draft disappears. This is the only moment both exist.
+    await recordDraftOutcome(service, {
+      conversationId: draft.conversation_id,
+      sentText: text,
+      sentBy: auth.user?.id ?? null,
     });
     // The send inserted the real message; drop the draft placeholder.
     await service.from("whatsapp_messages").delete().eq("id", id);

@@ -383,6 +383,51 @@ export type Database = {
         Update: Record<string, never>;
         Relationships: [];
       };
+      whatsapp_ai_corrections: {
+        Row: {
+          id: string;
+          conversation_id: string | null;
+          ai_text: string;
+          sent_text: string;
+          edited: boolean;
+          intent: string | null;
+          reason: string | null;
+          model: string | null;
+          reviewed: boolean;
+          promoted: boolean;
+          sent_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id?: string | null;
+          ai_text: string;
+          sent_text: string;
+          edited: boolean;
+          intent?: string | null;
+          reason?: string | null;
+          model?: string | null;
+          reviewed?: boolean;
+          promoted?: boolean;
+          sent_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          conversation_id?: string | null;
+          ai_text?: string;
+          sent_text?: string;
+          edited?: boolean;
+          intent?: string | null;
+          reason?: string | null;
+          model?: string | null;
+          reviewed?: boolean;
+          promoted?: boolean;
+          sent_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       whatsapp_notes: {
         Row: {
           id: string;
