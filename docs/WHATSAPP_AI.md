@@ -104,3 +104,37 @@ Groq and Kapso are faked, via `E2E_FAKE_GROQ` / `E2E_FAKE_KAPSO`.
 - **A job that reached the send call is never retried.** A provider timeout is
   ambiguous, and a duplicate WhatsApp message to a patient is worse than a
   missed one. Those are abandoned for staff instead.
+
+## If the responder is silent
+
+Work down the chain — each step tells you which link is broken.
+
+1. **Is the code deployed?**
+   ```bash
+   curl -s -o /dev/null -w '%{http_code}\n' \
+     https://<your-domain>/api/v1/whatsapp/ai/settings
+   ```
+   `401` means the route exists and is deployed. `404` means production is
+   running an older build — check Vercel's **Production Branch** setting, which
+   must be `main`, and that the latest commit actually built.
+
+2. **Are jobs being created?**
+   ```sql
+   select count(*) from whatsapp_ai_jobs;
+   ```
+   Every inbound message enqueues one, before any policy check. Messages
+   arriving with zero jobs means the deployed webhook is the old handler.
+
+3. **What did the responder decide?**
+   ```sql
+   select decision, reason, intent, confidence, latency_ms, created_at
+   from whatsapp_ai_events order by created_at desc limit 10;
+   ```
+   `reason` names the exact gate that stopped it — `mode_off`, `no_ai_key`,
+   `session_closed`, `human_active`, `rate_limited_*`.
+
+A missing `GROQ_API_KEY` is the quietest failure: the policy gate skips before
+any network call, so there is no error anywhere — only a `skip` row with reason
+`no_ai_key`. On Vercel, add it to the Production environment and redeploy;
+new environment variables do not apply to an existing build.
+
