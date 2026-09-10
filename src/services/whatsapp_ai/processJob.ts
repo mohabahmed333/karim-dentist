@@ -86,6 +86,7 @@ export async function processAutoReplyJob(
       { data: serviceRows },
       { data: history },
       { data: reservations },
+      { data: clinicHours },
     ] = await Promise.all([
       countRecentAiReplies(db, conversation.id),
       db
@@ -125,6 +126,11 @@ export async function processAutoReplyJob(
         .neq("status", "cancelled")
         .order("starts_at", { ascending: true })
         .limit(5),
+      db
+        .from("clinic_hours")
+        .select("open_weekdays,time_windows,timezone")
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     const clinic = clinicContactFromSettings(settingsRow);
@@ -156,6 +162,11 @@ export async function processAutoReplyJob(
           phone: clinic.phone,
           address: clinic.address,
         },
+        hours: clinicHours as {
+          open_weekdays: number[];
+          time_windows: string[];
+          timezone: string | null;
+        } | null,
         services: (serviceRows ?? []).map((s) => ({ title: s.title as string })),
         patient: {
           name: conversation.contact_name,

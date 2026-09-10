@@ -1,3 +1,4 @@
+import { formatClinicHours, type ClinicHoursInput } from "./formatClinicHours";
 import { wrapPatientTurn } from "./sanitize";
 
 export type OfferedSlot = { id: string; starts_at: string };
@@ -23,6 +24,7 @@ export type BuildPromptInput = {
   basePrompt: string;
   slots: OfferedSlot[];
   clinic: ClinicFacts;
+  hours: ClinicHoursInput | null;
   services: { title: string; price?: string | null }[];
   patient: { name?: string | null; known: boolean };
   reservations: PatientReservation[];
@@ -91,6 +93,7 @@ export function buildAutoReplyPrompt(input: BuildPromptInput): BuiltPrompt {
     input.basePrompt,
     "",
     clinicBlock(input.clinic),
+    formatClinicHours(input.hours),
     "",
     servicesBlock,
     "",

@@ -14,6 +14,11 @@ function build(overrides: Record<string, unknown> = {}) {
       { id: SLOT_B, starts_at: "2026-09-13T15:00:00.000Z" },
     ],
     clinic: { name: "The Dental Lounge", phone: "+20100", address: "Road 90" },
+    hours: {
+      open_weekdays: [0, 1, 2, 3, 4],
+      time_windows: ["10:00-13:00", "14:00-18:00"],
+      timezone: "Africa/Cairo",
+    },
     services: [{ title: "Cleaning", price: "800 EGP" }],
     patient: { name: "Ali", known: true },
     reservations: [],
@@ -86,8 +91,15 @@ describe("buildAutoReplyPrompt", () => {
     assert.match(build().system, /no upcoming appointments/i);
   });
 
+  it("gives the model real opening hours to quote", () => {
+    const built = build();
+    assert.match(built.system, /Sunday to Thursday/);
+    assert.match(built.system, /10:00 to 13:00/);
+  });
+
   it("forbids quoting facts it was not given", () => {
-    const bare = build({ clinic: {}, services: [] });
+    const bare = build({ clinic: {}, services: [], hours: null });
+    assert.match(bare.system, /do not state opening hours/i);
     assert.match(bare.system, /do not state hours, address or phone/i);
     assert.match(bare.system, /do not quote prices/i);
   });
