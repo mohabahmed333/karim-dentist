@@ -24,7 +24,8 @@ export type FakeDbCall =
   | { type: "rpc"; fn: string; args: FakeRow }
   | { type: "select"; table: string; filters: FakeRow }
   | { type: "update"; table: string; values: FakeRow; filters: FakeRow }
-  | { type: "insert"; table: string; values: FakeRow };
+  | { type: "insert"; table: string; values: FakeRow }
+  | { type: "upsert"; table: string; values: FakeRow };
 
 export function createFakeDb(options: FakeDbOptions = {}) {
   const tables = options.tables ?? {};
@@ -35,7 +36,7 @@ export function createFakeDb(options: FakeDbOptions = {}) {
 
   function builder(
     table: string,
-    op: "select" | "update" | "insert",
+    op: "select" | "update" | "insert" | "upsert",
     payload: FakeRow,
   ) {
     const filters: FakeRow = {};
@@ -77,6 +78,8 @@ export function createFakeDb(options: FakeDbOptions = {}) {
           });
         } else if (op === "insert") {
           calls.push({ type: "insert", table, values: payload });
+        } else if (op === "upsert") {
+          calls.push({ type: "upsert", table, values: payload });
         }
         return Promise.resolve(
           fail ? { data: null, error: fail } : { data: null, error: null },
@@ -92,6 +95,12 @@ export function createFakeDb(options: FakeDbOptions = {}) {
       return calls.filter(
         (c): c is Extract<FakeDbCall, { type: "update" }> =>
           c.type === "update" && c.table === table,
+      );
+    },
+    upsertsTo(table: string) {
+      return calls.filter(
+        (c): c is Extract<FakeDbCall, { type: "upsert" }> =>
+          c.type === "upsert" && c.table === table,
       );
     },
     insertsTo(table: string) {
@@ -114,6 +123,7 @@ export function createFakeDb(options: FakeDbOptions = {}) {
         select: () => builder(table, "select", {}),
         update: (values: FakeRow) => builder(table, "update", values),
         insert: (values: FakeRow) => builder(table, "insert", values),
+        upsert: (values: FakeRow) => builder(table, "upsert", values),
       };
     },
   };

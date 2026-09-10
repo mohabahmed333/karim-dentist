@@ -27,6 +27,10 @@ export const WRITE_ACTION_KINDS = new Set<ActionKind>([
   "whatsapp.send_template",
   "whatsapp.set_status",
   "whatsapp.add_note",
+  "patient.upsert_profile",
+  "encounter.create",
+  "schedule.set_hours",
+  "schedule.regenerate_slots",
 ]);
 
 export function isWriteActionKind(kind: string): boolean {

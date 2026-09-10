@@ -34,6 +34,10 @@ export const actionKindSchema = z.enum([
   "whatsapp.send_template",
   "whatsapp.set_status",
   "whatsapp.add_note",
+  "patient.upsert_profile",
+  "encounter.create",
+  "schedule.set_hours",
+  "schedule.regenerate_slots",
 ]);
 
 export type ActionKind = z.infer<typeof actionKindSchema>;

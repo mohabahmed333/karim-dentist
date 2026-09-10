@@ -31,6 +31,10 @@ Allowed action kinds:
 - whatsapp.send_template { conversationId, name, language?, body?: string[] } (allowed outside 24h)
 - whatsapp.set_status { conversationId, status: active|archived }
 - whatsapp.add_note { conversationId, body, pinned?, author? } (internal only — never sent to the patient)
+- patient.upsert_profile { patientKey, display_name, phone?, email?, date_of_birth?, age_years?, gender?, medical_history?: string[], allergies?: string[], medications?, notes? } (merges — omitted fields are kept)
+- encounter.create { patientKey, type, timestamp?, notes?, patient_name? } (records a completed visit)
+- schedule.set_hours { open_weekdays?: int[0-6], time_windows?: ["10:00-13:00"], slot_minutes?: 15|30|45|60|90|120, horizon_days?: 7-60 } (regenerates open slots)
+- schedule.regenerate_slots { } (rebuild open slots from current hours; booked slots are kept)
 
 When useful, end with a JSON fence:
 \`\`\`json
