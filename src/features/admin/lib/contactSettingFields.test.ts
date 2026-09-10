@@ -27,6 +27,9 @@ describe("groupedContactSettingFields", () => {
       "contact_country",
       "contact_hours",
       "contact_map_url",
+      "contact_latitude",
+      "contact_longitude",
+      "contact_price_range",
     ]);
     assert.ok(contactIds.includes("contact_phone"));
     assert.ok(contactIds.includes("contact_whatsapp"));

@@ -15,6 +15,7 @@ export const HOMEPAGE_SECTION_NAV: Record<
   slider: { href: "#more-images", navLabel: "More Images" },
   "case-studies": { href: "#case-studies", navLabel: "Case studies" },
   featured: { href: "#featured", navLabel: "Projects" },
+  faq: { href: "#faq", navLabel: "FAQ" },
   contact: { href: "#contact", navLabel: "Contact" },
 };
 
@@ -56,6 +57,11 @@ export const HOMEPAGE_SECTION_TITLE_FIELDS: Record<
     { key: "case_studies_description", label: "Section intro", multiline: true },
   ],
   featured: [],
+  faq: [
+    { key: "faq_title", label: "Section label" },
+    { key: "faq_heading", label: "Section headline" },
+    { key: "faq_description", label: "Section intro", multiline: true },
+  ],
   contact: [
     { key: "contact_title", label: "Section label" },
     { key: "contact_headline", label: "Section headline" },
@@ -86,7 +92,7 @@ export function isHomepageNavHrefVisible(
 }
 
 export function isSitePageSectionVisible(
-  key: "case-studies" | "featured",
+  key: HomepageSectionKey,
   hidden: string[] | null | undefined,
 ): boolean {
   return !isHomepageSectionHidden(hidden, key);

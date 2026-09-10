@@ -9,6 +9,7 @@ import {
 import { DentalWorkCard } from "../components/dental/DentalWorkCard";
 import { DentalWorkSection } from "../components/dental/DentalWorkSection";
 import { pickLocalized, useLocale, useTranslations } from "@/lib/i18n";
+import { localePath } from "@/lib/i18n/localePath";
 
 type Props = {
   items: Tables<"case_studies">[];
@@ -54,7 +55,7 @@ export function CaseStudiesIndexView({
         <DentalWorkCard
           key={item.id}
           itemId={item.id}
-          href={caseStudyDetailHref(item, ids, previewMode)}
+          href={localePath(locale, caseStudyDetailHref(item, ids, previewMode) ?? "") || null}
           imageUrl={item.media_url}
           title={pickLocalized(locale, item.title, item.title_ar)}
           description={pickLocalized(

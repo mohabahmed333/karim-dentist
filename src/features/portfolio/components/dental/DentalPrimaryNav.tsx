@@ -1,6 +1,7 @@
 "use client";
 
-import { useTranslations } from "@/lib/i18n";
+import { useLocale, useTranslations } from "@/lib/i18n";
+import { localePath } from "@/lib/i18n/localePath";
 import {
   HOMEPAGE_SECTION_NAV,
   visibleHomepageNavKeys,
@@ -16,13 +17,14 @@ type Props = {
   onNavigate?: () => void;
 };
 
-const NAV_LABEL: Record<HomepageSectionKey, "navAbout" | "navServices" | "navGallery" | "navMore" | "navCaseStudies" | "navProjects" | "navContact"> = {
+const NAV_LABEL: Record<HomepageSectionKey, "navAbout" | "navServices" | "navGallery" | "navMore" | "navCaseStudies" | "navProjects" | "navFaq" | "navContact"> = {
   about: "navAbout",
   services: "navServices",
   gallery: "navGallery",
   slider: "navMore",
   "case-studies": "navCaseStudies",
   featured: "navProjects",
+  faq: "navFaq",
   contact: "navContact",
 };
 
@@ -34,16 +36,20 @@ export function DentalPrimaryNav({
   onNavigate,
 }: Props) {
   const t = useTranslations();
+  const { locale } = useLocale();
   const navKeys = visibleHomepageNavKeys(hiddenSections).filter(
     (key) => !(omitSlider && key === "slider"),
   );
 
   function hrefFor(key: HomepageSectionKey): string {
     if (location === "inner") {
-      if (key === "case-studies") return "/case-studies";
-      if (key === "featured") return "/featured";
-      return `/${HOMEPAGE_SECTION_NAV[key].href}`;
+      if (key === "case-studies") return localePath(locale, "/case-studies");
+      if (key === "featured") return localePath(locale, "/featured");
+      // e.g. "/#about" — a homepage anchor reached from an inner page.
+      return localePath(locale, `/${HOMEPAGE_SECTION_NAV[key].href}`);
     }
+    // In-page hash on the homepage itself — no locale prefix, it navigates
+    // within the current URL.
     return HOMEPAGE_SECTION_NAV[key].href;
   }
 

@@ -32,10 +32,12 @@ export function CaseStudySectionList({
   customizeItemId,
   customizeSection = "case-studies",
 }: Props) {
+  const visible = sections.filter((section) => section.is_visible);
+  const firstTitleId = visible.find((section) => section.type === "title")?.id;
+
   return (
     <div className="cs-sections">
-      {sections
-        .filter((section) => section.is_visible)
+      {visible
         .map((section, index) => {
           const blockSection = section as ParsedCaseStudySection;
           return (
@@ -56,6 +58,7 @@ export function CaseStudySectionList({
                 section={blockSection}
                 content={section.content as TitleContent}
                 previewMode={previewMode}
+                headingLevel={section.id === firstTitleId ? "h1" : "h2"}
               />
             ) : null}
             {section.type === "intro" ? (

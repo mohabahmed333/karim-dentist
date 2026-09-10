@@ -7,6 +7,7 @@ import {
   toDetailPageIdSet,
 } from "@/features/portfolio/lib/detailPageLink";
 import { pickLocalized, useLocale, useTranslations } from "@/lib/i18n";
+import { localePath } from "@/lib/i18n/localePath";
 import { DentalWorkCard } from "./DentalWorkCard";
 import { DentalWorkSection } from "./DentalWorkSection";
 
@@ -42,7 +43,7 @@ export function DentalProjectsSection({
         <DentalWorkCard
           key={item.id}
           itemId={item.id}
-          href={featuredDetailHref(item, ids)}
+          href={localePath(locale, featuredDetailHref(item, ids) ?? "") || null}
           imageUrl={item.image_url}
           title={pickLocalized(locale, item.title, item.title_ar)}
           description={

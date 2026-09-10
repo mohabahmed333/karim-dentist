@@ -557,6 +557,9 @@ export type Database = {
           contact_credentials: string;
           contact_credentials_ar: string;
           contact_card_image_url: string | null;
+          contact_latitude: number | null;
+          contact_longitude: number | null;
+          contact_price_range: string;
           case_studies_title: string;
           case_studies_description: string;
           featured_title: string;
@@ -597,6 +600,12 @@ export type Database = {
           slider_heading_ar: string;
           case_studies_title_ar: string;
           case_studies_description_ar: string;
+          faq_title: string;
+          faq_title_ar: string;
+          faq_heading: string;
+          faq_heading_ar: string;
+          faq_description: string;
+          faq_description_ar: string;
           created_at: string;
           updated_at: string;
         };
@@ -632,6 +641,9 @@ export type Database = {
           contact_credentials?: string;
           contact_credentials_ar?: string;
           contact_card_image_url?: string | null;
+          contact_latitude?: number | null;
+          contact_longitude?: number | null;
+          contact_price_range?: string;
           case_studies_title?: string;
           case_studies_description?: string;
           featured_title?: string;
@@ -672,6 +684,12 @@ export type Database = {
           slider_heading_ar?: string;
           case_studies_title_ar?: string;
           case_studies_description_ar?: string;
+          faq_title?: string;
+          faq_title_ar?: string;
+          faq_heading?: string;
+          faq_heading_ar?: string;
+          faq_description?: string;
+          faq_description_ar?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -707,6 +725,9 @@ export type Database = {
           contact_credentials?: string;
           contact_credentials_ar?: string;
           contact_card_image_url?: string | null;
+          contact_latitude?: number | null;
+          contact_longitude?: number | null;
+          contact_price_range?: string;
           case_studies_title?: string;
           case_studies_description?: string;
           featured_title?: string;
@@ -747,6 +768,12 @@ export type Database = {
           slider_heading_ar?: string;
           case_studies_title_ar?: string;
           case_studies_description_ar?: string;
+          faq_title?: string;
+          faq_title_ar?: string;
+          faq_heading?: string;
+          faq_heading_ar?: string;
+          faq_description?: string;
+          faq_description_ar?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -1670,6 +1697,45 @@ export type Database = {
           },
         ];
       };
+      faqs: {
+        Row: {
+          id: string;
+          question: string;
+          question_ar: string;
+          answer: string;
+          answer_ar: string;
+          sort_order: number;
+          is_published: boolean;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          question: string;
+          question_ar?: string;
+          answer?: string;
+          answer_ar?: string;
+          sort_order?: number;
+          is_published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          question?: string;
+          question_ar?: string;
+          answer?: string;
+          answer_ar?: string;
+          sort_order?: number;
+          is_published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Relationships: [];
+      };
       services: {
         Row: {
           id: string;
@@ -1681,6 +1747,7 @@ export type Database = {
           kind: "our_services" | "laser";
           image_url: string | null;
           media_type: "image" | "video";
+          slug: string | null;
           sort_order: number;
           is_published: boolean;
           created_at: string;
@@ -1697,6 +1764,7 @@ export type Database = {
           kind?: "our_services" | "laser";
           image_url?: string | null;
           media_type?: "image" | "video";
+          slug?: string | null;
           sort_order?: number;
           is_published?: boolean;
           created_at?: string;
@@ -1713,6 +1781,7 @@ export type Database = {
           kind?: "our_services" | "laser";
           image_url?: string | null;
           media_type?: "image" | "video";
+          slug?: string | null;
           sort_order?: number;
           is_published?: boolean;
           created_at?: string;
@@ -2257,6 +2326,15 @@ export type Database = {
           p_notes?: string;
         };
         Returns: string;
+      };
+      check_and_log_rate_limit: {
+        Args: {
+          p_bucket: string;
+          p_identifier: string;
+          p_max_requests: number;
+          p_window_seconds: number;
+        };
+        Returns: boolean;
       };
     };
     Enums: Record<string, never>;

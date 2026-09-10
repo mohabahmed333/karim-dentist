@@ -1,11 +1,8 @@
 import type { Tables } from "@/lib/supabase/database.types";
-import Link from "next/link";
 import { SectionHeading } from "./SectionHeading";
 
 type ExperienceProps = {
   items: Tables<"experience_entries">[];
-  /** Homepage link to the full experience page. */
-  showMoreLink?: boolean;
 };
 
 type EntryProps = {
@@ -52,10 +49,7 @@ function ExperienceEntry({ item }: EntryProps) {
   );
 }
 
-export function ExperienceSection({
-  items,
-  showMoreLink = true,
-}: ExperienceProps) {
+export function ExperienceSection({ items }: ExperienceProps) {
   if (!items.length) return null;
   return (
     <section
@@ -65,11 +59,6 @@ export function ExperienceSection({
     >
       <div className="experience-inner">
         <SectionHeading>Experience</SectionHeading>
-        {showMoreLink ? (
-          <p className="experience-more">
-            <Link href="/experience">View all</Link>
-          </p>
-        ) : null}
         <div className="experience-list">
           {items.map((item) => (
             <ExperienceEntry key={item.id} item={item} />

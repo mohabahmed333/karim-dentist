@@ -4,11 +4,21 @@ import { useTranslations } from "@/lib/i18n";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { upsertSettings, type SiteSettings } from "@/services/site_settings";
+import { notifyRevalidate } from "@/services/admin/revalidate";
 import { LocalizedAdminPageHeader } from "./LocalizedAdminPageHeader";
 import { SettingsContactFields } from "./SettingsContactFields";
 import { ContactCardAdminFields } from "./ContactCardAdminFields";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+
+/** Blank clears the value; anything unparsable is left unset rather than
+ * silently coercing to 0 and publishing a wrong location. */
+function parseOptionalCoordinate(value: FormDataEntryValue | null): number | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
 type Props = { settings: SiteSettings | null };
 
@@ -38,6 +48,9 @@ export function ContactEditor({ settings: initial }: Props) {
         contact_country: String(form.get("contact_country") ?? ""),
         contact_hours: String(form.get("contact_hours") ?? ""),
         contact_map_url: String(form.get("contact_map_url") ?? ""),
+        contact_latitude: parseOptionalCoordinate(form.get("contact_latitude")),
+        contact_longitude: parseOptionalCoordinate(form.get("contact_longitude")),
+        contact_price_range: String(form.get("contact_price_range") ?? ""),
         contact_whatsapp: String(form.get("contact_whatsapp") ?? ""),
         contact_telegram: String(form.get("contact_telegram") ?? ""),
         contact_behance: String(form.get("contact_behance") ?? ""),
@@ -56,6 +69,7 @@ export function ContactEditor({ settings: initial }: Props) {
       setSettings(row);
       setCardImageUrl(row.contact_card_image_url ?? "");
       toast.success(t("admin.cms.saveSuccess"));
+      notifyRevalidate(["portfolio"]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
     } finally {

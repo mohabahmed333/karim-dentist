@@ -20,6 +20,7 @@ export type DentalSectionCopy = {
   slider: { label: string; heading: string; intro: string };
   caseStudies: { label: string; heading: string; intro: string };
   featured: { label: string; heading: string; intro: string };
+  faq: { label: string; heading: string; intro: string };
   contact: { label: string; heading: string };
 };
 
@@ -42,6 +43,9 @@ type I18nDental = {
   projectsLabel: string;
   projectsHeading: string;
   projectsIntro: string;
+  faqLabel: string;
+  faqHeading: string;
+  faqIntro: string;
   contactLabel: string;
   contactHeading: string;
 };
@@ -151,6 +155,21 @@ export function resolveDentalSectionCopy(
       label: t.projectsLabel,
       heading: t.projectsHeading,
       intro: t.projectsIntro,
+    },
+    faq: {
+      label: localizedCms(locale, settings?.faq_title, settings?.faq_title_ar, t.faqLabel),
+      heading: localizedCms(
+        locale,
+        settings?.faq_heading,
+        settings?.faq_heading_ar,
+        t.faqHeading,
+      ),
+      intro: localizedCms(
+        locale,
+        settings?.faq_description,
+        settings?.faq_description_ar,
+        t.faqIntro,
+      ),
     },
     contact: {
       label: localizedCms(

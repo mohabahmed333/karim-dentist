@@ -114,6 +114,12 @@ export async function getPortfolioData(): Promise<PortfolioData> {
         .eq("is_published", true)
         .order("sort_order"),
       supabase
+        .from("faqs")
+        .select("*")
+        .is("deleted_at", null)
+        .eq("is_published", true)
+        .order("sort_order"),
+      supabase
         .from("clients")
         .select("*")
         .is("deleted_at", null)
@@ -142,6 +148,7 @@ export async function getPortfolioData(): Promise<PortfolioData> {
       featuredSectionRows,
       experience,
       services,
+      faqs,
       clients,
       footerLinks,
       socialLinks,
@@ -182,6 +189,7 @@ export async function getPortfolioData(): Promise<PortfolioData> {
         (services.data?.length ?? 0) > 0
           ? services.data!
           : portfolioFallback.services,
+      faqs: faqs.data ?? [],
       clients: clients.data ?? [],
       footerLinks:
         (footerLinks.data?.length ?? 0) > 0

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { notifyRevalidate } from "@/services/admin/revalidate";
 
 type WithId = { id: string; sort_order: number };
 
@@ -32,6 +33,7 @@ export function useBoardCrud<T extends WithId>({
       const row = await create(sort_order, extra);
       setItems((prev) => [...prev, row]);
       setSelectedId(row.id);
+      notifyRevalidate(["portfolio"]);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Create failed");
     } finally {
@@ -47,6 +49,7 @@ export function useBoardCrud<T extends WithId>({
       const row = await update(selected.id, payload);
       setItems((prev) => prev.map((i) => (i.id === row.id ? row : i)));
       setMessage("Saved.");
+      notifyRevalidate(["portfolio"]);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Save failed");
     } finally {
@@ -61,6 +64,7 @@ export function useBoardCrud<T extends WithId>({
       await remove(selected.id);
       setItems((prev) => prev.filter((i) => i.id !== selected.id));
       setSelectedId(null);
+      notifyRevalidate(["portfolio"]);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Delete failed");
     } finally {

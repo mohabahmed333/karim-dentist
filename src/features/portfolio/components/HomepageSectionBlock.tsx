@@ -7,6 +7,7 @@ import { mediaSrc } from "../lib/mediaSrc";
 import { DentalAboutSection } from "./dental/DentalAboutSection";
 import { DentalCaseStudiesSection } from "./dental/DentalCaseStudiesSection";
 import { DentalContactSection } from "./dental/DentalContactSection";
+import { DentalFaqSection } from "./dental/DentalFaqSection";
 import { DentalGallerySection } from "./dental/DentalGallerySection";
 import { DentalProjectsSection } from "./dental/DentalProjectsSection";
 import { DentalSliderSection } from "./dental/DentalSliderSection";
@@ -88,6 +89,14 @@ export function HomepageSectionBlock({
           items={data.featured}
           detailPageIds={data.featuredDetailPageIds}
           copy={copy.featured}
+          number={number}
+        />
+      );
+    case "faq":
+      return (
+        <DentalFaqSection
+          items={data.faqs}
+          copy={copy.faq}
           number={number}
         />
       );
