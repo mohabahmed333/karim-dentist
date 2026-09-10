@@ -1,12 +1,14 @@
 import { buildPublicServicesPayload } from "@/lib/api/publicServicesPayload";
 import { publicJson, publicJsonOptions } from "@/lib/api/publicJson";
 import { getSiteUrl } from "@/lib/seo/siteUrl";
-import { getPortfolioData } from "@/services/portfolio";
+import { getCachedPortfolioData } from "@/services/portfolio/cached";
 
-export const dynamic = "force-dynamic";
+// Cached: see src/services/portfolio/cached.ts. Purged on admin save via
+// notifyRevalidate(["portfolio"]).
+export const revalidate = 900;
 
 export async function GET() {
-  const portfolio = await getPortfolioData();
+  const portfolio = await getCachedPortfolioData();
   return publicJson(
     buildPublicServicesPayload(portfolio.services, getSiteUrl()),
   );

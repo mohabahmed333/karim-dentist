@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { getPortfolioData } from "@/services/portfolio";
+import { getCachedPortfolioData } from "@/services/portfolio/cached";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -12,7 +12,7 @@ export const alt = "The Dental Lounge — laser and cosmetic dentistry in New Ca
 const NAVY = "#0f2744";
 
 export default async function OpengraphImage() {
-  const portfolio = await getPortfolioData();
+  const portfolio = await getCachedPortfolioData();
   const brand = portfolio.settings?.brand_name || "The Dental Lounge";
   const tagline =
     portfolio.settings?.footer_tagline ||

@@ -1,18 +1,16 @@
 import { buildLlmsFull } from "@/lib/seo/llmsContent";
-import { getPublicClinicHours } from "@/services/clinic_schedule/queries.server";
+import { getCachedClinicHours } from "@/services/clinic_schedule/cached";
 import { getSiteUrl } from "@/lib/seo/siteUrl";
-import { getPortfolioData } from "@/services/portfolio";
+import { getCachedPortfolioData } from "@/services/portfolio/cached";
 
-// TODO(seo-caching): switch to `revalidate` once getPortfolioData/
-// getPublicClinicHours are wrapped in unstable_cache — createPublicClient
-// hardcodes cache: "no-store", which conflicts with static revalidation and
-// forces this route dynamic today, matching every other public route.
-export const dynamic = "force-dynamic";
+// Cached: see src/services/portfolio/cached.ts. Purged on admin save via
+// notifyRevalidate(["portfolio", "clinic-hours"]).
+export const revalidate = 900;
 
 export async function GET() {
   const [portfolio, hours] = await Promise.all([
-    getPortfolioData(),
-    getPublicClinicHours(),
+    getCachedPortfolioData(),
+    getCachedClinicHours(),
   ]);
 
   const body = buildLlmsFull({

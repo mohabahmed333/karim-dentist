@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { upsertSettings, type SiteSettings } from "@/services/site_settings";
+import { notifyRevalidate } from "@/services/admin/revalidate";
 import { MediaUploadField } from "./MediaUploadField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ export function SettingsSiteForm({ settings: initial }: Props) {
       });
       setSettings(row);
       toast.success("Saved");
+      notifyRevalidate(["portfolio"]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
     } finally {

@@ -5,7 +5,7 @@ import { DentalSitePage } from "@/features/portfolio/components/dental/DentalSit
 import { ServiceDetailView } from "@/features/portfolio/components/dental/ServiceDetailView";
 import { isSitePageSectionVisible } from "@/features/portfolio/lib/homepageSectionNav";
 import { hasVisibleServiceTitle } from "@/features/portfolio/lib/serviceKindGroups";
-import { getPortfolioData } from "@/services/portfolio";
+import { getCachedPortfolioData } from "@/services/portfolio/cached";
 import { getServiceBySlug } from "@/services/services/queries.server";
 import { buildArticleNode, buildBreadcrumbList, wrapGraph } from "@/lib/seo/jsonLd";
 import { JsonLd } from "@/lib/seo/JsonLdScript";
@@ -14,7 +14,12 @@ import { isLocale, localePath } from "@/lib/i18n/localePath";
 import { pickLocalized } from "@/lib/i18n/pickLocalized";
 import { buildAlternates } from "@/lib/seo/alternates";
 
-export const dynamic = "force-dynamic";
+// Cached: getCachedPortfolioData() isolates the underlying
+// no-store fetch behind Next's Data Cache, so this route can be
+// static/ISR instead of rendering fresh on every request. Purged on
+// admin save via notifyRevalidate(["portfolio"]); this window is the
+// self-healing safety net if that call is ever missed.
+export const revalidate = 900;
 
 type Props = {
   params: Promise<{ locale: string; slug: string }>;
@@ -45,7 +50,7 @@ export default async function ServiceDetailPage({ params }: Props) {
 
   const [service, portfolio] = await Promise.all([
     getServiceBySlug(slug),
-    getPortfolioData(),
+    getCachedPortfolioData(),
   ]);
   // Not found rather than redirect: unlike case studies / featured
   // projects, a service page has no "homepage anchor" fallback to send a

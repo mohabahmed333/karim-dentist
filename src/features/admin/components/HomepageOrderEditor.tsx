@@ -4,6 +4,7 @@ import { useTranslations } from "@/lib/i18n";
 import { useState } from "react";
 import { toast } from "sonner";
 import { upsertSettings, type SiteSettings } from "@/services/site_settings";
+import { notifyRevalidate } from "@/services/admin/revalidate";
 import {
   DEFAULT_HOMEPAGE_SECTION_ORDER,
   moveHomepageSection,
@@ -109,6 +110,7 @@ export function HomepageOrderEditor({ settings: initial }: Props) {
         }),
       );
       toast.success(t("admin.pages.homepage.saved"));
+      notifyRevalidate(["portfolio"]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
     } finally {

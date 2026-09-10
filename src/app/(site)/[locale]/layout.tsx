@@ -10,8 +10,8 @@ import { getSiteUrl } from "@/lib/seo/siteUrl";
 import { buildAlternates } from "@/lib/seo/alternates";
 import { buildClinicGraph } from "@/lib/seo/jsonLd";
 import { JsonLd } from "@/lib/seo/JsonLdScript";
-import { getPublicClinicHours } from "@/services/clinic_schedule/queries.server";
-import { getPortfolioData } from "@/services/portfolio";
+import { getCachedClinicHours } from "@/services/clinic_schedule/cached";
+import { getCachedPortfolioData } from "@/services/portfolio/cached";
 import "../../globals.css";
 import { cn } from "@/lib/utils";
 
@@ -105,8 +105,8 @@ export default async function PublicRootLayout({
   const dir = localeDir(locale);
 
   const [portfolio, hours] = await Promise.all([
-    getPortfolioData(),
-    getPublicClinicHours(),
+    getCachedPortfolioData(),
+    getCachedClinicHours(),
   ]);
   const graph = buildClinicGraph({
     locale,

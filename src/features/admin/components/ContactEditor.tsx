@@ -4,6 +4,7 @@ import { useTranslations } from "@/lib/i18n";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { upsertSettings, type SiteSettings } from "@/services/site_settings";
+import { notifyRevalidate } from "@/services/admin/revalidate";
 import { LocalizedAdminPageHeader } from "./LocalizedAdminPageHeader";
 import { SettingsContactFields } from "./SettingsContactFields";
 import { ContactCardAdminFields } from "./ContactCardAdminFields";
@@ -68,6 +69,7 @@ export function ContactEditor({ settings: initial }: Props) {
       setSettings(row);
       setCardImageUrl(row.contact_card_image_url ?? "");
       toast.success(t("admin.cms.saveSuccess"));
+      notifyRevalidate(["portfolio"]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
     } finally {
