@@ -79,6 +79,16 @@ export async function processAutoReplyJob(
       return "missing_rows";
     }
 
+    // Slots this conversation was explicitly offered and may still claim — a
+    // waitlist offer, or times the assistant itself listed. Written by
+    // saveOfferedSlots but, until now, never read back: the bot only ever saw
+    // the next five open slots, so "take it" for an offered slot further out
+    // was refused as slot_not_offered.
+    const heldSlotIds =
+      state?.state_expires_at && Date.parse(state.state_expires_at) > Date.now()
+        ? (state.offered_slot_ids ?? [])
+        : [];
+
     const nowIso = new Date().toISOString();
     const [
       counts,
@@ -90,6 +100,7 @@ export async function processAutoReplyJob(
       { data: reservations },
       { data: clinicHours },
       knowledge,
+      { data: heldSlotRows },
     ] = await Promise.all([
       countRecentAiReplies(db, conversation.id),
       db
@@ -144,6 +155,14 @@ export async function processAutoReplyJob(
           patientName: conversation.contact_name ?? "",
         }),
       ),
+      heldSlotIds.length > 0
+        ? db
+            .from("appointment_slots")
+            .select("id,starts_at")
+            .in("id", heldSlotIds)
+            .eq("status", "open")
+            .gte("starts_at", nowIso)
+        : Promise.resolve({ data: [] as { id: string; starts_at: string }[] }),
     ]);
 
     const clinic = clinicContactFromSettings(settingsRow);
@@ -169,7 +188,17 @@ export async function processAutoReplyJob(
       },
       prompt: {
         basePrompt: await loadPrompt(),
-        slots: (slotRows ?? []) as { id: string; starts_at: string }[],
+        // Held slots first, so the five-slot window can never push out the one
+        // the patient was actually offered. Still filtered to status 'open'
+        // above, so a slot someone else took is not resurrected.
+        slots: [
+          ...new Map(
+            [
+              ...((heldSlotRows ?? []) as { id: string; starts_at: string }[]),
+              ...((slotRows ?? []) as { id: string; starts_at: string }[]),
+            ].map((slot) => [slot.id, slot]),
+          ).values(),
+        ],
         clinic: {
           name: clinic.name,
           phone: clinic.phone,
