@@ -148,6 +148,7 @@ export type Database = {
       };
       whatsapp_messages: {
         Row: {
+          sender_kind: string;
           id: string;
           conversation_id: string;
           kapso_wamid: string | null;
@@ -172,6 +173,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          sender_kind?: string;
           id?: string;
           conversation_id: string;
           kapso_wamid?: string | null;
@@ -196,6 +198,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          sender_kind?: string;
           id?: string;
           conversation_id?: string;
           kapso_wamid?: string | null;
@@ -228,6 +231,152 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      whatsapp_ai_settings: {
+        Row: {
+          id: string;
+          mode: "off" | "draft_only" | "auto";
+          max_replies_per_conversation_per_hour: number;
+          max_replies_global_per_hour: number;
+          human_handoff_minutes: number;
+          allow_booking_writes: boolean;
+          ack_media_enabled: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          mode?: "off" | "draft_only" | "auto";
+          max_replies_per_conversation_per_hour?: number;
+          max_replies_global_per_hour?: number;
+          human_handoff_minutes?: number;
+          allow_booking_writes?: boolean;
+          ack_media_enabled?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          mode?: "off" | "draft_only" | "auto";
+          max_replies_per_conversation_per_hour?: number;
+          max_replies_global_per_hour?: number;
+          human_handoff_minutes?: number;
+          allow_booking_writes?: boolean;
+          ack_media_enabled?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      whatsapp_ai_state: {
+        Row: {
+          conversation_id: string;
+          autoreply_enabled: boolean;
+          paused_until: string | null;
+          handoff_until: string | null;
+          step: "idle" | "collecting" | "awaiting_slot" | "awaiting_confirm";
+          pending: Json;
+          offered_slot_ids: string[];
+          offered_at: string | null;
+          state_expires_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          conversation_id: string;
+          autoreply_enabled?: boolean;
+          paused_until?: string | null;
+          handoff_until?: string | null;
+          step?: "idle" | "collecting" | "awaiting_slot" | "awaiting_confirm";
+          pending?: Json;
+          offered_slot_ids?: string[];
+          offered_at?: string | null;
+          state_expires_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          autoreply_enabled?: boolean;
+          paused_until?: string | null;
+          handoff_until?: string | null;
+          step?: "idle" | "collecting" | "awaiting_slot" | "awaiting_confirm";
+          pending?: Json;
+          offered_slot_ids?: string[];
+          offered_at?: string | null;
+          state_expires_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      whatsapp_ai_jobs: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          inbound_message_id: string;
+          status: "queued" | "running" | "sent" | "drafted" | "skipped" | "failed" | "abandoned";
+          skip_reason: string | null;
+          attempts: number;
+          send_started_at: string | null;
+          lease_until: string | null;
+          outbound_message_id: string | null;
+          last_error: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          inbound_message_id: string;
+          status?: "queued" | "running" | "sent" | "drafted" | "skipped" | "failed" | "abandoned";
+          skip_reason?: string | null;
+          attempts?: number;
+          send_started_at?: string | null;
+          lease_until?: string | null;
+          outbound_message_id?: string | null;
+          last_error?: string | null;
+        };
+        Update: {
+          status?: "queued" | "running" | "sent" | "drafted" | "skipped" | "failed" | "abandoned";
+          skip_reason?: string | null;
+          attempts?: number;
+          send_started_at?: string | null;
+          lease_until?: string | null;
+          outbound_message_id?: string | null;
+          last_error?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      whatsapp_ai_events: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          job_id: string | null;
+          message_id: string | null;
+          decision: "auto_send" | "draft" | "skip" | "error";
+          reason: string;
+          intent: string | null;
+          confidence: number | null;
+          language: string | null;
+          handoff: boolean;
+          injection_flags: string[];
+          model: string | null;
+          latency_ms: number | null;
+          envelope: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          job_id?: string | null;
+          message_id?: string | null;
+          decision: "auto_send" | "draft" | "skip" | "error";
+          reason?: string;
+          intent?: string | null;
+          confidence?: number | null;
+          language?: string | null;
+          handoff?: boolean;
+          injection_flags?: string[];
+          model?: string | null;
+          latency_ms?: number | null;
+          envelope?: Json;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
       };
       whatsapp_notes: {
         Row: {
