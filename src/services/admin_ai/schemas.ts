@@ -26,6 +26,10 @@ export const actionKindSchema = z.enum([
   "lab.create",
   "lab.update_status",
   "followup.book",
+  "reservation.create",
+  "reservation.reschedule",
+  "reservation.cancel",
+  "reservation.set_status",
 ]);
 
 export type ActionKind = z.infer<typeof actionKindSchema>;

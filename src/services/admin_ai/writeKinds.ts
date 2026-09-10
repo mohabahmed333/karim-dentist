@@ -19,6 +19,10 @@ export const WRITE_ACTION_KINDS = new Set<ActionKind>([
   "lab.create",
   "lab.update_status",
   "followup.book",
+  "reservation.create",
+  "reservation.reschedule",
+  "reservation.cancel",
+  "reservation.set_status",
 ]);
 
 export function isWriteActionKind(kind: string): boolean {

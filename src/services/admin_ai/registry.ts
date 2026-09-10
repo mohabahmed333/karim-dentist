@@ -26,6 +26,7 @@ import {
   navigateFocusToothAdapter,
   navigateOpenPatientAdapter,
 } from "./navFollowupAdapters";
+import { reservationAdapters } from "./reservationAdapters";
 import type { ActionKind } from "./schemas";
 import { isWriteActionKind } from "./writeKinds";
 
@@ -49,6 +50,7 @@ const adapters: ActionAdapter[] = [
   labCreateAdapter,
   labUpdateStatusAdapter,
   followupBookAdapter,
+  ...reservationAdapters,
 ];
 
 const byKind = new Map(adapters.map((a) => [a.kind, a]));

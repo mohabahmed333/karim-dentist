@@ -23,6 +23,10 @@ Allowed action kinds:
 - lab.create { patientKey, appliance_type, status?, tooth_fdi?, notes? }
 - lab.update_status { id, status }
 - followup.book { slotId, patient_name, phone, service_label, treatmentId?, notes? }
+- reservation.create { slotId, patient_name, phone, service_label?, email?, service_id?, notes? }
+- reservation.reschedule { reservationId, slotId }
+- reservation.cancel { reservationId }
+- reservation.set_status { reservationId, status: confirmed|completed|no_show } (cancel via reservation.cancel)
 
 When useful, end with a JSON fence:
 \`\`\`json

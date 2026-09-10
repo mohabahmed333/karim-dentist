@@ -2079,6 +2079,21 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
+      cancel_reservation_and_release_slot: {
+        Args: {
+          p_reservation_id: string;
+          p_phone?: string | null;
+        };
+        Returns: string;
+      };
+      reschedule_reservation_to_slot: {
+        Args: {
+          p_reservation_id: string;
+          p_slot_id: string;
+          p_phone?: string | null;
+        };
+        Returns: string;
+      };
       book_open_appointment_slot: {
         Args: {
           p_slot_id: string;
