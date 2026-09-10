@@ -122,6 +122,7 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin/faq": "admin.nav.faq",
   "/admin/knowledge": "admin.nav.knowledge",
   "/admin/assistant-review": "admin.nav.assistantReview",
+  "/admin/waitlist": "admin.nav.waitlist",
   "/admin/gallery": "admin.nav.gallery",
   "/admin/slider": "admin.nav.moreImages",
   "/admin/contact": "admin.nav.contact",
