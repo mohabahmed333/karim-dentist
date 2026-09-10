@@ -6,6 +6,7 @@ import { processKapsoWebhook } from "@/services/whatsapp";
 import type { KapsoWebhookBody } from "@/services/whatsapp/types";
 import { enqueueAutoReplyJob } from "@/services/whatsapp_ai/store";
 import { processAutoReplyJob } from "@/services/whatsapp_ai/processJob";
+import { sweepStaleAutoReplyJobs } from "@/services/whatsapp_ai/sweep";
 
 export const runtime = "nodejs";
 /** after() is bounded by this; the Groq call is capped well below it. */
@@ -57,17 +58,24 @@ export async function POST(request: Request) {
 
     // Generate after the response, so Kapso is not held open on a model call it
     // would time out and retry.
-    if (jobIds.length > 0) {
-      after(async () => {
-        for (const jobId of jobIds) {
-          try {
-            await processAutoReplyJob(supabase, jobId);
-          } catch (err) {
-            console.error("[whatsapp/webhook] auto-reply failed", err);
-          }
+    after(async () => {
+      for (const jobId of jobIds) {
+        try {
+          await processAutoReplyJob(supabase, jobId);
+        } catch (err) {
+          console.error("[whatsapp/webhook] auto-reply failed", err);
         }
-      });
-    }
+      }
+      // Opportunistic backstop. The cron sweeper runs daily, which is all a
+      // Hobby plan allows, so a job orphaned by a killed invocation would wait
+      // hours. Inbound traffic is the natural clock: piggy-back a small sweep
+      // on it so recovery tracks how busy the inbox actually is.
+      try {
+        await sweepStaleAutoReplyJobs(supabase, 2);
+      } catch (err) {
+        console.error("[whatsapp/webhook] sweep failed", err);
+      }
+    });
 
     return NextResponse.json({ ok: true, result: result.status });
   } catch (error) {
