@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
-import { buildClinicGraph } from "./jsonLd.ts";
+import {
+  buildArticleNode,
+  buildBreadcrumbList,
+  buildClinicGraph,
+  wrapGraph,
+} from "./jsonLd.ts";
 
 const SETTINGS = {
   brand_name: "The Dental Lounge",
@@ -144,10 +149,6 @@ test("does not emit a separate Organization node", () => {
     hours: HOURS,
     services: SERVICES,
   });
-  const orgNodes = graph["@graph"].filter((n: { "@type"?: unknown }) => {
-    const type = n["@type"];
-    return type === "Organization" || (Array.isArray(type) && type.includes("Organization") && !Array.isArray(type[0]));
-  });
   // Dentist/MedicalBusiness/LocalBusiness inherits Organization; a second
   // standalone node with a different @id would split the entity.
   const standaloneOrg = graph["@graph"].find(
@@ -253,4 +254,75 @@ test("does not include a SearchAction — no public search exists on the site", 
   });
   const json = JSON.stringify(graph);
   assert.ok(!json.includes("SearchAction"));
+});
+
+// --- BreadcrumbList ---
+
+test("buildBreadcrumbList emits an ordered ListItem trail with absolute URLs", () => {
+  const trail = buildBreadcrumbList("https://thedentallounge.com", [
+    { name: "Home", path: "/" },
+    { name: "Case studies", path: "/case-studies" },
+    { name: "Laser gum contouring", path: "/case-studies/laser-gum-contouring" },
+  ]);
+  assert.equal(trail["@type"], "BreadcrumbList");
+  assert.equal(trail.itemListElement.length, 3);
+  assert.deepEqual(trail.itemListElement[0], {
+    "@type": "ListItem",
+    position: 1,
+    name: "Home",
+    item: "https://thedentallounge.com",
+  });
+  assert.deepEqual(trail.itemListElement[2], {
+    "@type": "ListItem",
+    position: 3,
+    name: "Laser gum contouring",
+    item: "https://thedentallounge.com/case-studies/laser-gum-contouring",
+  });
+});
+
+// --- Article ---
+
+test("buildArticleNode maps a case study into an Article node", () => {
+  const node = buildArticleNode({
+    siteUrl: "https://thedentallounge.com",
+    path: "/case-studies/laser-gum-contouring",
+    headline: "Laser gum contouring",
+    description: "A comfort-first laser gum reshaping case.",
+    image: "https://thedentallounge.com/media/case.jpg",
+    datePublished: "2026-01-01T00:00:00.000Z",
+    dateModified: "2026-02-01T00:00:00.000Z",
+    authorName: "Dr. Karim Elshibiny",
+    clinicId: "https://thedentallounge.com/#clinic",
+  });
+  assert.equal(node["@type"], "Article");
+  assert.equal(node["@id"], "https://thedentallounge.com/case-studies/laser-gum-contouring#article");
+  assert.equal(node.headline, "Laser gum contouring");
+  assert.equal(node.image, "https://thedentallounge.com/media/case.jpg");
+  assert.equal(node.datePublished, "2026-01-01T00:00:00.000Z");
+  assert.equal(node.dateModified, "2026-02-01T00:00:00.000Z");
+  assert.deepEqual(node.publisher, { "@id": "https://thedentallounge.com/#clinic" });
+  assert.deepEqual(node.author, { "@type": "Person", name: "Dr. Karim Elshibiny" });
+  assert.equal(node.mainEntityOfPage, "https://thedentallounge.com/case-studies/laser-gum-contouring");
+});
+
+test("buildArticleNode omits image when none is available, rather than a broken URL", () => {
+  const node = buildArticleNode({
+    siteUrl: "https://thedentallounge.com",
+    path: "/case-studies/x",
+    headline: "X",
+    description: "",
+    image: null,
+    datePublished: "2026-01-01T00:00:00.000Z",
+    dateModified: "2026-01-01T00:00:00.000Z",
+    authorName: "Dr. Karim Elshibiny",
+    clinicId: "https://thedentallounge.com/#clinic",
+  });
+  assert.equal(node.image, undefined);
+  assert.equal(node.description, undefined);
+});
+
+test("wrapGraph produces a standalone context+graph from loose nodes", () => {
+  const graph = wrapGraph([{ "@type": "BreadcrumbList" }, { "@type": "Article" }]);
+  assert.equal(graph["@context"], "https://schema.org");
+  assert.equal(graph["@graph"].length, 2);
 });

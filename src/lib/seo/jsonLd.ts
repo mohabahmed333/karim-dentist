@@ -86,6 +86,7 @@ function text(value: string | null | undefined): string {
  * inputs and is trivially testable with fixture origins. */
 function resolveAssetUrl(siteUrl: string, value: string): string {
   if (/^https?:\/\//i.test(value)) return value;
+  if (value === "/") return siteUrl;
   return `${siteUrl}${value.startsWith("/") ? value : `/${value}`}`;
 }
 
@@ -278,5 +279,79 @@ export function buildClinicGraph(input: BuildClinicGraphInput): JsonLdGraph {
       buildWebsiteNode(siteUrl, safeSettings, clinicId),
       ...servicesNodes,
     ],
+  };
+}
+
+/** Wrap loose nodes (e.g. a page's own BreadcrumbList + Article) into a
+ * standalone graph for a single JsonLd render. */
+export function wrapGraph(nodes: JsonLdNode[]): JsonLdGraph {
+  return { "@context": "https://schema.org", "@graph": nodes };
+}
+
+/** One crumb in a breadcrumb trail: display name + site-relative path. */
+export type BreadcrumbInput = { name: string; path: string };
+
+/**
+ * BreadcrumbList for a detail route. Position is 1-indexed per schema.org;
+ * `item` is always absolute against the given siteUrl.
+ */
+export function buildBreadcrumbList(
+  siteUrl: string,
+  trail: BreadcrumbInput[],
+): JsonLdNode {
+  return {
+    "@type": "BreadcrumbList",
+    itemListElement: trail.map((crumb, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: crumb.name,
+      item: resolveAssetUrl(siteUrl, crumb.path),
+    })),
+  };
+}
+
+type BuildArticleInput = {
+  siteUrl: string;
+  /** Site-relative path of the article's own page. */
+  path: string;
+  headline: string;
+  description?: string | null;
+  /** Absolute or site-relative; omitted entirely when null so no broken
+   * image URL is ever published. */
+  image?: string | null;
+  datePublished: string;
+  dateModified: string;
+  authorName: string;
+  /** @id of the clinic node, e.g. `${siteUrl}/#clinic`. */
+  clinicId: string;
+};
+
+/** Article node for a case study or featured project detail page. */
+export function buildArticleNode(input: BuildArticleInput): JsonLdNode {
+  const {
+    siteUrl,
+    path,
+    headline,
+    description,
+    image,
+    datePublished,
+    dateModified,
+    authorName,
+    clinicId,
+  } = input;
+  const pageUrl = resolveAssetUrl(siteUrl, path);
+  const trimmedDescription = text(description);
+
+  return {
+    "@type": "Article",
+    "@id": `${pageUrl}#article`,
+    headline,
+    description: trimmedDescription || undefined,
+    image: image ? resolveAssetUrl(siteUrl, image) : undefined,
+    datePublished,
+    dateModified,
+    mainEntityOfPage: pageUrl,
+    author: { "@type": "Person", name: authorName },
+    publisher: { "@id": clinicId },
   };
 }
