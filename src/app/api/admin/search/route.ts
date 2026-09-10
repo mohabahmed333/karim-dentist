@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/api/requireAdmin";
 import {
   hitsFromCaseStudies,
   hitsFromConversations,
@@ -35,13 +35,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ hits: [] as CommandHit[] });
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+  const supabase = auth.supabase;
 
   const [reservations, services, caseStudies, projects, threads, conversations] =
     await Promise.all([

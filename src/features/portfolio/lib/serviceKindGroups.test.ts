@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
   groupServicesByKind,
   hasVisibleServiceTitle,
@@ -7,23 +8,19 @@ import {
 
 describe("resolveServiceKindTitle", () => {
   it("uses localized labels when provided", () => {
-    expect(
-      resolveServiceKindTitle("our_services", {
+    assert.equal(resolveServiceKindTitle("our_services", {
         our_services: "خدماتنا",
         laser: "علاجات الليزر",
-      }),
-    ).toBe("خدماتنا");
-    expect(
-      resolveServiceKindTitle("laser", {
+      }), "خدماتنا");
+    assert.equal(resolveServiceKindTitle("laser", {
         our_services: "خدماتنا",
         laser: "علاجات الليزر",
-      }),
-    ).toBe("علاجات الليزر");
+      }), "علاجات الليزر");
   });
 
   it("falls back to English defaults", () => {
-    expect(resolveServiceKindTitle("our_services")).toBe("Our Services");
-    expect(resolveServiceKindTitle("laser")).toBe("Laser treatments");
+    assert.equal(resolveServiceKindTitle("our_services"), "Our Services");
+    assert.equal(resolveServiceKindTitle("laser"), "Laser treatments");
   });
 });
 
@@ -40,7 +37,7 @@ describe("groupServicesByKind", () => {
       },
     );
 
-    expect(groups.map((g) => g.title)).toEqual([
+    assert.deepEqual(groups.map((g) => g.title), [
       "خدماتنا",
       "علاجات الليزر",
     ]);
@@ -49,10 +46,10 @@ describe("groupServicesByKind", () => {
 
 describe("hasVisibleServiceTitle", () => {
   it("hides empty and placeholder titles", () => {
-    expect(hasVisibleServiceTitle("")).toBe(false);
-    expect(hasVisibleServiceTitle("   ")).toBe(false);
-    expect(hasVisibleServiceTitle("Untitled")).toBe(false);
-    expect(hasVisibleServiceTitle("بدون عنوان")).toBe(false);
-    expect(hasVisibleServiceTitle("Dental laser treatments")).toBe(true);
+    assert.equal(hasVisibleServiceTitle(""), false);
+    assert.equal(hasVisibleServiceTitle("   "), false);
+    assert.equal(hasVisibleServiceTitle("Untitled"), false);
+    assert.equal(hasVisibleServiceTitle("بدون عنوان"), false);
+    assert.equal(hasVisibleServiceTitle("Dental laser treatments"), true);
   });
 });

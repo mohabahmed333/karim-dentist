@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { formatClinicSlotAvailability } from "./formatClinicSlotAvailability";
 
 describe("formatClinicSlotAvailability", () => {
@@ -7,10 +8,10 @@ describe("formatClinicSlotAvailability", () => {
       openStartsAt: ["2026-09-08T10:00:00.000Z"],
       takenStartsAt: ["2026-09-08T11:30:00.000Z"],
     });
-    expect(text).toContain("ONLY suggest from these");
-    expect(text).toContain("2026-09-08T10:00:00.000Z");
-    expect(text).toContain("never suggest these");
-    expect(text).toContain("2026-09-08T11:30:00.000Z");
+    assert.ok(text.includes("ONLY suggest from these"));
+    assert.ok(text.includes("2026-09-08T10:00:00.000Z"));
+    assert.ok(text.includes("never suggest these"));
+    assert.ok(text.includes("2026-09-08T11:30:00.000Z"));
   });
 
   it("says not to invent times when no open slots", () => {
@@ -18,6 +19,6 @@ describe("formatClinicSlotAvailability", () => {
       openStartsAt: [],
       takenStartsAt: [],
     });
-    expect(text).toContain("do not invent times");
+    assert.ok(text.includes("do not invent times"));
   });
 });

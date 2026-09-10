@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # scripts/test.sh relies on --experimental-strip-types, which needs Node 22+.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      - run: yarn typecheck
+
+      - run: yarn test
+
+      # Lint last: the repo currently has pre-existing violations, so this
+      # reports without failing the build. Drop `|| true` once they are cleared.
+      - run: yarn lint || true

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/api/requireAdmin";
 import { sanitizeIlike } from "@/services/reservations/listFilters";
 
 export const dynamic = "force-dynamic";
@@ -14,13 +14,9 @@ export async function GET(request: Request) {
     Math.max(1, Number(searchParams.get("limit") ?? 40) || 40),
   );
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+  const supabase = auth.supabase;
 
   let query = supabase
     .from("services")

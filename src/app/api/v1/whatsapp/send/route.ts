@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { requireAdmin } from "@/lib/api/requireAdmin";
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import {
   clinicContactFromSettings,
@@ -92,20 +92,11 @@ function mediaKindFromMime(mime: string): SendKind {
   return "document";
 }
 
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return { supabase, user };
-}
-
 export async function POST(request: Request) {
   try {
-    const { user } = await requireUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+    const user = auth.user;
 
     const contentType = request.headers.get("content-type") ?? "";
     const service = createServiceClient();

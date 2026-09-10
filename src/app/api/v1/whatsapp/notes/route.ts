@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/api/requireAdmin";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
 import { firstNameFromEmail } from "@/features/admin/lib/dashboardModel";
 
 export const runtime = "nodejs";
@@ -27,13 +27,10 @@ function authorFromUser(email: string | null | undefined): string {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+    const supabase = auth.supabase;
+    const user = auth.user;
 
     const parsed = postSchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -60,13 +57,9 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+    const supabase = auth.supabase;
 
     const parsed = patchSchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -95,13 +88,9 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+    const supabase = auth.supabase;
 
     const url = new URL(request.url);
     const parsed = deleteSchema.safeParse({

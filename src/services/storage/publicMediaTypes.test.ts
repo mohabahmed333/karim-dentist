@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
   decodeMediaCursor,
   encodeMediaCursor,
@@ -14,16 +15,16 @@ describe("publicMedia cursor codec", () => {
         { prefix: "about/contact", offset: 0 },
       ],
     };
-    expect(decodeMediaCursor(encodeMediaCursor(cursor))).toEqual(cursor);
+    assert.deepEqual(decodeMediaCursor(encodeMediaCursor(cursor)), cursor);
   });
 
   it("returns null for junk", () => {
-    expect(decodeMediaCursor("not-valid")).toBeNull();
-    expect(decodeMediaCursor(null)).toBeNull();
+    assert.equal(decodeMediaCursor("not-valid"), null);
+    assert.equal(decodeMediaCursor(null), null);
   });
 
   it("starts at first bucket root", () => {
-    expect(initialMediaCursor()).toEqual({
+    assert.deepEqual(initialMediaCursor(), {
       bucketIndex: 0,
       stack: [{ prefix: "", offset: 0 }],
     });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/api/requireAdmin";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
 import { listMessagesPage } from "@/services/whatsapp";
 
 export const runtime = "nodejs";
@@ -20,13 +20,9 @@ function parseBefore(raw?: string) {
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+    const supabase = auth.supabase;
 
     const url = new URL(request.url);
     const parsed = querySchema.safeParse({

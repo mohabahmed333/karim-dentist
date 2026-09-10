@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
   bucketsForMediaSection,
   mediaSectionFromBucket,
@@ -6,7 +7,7 @@ import {
 
 describe("mediaLibrarySections", () => {
   it("maps all to every public bucket", () => {
-    expect(bucketsForMediaSection("all")).toEqual([
+    assert.deepEqual(bucketsForMediaSection("all"), [
       "hero",
       "about",
       "projects",
@@ -15,11 +16,11 @@ describe("mediaLibrarySections", () => {
   });
 
   it("maps a section to a single bucket", () => {
-    expect(bucketsForMediaSection("about")).toEqual(["about"]);
+    assert.deepEqual(bucketsForMediaSection("about"), ["about"]);
   });
 
   it("defaults picker bucket to matching section tab", () => {
-    expect(mediaSectionFromBucket("projects")).toBe("projects");
-    expect(mediaSectionFromBucket("patient-records")).toBe("all");
+    assert.equal(mediaSectionFromBucket("projects"), "projects");
+    assert.equal(mediaSectionFromBucket("patient-records"), "all");
   });
 });

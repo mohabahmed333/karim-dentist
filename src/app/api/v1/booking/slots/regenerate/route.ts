@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/api/requireAdmin";
 import { regenerateOpenSlotsWithClient } from "@/services/clinic_schedule/regenerate";
 import type { ClinicHours } from "@/services/clinic_schedule/types";
 
 const HOURS_ID = "00000000-0000-4000-8000-000000000001";
 
 export async function POST() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+  const supabase = auth.supabase;
 
   const { data: hours, error: hoursError } = await supabase
     .from("clinic_hours")

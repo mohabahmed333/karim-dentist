@@ -1,39 +1,32 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { resolveConversationStatus } from "./resolveConversationStatus";
 
 describe("resolveConversationStatus", () => {
   it("sets ended when Kapso requests ended", () => {
-    expect(
-      resolveConversationStatus({
+    assert.equal(resolveConversationStatus({
         existing: "archived",
         requested: "ended",
-      }),
-    ).toBe("ended");
+      }), "ended");
   });
 
   it("auto-unarchives on inbound unread bump", () => {
-    expect(
-      resolveConversationStatus({
+    assert.equal(resolveConversationStatus({
         existing: "archived",
         bumpUnread: true,
-      }),
-    ).toBe("active");
+      }), "active");
   });
 
   it("preserves archived on non-inbound updates", () => {
-    expect(
-      resolveConversationStatus({
+    assert.equal(resolveConversationStatus({
         existing: "archived",
         requested: "active",
         bumpUnread: false,
-      }),
-    ).toBe("archived");
+      }), "archived");
   });
 
   it("defaults to active", () => {
-    expect(resolveConversationStatus({})).toBe("active");
-    expect(
-      resolveConversationStatus({ existing: "ended", requested: "active" }),
-    ).toBe("active");
+    assert.equal(resolveConversationStatus({}), "active");
+    assert.equal(resolveConversationStatus({ existing: "ended", requested: "active" }), "active");
   });
 });
