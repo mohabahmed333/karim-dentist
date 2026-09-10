@@ -1,7 +1,7 @@
 import type { Json } from "@/lib/supabase/database.types";
 import { buildDiff } from "./diff";
 import type { ActionContext, PreviewBundle } from "./adapterTypes";
-import { getAdapter, isWriteAction } from "./registry";
+import { getAdapter } from "./registry";
 import {
   createProposalInputSchema,
   type ActionDiff,
@@ -47,11 +47,6 @@ export async function createProposal(
   input: CreateProposalInput,
 ) {
   const parsed = createProposalInputSchema.parse(input);
-  for (const action of parsed.actions) {
-    if (!isWriteAction(action.kind) && parsed.actions.length === 1) {
-      /* navigation-only proposals are unusual but allowed */
-    }
-  }
   const { diffs, snapshots } = await previewActions(parsed.actions, ctx);
   const hash = snapshotHash(snapshots);
   const expires = proposalExpiresAt();

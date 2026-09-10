@@ -5,8 +5,7 @@ import {
   type TreatmentAiResponse,
 } from "./schemas";
 import { ADMIN_AI_ACTION_CATALOG } from "@/services/admin_ai/actionCatalog";
-import { proposedActionSchema } from "@/services/admin_ai/schemas";
-import { z } from "zod";
+import { parseProposedActions } from "@/services/admin_ai/parseProposedActions";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
@@ -118,11 +117,9 @@ export async function runTreatmentChat(input: {
   const raw = payload.choices?.[0]?.message?.content ?? "";
   const parsed = JSON.parse(raw) as unknown;
   const result = treatmentAiResponseSchema.parse(parsed);
-  const proposed = z
-    .array(proposedActionSchema)
-    .safeParse(result.proposedActions ?? []);
+  const proposed = parseProposedActions(result.proposedActions);
   return {
     ...result,
-    proposedActions: proposed.success ? proposed.data : [],
+    proposedActions: proposed.actions,
   };
 }

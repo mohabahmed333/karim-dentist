@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { proposedActionSchema } from "@/services/admin_ai/schemas";
+import type { ProposedAction } from "@/services/admin_ai/schemas";
+import { parseProposedActions } from "./parseProposedActions";
 
 const chipSchema = z.object({
   id: z.string().min(1).max(80),
@@ -13,7 +14,7 @@ export function extractClinicChatPayload(
 ): {
   reply: string;
   suggestedActions: z.infer<typeof chipSchema>[];
-  proposedActions: z.infer<typeof proposedActionSchema>[];
+  proposedActions: ProposedAction[];
 } {
   const fence = raw.match(/```json\s*([\s\S]*?)```/i);
   if (fence?.[1]) {
@@ -24,13 +25,11 @@ export function extractClinicChatPayload(
         proposedActions?: unknown;
       };
       const chips = z.array(chipSchema).safeParse(parsed.suggestedActions);
-      const proposed = z
-        .array(proposedActionSchema)
-        .safeParse(parsed.proposedActions ?? []);
+      const proposed = parseProposedActions(parsed.proposedActions);
       return {
         reply: (parsed.reply ?? raw.replace(fence[0], "").trim()) || raw,
         suggestedActions: chips.success ? chips.data : defaults,
-        proposedActions: proposed.success ? proposed.data : [],
+        proposedActions: proposed.actions,
       };
     } catch {
       /* fall through */

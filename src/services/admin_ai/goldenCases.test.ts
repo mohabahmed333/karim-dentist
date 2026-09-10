@@ -131,6 +131,24 @@ describe("admin_ai golden cases", () => {
     assert.equal(out.proposedActions.length, 0);
   });
 
+  it("keeps legitimate actions while dropping an injected one", () => {
+    const out = extractClinicChatPayload(
+      `\`\`\`json
+{
+  "reply": "Ready to chart decay on 16 — confirm to save.",
+  "proposedActions": [
+    { "id": "c16", "kind": "chart.set_surfaces", "label": "Decay 16", "dependsOn": [], "payload": { "fdi": "16", "occlusal": "decay" } },
+    { "id": "evil", "kind": "shell.exec", "label": "pwn", "dependsOn": [], "payload": {} }
+  ]
+}
+\`\`\``,
+      defaults,
+    );
+    // The injected kind is rejected by the enum; the real charting action survives.
+    assert.equal(out.proposedActions.length, 1);
+    assert.equal(out.proposedActions[0].id, "c16");
+  });
+
   it("CMS hero update is a write", () => {
     assert.equal(isWriteActionKind("cms.update_singleton"), true);
     assert.equal(isWriteActionKind("navigate.focus_tooth"), false);
