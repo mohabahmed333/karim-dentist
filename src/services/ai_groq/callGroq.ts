@@ -1,3 +1,5 @@
+import { fakeGroqEnabled, fakeGroqReply } from "@/lib/testing/e2eFakes";
+
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const DEFAULT_MODEL = "openai/gpt-oss-120b";
 
@@ -46,6 +48,9 @@ function isRetryable(status: number): boolean {
  * WhatsApp webhook, which the provider retries on timeout.
  */
 export async function groqChat(input: GroqChatInput): Promise<string> {
+  // E2E only; see e2eFakes for why this is not gated on NODE_ENV.
+  if (fakeGroqEnabled()) return fakeGroqReply(input.messages);
+
   const apiKey = input.apiKey?.trim();
   if (!apiKey) throw new GroqError("Missing GROQ_API_KEY");
 

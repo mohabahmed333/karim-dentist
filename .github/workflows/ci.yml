@@ -30,3 +30,50 @@ jobs:
       # Lint last: the repo currently has pre-existing violations, so this
       # reports without failing the build. Drop `|| true` once they are cleared.
       - run: yarn lint || true
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Applies every migration in order, so a broken migration fails here
+      # rather than on a real database.
+      - run: supabase start
+      - run: supabase db reset --local
+
+      - name: Export local Supabase keys
+        run: |
+          supabase status -o env | sed 's/^/E2E_/' >> "$GITHUB_ENV"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321"
+            echo "KAPSO_WEBHOOK_SECRET=e2e-webhook-secret"
+          } >> "$GITHUB_ENV"
+
+      - name: Map keys the app expects
+        run: |
+          {
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${E2E_ANON_KEY//\"/}"
+            echo "SUPABASE_SERVICE_ROLE_KEY=${E2E_SERVICE_ROLE_KEY//\"/}"
+          } >> "$GITHUB_ENV"
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: yarn e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

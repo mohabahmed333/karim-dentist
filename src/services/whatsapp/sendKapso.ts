@@ -1,4 +1,5 @@
 import type { WhatsAppClient } from "@kapso/whatsapp-cloud-api";
+import { fakeKapsoEnabled } from "@/lib/testing/e2eFakes";
 import { buildTemplateSendPayload } from "@kapso/whatsapp-cloud-api";
 import {
   CLINIC_LOCATION,
@@ -85,6 +86,18 @@ export async function sendKapsoPayload(input: {
   const { client, phoneNumberId, to, kind } = input;
   const text = input.text?.trim() ?? "";
   const base = { phoneNumberId, to };
+
+  // E2E only: record the send shape without calling Meta. See e2eFakes.
+  if (fakeKapsoEnabled()) {
+    return {
+      wamid: `wamid.fake.${Date.now()}`,
+      messageType: kind === "template" ? "template" : kind,
+      body: text,
+      preview: text.slice(0, 240) || kind,
+      media: [],
+      flow: null,
+    };
+  }
 
   if (kind === "template" && input.template) {
     const tpl = input.template;

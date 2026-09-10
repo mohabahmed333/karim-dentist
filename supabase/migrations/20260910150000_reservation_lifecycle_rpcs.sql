@@ -27,8 +27,14 @@ BEGIN
   IF p_phone IS NULL OR length(trim(p_phone)) = 0 THEN
     RAISE EXCEPTION 'Not authorised for this reservation';
   END IF;
-  IF regexp_replace(p_reservation.phone, '[^0-9]', '', 'g')
-     <> regexp_replace(p_phone, '[^0-9]', '', 'g') THEN
+  -- Compare the last 8 digits, matching phonesMatch()/phone_suffix in the app.
+  -- Full-string equality is wrong here: the same person is stored as
+  -- "+20 100 555 1234" from WhatsApp and "0100-555-1234" from the web form,
+  -- and the app's canonicalisation (00-strip, local 01 -> 201) only ever
+  -- rewrites the prefix. Suffix comparison is still a real check, because the
+  -- caller cannot forge the WhatsApp number they are messaging from.
+  IF right(regexp_replace(p_reservation.phone, '[^0-9]', '', 'g'), 8)
+     <> right(regexp_replace(p_phone, '[^0-9]', '', 'g'), 8) THEN
     RAISE EXCEPTION 'Not authorised for this reservation';
   END IF;
 END;

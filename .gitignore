@@ -57,3 +57,11 @@ supabase/.temp
 
 # local agent brainstorm runtime
 .superpowers/
+
+# Playwright
+/test-results/
+/playwright-report/
+/e2e/.auth/
+
+# Local E2E env (contains only the well-known local Supabase demo keys)
+.env.e2e
