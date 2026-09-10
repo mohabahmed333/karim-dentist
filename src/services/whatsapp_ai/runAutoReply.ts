@@ -3,6 +3,7 @@ import { decideAutoReply } from "./decideAutoReply";
 import { extractAutoReplyEnvelope } from "./extractAutoReplyEnvelope";
 import { injectionHeuristics } from "./injectionHeuristics";
 import { evaluateAutoReplyPolicy, type PolicyInput } from "./policy";
+import { isSendableReply, stripInternalIds } from "./replyGuards";
 import type { AutoReplyEnvelope, BotAction } from "./schemas";
 
 export type RunOutcome = {
@@ -81,7 +82,26 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     return { status: "failed", reason: message };
   }
 
-  const { envelope } = extractAutoReplyEnvelope(raw);
+  const { envelope: rawEnvelope } = extractAutoReplyEnvelope(raw);
+
+  // Internal identifiers must never reach a patient. The model is shown slots
+  // as `slotId=<uuid>` and told to copy the id exactly — meaning into the
+  // structured field — and it has been observed copying them into the prose
+  // too. The prompt asks; this enforces.
+  const guarded = stripInternalIds(rawEnvelope.reply);
+  const envelope = { ...rawEnvelope, reply: guarded.reply };
+  if (guarded.violations.length > 0 && !isSendableReply(envelope.reply)) {
+    // Nothing meaningful survived the strip — a human should write this one.
+    const { id } = await deps.draft(rawEnvelope.reply, "reply_was_all_ids");
+    await deps.record({
+      decision: "draft",
+      reason: "reply_was_all_ids",
+      envelope,
+      injectionFlags: flags,
+      latencyMs: Date.now() - startedAt,
+    });
+    return { status: "drafted", reason: "reply_was_all_ids", messageId: id, envelope };
+  }
 
   // Remember what we offered, so the next turn can validate the patient's pick
   // against the server's list rather than the model's memory.
