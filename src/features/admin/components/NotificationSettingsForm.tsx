@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -135,6 +136,12 @@ export function NotificationSettingsForm() {
       </div>
 
       {readiness ? <NotificationReadinessPanel readiness={readiness} /> : null}
+      <Link
+        href="/admin/outbox"
+        className="-mt-2 inline-block text-xs text-[var(--admin-muted)] underline underline-offset-2"
+      >
+        See every queued message and who has opted out →
+      </Link>
 
       <label className="space-y-1.5">
         <Label>Mode</Label>
@@ -210,12 +217,13 @@ export function NotificationSettingsForm() {
 
       <label className="flex items-start justify-between gap-3 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] px-3 py-2.5 text-sm">
         <span className="space-y-0.5">
-          <span className="block font-medium">Six-month check-up recalls</span>
+          <span className="block font-medium">Recalls and review requests</span>
           <span className="block text-xs text-[var(--admin-muted)]">
             Messages patients whose last visit was over six months ago and who
-            have nothing booked. This is marketing, not a service message: it
-            needs its own approved template and patients&apos; consent, so it
-            stays off even when sending is on.
+            have nothing booked, and asks for a review — but only from a patient
+            who replied positively to their follow-up. Both are marketing, not
+            service messages: they need their own approved templates and
+            patients&apos; consent, so they stay off even when sending is on.
           </span>
         </span>
         <input
