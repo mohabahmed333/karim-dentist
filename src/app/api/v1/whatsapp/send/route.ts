@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/api/requireAdmin";
+import { loadAiSettings, markHumanHandoff } from "@/services/whatsapp_ai/store";
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import {
   clinicContactFromSettings,
@@ -269,6 +270,20 @@ export async function POST(request: Request) {
 
     if (localPreviewUrl && sent.media[0]) {
       sent.media[0] = { ...sent.media[0], url: localPreviewUrl };
+    }
+
+    // A human is now handling this thread: hold the auto-responder off for the
+    // configured window. The runner also derives this from the last human
+    // message, so this is belt-and-braces rather than the only signal.
+    try {
+      const settings = await loadAiSettings(service);
+      await markHumanHandoff(
+        service,
+        conversation.id,
+        settings.human_handoff_minutes,
+      );
+    } catch (err) {
+      console.error("[whatsapp/send] handoff marker failed", err);
     }
 
     const message = await insertOutboundMessage(service, {

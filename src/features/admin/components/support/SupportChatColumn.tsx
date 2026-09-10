@@ -30,6 +30,7 @@ import { SupportAvatar } from "./SupportAvatar";
 import { ChatComposer } from "./chat/ChatComposer";
 import { ChatGalleryProvider } from "./chat/ChatGalleryContext";
 import { ChatMessageBubble } from "./chat/ChatMessageBubble";
+import { AiDraftCard } from "./chat/AiDraftCard";
 import { ChatThreadSearch } from "./chat/ChatThreadSearch";
 import { collectConversationMedia } from "./chat/collectConversationMedia";
 import type { ComposerSendPayload } from "./chat/composerTypes";
@@ -398,7 +399,10 @@ export function SupportChatColumn({
             {t("admin.frontDesk.loadingEarlier")}
           </p>
         ) : null}
-        {messages.map((m) => (
+        {messages.map((m) =>
+          m.isDraft ? (
+            <AiDraftCard key={m.id} message={m} />
+          ) : (
           <ChatMessageBubble
             key={m.id}
             message={m}
@@ -411,7 +415,8 @@ export function SupportChatColumn({
               patientKey: conversation.patientKey,
             }}
           />
-        ))}
+          ),
+        )}
       </div>
 
       {sessionOpen === false && onSendTemplate ? (
