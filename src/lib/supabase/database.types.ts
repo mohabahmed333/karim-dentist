@@ -97,6 +97,8 @@ export type Database = {
           id: string;
           kapso_conversation_id: string | null;
           phone_number: string;
+          /** Generated column: last 8 digits of `phone_number`. Never write it. */
+          phone_suffix: string | null;
           contact_name: string | null;
           patient_key: string | null;
           status: "active" | "ended" | "archived";

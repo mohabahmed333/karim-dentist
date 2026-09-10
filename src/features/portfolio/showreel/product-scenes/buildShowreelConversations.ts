@@ -7,6 +7,9 @@ export function buildShowreelConversations(): WhatsappConversation[] {
     id: c.id,
     kapso_conversation_id: `demo_${c.id}`,
     phone_number: c.phone.replace(/\D/g, ""),
+    // Generated in Postgres; computed here so the demo rows are the same
+    // shape as real ones.
+    phone_suffix: c.phone.replace(/\D/g, "").slice(-8),
     contact_name: c.name,
     patient_key: c.patientKey,
     status: c.status,
