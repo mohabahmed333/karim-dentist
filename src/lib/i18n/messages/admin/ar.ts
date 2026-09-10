@@ -273,6 +273,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.settings.contact": "التواصل",
   "admin.settings.brand": "الموقع",
   "admin.settings.whatsappAi": "ذكاء واتساب الاصطناعي",
+  "admin.settings.notifications": "تنبيهات المرضى",
   "admin.settings.description":
     "ساعات العيادة وسمة اللوحة وعلامة الموقع وأسعار العلاجات.",
   "admin.settings.account": "الحساب",

@@ -271,6 +271,7 @@ export const adminEn = {
   "admin.settings.contact": "Contact",
   "admin.settings.brand": "Site",
   "admin.settings.whatsappAi": "WhatsApp AI",
+  "admin.settings.notifications": "Patient notifications",
   "admin.settings.description":
     "Clinic hours, dashboard theme, site brand, and treatment prices.",
   "admin.settings.account": "Account",

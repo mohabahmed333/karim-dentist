@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChartingFeesEditor } from "./ChartingFeesEditor";
 import { ClinicHoursEditor } from "./ClinicHoursEditor";
+import { NotificationSettingsForm } from "./NotificationSettingsForm";
 import { SettingsDashboardForm } from "./SettingsDashboardForm";
 import { SettingsSiteForm } from "./SettingsSiteForm";
 import { WhatsappAiSettingsForm } from "./WhatsappAiSettingsForm";
 
 type Props = { settings: SiteSettings | null };
-type Tab = "site" | "hours" | "fees" | "dashboard" | "whatsappAi";
+type Tab = "site" | "hours" | "fees" | "dashboard" | "whatsappAi" | "notifications";
 
 export function SettingsEditor({ settings }: Props) {
   const t = useTranslations();
@@ -67,6 +68,14 @@ export function SettingsEditor({ settings }: Props) {
         >
           {t("admin.settings.whatsappAi")}
         </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={tab === "notifications" ? "default" : "outline"}
+          onClick={() => setTab("notifications")}
+        >
+          {t("admin.settings.notifications")}
+        </Button>
       </div>
       {tab === "dashboard" ? (
         <Card className="max-w-4xl gap-0 p-6">
@@ -83,6 +92,10 @@ export function SettingsEditor({ settings }: Props) {
       ) : tab === "whatsappAi" ? (
         <Card className="max-w-3xl gap-0 p-6">
           <WhatsappAiSettingsForm />
+        </Card>
+      ) : tab === "notifications" ? (
+        <Card className="max-w-3xl gap-0 p-6">
+          <NotificationSettingsForm />
         </Card>
       ) : (
         <Card className="w-full max-w-none gap-0 p-6">

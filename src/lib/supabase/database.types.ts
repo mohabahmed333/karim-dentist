@@ -2438,6 +2438,11 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      patient_notifications_cron_scheduled: {
+        Args: Record<string, never>;
+        /** null when pg_cron is absent or cron.job is unreadable. */
+        Returns: boolean | null;
+      };
       is_admin: { Args: Record<string, never>; Returns: boolean };
       cancel_reservation_and_release_slot: {
         Args: {
