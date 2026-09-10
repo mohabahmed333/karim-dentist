@@ -45,6 +45,9 @@ export type DueNotification = {
   scheduled_for: string;
   conversation_id: string | null;
   attempts: number;
+  /** Set for waitlist offers: the slot on offer and who it is offered to. */
+  slot_id: string | null;
+  waitlist_id: string | null;
 };
 
 /** Rows whose time has come, oldest first. */
@@ -56,7 +59,7 @@ export async function findDue(
   const { data } = await db
     .from("patient_notifications")
     .select(
-      "id,kind,source,phone,patient_name,service_label,starts_at,scheduled_for,conversation_id,attempts",
+      "id,kind,source,phone,patient_name,service_label,starts_at,scheduled_for,conversation_id,attempts,slot_id,waitlist_id",
     )
     .eq("status", "pending")
     .lte("scheduled_for", now.toISOString())
@@ -201,4 +204,14 @@ export async function sweepExpiredLeases(
     .select("id");
 
   return (abandoned?.length ?? 0) + (returned?.length ?? 0);
+}
+
+/** Whether an offered slot can still be claimed, checked at the moment of sending. */
+export async function isSlotOpen(db: ServiceClient, slotId: string): Promise<boolean> {
+  const { data } = await db
+    .from("appointment_slots")
+    .select("status,starts_at")
+    .eq("id", slotId)
+    .maybeSingle();
+  return Boolean(data && data.status === "open" && Date.parse(data.starts_at) > Date.now());
 }

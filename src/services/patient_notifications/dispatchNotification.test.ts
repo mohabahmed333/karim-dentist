@@ -185,3 +185,64 @@ describe("dispatchNotification — language", () => {
     assert.equal(d.finished[0].templateName, "appoinment_ar");
   });
 });
+
+describe("dispatchNotification — waitlist offers", () => {
+  const offer = (over: Record<string, unknown> = {}) =>
+    row({ kind: "waitlist_offer", slot_id: "slot-1", waitlist_id: "w1", ...over });
+
+  it("does not offer a slot someone has already taken", () => {
+    const d = deps({
+      async isSlotOpen() {
+        return false;
+      },
+    });
+    return dispatchNotification(d, offer()).then((out: { reason: string }) => {
+      assert.equal(out.reason, "slot_taken");
+      assert.equal(d.trace.includes("send"), false);
+    });
+  });
+
+  it("treats an unverifiable slot as taken rather than offering it blind", async () => {
+    const d = deps(); // no isSlotOpen dependency at all
+    const out = await dispatchNotification(d, offer());
+    assert.equal(out.reason, "slot_taken");
+  });
+
+  it("stays quiet while no waitlist template is approved", async () => {
+    const d = deps({
+      async isSlotOpen() {
+        return true;
+      },
+    });
+    const out = await dispatchNotification(d, offer());
+    assert.equal(out.reason, "no_approved_template");
+    assert.equal(d.trace.includes("send"), false);
+  });
+
+  it("registers the offered slot only after the message has gone out", async () => {
+    // Registering first would let an earlier, unrelated "yes" claim a slot the
+    // patient was never told about.
+    const d = deps({
+      async isSlotOpen() {
+        return true;
+      },
+      buildTemplate: () => ({
+        name: "slot_offer_test",
+        language: "en_US",
+        body: [{ type: "text", text: "x" }],
+      }),
+      async rememberOfferedSlot(_conversationId: string, slotId: string) {
+        d.trace.push(`remember:${slotId}`);
+      },
+    });
+    const out = await dispatchNotification(d, offer());
+    assert.equal(out.status, "sent");
+    assert.deepEqual(d.trace, [
+      "resolveConversation",
+      "markSendStarted",
+      "send",
+      "remember:slot-1",
+      "finish:sent",
+    ]);
+  });
+});

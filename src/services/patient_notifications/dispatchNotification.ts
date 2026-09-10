@@ -41,6 +41,16 @@ export type DispatchDeps = {
     template: TemplateSendInput;
   }) => Promise<{ id: string }>;
   finish: (id: string, patch: FinishPatch) => Promise<void>;
+  /** Waitlist offers only: is the slot still free to claim? */
+  isSlotOpen?: (slotId: string) => Promise<boolean>;
+  /**
+   * Waitlist offers only: register the slot as offered in this conversation,
+   * so the assistant accepts "take it" for it instead of refusing it as
+   * slot_not_offered.
+   */
+  rememberOfferedSlot?: (conversationId: string, slotId: string) => Promise<void>;
+  /** Overridable so the send path can be tested before a template is approved. */
+  buildTemplate?: typeof buildTemplateForKind;
 };
 
 export async function dispatchNotification(
@@ -81,11 +91,23 @@ export async function dispatchNotification(
       return { status: "skipped", reason: decision.reason };
     }
 
+    // Offering a slot someone already took would invite a patient to claim
+    // something that no longer exists. Checked here, at send time, because a
+    // deferral can hold an offer back for hours.
+    if (row.kind === "waitlist_offer") {
+      const open =
+        row.slot_id && deps.isSlotOpen ? await deps.isSlotOpen(row.slot_id) : false;
+      if (!open) {
+        await deps.finish(row.id, { status: "skipped", skipReason: "slot_taken" });
+        return { status: "skipped", reason: "slot_taken" };
+      }
+    }
+
     const language = pickPatientLanguage({
       lastInboundBody: await deps.lastInboundBody(row.phone),
       patientName: row.patient_name,
     });
-    const template = buildTemplateForKind(row.kind, {
+    const template = (deps.buildTemplate ?? buildTemplateForKind)(row.kind, {
       patientName: row.patient_name,
       clinicName: deps.clinicName,
       startsAt: row.starts_at ?? now.toISOString(),
@@ -132,6 +154,13 @@ export async function dispatchNotification(
     await deps.markSendStarted(row.id);
 
     const message = await deps.send({ conversationId, template });
+
+    if (row.kind === "waitlist_offer" && row.slot_id && deps.rememberOfferedSlot) {
+      // After the send, never before: registering an offer the patient never
+      // received would let a stale "yes" from earlier claim it. A failure here
+      // must not turn a delivered message into a recorded failure.
+      await deps.rememberOfferedSlot(conversationId, row.slot_id).catch(() => undefined);
+    }
     await deps.finish(row.id, {
       status: "sent",
       ...resolved,
