@@ -41,6 +41,7 @@ import {
   type SupportMessage,
 } from "./supportDummyData";
 import { InboxColumnResizeHandle } from "./InboxColumnResizeHandle";
+import { INBOX_WIDTH_MAX, INBOX_WIDTH_MIN } from "./inboxColumnWidth";
 import { useInboxColumnWidth } from "./useInboxColumnWidth";
 import type { WhatsappMessage } from "@/services/whatsapp";
 import {
@@ -1024,6 +1025,9 @@ export function SupportInboxView({
           </div>
           <InboxColumnResizeHandle
             width={inboxWidth}
+            min={INBOX_WIDTH_MIN}
+            max={INBOX_WIDTH_MAX}
+            labelKey="admin.frontDesk.resizeInbox"
             dragging={inboxResizing}
             onPointerDown={startInboxResize}
           />

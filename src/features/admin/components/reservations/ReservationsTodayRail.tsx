@@ -11,7 +11,7 @@ import type { Service } from "@/services/services/types";
 import {
   groupReservationsNextThreeDays,
   type NextThreeDayKey,
-} from "./reservationsTodayRail";
+} from "./todayRailGrouping";
 
 type Props = {
   reservations: Reservation[];

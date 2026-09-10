@@ -623,6 +623,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.reservations.appointmentsCount": "{count} مواعيد",
   "admin.reservations.appointmentCountOne": "{count} موعد",
   "admin.reservations.noAppointmentsToday": "لا مواعيد اليوم",
+  "admin.reservations.noAppointmentsNextThreeDays": "لا توجد مواعيد خلال الأيام الثلاثة القادمة",
   "admin.reservations.create": "إنشاء حجز",
   "admin.reservations.createDesc": "أكمل تفاصيل الحجز لهذا العميل.",
   "admin.reservations.update": "تحديث الحجز",

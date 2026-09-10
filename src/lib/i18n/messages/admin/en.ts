@@ -621,6 +621,7 @@ export const adminEn = {
   "admin.reservations.appointmentsCount": "{count} appointments",
   "admin.reservations.appointmentCountOne": "{count} appointment",
   "admin.reservations.noAppointmentsToday": "No appointments today",
+  "admin.reservations.noAppointmentsNextThreeDays": "No appointments in the next 3 days",
   "admin.reservations.create": "Create reservation",
   "admin.reservations.createDesc": "Complete the booking details for this client.",
   "admin.reservations.update": "Update reservation",

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
-import { groupReservationsNextThreeDays } from "./reservationsTodayRail.ts";
+import { groupReservationsNextThreeDays } from "./todayRailGrouping.ts";
 import type { Reservation } from "@/services/reservations/types.ts";
 
 const base: Omit<Reservation, "id" | "starts_at" | "status"> = {
