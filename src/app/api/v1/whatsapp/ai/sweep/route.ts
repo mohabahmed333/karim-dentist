@@ -22,14 +22,21 @@ const MAX_LLM_ATTEMPTS = 3;
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET?.trim();
-  if (secret) {
-    const provided =
-      request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-      request.headers.get("x-cron-secret") ??
-      "";
-    if (provided !== secret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!secret) {
+    // Fail closed: an unconfigured secret must never mean "open to anyone" —
+    // this endpoint can drain the auto-reply queue, including sending real
+    // messages to patients in `auto` mode.
+    return NextResponse.json(
+      { error: "CRON_SECRET is not configured" },
+      { status: 500 },
+    );
+  }
+  const provided =
+    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
+    request.headers.get("x-cron-secret") ??
+    "";
+  if (provided !== secret) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const db = createServiceClient();

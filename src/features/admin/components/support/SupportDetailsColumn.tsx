@@ -9,6 +9,9 @@ import type { SupportDetails, SupportMessage } from "./supportDummyData";
 type Props = {
   details: SupportDetails;
   messages: SupportMessage[];
+  conversationId?: string;
+  /** Show the live AI assistant controls (real Kapso conversations only). */
+  showAiControls?: boolean;
   onToggleDetails: () => void;
   onAddNote?: (body: string) => void | Promise<void>;
   onTogglePinNote?: (id: string, pinned: boolean) => void | Promise<void>;
@@ -19,6 +22,8 @@ type Props = {
 export function SupportDetailsColumn({
   details,
   messages,
+  conversationId,
+  showAiControls,
   onToggleDetails,
   onAddNote,
   onTogglePinNote,
@@ -27,6 +32,7 @@ export function SupportDetailsColumn({
 }: Props) {
   const t = useTranslations();
   const [open, setOpen] = useState<Record<string, boolean>>({
+    ai: true,
     attributes: true,
     client: true,
     tickets: true,
@@ -51,6 +57,8 @@ export function SupportDetailsColumn({
       <SupportDetailsTabs
         details={details}
         messages={messages}
+        conversationId={conversationId}
+        showAiControls={showAiControls}
         accordionOpen={open}
         onToggleAccordion={(key) =>
           setOpen((prev) => ({ ...prev, [key]: !prev[key] }))

@@ -1116,6 +1116,8 @@ export function SupportInboxView({
                       <SupportDetailsColumn
                         details={details}
                         messages={messages}
+                        conversationId={conversation.id}
+                        showAiControls={useKapso}
                         onToggleDetails={() => setDetailsOpen(false)}
                         onAddNote={addNote}
                         onTogglePinNote={togglePinNote}

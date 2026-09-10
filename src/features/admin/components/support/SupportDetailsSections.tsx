@@ -3,11 +3,14 @@
 import { FileText } from "lucide-react";
 import { useTranslations } from "@/lib/i18n";
 import { SupportAccordion, SupportKeyValueList } from "./SupportAccordion";
+import { SupportAiControlPanel } from "./SupportAiControlPanel";
 import { SupportNotesPanel } from "./SupportNotesPanel";
 import type { SupportDetails } from "./supportDummyData";
 
 type Props = {
   details: SupportDetails;
+  conversationId?: string;
+  showAiControls?: boolean;
   open: Record<string, boolean>;
   onToggle: (key: string) => void;
   onAddNote?: (body: string) => void | Promise<void>;
@@ -18,6 +21,8 @@ type Props = {
 
 export function SupportDetailsSections({
   details,
+  conversationId,
+  showAiControls,
   open,
   onToggle,
   onAddNote,
@@ -29,6 +34,16 @@ export function SupportDetailsSections({
 
   return (
     <>
+      {showAiControls && conversationId ? (
+        <SupportAccordion
+          title={t("admin.frontDesk.aiControlTitle")}
+          open={open.ai}
+          onToggle={() => onToggle("ai")}
+        >
+          <SupportAiControlPanel conversationId={conversationId} />
+        </SupportAccordion>
+      ) : null}
+
       <SupportAccordion
         title={t("admin.frontDesk.visitAttributes")}
         open={open.attributes}

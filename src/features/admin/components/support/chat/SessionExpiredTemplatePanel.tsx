@@ -100,13 +100,22 @@ export function SessionExpiredTemplatePanel({
     [templates, selectedKey],
   );
 
+  // Reset on template/conversation change — fields start blank. The dummy
+  // defaults are shown as placeholder hints only (see `placeholders` below),
+  // never as a prefilled, sendable value: a staff member skimming past an
+  // unedited "Ahmed" / "Tomorrow, 10:00 AM" would send fabricated info to a
+  // real patient.
   useEffect(() => {
-    if (!selected) {
-      setValues({});
-      return;
-    }
-    setValues(templateDummyDefaults(selected.fields, selected.language));
+    setValues({});
   }, [selected, conversationId]);
+
+  const placeholders = useMemo(
+    () =>
+      selected
+        ? templateDummyDefaults(selected.fields, selected.language)
+        : {},
+    [selected],
+  );
 
   async function handleSend() {
     if (!selected || !selected.supported) return;
@@ -225,6 +234,7 @@ export function SessionExpiredTemplatePanel({
                 <AdminInput
                   className="mt-1"
                   value={values[id] ?? ""}
+                  placeholder={placeholders[id]}
                   onChange={(e) =>
                     setValues((prev) => ({ ...prev, [id]: e.target.value }))
                   }

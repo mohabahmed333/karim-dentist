@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/api/requireAdmin";
 import { createServiceClient } from "@/lib/supabase/service";
+import { loadConversationState } from "@/services/whatsapp_ai/store";
 
 export const runtime = "nodejs";
 
@@ -11,6 +12,23 @@ const bodySchema = z.object({
   /** Minutes to pause the bot for; 0 clears the pause. */
   pauseMinutes: z.number().int().min(0).max(1440).optional(),
 });
+
+/** Current per-conversation kill switch / pause state. */
+export async function GET(request: Request) {
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+
+  const conversationId = new URL(request.url).searchParams.get(
+    "conversationId",
+  );
+  const parsed = z.string().uuid().safeParse(conversationId);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid conversationId" }, { status: 400 });
+  }
+
+  const state = await loadConversationState(createServiceClient(), parsed.data);
+  return NextResponse.json({ state });
+}
 
 /** Per-conversation kill switch and pause. */
 export async function POST(request: Request) {

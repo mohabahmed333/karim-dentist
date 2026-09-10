@@ -17,6 +17,8 @@ type Tab = "details" | "images" | "links" | "attachments";
 type Props = {
   details: SupportDetails;
   messages: SupportMessage[];
+  conversationId?: string;
+  showAiControls?: boolean;
   accordionOpen: Record<string, boolean>;
   onToggleAccordion: (key: string) => void;
   onAddNote?: (body: string) => void | Promise<void>;
@@ -41,6 +43,8 @@ function attachmentIcon(kind: MediaAttachmentItem["kind"]) {
 export function SupportDetailsTabs({
   details,
   messages,
+  conversationId,
+  showAiControls,
   accordionOpen,
   onToggleAccordion,
   onAddNote,
@@ -84,6 +88,8 @@ export function SupportDetailsTabs({
         {tab === "details" ? (
           <SupportDetailsSections
             details={details}
+            conversationId={conversationId}
+            showAiControls={showAiControls}
             open={accordionOpen}
             onToggle={onToggleAccordion}
             onAddNote={onAddNote}

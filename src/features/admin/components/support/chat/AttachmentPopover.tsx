@@ -7,7 +7,6 @@ import {
   MapPin,
   Contact,
   LayoutTemplate,
-  Video,
 } from "lucide-react";
 import type { ComposerSendPayload } from "./composerTypes";
 import { LocationSendDialog } from "./LocationSendDialog";
@@ -122,7 +121,6 @@ export function AttachmentPopover({ onSend, onClose, onOpenTemplate }: Props) {
             }}
           />
         ) : null}
-        <Video className="hidden" />
       </div>
       )}
       <LocationSendDialog

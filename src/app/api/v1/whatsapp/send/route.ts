@@ -18,6 +18,7 @@ import {
   uploadMediaFile,
   type SendKind,
 } from "@/services/whatsapp/sendKapso";
+import { uploadWhatsappMediaFile } from "@/services/whatsapp/mediaStorage";
 
 export const runtime = "nodejs";
 
@@ -166,14 +167,17 @@ export async function POST(request: Request) {
       fileName = file.name;
       kind = mediaKindFromMime(mime);
       if (form.get("kind") === "audio") kind = "audio";
-      mediaId = await uploadMediaFile(
-        client,
-        phoneNumberId,
-        file,
-        mime,
-        fileName,
-      );
-      localPreviewUrl = undefined;
+      const [uploadedMediaId, storedUrl] = await Promise.all([
+        uploadMediaFile(client, phoneNumberId, file, mime, fileName),
+        uploadWhatsappMediaFile(service, conversationId, file, mime, fileName).catch(
+          (err: unknown) => {
+            console.error("[whatsapp/send] media storage upload failed", err);
+            return undefined;
+          },
+        ),
+      ]);
+      mediaId = uploadedMediaId;
+      localPreviewUrl = storedUrl;
     } else {
       const parsed = jsonSchema.safeParse(await request.json());
       if (!parsed.success) {

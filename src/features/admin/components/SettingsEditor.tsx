@@ -11,9 +11,10 @@ import { ChartingFeesEditor } from "./ChartingFeesEditor";
 import { ClinicHoursEditor } from "./ClinicHoursEditor";
 import { SettingsDashboardForm } from "./SettingsDashboardForm";
 import { SettingsSiteForm } from "./SettingsSiteForm";
+import { WhatsappAiSettingsForm } from "./WhatsappAiSettingsForm";
 
 type Props = { settings: SiteSettings | null };
-type Tab = "site" | "hours" | "fees" | "dashboard";
+type Tab = "site" | "hours" | "fees" | "dashboard" | "whatsappAi";
 
 export function SettingsEditor({ settings }: Props) {
   const t = useTranslations();
@@ -58,6 +59,14 @@ export function SettingsEditor({ settings }: Props) {
         >
           {t("admin.settings.clinic")}
         </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={tab === "whatsappAi" ? "default" : "outline"}
+          onClick={() => setTab("whatsappAi")}
+        >
+          {t("admin.settings.whatsappAi")}
+        </Button>
       </div>
       {tab === "dashboard" ? (
         <Card className="max-w-4xl gap-0 p-6">
@@ -70,6 +79,10 @@ export function SettingsEditor({ settings }: Props) {
       ) : tab === "fees" ? (
         <Card className="max-w-3xl gap-0 p-6">
           <ChartingFeesEditor />
+        </Card>
+      ) : tab === "whatsappAi" ? (
+        <Card className="max-w-3xl gap-0 p-6">
+          <WhatsappAiSettingsForm />
         </Card>
       ) : (
         <Card className="w-full max-w-none gap-0 p-6">
