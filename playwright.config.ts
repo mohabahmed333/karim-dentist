@@ -59,6 +59,9 @@ export default defineConfig({
       KAPSO_WEBHOOK_SECRET: process.env.KAPSO_WEBHOOK_SECRET ?? "e2e-webhook-secret",
       // Non-empty so the policy gate sees a configured model.
       GROQ_API_KEY: "e2e",
+      // The dispatch endpoint fails closed without this, so the auth specs
+      // would only ever see 503 and never exercise the real path.
+      CRON_SECRET: process.env.CRON_SECRET ?? "e2e-cron-secret",
     },
   },
 });
