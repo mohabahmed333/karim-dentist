@@ -78,6 +78,7 @@ export function NotificationSettingsForm() {
           quiet_hours_end: settings.quiet_hours_end,
           max_per_patient_per_day: settings.max_per_patient_per_day,
           reminder_lead_minutes: settings.reminder_lead_minutes,
+          recall_enabled: settings.recall_enabled,
         }),
       });
       const body = (await res.json()) as {
@@ -206,6 +207,24 @@ export function NotificationSettingsForm() {
         (24&nbsp;hours) is the only value that reads correctly. Anything else and
         the reminder is skipped rather than sent with the wrong day.
       </p>
+
+      <label className="flex items-start justify-between gap-3 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] px-3 py-2.5 text-sm">
+        <span className="space-y-0.5">
+          <span className="block font-medium">Six-month check-up recalls</span>
+          <span className="block text-xs text-[var(--admin-muted)]">
+            Messages patients whose last visit was over six months ago and who
+            have nothing booked. This is marketing, not a service message: it
+            needs its own approved template and patients&apos; consent, so it
+            stays off even when sending is on.
+          </span>
+        </span>
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={settings.recall_enabled}
+          onChange={(e) => set({ recall_enabled: e.target.checked })}
+        />
+      </label>
 
       <div className="flex justify-end">
         <Button type="button" onClick={onSave} disabled={pending}>

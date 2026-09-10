@@ -1368,6 +1368,7 @@ export type Database = {
           quiet_hours_end: number;
           max_per_patient_per_day: number;
           reminder_lead_minutes: number;
+          recall_enabled: boolean;
           updated_at: string;
         };
         Insert: {
@@ -1378,6 +1379,7 @@ export type Database = {
           quiet_hours_end?: number;
           max_per_patient_per_day?: number;
           reminder_lead_minutes?: number;
+          recall_enabled?: boolean;
           updated_at?: string;
         };
         Update: {
@@ -1388,6 +1390,7 @@ export type Database = {
           quiet_hours_end?: number;
           max_per_patient_per_day?: number;
           reminder_lead_minutes?: number;
+          recall_enabled?: boolean;
           updated_at?: string;
         };
         Relationships: [];

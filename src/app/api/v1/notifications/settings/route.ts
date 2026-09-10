@@ -13,6 +13,7 @@ const patchSchema = z.object({
   quiet_hours_end: z.number().int().min(0).max(23).optional(),
   max_per_patient_per_day: z.number().int().min(0).max(20).optional(),
   reminder_lead_minutes: z.number().int().min(60).max(10080).optional(),
+  recall_enabled: z.boolean().optional(),
 });
 
 async function loadSettings(service: ReturnType<typeof createServiceClient>) {

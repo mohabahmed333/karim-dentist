@@ -11,6 +11,8 @@ import { clinicContactFromSettings } from "@/lib/clinic/whatsappClinicContact";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { phoneSuffixForLookup } from "@/services/reservations/phoneSuffix";
 import { sendWhatsappMessage } from "@/services/whatsapp/sendMessage";
+import { saveOfferedSlots } from "@/services/whatsapp_ai/store";
+import { enqueueFollowupsAndRecalls } from "./followupsAndRecalls";
 import { dispatchNotification, type DispatchOutcome } from "./dispatchNotification";
 import { pickConversation, resolveOrCreateConversation } from "./resolveConversation";
 import {
@@ -19,6 +21,7 @@ import {
   findDue,
   finish,
   isOptedOut,
+  isSlotOpen,
   loadSettings,
   markSendStarted,
   sweepExpiredLeases,
@@ -45,6 +48,21 @@ export async function runDispatch(
 ): Promise<{ claimed: number; swept: number; outcomes: DispatchOutcome[] }> {
   const swept = await sweepExpiredLeases(db, now);
   const settings = await loadSettings(db);
+
+  // Time-driven messages have no triggering row, so they are found by a scan.
+  // Safe on every tick because each enqueue is idempotent on dedupe_key. Not
+  // while off: a scanned row would be skipped as mode_off and its dedupe key
+  // spent, so a patient who lapsed during that window would never be recalled.
+  if (settings.mode !== "off") {
+    const { data: flags } = await db
+      .from("patient_notification_settings")
+      .select("recall_enabled")
+      .limit(1)
+      .maybeSingle();
+    await enqueueFollowupsAndRecalls(db, now, {
+      recallEnabled: Boolean(flags?.recall_enabled),
+    }).catch(() => 0);
+  }
 
   const [{ data: settingsRow }, due] = await Promise.all([
     db
@@ -135,6 +153,11 @@ export async function runDispatch(
             return { id: message.id };
           },
           finish: (id, patch) => finish(db, id, patch),
+          isSlotOpen: (slotId) => isSlotOpen(db, slotId),
+          // Carries the same 30-minute expiry as an offer the assistant makes
+          // itself, which is the claim window the waitlist promises.
+          rememberOfferedSlot: (conversationId, slotId) =>
+            saveOfferedSlots(db, conversationId, [slotId]),
         },
         row,
       ),
