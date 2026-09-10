@@ -1,64 +1,73 @@
 ---
 alwaysApply: true
-description: "Phase 2 — Unit and component testing with Vitest and React Testing Library."
+description: "Unit testing with node:test — the runner this repo actually uses."
 ---
 
-# Unit Testing (Phase 2)
+# Unit Testing
 
-> **When to apply:** After Phase 1 implementation is complete. See `00-workflow/000-rules-sequence.mdc`.
+> This file previously described Vitest, React Testing Library, a root `tests/`
+> directory and a 70% coverage gate. None of that was ever true in this repo,
+> and following it produced seven test files importing an uninstalled `vitest`
+> that therefore never ran. It now describes the real setup.
 
-## Scope
+## Runner
 
-| Target | Requirement |
-|--------|-------------|
-| `src/lib/**` utils | Unit test every new or changed util |
-| `src/hooks/**` and feature/module hooks | Unit test pure logic; mock React Query / router where needed |
-| `src/components/ui/**` | Component test with React Testing Library — render + a11y queries, not snapshot-only |
-| Zod schemas (`schemas/`, `schema.ts`) | At least one valid + one invalid case per schema |
+`yarn test` → `scripts/test.sh` → Node's built-in test runner with native TS
+stripping:
+
+```bash
+node --experimental-strip-types --import ./scripts/test-loader.mjs --test $(find src -name '*.test.ts' | sort)
+```
+
+Zero test dependencies. Requires Node 22+.
 
 ## Conventions
 
-- **Runner:** Vitest
-- **Location:** all tests live under `tests/` at the repo root — **never** in `src/`
-- **Mirror `src/` paths:** `src/features/orders/hooks/useOrders.ts` → `tests/features/orders/hooks/useOrders.test.ts`
-- **Shared helpers:** `tests/helpers/` (import via `@tests/helpers/...`)
-- **Import production code** via `@/` only — no relative imports into `src/`
-- **Naming:** `describe('<UnitName>', () => { it('should ...', () => {}) })`
-- **No `test.skip` or `test.only`** merged to main
-- **Coverage gate:** ≥ 70% lines on `src/lib` and `src/hooks` (CI target)
+- **Location:** co-located beside the code, `src/**/thing.test.ts` — not a root
+  `tests/` directory.
+- **Glob:** the runner matches `*.test.ts` only. A `.test.tsx` file is silently
+  skipped, which is why there are no component/DOM tests. Extract logic into a
+  pure module and test that instead.
+- **Imports need the explicit extension**, preceded by the ts-expect-error the
+  strip-types loader requires:
+
+  ```ts
+  import assert from "node:assert/strict";
+  import { describe, it } from "node:test";
+  // @ts-expect-error -- Node strip-types needs the extension.
+  import { parseChartingFee } from "./parseFee.ts";
+  ```
+
+- **Assertions:** `node:assert/strict` — `assert.equal`, `assert.deepEqual`,
+  `assert.throws`, `assert.rejects`, `assert.match`. There is no `expect`.
+- **Typecheck:** `tsconfig.json` excludes `**/*.test.ts`, so test files are not
+  typechecked today. That is why the `@ts-expect-error` above is tolerated.
+- **Zod schemas:** at least one valid and one invalid case each.
+- No `test.only` merged to main.
 
 ## What to test
 
-```ts
-// ✅ util — pure function
-describe('formatFileSize', () => {
-  it('should format megabytes correctly', () => {
-    expect(formatFileSize(1024 * 1024)).toBe('1.00 MB');
-  });
-});
+Pure functions, schemas and reducers — which is most of `src/services/**` and
+`src/features/**/lib/**`.
 
-// ✅ schema — valid + invalid
-describe('createAPIKeySchema', () => {
-  it('accepts valid input', () => { /* ... */ });
-  it('rejects empty name', () => { /* ... */ });
-});
+For code that touches Supabase, inject the client and use the in-memory fake at
+`src/services/admin_ai/testing/fakeDb.ts` rather than reaching for a mocking
+library. It records calls, so a test can assert what was *not* done.
 
-// ✅ component — behavior, not snapshots
-describe('NameField', () => {
-  it('shows validation error when name is empty', () => { /* RTL + userEvent */ });
-});
-```
+For AI work, add a golden case to the relevant `goldenCases.test.ts`: a raw
+model output in, the parsed decision asserted out — including adversarial and
+malformed inputs, not just the happy path.
 
 ## Commands
 
 ```bash
-yarn vitest run                              # all tests once
-yarn vitest run tests/path/to/Foo.test.ts    # single file
-yarn vitest run tests/shared/modules/**      # module tests
+yarn test        # whole suite
+yarn typecheck   # tsc --noEmit
+node --experimental-strip-types --import ./scripts/test-loader.mjs --test src/path/to/one.test.ts
 ```
 
-## Do not
+## End-to-end
 
-- Write tests before implementation (Phase 1) unless the prompt is test-only
-- Use snapshot-only tests as the sole coverage for a component
-- Mock everything — prefer testing real util logic and shallow component behavior
+Browser and database coverage lives in `e2e/` and runs on Playwright against a
+local Supabase (`yarn e2e`, see `playwright.config.ts`). It sits outside `src/`
+deliberately, so this runner does not pick it up.
