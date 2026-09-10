@@ -25,6 +25,8 @@ export type SendTextInput = {
   conversationId: string;
   /** Null for messages the AI sent without a human pressing send. */
   sentBy: string | null;
+  /** 'ai' for assistant-authored sends, including drafts a human approved. */
+  senderKind?: "human" | "ai" | "system";
   text?: string;
   template?: TemplateSendInput;
   contextMessageId?: string;
@@ -83,6 +85,7 @@ export async function sendWhatsappMessage(
     conversationId: conversation.id,
     body: sent.body,
     sentBy: input.sentBy,
+    senderKind: input.senderKind ?? "human",
     wamid: sent.wamid,
     status: "sent",
     messageType: sent.messageType,

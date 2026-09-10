@@ -57,6 +57,12 @@ export async function PATCH(request: Request, context: Params) {
       // The approving admin owns the send, even though the AI wrote it. That
       // pairing is the provenance staff need when reviewing later.
       sentBy: auth.user!.id,
+      // Recorded as AI, not human: approving a draft is a person endorsing the
+      // assistant, not taking the conversation over. Marking it human tripped
+      // the handoff guard, so approving a draft silenced the bot for the next
+      // 30 minutes — the opposite of what approval should mean. It still counts
+      // toward the AI rate limit, which is correct.
+      senderKind: "ai",
       text,
     });
     // The send inserted the real message; drop the draft placeholder.
