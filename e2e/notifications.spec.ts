@@ -116,3 +116,124 @@ test.describe("patient_notifications storage", () => {
     await db.from("patient_notifications").delete().eq("dedupe_key", key);
   });
 });
+
+/**
+ * The reservations trigger.
+ *
+ * Entirely a database behaviour, and the reason it is a trigger rather than
+ * application code is precisely that it must fire for writes the application
+ * makes directly — so a fake would test the wrong thing.
+ */
+test.describe("reservations -> outbox trigger", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  const PHONE = "+201007770000";
+
+  async function makeReservation(hoursAhead: number) {
+    const db = serviceClient();
+    const { data, error } = await db
+      .from("reservations")
+      .insert({
+        patient_name: "E2E Patient",
+        phone: PHONE,
+        service_label: "Cleaning",
+        starts_at: new Date(Date.now() + hoursAhead * 3_600_000).toISOString(),
+      })
+      .select("id")
+      .single();
+    expect(error).toBeNull();
+    return { db, id: data!.id as string };
+  }
+
+  async function notificationsFor(
+    db: ReturnType<typeof serviceClient>,
+    reservationId: string,
+  ) {
+    const { data } = await db
+      .from("patient_notifications")
+      .select("kind, status, scheduled_for, starts_at")
+      .eq("reservation_id", reservationId)
+      .order("kind");
+    return data ?? [];
+  }
+
+  test("a future booking is confirmed now and arms a reminder one lead ahead", async () => {
+    await seedE2E();
+    const { db, id } = await makeReservation(24 * 10);
+    const rows = await notificationsFor(db, id);
+
+    expect(rows.map((r) => r.kind)).toEqual(["confirmation", "reminder_24h"]);
+    expect(rows.every((r) => r.status === "pending")).toBe(true);
+
+    // The reminder must sit exactly reminder_lead_minutes before the
+    // appointment — 24h by default. Anything else makes the approved template's
+    // word "tomorrow" a lie.
+    const reminder = rows.find((r) => r.kind === "reminder_24h")!;
+    const gapMs =
+      Date.parse(reminder.starts_at!) - Date.parse(reminder.scheduled_for);
+    expect(gapMs).toBe(24 * 3_600_000);
+
+    await db.from("reservations").delete().eq("id", id);
+  });
+
+  test("a booking inside the lead time gets a confirmation and no stale reminder", async () => {
+    await seedE2E();
+    // Five hours out: a 24h reminder would be scheduled in the past and fire
+    // immediately, seconds after the confirmation that already gave the time.
+    const { db, id } = await makeReservation(5);
+    const rows = await notificationsFor(db, id);
+
+    expect(rows.map((r) => r.kind)).toEqual(["confirmation"]);
+    await db.from("reservations").delete().eq("id", id);
+  });
+
+  test("rescheduling withdraws the old reminder and arms a new one", async () => {
+    await seedE2E();
+    const { db, id } = await makeReservation(24 * 10);
+    await db
+      .from("reservations")
+      .update({ starts_at: new Date(Date.now() + 24 * 20 * 3_600_000).toISOString() })
+      .eq("id", id);
+
+    const rows = await notificationsFor(db, id);
+    const live = rows.filter((r) => r.status === "pending").map((r) => r.kind).sort();
+    // The patient is told once about the move, and exactly one reminder is live.
+    expect(live).toEqual(["reminder_24h", "reschedule"]);
+    expect(rows.filter((r) => r.status === "superseded").length).toBeGreaterThan(0);
+
+    await db.from("reservations").delete().eq("id", id);
+  });
+
+  test("cancelling withdraws everything pending and says so once", async () => {
+    await seedE2E();
+    const { db, id } = await makeReservation(24 * 10);
+    await db.from("reservations").update({ status: "cancelled" }).eq("id", id);
+
+    const rows = await notificationsFor(db, id);
+    const live = rows.filter((r) => r.status === "pending").map((r) => r.kind);
+    expect(live).toEqual(["cancellation"]);
+    // Critically, the armed reminder must not survive a cancellation.
+    expect(
+      rows.filter((r) => r.kind === "reminder_24h" && r.status === "pending"),
+    ).toHaveLength(0);
+
+    await db.from("reservations").delete().eq("id", id);
+  });
+
+  test("soft-deleting withdraws pending work but tells the patient nothing", async () => {
+    await seedE2E();
+    const { db, id } = await makeReservation(24 * 10);
+    await db
+      .from("reservations")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
+
+    const rows = await notificationsFor(db, id);
+    // Deleting is how staff tidy a row away; cancelling is how they tell a
+    // patient. Conflating them messages people about records maintenance.
+    expect(rows.filter((r) => r.status === "pending")).toHaveLength(0);
+    expect(rows.filter((r) => r.kind === "cancellation")).toHaveLength(0);
+
+    await db.from("reservations").delete().eq("id", id);
+  });
+});
