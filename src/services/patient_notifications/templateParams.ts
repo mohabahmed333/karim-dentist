@@ -94,3 +94,27 @@ export function buildReminderTemplate(input: ReminderInput): TemplateSendInput {
     ),
   };
 }
+
+/**
+ * The template for one outbox row, or null when this clinic has none approved.
+ *
+ * Only `confirmation` and `reminder_24h` have approved templates today. A
+ * cancellation or a reschedule notice has nothing to send it with, and Meta
+ * will not accept free text outside the 24h window — so the dispatcher records
+ * `no_approved_template` and stays quiet rather than failing in a way that
+ * looks like a bug. Submitting those templates is all that is needed to switch
+ * them on: add them to PATIENT_TEMPLATES and extend this switch.
+ */
+export function buildTemplateForKind(
+  kind: string,
+  input: ConfirmationInput,
+): TemplateSendInput | null {
+  switch (kind) {
+    case "confirmation":
+      return buildConfirmationTemplate(input);
+    case "reminder_24h":
+      return buildReminderTemplate(input);
+    default:
+      return null;
+  }
+}

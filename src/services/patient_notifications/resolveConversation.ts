@@ -45,7 +45,7 @@ export type ResolveConversationDeps = {
   create: (input: {
     phone_number: string;
     contact_name: string;
-    status: string;
+    status: "active";
   }) => Promise<{ id: string }>;
 };
 

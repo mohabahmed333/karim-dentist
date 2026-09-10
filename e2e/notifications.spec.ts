@@ -237,3 +237,40 @@ test.describe("reservations -> outbox trigger", () => {
     await db.from("reservations").delete().eq("id", id);
   });
 });
+
+/**
+ * The dispatch endpoint's front door.
+ *
+ * It sends WhatsApp messages to patients, so the interesting cases are the ones
+ * where it must refuse.
+ */
+test.describe("dispatch endpoint auth", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test("refuses an anonymous caller", async ({ request }) => {
+    const res = await request.get("/api/v1/notifications/dispatch");
+    // 503 when CRON_SECRET is unset, 401 when it is set and not supplied.
+    // Never 200 — an unset secret must lock the endpoint, not open it.
+    expect([401, 503]).toContain(res.status());
+  });
+
+  test("refuses a wrong secret", async ({ request }) => {
+    const res = await request.get("/api/v1/notifications/dispatch", {
+      headers: { Authorization: "Bearer not-the-secret" },
+    });
+    expect([401, 503]).toContain(res.status());
+    expect(res.status()).not.toBe(200);
+  });
+
+  test("accepts pg_net's POST with the right secret", async ({ request }) => {
+    const secret = process.env.CRON_SECRET ?? "";
+    test.skip(!secret, "needs CRON_SECRET");
+    const res = await request.post("/api/v1/notifications/dispatch", {
+      headers: { Authorization: `Bearer ${secret}` },
+      data: { source: "pg_cron" },
+    });
+    expect(res.ok()).toBeTruthy();
+    const body = (await res.json()) as { claimed: number; outcomes: unknown[] };
+    expect(typeof body.claimed).toBe("number");
+  });
+});
