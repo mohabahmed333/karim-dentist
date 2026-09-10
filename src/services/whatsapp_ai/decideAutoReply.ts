@@ -26,6 +26,9 @@ const AUTO_SEND_THRESHOLDS: Partial<Record<AutoReplyIntent, number>> = {
   pricing: 0.8,
   booking_availability: 0.8,
   booking_confirm: 0.8,
+  // A warm thank-you is low risk. feedback_negative is deliberately absent, like
+  // complaint: an unhappy patient is always answered by a person.
+  feedback_positive: 0.8,
   booking_request: 0.85,
   booking_reschedule: 0.85,
   // Higher than booking or rescheduling on purpose. Cancelling is asymmetric:

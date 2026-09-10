@@ -416,3 +416,51 @@ describe("golden — cancelling by replying to a reminder", () => {
     assert.equal(decision.reason, "injection");
   });
 });
+
+/**
+ * Replies to the post-visit follow-up.
+ *
+ * The classification matters beyond the reply itself: feedback_positive is what
+ * allows a review request to be queued, so a mislabelled unhappy patient would be
+ * asked to rate the clinic in public.
+ */
+describe("golden — replying to a follow-up", () => {
+  it("keeps the new intents instead of collapsing them to 'other'", () => {
+    const { envelope } = decide(
+      model({ intent: "feedback_positive", confidence: 0.9, reply: "Thank you!" }),
+    );
+    assert.equal(envelope.intent, "feedback_positive");
+  });
+
+  it("thanks a happy patient without a person in the loop", () => {
+    const { decision } = decide(
+      model({
+        language: "ar",
+        intent: "feedback_positive",
+        confidence: 0.9,
+        reply: "الحمد لله، نورتنا!",
+      }),
+    );
+    assert.equal(decision.action, "auto_send");
+    assert.equal(decision.actions.length, 0);
+  });
+
+  it("holds a thank-you the model is unsure about", () => {
+    const { decision } = decide(
+      model({ intent: "feedback_positive", confidence: 0.7, reply: "Thanks!" }),
+    );
+    assert.equal(decision.reason, "low_confidence");
+  });
+
+  it("always sends an unhappy patient to a person, however confident the model is", () => {
+    const { decision } = decide(
+      model({
+        intent: "feedback_negative",
+        confidence: 0.99,
+        reply: "I'm sorry about the wait. A colleague will be in touch.",
+      }),
+    );
+    assert.equal(decision.action, "draft");
+    assert.equal(decision.reason, "intent_feedback_negative");
+  });
+});

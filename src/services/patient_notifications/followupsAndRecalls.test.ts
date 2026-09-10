@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
-import { selectFollowups, selectRecalls } from "./followupsAndRecalls.ts";
+import { selectFollowups, selectRecalls, selectReviewRequests } from "./followupsAndRecalls.ts";
 
 const NOW = new Date("2026-09-11T10:00:00Z");
 const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3_600_000).toISOString();
@@ -85,5 +85,64 @@ describe("selectRecalls", () => {
     const [first] = selectRecalls([visit({ id: "v9", starts_at: daysAgo(200) })], new Set(), NOW);
     const [again] = selectRecalls([visit({ id: "v9", starts_at: daysAgo(200) })], new Set(), new Date(NOW.getTime() + 7 * 86_400_000));
     assert.equal(first.dedupe_key, again.dedupe_key);
+  });
+});
+
+describe("selectReviewRequests", () => {
+  const SENT = "2026-09-09T10:00:00Z";
+  const later = (h: number) => new Date(Date.parse(SENT) + h * 3_600_000).toISOString();
+  const followup = (over: Record<string, unknown> = {}) => ({
+    id: "n1",
+    reservation_id: "r1",
+    conversation_id: "c1",
+    phone: "+201005551234",
+    patient_name: "Ahmed",
+    service_label: "Cleaning",
+    sent_at: SENT,
+    ...over,
+  });
+  const event = (intent: string, h: number, conversation_id = "c1") => ({
+    conversation_id,
+    intent,
+    created_at: later(h),
+  });
+
+  it("asks a patient who replied that they are happy", () => {
+    const out = selectReviewRequests([followup()], [event("feedback_positive", 2)]);
+    assert.equal(out.length, 1);
+    assert.equal(out[0].kind, "review_request");
+    assert.equal(out[0].dedupe_key, "n1:review_request");
+  });
+
+  it("never asks an unhappy patient, even one who also said something nice", () => {
+    // "The filling is fine but I waited an hour" is not someone to send to Google.
+    const out = selectReviewRequests(
+      [followup()],
+      [event("feedback_positive", 2), event("feedback_negative", 3)],
+    );
+    assert.equal(out.length, 0);
+  });
+
+  it("ignores praise that came before the follow-up was sent", () => {
+    assert.equal(selectReviewRequests([followup()], [event("feedback_positive", -5)]).length, 0);
+  });
+
+  it("ignores a reply long after the follow-up", () => {
+    assert.equal(selectReviewRequests([followup()], [event("feedback_positive", 24 * 5)]).length, 0);
+  });
+
+  it("does not cross conversations", () => {
+    assert.equal(
+      selectReviewRequests([followup()], [event("feedback_positive", 2, "someone-else")]).length,
+      0,
+    );
+  });
+
+  it("needs a follow-up that was actually delivered into a conversation", () => {
+    assert.equal(selectReviewRequests([followup({ sent_at: null })], [event("feedback_positive", 2)]).length, 0);
+    assert.equal(
+      selectReviewRequests([followup({ conversation_id: null })], [event("feedback_positive", 2)]).length,
+      0,
+    );
   });
 });

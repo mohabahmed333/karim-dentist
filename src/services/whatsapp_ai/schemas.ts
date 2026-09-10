@@ -40,6 +40,10 @@ export const autoReplyIntentSchema = z.enum([
   "booking_reschedule",
   "booking_cancel",
   "booking_confirm",
+  // A reply to the clinic's post-visit follow-up. Classified so that a review
+  // request can be sent to a happy patient and never to an unhappy one.
+  "feedback_positive",
+  "feedback_negative",
   "clinical_question",
   "complaint",
   "emergency",

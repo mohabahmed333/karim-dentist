@@ -26,6 +26,8 @@ const FOLLOWUP_AFTER = 18 * HOUR;
 /** Past this, "how did it go?" reads as an afterthought rather than care. */
 const FOLLOWUP_UNTIL = 3 * DAY;
 const RECALL_AFTER = 180 * DAY;
+/** How long after a follow-up a reply still counts as answering it. */
+const REVIEW_REPLY_WINDOW = 3 * DAY;
 
 export type VisitRow = {
   id: string;
@@ -37,7 +39,7 @@ export type VisitRow = {
 };
 
 export type Enqueue = {
-  kind: "followup" | "recall_6m";
+  kind: "followup" | "recall_6m" | "review_request";
   dedupe_key: string;
   reservation_id: string | null;
   phone: string;
@@ -102,6 +104,59 @@ export function selectRecalls(
   return out;
 }
 
+export type SentFollowup = {
+  id: string;
+  reservation_id: string | null;
+  conversation_id: string | null;
+  phone: string;
+  patient_name: string;
+  service_label: string;
+  sent_at: string | null;
+};
+
+export type FeedbackEvent = {
+  conversation_id: string | null;
+  intent: string | null;
+  created_at: string;
+};
+
+/**
+ * Ask for a review only from a patient who has just said they are happy.
+ *
+ * Driven by the assistant's classification of their reply to the follow-up.
+ * Any negative reply in the same window vetoes it, even alongside a positive
+ * one — "the filling is fine but I waited an hour" is not someone to send to
+ * Google. Asking an unhappy patient to rate you publicly is how a clinic earns
+ * its one-star reviews.
+ */
+export function selectReviewRequests(
+  followups: SentFollowup[],
+  events: FeedbackEvent[],
+): Enqueue[] {
+  const out: Enqueue[] = [];
+  for (const f of followups) {
+    if (!f.conversation_id || !f.sent_at) continue;
+    const sentAt = Date.parse(f.sent_at);
+    const replies = events.filter((e) => {
+      if (e.conversation_id !== f.conversation_id) return false;
+      const at = Date.parse(e.created_at);
+      return at > sentAt && at - sentAt <= REVIEW_REPLY_WINDOW;
+    });
+    if (replies.some((e) => e.intent === "feedback_negative")) continue;
+    if (!replies.some((e) => e.intent === "feedback_positive")) continue;
+    out.push({
+      kind: "review_request",
+      dedupe_key: `${f.id}:review_request`,
+      reservation_id: f.reservation_id,
+      phone: f.phone,
+      patient_name: f.patient_name,
+      service_label: f.service_label,
+      starts_at: null,
+    });
+  }
+  return out;
+}
+
 export async function enqueueFollowupsAndRecalls(
   db: ServiceClient,
   now: Date,
@@ -134,6 +189,34 @@ export async function enqueueFollowupsAndRecalls(
         .filter((s): s is string => Boolean(s)),
     );
     queue.push(...selectRecalls(rows, upcomingSuffixes, now));
+
+    // Review requests ride the same marketing switch as recalls.
+    const windowStart = new Date(now.getTime() - FOLLOWUP_UNTIL - REVIEW_REPLY_WINDOW).toISOString();
+    const { data: followups } = await db
+      .from("patient_notifications")
+      .select("id,reservation_id,conversation_id,phone,patient_name,service_label,sent_at")
+      .eq("kind", "followup")
+      .eq("status", "sent")
+      .not("conversation_id", "is", null)
+      .gte("sent_at", windowStart)
+      .limit(1000);
+    const conversationIds = [
+      ...new Set((followups ?? []).map((f) => f.conversation_id).filter((id): id is string => Boolean(id))),
+    ];
+    if (conversationIds.length > 0) {
+      const { data: events } = await db
+        .from("whatsapp_ai_events")
+        .select("conversation_id,intent,created_at")
+        .in("conversation_id", conversationIds)
+        .in("intent", ["feedback_positive", "feedback_negative"])
+        .gte("created_at", windowStart);
+      queue.push(
+        ...selectReviewRequests(
+          (followups ?? []) as SentFollowup[],
+          (events ?? []) as FeedbackEvent[],
+        ),
+      );
+    }
   }
   if (queue.length === 0) return 0;
 
