@@ -25,6 +25,8 @@ export type BuildPromptInput = {
   slots: OfferedSlot[];
   clinic: ClinicFacts;
   hours: ClinicHoursInput | null;
+  /** Whether the assistant is permitted to write bookings this turn. */
+  canBook: boolean;
   services: { title: string; price?: string | null }[];
   patient: { name?: string | null; known: boolean };
   reservations: PatientReservation[];
@@ -98,6 +100,12 @@ export function buildAutoReplyPrompt(input: BuildPromptInput): BuiltPrompt {
     servicesBlock,
     "",
     slotBlock(input.slots),
+    // With writes disabled the assistant must not pretend it can book. Left
+    // unsaid, its only way to seem helpful is to claim a booking it cannot
+    // make — which is exactly what happened to a real patient.
+    input.canBook
+      ? "You may book, reschedule and cancel by emitting an action. Never describe the result as done — the system performs it and confirms separately."
+      : "Booking is currently handled by a colleague, not by you. You may check and offer available times, but you cannot book, reschedule or cancel. Collect what the patient wants, then tell them a colleague will confirm shortly. Never emit a booking action and never say an appointment has been made.",
     "",
     reservationBlock(input.reservations),
     "",

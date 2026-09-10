@@ -14,6 +14,7 @@ function build(overrides: Record<string, unknown> = {}) {
       { id: SLOT_B, starts_at: "2026-09-13T15:00:00.000Z" },
     ],
     clinic: { name: "The Dental Lounge", phone: "+20100", address: "Road 90" },
+    canBook: true,
     hours: {
       open_weekdays: [0, 1, 2, 3, 4],
       time_windows: ["10:00-13:00", "14:00-18:00"],
@@ -102,6 +103,16 @@ describe("buildAutoReplyPrompt", () => {
     assert.match(bare.system, /do not state opening hours/i);
     assert.match(bare.system, /do not state hours, address or phone/i);
     assert.match(bare.system, /do not quote prices/i);
+  });
+
+  it("tells the model it cannot book when writes are disabled", () => {
+    const off = build({ canBook: false });
+    assert.match(off.system, /cannot book, reschedule or cancel/i);
+    assert.match(off.system, /colleague will confirm/i);
+
+    const on = build({ canBook: true });
+    assert.match(on.system, /You may book, reschedule and cancel/i);
+    assert.ok(!/cannot book/i.test(on.system));
   });
 
   it("keeps the base prompt first so its rules frame everything after", () => {

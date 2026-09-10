@@ -3,7 +3,11 @@ import { decideAutoReply } from "./decideAutoReply";
 import { extractAutoReplyEnvelope } from "./extractAutoReplyEnvelope";
 import { injectionHeuristics } from "./injectionHeuristics";
 import { evaluateAutoReplyPolicy, type PolicyInput } from "./policy";
-import { isSendableReply, stripInternalIds } from "./replyGuards";
+import {
+  claimsCompletedBooking,
+  isSendableReply,
+  stripInternalIds,
+} from "./replyGuards";
 import type { AutoReplyEnvelope, BotAction } from "./schemas";
 
 export type RunOutcome = {
@@ -151,6 +155,27 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
       });
       return { status: "drafted", reason: "action_failed", messageId: id, envelope };
     }
+  }
+
+  // Last gate before a patient reads it: the reply may not assert a booking
+  // change that did not happen. The model wrote "حجزت لك موعد" to a real
+  // patient while booking writes were disabled, and nothing had been written.
+  // Executed actions are the only thing that makes such a claim true.
+  if (decision.actions.length === 0 && claimsCompletedBooking(envelope.reply)) {
+    const { id } = await deps.draft(envelope.reply, "false_confirmation");
+    await deps.record({
+      decision: "draft",
+      reason: "false_confirmation",
+      envelope,
+      injectionFlags: flags,
+      latencyMs: Date.now() - startedAt,
+    });
+    return {
+      status: "drafted",
+      reason: "false_confirmation",
+      messageId: id,
+      envelope,
+    };
   }
 
   const { id } = await deps.send(envelope.reply);
