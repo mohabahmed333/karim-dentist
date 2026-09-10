@@ -4,6 +4,7 @@ import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import { clinicContactFromSettings } from "@/lib/clinic/whatsappClinicContact";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { groqChat } from "@/services/ai_groq/callGroq";
+import { addOptOut, isOptOutMessage } from "@/services/patient_notifications/optouts";
 import { searchClinicKnowledge } from "@/services/clinic_knowledge/search";
 import { pickPatientLanguage } from "@/services/patient_notifications/pickLanguage";
 import { insertOutboundMessage } from "@/services/whatsapp/mutations";
@@ -77,6 +78,33 @@ export async function processAutoReplyJob(
     if (!conversation || !inbound) {
       await finishJob(db, jobId, { status: "skipped", skipReason: "missing_rows" });
       return "missing_rows";
+    }
+
+    // A patient who texts STOP is unsubscribing, not opening a conversation.
+    // Handled before anything else — above all before the model, which would
+    // otherwise try to answer "stop" as if it were a question. This opts them
+    // out of business-initiated messages only: if they write to the clinic
+    // again later, the assistant still answers them.
+    if (isOptOutMessage(inbound.body)) {
+      await addOptOut(db, conversation.phone_number, "patient sent an opt-out keyword").catch(
+        () => undefined,
+      );
+      await recordAiEvent(db, {
+        conversationId: conversation.id,
+        jobId,
+        decision: "skip",
+        reason: "opted_out_keyword",
+        intent: null,
+        confidence: null,
+        language: null,
+        handoff: false,
+        injectionFlags: [],
+        model: process.env.GROQ_MODEL ?? "openai/gpt-oss-120b",
+        latencyMs: 0,
+        envelope: {},
+      });
+      await finishJob(db, jobId, { status: "skipped", skipReason: "opted_out_keyword" });
+      return "opted_out";
     }
 
     // Slots this conversation was explicitly offered and may still claim — a
