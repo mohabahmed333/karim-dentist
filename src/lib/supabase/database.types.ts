@@ -1836,6 +1836,48 @@ export type Database = {
           },
         ];
       };
+      clinic_knowledge: {
+        Row: {
+          id: string;
+          title: string;
+          title_ar: string;
+          body: string;
+          body_ar: string;
+          tags: string[];
+          sort_order: number;
+          is_published: boolean;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          title_ar?: string;
+          body?: string;
+          body_ar?: string;
+          tags?: string[];
+          sort_order?: number;
+          is_published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          title_ar?: string;
+          body?: string;
+          body_ar?: string;
+          tags?: string[];
+          sort_order?: number;
+          is_published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Relationships: [];
+      };
       faqs: {
         Row: {
           id: string;
@@ -2442,6 +2484,17 @@ export type Database = {
         Args: Record<string, never>;
         /** null when pg_cron is absent or cron.job is unreadable. */
         Returns: boolean | null;
+      };
+      search_clinic_knowledge: {
+        Args: { p_query: string; p_limit?: number };
+        Returns: {
+          id: string;
+          title: string;
+          title_ar: string;
+          body: string;
+          body_ar: string;
+          rank: number;
+        }[];
       };
       is_admin: { Args: Record<string, never>; Returns: boolean };
       cancel_reservation_and_release_slot: {

@@ -112,3 +112,46 @@ describe("buildAutoReplyPrompt", () => {
     assert.match(build().system, /Current time: \d{4}-\d{2}-\d{2}T/);
   });
 });
+
+/**
+ * The clinic knowledge block.
+ *
+ * This is the assistant's answer to the questions it used to hand off — prices,
+ * FAQs, post-op instructions. It is trusted text, unlike a patient turn, so the
+ * empty state has to be unambiguous: no match must still mean handoff, never a
+ * plausible invention.
+ */
+describe("buildAutoReplyPrompt — clinic knowledge", () => {
+  it("states retrieved entries as facts the assistant may use", () => {
+    const built = build({
+      knowledge: [
+        { title: "Teeth whitening", body: "One session, 2500 EGP." },
+        { title: "Parking", body: "Free underground parking." },
+      ],
+    });
+    assert.match(built.system, /Clinic knowledge \(written by the clinic/);
+    assert.match(built.system, /Teeth whitening: One session, 2500 EGP\./);
+    assert.match(built.system, /Parking: Free underground parking\./);
+  });
+
+  it("forbids improvising when nothing matched", () => {
+    const built = build({ knowledge: [] });
+    assert.match(built.system, /nothing on file matches this question/i);
+    assert.match(built.system, /hand off/i);
+  });
+
+  it("treats a missing knowledge field the same as no match", () => {
+    // The field is optional so existing callers keep working; they must get the
+    // restrictive empty state, not silence.
+    const built = build({});
+    assert.match(built.system, /nothing on file matches this question/i);
+  });
+
+  it("keeps knowledge out of the patient's own turns", () => {
+    // The block is server-authored and belongs in the system message only.
+    const built = build({ knowledge: [{ title: "Parking", body: "Free." }] });
+    for (const message of built.messages.filter((m) => m.role === "user")) {
+      assert.doesNotMatch(message.content, /Clinic knowledge/);
+    }
+  });
+});

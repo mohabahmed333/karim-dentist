@@ -4,6 +4,8 @@ import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import { clinicContactFromSettings } from "@/lib/clinic/whatsappClinicContact";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { groqChat } from "@/services/ai_groq/callGroq";
+import { searchClinicKnowledge } from "@/services/clinic_knowledge/search";
+import { pickPatientLanguage } from "@/services/patient_notifications/pickLanguage";
 import { insertOutboundMessage } from "@/services/whatsapp/mutations";
 import { sendWhatsappMessage } from "@/services/whatsapp/sendMessage";
 import { runAutoReply } from "./runAutoReply";
@@ -87,6 +89,7 @@ export async function processAutoReplyJob(
       { data: history },
       { data: reservations },
       { data: clinicHours },
+      knowledge,
     ] = await Promise.all([
       countRecentAiReplies(db, conversation.id),
       db
@@ -131,6 +134,16 @@ export async function processAutoReplyJob(
         .select("open_weekdays,time_windows,timezone")
         .limit(1)
         .maybeSingle(),
+      // Retrieved per message rather than dumped wholesale: the prompt has a
+      // budget, and an unrelated entry is a distraction the model may act on.
+      searchClinicKnowledge(
+        db,
+        inbound.body ?? "",
+        pickPatientLanguage({
+          lastInboundBody: inbound.body ?? "",
+          patientName: conversation.contact_name ?? "",
+        }),
+      ),
     ]);
 
     const clinic = clinicContactFromSettings(settingsRow);
@@ -168,6 +181,7 @@ export async function processAutoReplyJob(
           timezone: string | null;
         } | null,
         services: (serviceRows ?? []).map((s) => ({ title: s.title as string })),
+        knowledge,
         patient: {
           name: conversation.contact_name,
           known: Boolean(conversation.patient_key),

@@ -26,6 +26,8 @@ export type BuildPromptInput = {
   clinic: ClinicFacts;
   hours: ClinicHoursInput | null;
   services: { title: string; price?: string | null }[];
+  /** Clinic knowledge retrieved for this specific message. */
+  knowledge?: { title: string; body: string }[];
   patient: { name?: string | null; known: boolean };
   reservations: PatientReservation[];
   /** Oldest first. Patient turns are sanitized and JSON-wrapped. */
@@ -82,6 +84,28 @@ function reservationBlock(reservations: PatientReservation[]): string {
  * patient wrote arrives as a JSON-wrapped `user` turn. That separation is what
  * keeps an injected instruction from being read as policy.
  */
+/**
+ * Clinic knowledge retrieved for this message.
+ *
+ * Unlike a patient turn, this is trusted context: it is clinic-authored text
+ * that staff wrote and published, not something a member of the public can put
+ * in front of the model. It is still not permission to improvise — the empty
+ * state says so explicitly, because "no entry matched" must keep producing a
+ * handoff rather than a plausible invention.
+ */
+function knowledgeBlock(entries: { title: string; body: string }[]): string {
+  if (entries.length === 0) {
+    return "Clinic knowledge: (nothing on file matches this question — do not invent an answer; hand off instead)";
+  }
+  const lines = entries.map((e) =>
+    e.body ? `- ${e.title}: ${e.body}` : `- ${e.title}`,
+  );
+  return [
+    "Clinic knowledge (written by the clinic; you may state these facts):",
+    ...lines,
+  ].join("\n");
+}
+
 export function buildAutoReplyPrompt(input: BuildPromptInput): BuiltPrompt {
   const servicesBlock = input.services.length
     ? `Services and prices:\n${input.services
@@ -96,6 +120,8 @@ export function buildAutoReplyPrompt(input: BuildPromptInput): BuiltPrompt {
     formatClinicHours(input.hours),
     "",
     servicesBlock,
+    "",
+    knowledgeBlock(input.knowledge ?? []),
     "",
     slotBlock(input.slots),
     "",
