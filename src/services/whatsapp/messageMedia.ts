@@ -1,3 +1,4 @@
+import { extractKapsoTranscript } from "./transcript";
 import type { Json } from "@/lib/supabase/database.types";
 import type { KapsoMessagePayload } from "./types";
 
@@ -196,6 +197,14 @@ export function kapsoMessageBody(message: KapsoMessagePayload): string {
     if (typeof listReply?.title === "string" && listReply.title.trim()) {
       return listReply.title.trim();
     }
+  }
+
+  // A voice note's real content is its transcript. Kapso reports it both as a
+  // structured field and as a "Transcript:" tail on the display string; prefer
+  // the structured one, whose shape is a contract.
+  if (type === "audio" || type === "voice") {
+    const transcript = extractKapsoTranscript(message.kapso);
+    if (transcript) return transcript;
   }
 
   const block = asRecord(raw[type]);

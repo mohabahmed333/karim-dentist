@@ -202,3 +202,59 @@ describe("evaluateAutoReplyPolicy — modes", () => {
     assert.equal(DEFAULT_AI_SETTINGS.allow_booking_writes, false);
   });
 });
+
+/**
+ * Voice notes.
+ *
+ * Egyptian patients send them constantly, and until now every one was dropped
+ * before any model call — the patient simply got no reply. Kapso already
+ * transcribes them, so a transcribed voice note is exactly as readable as text.
+ */
+describe("evaluateAutoReplyPolicy — transcribed voice notes", () => {
+  const voice = (body: string, type = "audio") =>
+    evaluateAutoReplyPolicy(input({ inbound: { message_type: type, body } }));
+
+  it("answers a voice note once its transcript has arrived", () => {
+    assert.deepEqual(voice("عايز أحجز ميعاد بكرة"), { allow: "auto" });
+    assert.deepEqual(voice("can I move my appointment?", "voice"), {
+      allow: "auto",
+    });
+  });
+
+  it("stays silent while transcription is still pending", () => {
+    // kapso.processing_status is 'pending' on arrival, so an empty body here is
+    // routine rather than an error.
+    assert.deepEqual(voice(""), { allow: "none", reason: "unreadable_message" });
+  });
+
+  it("refuses to answer Whisper's non-speech markers", () => {
+    // Production already contains "[outro jingle]". Treating that as a message
+    // would have the assistant confidently answer something nobody said.
+    for (const marker of ["[outro jingle]", "[music]", "(silence)"]) {
+      assert.deepEqual(
+        voice(marker),
+        { allow: "none", reason: "unreadable_message" },
+        `${marker} must not be treated as speech`,
+      );
+    }
+  });
+
+  it("still drafts an acknowledgement for unreadable audio when that is enabled", () => {
+    const out = evaluateAutoReplyPolicy(
+      input({
+        settings: { ...DEFAULT_AI_SETTINGS, mode: "auto", ack_media_enabled: true },
+        inbound: { message_type: "audio", body: "" },
+      }),
+    );
+    assert.deepEqual(out, { allow: "draft", reason: "unreadable_message" });
+  });
+
+  it("leaves other media untouched", () => {
+    assert.deepEqual(
+      evaluateAutoReplyPolicy(
+        input({ inbound: { message_type: "image", body: "a photo of a tooth" } }),
+      ),
+      { allow: "none", reason: "unreadable_message" },
+    );
+  });
+});

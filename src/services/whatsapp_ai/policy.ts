@@ -1,4 +1,5 @@
 import { isWhatsappSessionOpen } from "@/services/whatsapp/sessionWindow";
+import { isSpeechTranscript } from "@/services/whatsapp/transcript";
 import type {
   PolicyDecision,
   WhatsappAiSettings,
@@ -7,6 +8,24 @@ import type {
 
 /** Message types the model can actually read. */
 const READABLE_TYPES = new Set(["text", "interactive", "button"]);
+
+/** Types Kapso transcribes, so they become readable once a transcript lands. */
+const TRANSCRIBED_TYPES = new Set(["audio", "voice"]);
+
+/**
+ * Can the model read this message?
+ *
+ * A voice note whose transcript has arrived is exactly as readable as text —
+ * `body` already holds the transcript by the time this runs. Two cases keep it
+ * out: transcription is still pending (`processing_status` is 'pending' on
+ * arrival, so the body is empty), or the transcript is one of Whisper's
+ * non-speech markers like "[outro jingle]" — production contains one — which
+ * would have the assistant answer something no patient said.
+ */
+function isReadable(messageType: string, body: string): boolean {
+  if (READABLE_TYPES.has(messageType)) return true;
+  return TRANSCRIBED_TYPES.has(messageType) && isSpeechTranscript(body);
+}
 
 export type PolicyInput = {
   settings: WhatsappAiSettings;
@@ -63,7 +82,7 @@ export function evaluateAutoReplyPolicy(input: PolicyInput): PolicyDecision {
   }
 
   // A message the model cannot read must not be guessed at.
-  if (!READABLE_TYPES.has(input.inbound.message_type)) {
+  if (!isReadable(input.inbound.message_type, input.inbound.body)) {
     return settings.ack_media_enabled
       ? { allow: "draft", reason: "unreadable_message" }
       : { allow: "none", reason: "unreadable_message" };
