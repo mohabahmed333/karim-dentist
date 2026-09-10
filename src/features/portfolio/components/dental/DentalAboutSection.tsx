@@ -53,8 +53,8 @@ export function DentalAboutSection({
                 <div
                   data-customize-field="copy_image_url"
                   className={cn(
-                    "relative aspect-[2/3] overflow-hidden border border-[#e6e8ec]",
-                    bothImages ? "w-[58%]" : "w-full",
+                    "relative overflow-hidden border border-[#e6e8ec]",
+                    bothImages ? "aspect-[2/3] w-[58%]" : "aspect-[4/3] w-full",
                   )}
                 >
                   <Image
