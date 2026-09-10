@@ -142,6 +142,12 @@ export function buildLlmsIndex(input: IndexInput): string {
   lines.push(`- [Full details](${input.siteUrl}/llms-full.txt)`);
   lines.push(`- [Sitemap](${input.siteUrl}/sitemap.xml)`);
   lines.push(`- [Robots policy](${input.siteUrl}/robots.txt)`);
+  lines.push(
+    `- [Clinic profile JSON](${input.siteUrl}/api/v1/public/clinic) — NAP, hours, geo, socials`,
+  );
+  lines.push(
+    `- [Services JSON](${input.siteUrl}/api/v1/public/services) — bilingual catalogue with each service's page URL`,
+  );
 
   return lines.join("\n");
 }

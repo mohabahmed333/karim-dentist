@@ -79,6 +79,8 @@ test("index lists NAP, hours, and the services and pages sections", () => {
   assert.match(text, /https:\/\/thedentallounge\.com\/case-studies/);
   assert.match(text, /llms-full\.txt/);
   assert.match(text, /sitemap\.xml/);
+  assert.match(text, /\/api\/v1\/public\/clinic/);
+  assert.match(text, /\/api\/v1\/public\/services/);
 });
 
 test("index omits a section's link when it is hidden on the homepage", () => {
