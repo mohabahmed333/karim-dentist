@@ -1312,6 +1312,143 @@ export type Database = {
           },
         ];
       };
+      patient_notification_settings: {
+        Row: {
+          id: string;
+          mode: string;
+          timezone: string;
+          quiet_hours_start: number;
+          quiet_hours_end: number;
+          max_per_patient_per_day: number;
+          reminder_lead_minutes: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          mode?: string;
+          timezone?: string;
+          quiet_hours_start?: number;
+          quiet_hours_end?: number;
+          max_per_patient_per_day?: number;
+          reminder_lead_minutes?: number;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          mode?: string;
+          timezone?: string;
+          quiet_hours_start?: number;
+          quiet_hours_end?: number;
+          max_per_patient_per_day?: number;
+          reminder_lead_minutes?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      patient_notification_optouts: {
+        Row: {
+          phone_suffix: string;
+          phone: string;
+          reason: string;
+          created_at: string;
+        };
+        Insert: {
+          phone_suffix: string;
+          phone?: string;
+          reason?: string;
+          created_at?: string;
+        };
+        Update: {
+          phone_suffix?: string;
+          phone?: string;
+          reason?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      patient_notifications: {
+        Row: {
+          id: string;
+          reservation_id: string | null;
+          kind: string;
+          dedupe_key: string;
+          source: string;
+          phone: string;
+          /** Generated column: last 8 digits of `phone`. Never write it. */
+          phone_suffix: string | null;
+          patient_name: string;
+          service_label: string;
+          starts_at: string | null;
+          language: string | null;
+          template_name: string | null;
+          payload: Json;
+          conversation_id: string | null;
+          scheduled_for: string;
+          status: string;
+          skip_reason: string | null;
+          attempts: number;
+          lease_until: string | null;
+          send_started_at: string | null;
+          sent_at: string | null;
+          outbound_message_id: string | null;
+          last_error: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          reservation_id?: string | null;
+          kind: string;
+          dedupe_key: string;
+          source?: string;
+          phone: string;
+          patient_name?: string;
+          service_label?: string;
+          starts_at?: string | null;
+          language?: string | null;
+          template_name?: string | null;
+          payload?: Json;
+          conversation_id?: string | null;
+          scheduled_for?: string;
+          status?: string;
+          skip_reason?: string | null;
+          attempts?: number;
+          lease_until?: string | null;
+          send_started_at?: string | null;
+          sent_at?: string | null;
+          outbound_message_id?: string | null;
+          last_error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          reservation_id?: string | null;
+          kind?: string;
+          dedupe_key?: string;
+          source?: string;
+          phone?: string;
+          patient_name?: string;
+          service_label?: string;
+          starts_at?: string | null;
+          language?: string | null;
+          template_name?: string | null;
+          payload?: Json;
+          conversation_id?: string | null;
+          scheduled_for?: string;
+          status?: string;
+          skip_reason?: string | null;
+          attempts?: number;
+          lease_until?: string | null;
+          send_started_at?: string | null;
+          sent_at?: string | null;
+          outbound_message_id?: string | null;
+          last_error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       patient_tooth_note_attachments: {
         Row: {
           id: string;
