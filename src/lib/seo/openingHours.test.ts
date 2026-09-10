@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
-import { openingHoursSpecification } from "./openingHours.ts";
+import {
+  formatOpeningHoursText,
+  openingHoursSpecification,
+} from "./openingHours.ts";
 
 const BASE = {
   open_weekdays: [0, 1, 2, 3, 4],
@@ -89,4 +92,23 @@ test("normalises single-digit hours to zero-padded schema.org times", () => {
   });
   assert.equal(specs?.[0]?.opens, "09:00");
   assert.equal(specs?.[0]?.closes, "17:30");
+});
+
+test("formats contiguous open days into a compact range for humans", () => {
+  const text = formatOpeningHoursText(BASE);
+  assert.equal(text, "Sun–Thu 10:00–13:00, 14:00–18:00 (Africa/Cairo)");
+});
+
+test("formats non-contiguous days as a comma list", () => {
+  const text = formatOpeningHoursText({
+    ...BASE,
+    open_weekdays: [0, 2, 5],
+    time_windows: ["09:00-17:00"],
+  });
+  assert.equal(text, "Sun, Tue, Fri 09:00–17:00 (Africa/Cairo)");
+});
+
+test("returns null when there is nothing valid to format", () => {
+  assert.equal(formatOpeningHoursText(null), null);
+  assert.equal(formatOpeningHoursText({ ...BASE, open_weekdays: [] }), null);
 });

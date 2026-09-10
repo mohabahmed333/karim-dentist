@@ -22,7 +22,7 @@ export type OpeningHoursSpec = {
   closes: string;
 };
 
-type ClinicHoursInput = {
+export type ClinicHoursInput = {
   open_weekdays: number[];
   time_windows: string[];
   timezone: string;
@@ -83,4 +83,39 @@ export function openingHoursSpecification(
     });
   }
   return specs.length > 0 ? specs : null;
+}
+
+const SHORT_DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** "Sun–Thu" for a contiguous run, "Sun, Tue, Fri" otherwise. */
+function formatDayRange(days: number[]): string {
+  if (days.length === 0) return "";
+  const isContiguous = days.every(
+    (day, index) => index === 0 || day === days[index - 1] + 1,
+  );
+  if (isContiguous && days.length > 1) {
+    return `${SHORT_DAY_NAMES[days[0]]}–${SHORT_DAY_NAMES[days[days.length - 1]]}`;
+  }
+  return days.map((day) => SHORT_DAY_NAMES[day]).join(", ");
+}
+
+/**
+ * Human-readable hours for llms.txt / a plain-text summary, built from the
+ * same structured source as openingHoursSpecification — never the stale
+ * free-text contact_hours field.
+ */
+export function formatOpeningHoursText(hours: ClinicHoursInput): string | null {
+  if (!hours) return null;
+  const days = Array.from(new Set(hours.open_weekdays ?? []))
+    .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)
+    .sort((a, b) => a - b);
+  if (days.length === 0) return null;
+
+  const windows = (hours.time_windows ?? [])
+    .map((window) => parseTimeWindow(window))
+    .filter((w): w is { opens: string; closes: string } => w !== null)
+    .map((w) => `${w.opens}–${w.closes}`);
+  if (windows.length === 0) return null;
+
+  return `${formatDayRange(days)} ${windows.join(", ")} (${hours.timezone})`;
 }
