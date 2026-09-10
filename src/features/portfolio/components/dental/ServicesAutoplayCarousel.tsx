@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { Tables } from "@/lib/supabase/database.types";
 import { pickLocalized, useLocale, useTranslations } from "@/lib/i18n";
 import {
@@ -7,11 +8,23 @@ import {
   hasVisibleServiceTitle,
 } from "@/features/portfolio/lib/serviceKindGroups";
 import { HorizontalCarousel } from "../HorizontalCarousel";
+import { localePath } from "@/lib/i18n/localePath";
 import { repeatForInfiniteLoop } from "../../lib/carouselAutoplay";
 
 type Service = Tables<"services">;
 
-function ServiceCard({ service }: { service: Service }) {
+function ServiceCard({
+  service,
+  duplicate = false,
+}: {
+  service: Service;
+  /**
+   * Embla needs repeated slides for a seamless loop, but the clones are the
+   * same copy again. Hide them from assistive tech and from crawlers so the
+   * page does not carry the same service title a dozen times.
+   */
+  duplicate?: boolean;
+}) {
   const { locale } = useLocale();
   const title = pickLocalized(locale, service.title, service.title_ar);
   const description = pickLocalized(
@@ -25,16 +38,35 @@ function ServiceCard({ service }: { service: Service }) {
       className="services-carousel-card"
       data-carousel-card
       data-customize-item={service.id}
+      aria-hidden={duplicate || undefined}
+      data-nosnippet={duplicate || undefined}
     >
-      <h3
-        className="text-lg font-semibold text-[#0f2744]"
-        data-customize-field="title"
-      >
-        {title}
-      </h3>
+      {/* Real card contributes a heading; clones use inert markup. */}
+      {duplicate ? (
+        <p className="text-lg font-semibold text-[#0f2744]">{title}</p>
+      ) : service.slug ? (
+        <h4
+          className="text-lg font-semibold text-[#0f2744]"
+          data-customize-field="title"
+        >
+          <Link
+            href={localePath(locale, `/services/${service.slug}`)}
+            className="hover:underline"
+          >
+            {title}
+          </Link>
+        </h4>
+      ) : (
+        <h4
+          className="text-lg font-semibold text-[#0f2744]"
+          data-customize-field="title"
+        >
+          {title}
+        </h4>
+      )}
       <p
         className="mt-2 text-sm leading-relaxed text-[#6b7280]"
-        data-customize-field="description"
+        data-customize-field={duplicate ? undefined : "description"}
       >
         {description}
       </p>
@@ -82,6 +114,7 @@ export function ServicesAutoplayCarousel({
                 <ServiceCard
                   key={`${service.id}-${index}`}
                   service={service}
+                  duplicate={index >= group.items.length}
                 />
               ))}
             </HorizontalCarousel>

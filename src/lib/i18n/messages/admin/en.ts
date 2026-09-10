@@ -179,6 +179,7 @@ export const adminEn = {
   "admin.reservations.noResults": "No reservations match your filters.",
   "admin.reservations.today": "Today",
   "admin.reservations.nextThreeDays": "Next 3 days",
+  "admin.reservations.noAppointmentsNextThreeDays": "No appointments in the next 3 days",
   "admin.reservations.patient": "Patient",
   "admin.reservations.service": "Service",
   "admin.reservations.date": "Date",

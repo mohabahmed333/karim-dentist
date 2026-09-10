@@ -405,6 +405,9 @@ export type Database = {
           contact_credentials: string;
           contact_credentials_ar: string;
           contact_card_image_url: string | null;
+          contact_latitude: number | null;
+          contact_longitude: number | null;
+          contact_price_range: string;
           case_studies_title: string;
           case_studies_description: string;
           featured_title: string;
@@ -480,6 +483,9 @@ export type Database = {
           contact_credentials?: string;
           contact_credentials_ar?: string;
           contact_card_image_url?: string | null;
+          contact_latitude?: number | null;
+          contact_longitude?: number | null;
+          contact_price_range?: string;
           case_studies_title?: string;
           case_studies_description?: string;
           featured_title?: string;
@@ -555,6 +561,9 @@ export type Database = {
           contact_credentials?: string;
           contact_credentials_ar?: string;
           contact_card_image_url?: string | null;
+          contact_latitude?: number | null;
+          contact_longitude?: number | null;
+          contact_price_range?: string;
           case_studies_title?: string;
           case_studies_description?: string;
           featured_title?: string;
@@ -1527,6 +1536,7 @@ export type Database = {
           kind: "our_services" | "laser";
           image_url: string | null;
           media_type: "image" | "video";
+          slug: string | null;
           sort_order: number;
           is_published: boolean;
           created_at: string;
@@ -1543,6 +1553,7 @@ export type Database = {
           kind?: "our_services" | "laser";
           image_url?: string | null;
           media_type?: "image" | "video";
+          slug?: string | null;
           sort_order?: number;
           is_published?: boolean;
           created_at?: string;
@@ -1559,6 +1570,7 @@ export type Database = {
           kind?: "our_services" | "laser";
           image_url?: string | null;
           media_type?: "image" | "video";
+          slug?: string | null;
           sort_order?: number;
           is_published?: boolean;
           created_at?: string;

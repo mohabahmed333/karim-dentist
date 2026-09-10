@@ -10,9 +10,19 @@ type Props = {
   section: ParsedCaseStudySection;
   content: TitleContent;
   previewMode?: boolean;
+  /**
+   * A page gets exactly one h1. Editors can add more than one title block,
+   * so only the first is the document heading; the rest are h2.
+   */
+  headingLevel?: "h1" | "h2";
 };
 
-export function CaseStudyTitleBlock({ section, content }: Props) {
+export function CaseStudyTitleBlock({
+  section,
+  content,
+  headingLevel = "h1",
+}: Props) {
+  const Heading = headingLevel;
   const { locale } = useLocale();
   const eyebrow = pickLocalized(locale, content.eyebrow, content.eyebrow_ar);
   const title =
@@ -33,12 +43,12 @@ export function CaseStudyTitleBlock({ section, content }: Props) {
             {eyebrow}
           </p>
         ) : null}
-        <h1
+        <Heading
           className="cs-title-heading"
           data-customize-field={`section-${section.id}-title`}
         >
           {title}
-        </h1>
+        </Heading>
       </div>
     </section>
   );

@@ -1,11 +1,16 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Service, ServiceInsert, ServiceUpdate } from "./types";
+import { resolveUniqueSlug } from "./queries";
+import { isBlankSlug } from "./slug";
 
 export async function createService(payload: ServiceInsert): Promise<Service> {
   const supabase = createClient();
+  const slug = isBlankSlug(payload.slug)
+    ? await resolveUniqueSlug(payload.title)
+    : payload.slug;
   const { data, error } = await supabase
     .from("services")
-    .insert(payload)
+    .insert({ ...payload, slug })
     .select()
     .single();
   if (error) throw error;
@@ -17,9 +22,24 @@ export async function updateService(
   payload: ServiceUpdate,
 ): Promise<Service> {
   const supabase = createClient();
+  const next: ServiceUpdate = {
+    ...payload,
+    updated_at: new Date().toISOString(),
+  };
+  if (isBlankSlug(payload.slug)) {
+    const { data: existing, error: readError } = await supabase
+      .from("services")
+      .select("slug, title")
+      .eq("id", id)
+      .single();
+    if (readError) throw readError;
+    next.slug = isBlankSlug(existing.slug)
+      ? await resolveUniqueSlug(payload.title ?? existing.title, id)
+      : existing.slug;
+  }
   const { data, error } = await supabase
     .from("services")
-    .update({ ...payload, updated_at: new Date().toISOString() })
+    .update(next)
     .eq("id", id)
     .select()
     .single();

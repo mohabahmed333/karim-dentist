@@ -8,14 +8,14 @@ import {
 import type { PortfolioData } from "./types";
 
 const dentalServices: PortfolioData["services"] = [
-  { id: "s1", title: "Gingivectomy", title_ar: "", description: "Removes excess gum tissue and reshapes the gum line.", description_ar: "", kind: "laser", sort_order: 0, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
-  { id: "s2", title: "Frenectomy", title_ar: "", description: "Releases abnormal frenum attachments quickly and comfortably.", description_ar: "", kind: "laser", sort_order: 1, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
-  { id: "s3", title: "Teeth Whitening", title_ar: "", description: "Removes stains and discoloration for a brighter smile.", description_ar: "", kind: "laser", sort_order: 2, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
-  { id: "s4", title: "TMJ Pain Therapy", title_ar: "", description: "Relieves pain and inflammation in jaw muscles and TMJ.", description_ar: "", kind: "laser", sort_order: 3, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
-  { id: "s5", title: "Oral Ulcer Removal", title_ar: "", description: "Relieves pain and promotes faster healing of mouth ulcers.", description_ar: "", kind: "laser", sort_order: 4, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
-  { id: "s6", title: "Perio Pockets Treatment", title_ar: "", description: "Reduces bacteria and inflammation in periodontal pockets.", description_ar: "", kind: "laser", sort_order: 5, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
-  { id: "s7", title: "Endodontic Treatment", title_ar: "", description: "Disinfects root canals effectively and supports faster recovery.", description_ar: "", kind: "our_services", sort_order: 6, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
-  { id: "s8", title: "Oral Surgeries", title_ar: "", description: "Precise cutting, minimal bleeding, and faster recovery.", description_ar: "", kind: "laser", sort_order: 7, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
+  { id: "s1", title: "Gingivectomy", title_ar: "", description: "Removes excess gum tissue and reshapes the gum line.", description_ar: "", slug: "gingivectomy", kind: "laser", sort_order: 0, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
+  { id: "s2", title: "Frenectomy", title_ar: "", description: "Releases abnormal frenum attachments quickly and comfortably.", description_ar: "", slug: "frenectomy", kind: "laser", sort_order: 1, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
+  { id: "s3", title: "Teeth Whitening", title_ar: "", description: "Removes stains and discoloration for a brighter smile.", description_ar: "", slug: "teeth-whitening", kind: "laser", sort_order: 2, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
+  { id: "s4", title: "TMJ Pain Therapy", title_ar: "", description: "Relieves pain and inflammation in jaw muscles and TMJ.", description_ar: "", slug: "tmj-pain-therapy", kind: "laser", sort_order: 3, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
+  { id: "s5", title: "Oral Ulcer Removal", title_ar: "", description: "Relieves pain and promotes faster healing of mouth ulcers.", description_ar: "", slug: "oral-ulcer-removal", kind: "laser", sort_order: 4, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
+  { id: "s6", title: "Perio Pockets Treatment", title_ar: "", description: "Reduces bacteria and inflammation in periodontal pockets.", description_ar: "", slug: "perio-pockets-treatment", kind: "laser", sort_order: 5, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
+  { id: "s7", title: "Endodontic Treatment", title_ar: "", description: "Disinfects root canals effectively and supports faster recovery.", description_ar: "", slug: "endodontic-treatment", kind: "our_services", sort_order: 6, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
+  { id: "s8", title: "Oral Surgeries", title_ar: "", description: "Precise cutting, minimal bleeding, and faster recovery.", description_ar: "", slug: "oral-surgeries", kind: "laser", sort_order: 7, is_published: true, tags: [], image_url: null, media_type: "image", created_at: "", updated_at: "", deleted_at: null },
 ];
 
 const sliderFeatured: PortfolioData["featured"] = [
@@ -60,6 +60,9 @@ export const portfolioFallback: PortfolioData = {
     contact_country: "Egypt",
     contact_hours: "",
     contact_map_url: "https://www.google.com/maps/search/?api=1&query=A+41+Ozone+Medical+Center,+New+Cairo,+Al+Narges+Buildings",
+    contact_latitude: null,
+    contact_longitude: null,
+    contact_price_range: "",
     contact_whatsapp: "201111922252",
     contact_telegram: "",
     contact_behance: "",

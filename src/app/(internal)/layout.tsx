@@ -1,8 +1,6 @@
-import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { Cairo, Instrument_Serif, Inter } from "next/font/google";
 import { RouteScrollToTop } from "@/features/portfolio";
-import { HomeHashScroll } from "@/features/portfolio/components/HomeHashScroll";
 import { LocaleProvider } from "@/lib/i18n";
 import { LocaleBootstrapScript } from "@/lib/i18n/LocaleBootstrapScript";
 import {
@@ -10,8 +8,22 @@ import {
   localeDir,
   parseLocale,
 } from "@/lib/i18n/localeStorage";
-import "./globals.css";
+import "../globals.css";
 import { cn } from "@/lib/utils";
+
+/**
+ * Root layout for everything NOT on the public locale-routed site: admin
+ * (/admin/*), and the showreel sales-demo routes (/showreel, /showreel2,
+ * /showreel/demo). These stay cookie-driven — there is no /admin/ar or
+ * /showreel/ar, and the admin UI's own language switcher already works via
+ * the cookie independently of the public URL locale.
+ *
+ * A second root layout is legal in the App Router as long as no top-level
+ * app/layout.tsx exists (see app/(site)/[locale]/layout.tsx, the other
+ * one) and the two never resolve to the same URL — route groups like
+ * (internal) don't appear in the URL, so /admin and /showreel keep their
+ * paths unchanged by this move.
+ */
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,21 +43,7 @@ const cairo = Cairo({
   weight: ["400", "600", "700"],
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "The Dental Lounge | Dr. Karim Elshibiny",
-    template: "%s — The Dental Lounge",
-  },
-  description:
-    "The Dental Lounge by Dr. Karim Elshibiny offers modern laser and cosmetic dentistry with comfort-first care in New Cairo.",
-  icons: {
-    icon: "/dental/766800441_18084577118253727_1449914596899119909_n.jpg",
-    shortcut: "/dental/766800441_18084577118253727_1449914596899119909_n.jpg",
-    apple: "/dental/766800441_18084577118253727_1449914596899119909_n.jpg",
-  },
-};
-
-export default async function RootLayout({
+export default async function InternalRootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -74,7 +72,6 @@ export default async function RootLayout({
         <LocaleBootstrapScript />
         <LocaleProvider initialLocale={initialLocale}>
           <RouteScrollToTop />
-          <HomeHashScroll />
           {children}
         </LocaleProvider>
       </body>

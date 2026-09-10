@@ -53,6 +53,7 @@ export function buildShowreelServices(): Service[] {
     title_ar: row.title_ar,
     description: row.title,
     description_ar: row.title_ar,
+    slug: row.id.replace(/^svc-/, ""),
     kind: "our_services",
     tags: [],
     image_url: null,

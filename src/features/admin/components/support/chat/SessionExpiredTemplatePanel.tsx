@@ -190,7 +190,7 @@ export function SessionExpiredTemplatePanel({
             </label>
             <AdminSelect
               value={selectedKey}
-              onValueChange={(next) => setSelectedKey(next ?? "")}
+              onValueChange={(next) => setSelectedKey((next as string) ?? "")}
               disabled={sending}
             >
               <AdminSelectTrigger className="w-full">
