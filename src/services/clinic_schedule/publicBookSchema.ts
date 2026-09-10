@@ -7,7 +7,7 @@ export const publicBookSchema = z.object({
   email: z.string().trim().email().optional().or(z.literal("")),
   service_id: z.string().uuid().nullable().optional(),
   service_label: z.string().trim().min(1).max(200),
-  notes: z.string().max(2000).optional().default(""),
+  notes: z.string().max(500).optional().default(""),
 });
 
 export type PublicBookValues = z.infer<typeof publicBookSchema>;

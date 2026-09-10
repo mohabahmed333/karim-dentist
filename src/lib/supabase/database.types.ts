@@ -2101,6 +2101,15 @@ export type Database = {
         };
         Returns: string;
       };
+      check_and_log_rate_limit: {
+        Args: {
+          p_bucket: string;
+          p_identifier: string;
+          p_max_requests: number;
+          p_window_seconds: number;
+        };
+        Returns: boolean;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
