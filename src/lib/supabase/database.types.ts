@@ -405,6 +405,9 @@ export type Database = {
           contact_credentials: string;
           contact_credentials_ar: string;
           contact_card_image_url: string | null;
+          contact_latitude: number | null;
+          contact_longitude: number | null;
+          contact_price_range: string;
           case_studies_title: string;
           case_studies_description: string;
           featured_title: string;
@@ -480,6 +483,9 @@ export type Database = {
           contact_credentials?: string;
           contact_credentials_ar?: string;
           contact_card_image_url?: string | null;
+          contact_latitude?: number | null;
+          contact_longitude?: number | null;
+          contact_price_range?: string;
           case_studies_title?: string;
           case_studies_description?: string;
           featured_title?: string;
@@ -555,6 +561,9 @@ export type Database = {
           contact_credentials?: string;
           contact_credentials_ar?: string;
           contact_card_image_url?: string | null;
+          contact_latitude?: number | null;
+          contact_longitude?: number | null;
+          contact_price_range?: string;
           case_studies_title?: string;
           case_studies_description?: string;
           featured_title?: string;
