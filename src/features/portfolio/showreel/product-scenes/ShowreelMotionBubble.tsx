@@ -2,12 +2,13 @@
 
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { CHAT_BUBBLE, CHAT_META } from "@/features/admin/components/chat/chatSkin";
+import { CHAT_META } from "@/features/admin/components/chat/chatSkin";
 import {
   chatTransition,
   messageVariants,
   workingVariants,
 } from "@/features/admin/components/chat/chatMotion";
+import { showreelBubbleClass } from "./showreelBubbleClass";
 
 /**
  * A message bubble that fades/slides/scales in exactly like the real chat's
@@ -25,7 +26,7 @@ export function ShowreelMotionBubble({
 }) {
   return (
     <motion.div
-      className={`${CHAT_BUBBLE} ${isUser ? "ms-8" : ""} ${className}`}
+      className={showreelBubbleClass(isUser, className)}
       custom={isUser}
       variants={messageVariants}
       initial="hidden"

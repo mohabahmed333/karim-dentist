@@ -25,6 +25,9 @@ export function AdminNavLink({
   return (
     <Link
       href={href}
+      data-showreel-action={
+        href === "/admin/support" ? "nav-front-desk" : undefined
+      }
       className={cn(
         "flex items-center justify-between rounded-md px-2 py-1 text-[13px] transition-colors",
         active

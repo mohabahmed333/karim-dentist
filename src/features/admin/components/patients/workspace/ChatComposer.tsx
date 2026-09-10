@@ -64,6 +64,9 @@ export function ChatComposer({
         disabled={disabled}
         placeholder={t("admin.chat.messageOrSlash")}
         showAttach
+        showreelInputAction="clinical-composer"
+        showreelAttachAction="clinical-attach"
+        showreelSendAction="clinical-send"
         onChange={onChange}
         onAddFiles={onAddFiles}
         onSend={() => {
@@ -78,7 +81,10 @@ export function ChatComposer({
         topSlot={
           <>
             {pendingUploads.length > 0 ? (
-              <div className="flex flex-wrap gap-2 border-b border-[#E8EAED] px-3 py-2">
+              <div
+                data-showreel-action="clinical-pending-uploads"
+                className="flex flex-wrap gap-2 border-b border-[#E8EAED] px-3 py-2"
+              >
                 {pendingUploads.map((item) => (
                   <ChatResourceByKind
                     key={item.id}

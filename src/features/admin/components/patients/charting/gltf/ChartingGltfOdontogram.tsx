@@ -10,7 +10,10 @@ import {
   type ToothGltfKind,
 } from "@/services/notation";
 import type { PaintTool, SurfaceId, SurfaceMap } from "@/services/tooth_surfaces";
-import { AnatomicalArchViewer } from "../../shared/anatomical-arch";
+import {
+  ANATOMICAL_ARCH_URL,
+  AnatomicalArchViewer,
+} from "../../shared/anatomical-arch";
 import { SurfaceOdontogram } from "../SurfaceOdontogram";
 
 const KindCanvas = dynamic(
@@ -31,10 +34,9 @@ type Props = {
 
 async function probeArch(): Promise<boolean> {
   try {
-    const res = await fetch("/dental/teeth/arch.glb?v=1", {
-      method: "GET",
-      cache: "no-cache",
-    });
+    // HEAD, and the same URL the viewer loads: a GET here pulled the whole
+    // model down only to read res.ok, then the viewer fetched it again.
+    const res = await fetch(ANATOMICAL_ARCH_URL, { method: "HEAD" });
     return res.ok;
   } catch {
     return false;

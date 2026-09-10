@@ -1,4 +1,5 @@
 import type { DashboardWidgetId } from "@/features/admin/lib/dashboardLayout";
+import type { DashboardDropEdge } from "@/features/admin/lib/dashboardDrop";
 
 export const DASHBOARD_LAYOUT_STATE_EVENT = "admin-dashboard-layout-state";
 export const DASHBOARD_LAYOUT_ACTION_EVENT = "admin-dashboard-layout-action";
@@ -23,7 +24,13 @@ export type DashboardLayoutAction =
   | { type: "redo" }
   | { type: "toggleCatalog" }
   | { type: "closeCatalog" }
-  | { type: "add"; id: DashboardWidgetId };
+  | { type: "add"; id: DashboardWidgetId }
+  | {
+      type: "move";
+      fromId: DashboardWidgetId;
+      targetId: DashboardWidgetId;
+      edge: DashboardDropEdge;
+    };
 
 export const INACTIVE_DASHBOARD_LAYOUT_STATE: DashboardLayoutUiState = {
   active: false,

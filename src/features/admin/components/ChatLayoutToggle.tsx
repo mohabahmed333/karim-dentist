@@ -28,6 +28,7 @@ export function ChatLayoutToggle({
         <button
           type="button"
           onClick={onCollapseDock}
+          data-showreel-action="chat-collapse"
           aria-label={t("admin.bubbles.collapseDock")}
           title={t("admin.bubbles.collapseDock")}
           className="rounded-lg p-1.5 text-[#70758A] hover:bg-[#F3F4F6] hover:text-[#111111]"
@@ -38,6 +39,7 @@ export function ChatLayoutToggle({
       <button
         type="button"
         onClick={onToggleLayout}
+        data-showreel-action="chat-layout-toggle"
         aria-label={
           docked ? t("admin.bubbles.switchToFloat") : t("admin.bubbles.switchToDock")
         }

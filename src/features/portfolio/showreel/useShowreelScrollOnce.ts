@@ -1,90 +1,21 @@
 "use client";
 
 import { useEffect, type RefObject } from "react";
+import {
+  showreelScrollTargetY,
+  type ScrollTargetOptions,
+} from "./showreelScrollTarget";
 
-type Options = {
+type Options = ScrollTargetOptions & {
   scrollMs?: number;
-  maxProgress?: number;
   delayMs?: number;
-  targetId?: string;
-  /** Scroll through hero scrub first, then continue down the page. */
-  heroFirst?: boolean;
-  /** Share of scroll time spent finishing the hero (0–1). */
-  heroPhaseRatio?: number;
 };
 
-function easeHero(t: number) {
-  return 1 - (1 - t) ** 2.8;
-}
-
-/** Faster zip through content below the hero. */
-function easePostHero(t: number) {
-  return t ** 2.4;
-}
-
-function scrollMax(win: Window) {
-  const doc = win.document.documentElement;
-  return Math.max(0, doc.scrollHeight - win.innerHeight);
-}
-
-function heroScrollEnd(win: Window) {
-  const track = win.document.querySelector<HTMLElement>(".scroll-track");
-  if (!track) return null;
-
-  const scrollable = Math.max(0, track.offsetHeight - win.innerHeight);
-  return Math.max(0, track.offsetTop + scrollable);
-}
-
-function targetScrollTop(win: Window, targetId: string) {
-  const el = win.document.getElementById(targetId);
-  if (!el) return null;
-
-  const top = el.getBoundingClientRect().top + win.scrollY - 48;
-  return Math.max(0, Math.min(top, scrollMax(win)));
-}
+/** How often the end position is re-measured once the scroll has finished. */
+const SETTLE_MS = 250;
 
 function scrollToY(win: Window, top: number) {
   win.scrollTo({ top: Math.max(0, top), left: 0, behavior: "auto" });
-}
-
-function applyScroll(
-  win: Window,
-  progress: number,
-  maxProgress: number,
-  targetId?: string,
-  heroFirst?: boolean,
-  heroPhaseRatio = 0.42,
-) {
-  const pageMax = scrollMax(win) * maxProgress;
-
-  if (targetId) {
-    const targetTop = targetScrollTop(win, targetId);
-    scrollToY(win, (targetTop ?? pageMax) * progress);
-    return;
-  }
-
-  if (!heroFirst) {
-    scrollToY(win, pageMax * progress);
-    return;
-  }
-
-  const heroEnd = heroScrollEnd(win);
-  if (heroEnd === null) {
-    scrollToY(win, pageMax * progress);
-    return;
-  }
-
-  const heroTarget = Math.min(heroEnd, pageMax);
-  const restSpan = Math.max(0, pageMax - heroTarget);
-
-  if (progress <= heroPhaseRatio) {
-    const local = easeHero(progress / heroPhaseRatio);
-    scrollToY(win, heroTarget * local);
-    return;
-  }
-
-  const local = easePostHero((progress - heroPhaseRatio) / (1 - heroPhaseRatio));
-  scrollToY(win, heroTarget + restSpan * local);
 }
 
 function getWindows(refs: RefObject<HTMLIFrameElement | null>[]) {
@@ -116,16 +47,18 @@ export function useShowreelScrollOnce(
     let raf = 0;
     let cancelled = false;
     const started = performance.now() + delayMs;
+    const endsAt = started + scrollMs;
 
     const applyAll = (progress: number) => {
       getWindows(iframeRefs).forEach((win) =>
-        applyScroll(
+        scrollToY(
           win,
-          progress,
-          maxProgress,
-          targetId,
-          heroFirst,
-          heroPhaseRatio,
+          showreelScrollTargetY(win, progress, {
+            maxProgress,
+            targetId,
+            heroFirst,
+            heroPhaseRatio,
+          }),
         ),
       );
     };
@@ -147,12 +80,20 @@ export function useShowreelScrollOnce(
     winsReset(iframeRefs);
     raf = requestAnimationFrame(tick);
 
-    const retry = window.setTimeout(() => applyAll(1), scrollMs + delayMs + 200);
+    // Hold the end position for the rest of the slide instead of pinning it
+    // once. Lazy content below the fold only starts loading as the scroll
+    // reaches it, so the page is still growing when the animation ends — a
+    // single re-pin left the slide short of the bottom. This re-measures and
+    // re-applies until the slide is swapped out, and no-ops until then.
+    const settle = window.setInterval(() => {
+      if (cancelled || performance.now() < endsAt + 200) return;
+      applyAll(1);
+    }, SETTLE_MS);
 
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
-      window.clearTimeout(retry);
+      window.clearInterval(settle);
     };
   }, [
     delayMs,

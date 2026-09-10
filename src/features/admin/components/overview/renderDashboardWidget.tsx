@@ -12,6 +12,7 @@ import type { WhatsappConversation } from "@/services/whatsapp/types";
 import type { DashboardWidgetId } from "@/features/admin/lib/dashboardLayout";
 import { DashboardAttentionCard } from "./DashboardAttentionCard";
 import { DashboardKpiCard } from "./DashboardKpiCard";
+import { DashboardUnreadChatsKpi } from "./DashboardUnreadChatsKpi";
 import { DashboardBookingsPanel } from "./DashboardBookingsPanel";
 import { DashboardRecentPanel } from "./DashboardRecentPanel";
 import { DashboardSchedulePanel } from "./DashboardSchedulePanel";
@@ -45,6 +46,8 @@ export type DashboardWidgetRenderCtx = {
   conversations: WhatsappConversation[];
   onPatientSelect: (reservation: Reservation) => void;
   emptyAttention: string;
+  /** When false, message widgets stay on fixture rows (showreel). */
+  conversationsLive?: boolean;
 };
 
 const KPI_BY_WIDGET: Partial<
@@ -87,6 +90,15 @@ export function renderDashboardWidget(
   if (kpiMeta) {
     const item = ctx.kpis.find((k) => k.labelKey === kpiMeta.labelKey);
     if (!item) return null;
+    if (id === "kpiUnreadChats") {
+      return (
+        <DashboardUnreadChatsKpi
+          item={item}
+          iconIndex={kpiMeta.icon}
+          conversations={ctx.conversations}
+        />
+      );
+    }
     return <DashboardKpiCard item={item} iconIndex={kpiMeta.icon} />;
   }
 
@@ -126,7 +138,12 @@ export function renderDashboardWidget(
         />
       );
     case "messages":
-      return <DashboardMessagesPanel conversations={ctx.conversations} />;
+      return (
+        <DashboardMessagesPanel
+          conversations={ctx.conversations}
+          live={ctx.conversationsLive !== false}
+        />
+      );
     case "listPending":
       return (
         <DashboardPendingQueuePanel

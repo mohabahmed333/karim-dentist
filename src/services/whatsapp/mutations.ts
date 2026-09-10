@@ -17,6 +17,7 @@ import {
 } from "./messageReply";
 import { resolvePatientKeyByPhone } from "./patientLink";
 import { resolveConversationStatus } from "./resolveConversationStatus";
+import { laterIsoTimestamp } from "./sessionWindow";
 import type {
   KapsoConversationPayload,
   KapsoMessagePayload,
@@ -134,8 +135,10 @@ export async function upsertConversationFromKapso(
       bumpUnread: extras?.bumpUnread,
     }),
     last_message_at: extras?.at ?? existing?.last_message_at ?? null,
-    last_inbound_at:
-      extras?.lastInboundAt ?? existing?.last_inbound_at ?? null,
+    last_inbound_at: laterIsoTimestamp(
+      existing?.last_inbound_at,
+      extras?.lastInboundAt,
+    ),
     last_message_preview:
       extras?.preview ?? existing?.last_message_preview ?? "",
     last_message_type:
@@ -251,6 +254,23 @@ export async function upsertMessageFromKapso(
 
   const { error } = await supabase.from("whatsapp_messages").insert(row);
   if (error) throw error;
+  if (direction === "inbound") {
+    const { data: conv } = await supabase
+      .from("whatsapp_conversations")
+      .select("last_inbound_at")
+      .eq("id", conversationId)
+      .maybeSingle();
+    const nextInbound = laterIsoTimestamp(conv?.last_inbound_at, waTimestamp);
+    if (nextInbound && nextInbound !== conv?.last_inbound_at) {
+      await supabase
+        .from("whatsapp_conversations")
+        .update({
+          last_inbound_at: nextInbound,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", conversationId);
+    }
+  }
 }
 
 export async function updateMessageStatusByWamid(

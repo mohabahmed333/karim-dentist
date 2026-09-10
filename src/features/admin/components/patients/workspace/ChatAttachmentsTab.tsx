@@ -29,7 +29,10 @@ export function ChatAttachmentsTab({
   const empty = items.length === 0 && pendingUploads.length === 0;
 
   return (
-    <div className={`min-h-0 flex-1 overflow-y-auto ${CHAT_BODY} p-4`}>
+    <div
+      data-showreel-action="clinical-imaging"
+      className={`min-h-0 flex-1 overflow-y-auto ${CHAT_BODY} p-4`}
+    >
       {empty ? (
         <p className="pt-12 text-center text-[12px] text-[#9CA3AF]">
           No attachments for this tooth yet. Paste or attach images in Chat.

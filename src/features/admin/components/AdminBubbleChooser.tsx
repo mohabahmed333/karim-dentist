@@ -42,6 +42,7 @@ export function AdminBubbleChooser({
       <button
         type="button"
         role="menuitem"
+        data-showreel-action="bubble-whatsapp"
         className="flex w-full items-center gap-3 px-3 py-2.5 text-start text-sm font-medium text-[var(--admin-text)] hover:bg-[var(--admin-canvas)]"
         onClick={onWhatsapp}
       >

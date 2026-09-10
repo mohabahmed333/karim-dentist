@@ -46,6 +46,7 @@ export function DashboardWidgetCatalog({
               <li key={id}>
                 <button
                   type="button"
+                  data-dash-widget-catalog-item={id}
                   className="flex w-full items-center gap-2 rounded px-2 py-2 text-start text-[12px] text-[var(--admin-text)] hover:bg-[var(--admin-hover)]"
                   onClick={() => onAdd(id)}
                 >

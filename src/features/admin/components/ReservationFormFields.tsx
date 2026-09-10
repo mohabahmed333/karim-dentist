@@ -219,6 +219,7 @@ export function ReservationFormFields({
           <Label htmlFor="patient_name">{t("admin.reservations.patientName")}</Label>
           <AdminInput
             id="patient_name"
+            data-showreel-action="reservation-patient-name"
             value={values.patient_name}
             disabled={pending}
             onChange={(event) => patch({ patient_name: event.target.value })}
@@ -228,6 +229,7 @@ export function ReservationFormFields({
           <Label htmlFor="phone">{t("admin.reservations.phone")}</Label>
           <AdminInput
             id="phone"
+            data-showreel-action="reservation-phone"
             value={values.phone}
             disabled={pending}
             onChange={(event) => patch({ phone: event.target.value })}

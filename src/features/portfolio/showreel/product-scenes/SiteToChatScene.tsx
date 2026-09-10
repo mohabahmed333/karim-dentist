@@ -77,7 +77,7 @@ export function SiteToChatScene({ active, siteData }: Props) {
             exit="exit"
             transition={chatTransition(false, 0.3)}
           >
-            <ShowreelPublicBookingPanel active={active} siteData={siteData} />
+            <ShowreelPublicBookingPanel siteData={siteData} />
           </motion.div>
         ) : (
           <motion.div

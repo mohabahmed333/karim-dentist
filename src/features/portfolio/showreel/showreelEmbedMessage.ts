@@ -15,7 +15,11 @@ export type ShowreelCustomizeRouteParams = {
 export type ShowreelCustomizeDemoAction =
   | "reset"
   | "patchCaseStudy"
-  | "reorderHomepage";
+  | "reorderHomepage"
+  | "patchHero"
+  | "simulateTranslate"
+  | "setDevice"
+  | "setLocale";
 
 export type ShowreelCustomizeDemoMessage = {
   type: typeof SHOWREEL_CUSTOMIZE_DEMO;
@@ -25,6 +29,14 @@ export type ShowreelCustomizeDemoMessage = {
     title?: string;
     fromIndex?: number;
     toIndex?: number;
+    headline?: string;
+    body?: string;
+    headlineAr?: string;
+    bodyAr?: string;
+    cta?: string;
+    ctaAr?: string;
+    device?: "desktop" | "tablet" | "mobile";
+    locale?: "en" | "ar";
   };
 };
 
@@ -80,7 +92,9 @@ export function postShowreelCustomizeDemo(
 }
 
 /** Tell the showreel parent the embed has painted (hero video, CMS UI, etc.). */
-export function postShowreelEmbedReady(mode: "site" | "customize") {
+export function postShowreelEmbedReady(
+  mode: "site" | "customize" | "product",
+) {
   if (window.parent === window) return;
 
   const payload = { type: SHOWREEL_EMBED_READY, mode };

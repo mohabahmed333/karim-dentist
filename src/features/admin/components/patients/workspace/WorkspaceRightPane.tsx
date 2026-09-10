@@ -6,6 +6,7 @@ import type { PatientToothNote } from "@/services/patient_tooth_notes";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 import type { Service } from "@/services/services/types";
 import type { TreatmentAiDraft } from "@/services/ai_groq";
+import type { ProposalReviewState } from "@/features/admin/components/chat/ActionReviewCard";
 import type { usePatientTreatments } from "../usePatientTreatments";
 import { WorkspaceTreatmentsPane } from "./WorkspaceTreatmentsPane";
 import type { WizardLaunch } from "./wizardModel";
@@ -24,6 +25,8 @@ type Props = {
     draft: TreatmentAiDraft,
     existingTreatmentId?: string | null,
   ) => void;
+  demoReview?: ProposalReviewState | null;
+  localOnly?: boolean;
 };
 
 export function WorkspaceRightPane(props: Props) {
@@ -40,6 +43,8 @@ export function WorkspaceRightPane(props: Props) {
         wizardLaunch={props.wizardLaunch}
         onWizardLaunchApplied={props.onWizardLaunchApplied}
         onApplyAiDraft={props.onApplyAiDraft}
+        demoReview={props.demoReview}
+        localOnly={props.localOnly}
       />
     </div>
   );

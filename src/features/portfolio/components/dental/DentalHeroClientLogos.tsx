@@ -12,7 +12,7 @@ export function DentalHeroClientLogos({ clients, ariaLabel }: Props) {
 
   return (
     <ul
-      className="mt-auto flex flex-wrap items-center gap-x-8 gap-y-4 pt-12 opacity-40 grayscale"
+      className="mt-auto hidden flex-wrap items-center gap-x-8 gap-y-4 pt-12 opacity-40 grayscale lg:flex"
       aria-label={ariaLabel}
     >
       {logos.map((client) => (

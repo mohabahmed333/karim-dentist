@@ -1,0 +1,168 @@
+import { DEMO_CONV } from "./demoIds";
+
+export type FixtureConversation = {
+  id: string;
+  name: string;
+  initials: string;
+  avatarColor: string;
+  preview: string;
+  timestamp: string;
+  unread?: string;
+  starred?: boolean;
+  status: "active" | "ended" | "archived";
+  phone: string;
+  patientKey: string;
+  lastMessageType?: string;
+  lastMessageStatus?: string;
+  lastInboundAt?: string;
+  tags: { label: string; tone?: "neutral" | "danger" }[];
+};
+
+export const WHATSAPP_FIXTURE_CONVERSATIONS: FixtureConversation[] = [
+  {
+    id: DEMO_CONV.sara,
+    name: "Sara Hassan",
+    initials: "SH",
+    avatarColor: "#DBEAFE",
+    preview: "Can I book teeth whitening this week?",
+    timestamp: "now",
+    unread: "1",
+    starred: true,
+    status: "active",
+    phone: "+201111000001",
+    patientKey: "phone:+201111000001",
+    lastMessageType: "text",
+    lastMessageStatus: "received",
+    lastInboundAt: new Date().toISOString(),
+    tags: [{ label: "VIP" }, { label: "Whitening" }],
+  },
+  {
+    id: DEMO_CONV.omar,
+    name: "Omar Farid",
+    initials: "OF",
+    avatarColor: "#DCFCE7",
+    preview: "Thanks — Tuesday 10:30 works.",
+    timestamp: "12m",
+    status: "active",
+    phone: "+201111000002",
+    patientKey: "phone:+201111000002",
+    lastMessageType: "text",
+    lastMessageStatus: "read",
+    tags: [{ label: "Reschedule" }],
+  },
+  {
+    id: DEMO_CONV.nour,
+    name: "Nour El-Sayed",
+    initials: "NE",
+    avatarColor: "#FEF3C7",
+    preview: "Here are photos of the sore tooth",
+    timestamp: "8m",
+    unread: "2",
+    status: "active",
+    phone: "+201111000003",
+    patientKey: "phone:+201111000003",
+    lastMessageType: "image",
+    lastMessageStatus: "received",
+    tags: [{ label: "Pain" }],
+  },
+  {
+    id: DEMO_CONV.youssef,
+    name: "Youssef Adel",
+    initials: "YA",
+    avatarColor: "#FCE7F3",
+    preview: "Voice note about sensitivity",
+    timestamp: "18m",
+    unread: "1",
+    status: "active",
+    phone: "+201111000004",
+    patientKey: "phone:+201111000004",
+    lastMessageType: "audio",
+    lastMessageStatus: "received",
+    tags: [{ label: "Follow-up" }],
+  },
+  {
+    id: DEMO_CONV.mariam,
+    name: "Mariam Khaled",
+    initials: "MK",
+    avatarColor: "#E0E7FF",
+    preview: "Estimate PDF attached",
+    timestamp: "35m",
+    starred: true,
+    status: "active",
+    phone: "+201111000005",
+    patientKey: "phone:+201111000005",
+    lastMessageType: "document",
+    lastMessageStatus: "read",
+    tags: [{ label: "Implant" }],
+  },
+  {
+    id: DEMO_CONV.ahmed,
+    name: "أحمد محمود",
+    initials: "أم",
+    avatarColor: "#CCFBF1",
+    preview: "تم تأكيد موعدك غداً الساعة ١١",
+    timestamp: "6m",
+    status: "active",
+    phone: "+201111000006",
+    patientKey: "phone:+201111000006",
+    lastMessageType: "text",
+    lastMessageStatus: "delivered",
+    tags: [{ label: "عربي" }],
+  },
+  {
+    id: DEMO_CONV.layla,
+    name: "Layla Ibrahim",
+    initials: "LI",
+    avatarColor: "#F3E8FF",
+    preview: "Book your visit",
+    timestamp: "50m",
+    status: "active",
+    phone: "+201111000007",
+    patientKey: "phone:+201111000007",
+    lastMessageType: "interactive",
+    lastMessageStatus: "delivered",
+    tags: [{ label: "CTA" }],
+  },
+  {
+    id: DEMO_CONV.karim,
+    name: "Karim Saleh",
+    initials: "KS",
+    avatarColor: "#FFEDD5",
+    preview: "Clinic location pin",
+    timestamp: "2h",
+    status: "active",
+    phone: "+201111000008",
+    patientKey: "phone:+201111000008",
+    lastMessageType: "location",
+    lastMessageStatus: "read",
+    tags: [{ label: "Location" }],
+  },
+  {
+    id: DEMO_CONV.hana,
+    name: "Hana Mostafa",
+    initials: "HM",
+    avatarColor: "#DBEAFE",
+    preview: "See you at the follow-up.",
+    timestamp: "1d",
+    status: "ended",
+    phone: "+201111000009",
+    patientKey: "phone:+201111000009",
+    lastMessageType: "text",
+    lastMessageStatus: "read",
+    tags: [{ label: "Done" }],
+  },
+  {
+    id: DEMO_CONV.rami,
+    name: "Rami Nabil",
+    initials: "RN",
+    avatarColor: "#E5E7EB",
+    preview: "Case closed — thanks!",
+    timestamp: "5d",
+    status: "archived",
+    phone: "+201111000010",
+    patientKey: "phone:+201111000010",
+    lastMessageType: "text",
+    lastMessageStatus: "read",
+    tags: [{ label: "Archived", tone: "danger" }],
+  },
+];

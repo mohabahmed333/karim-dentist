@@ -132,7 +132,9 @@ export const SHOWREEL_SLIDES: ShowreelSlide[] = [
     "⌘K AI search jumps to Reservations, then book straight from the calendar.",
     ["⌘K", "Calendar", "Book"],
     {
-      durationMs: 20000,
+      // 13.5s: the booking beat now ends at 11.8s, so the old 20s left the
+      // slide sitting on a finished form for six seconds.
+      durationMs: 13500,
       desktopSrc: PRODUCT("smart-ux"),
       productScene: "smart-ux",
     },
@@ -169,6 +171,6 @@ export const SHOWREEL_SLIDES: ShowreelSlide[] = [
     durationMs: 5000,
     kicker: "Designed and developed by",
     title: "Mohab Elbasiry",
-    body: "Next.js · Supabase · WhatsApp · AI-assisted workflows",
+    body: "What's next!",
   },
 ];

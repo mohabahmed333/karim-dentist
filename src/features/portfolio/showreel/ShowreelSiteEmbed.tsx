@@ -1,13 +1,8 @@
-import {
-  HeroSection,
-  HomeMainSections,
-  PortfolioMotion,
-  SiteFooter,
-  SiteNav,
-} from "@/features/portfolio";
-import { TALES_TAGLINE } from "@/features/portfolio/lib/footerTaglineLines";
-import { contactFromSettings } from "@/features/portfolio/lib/contactInfo";
-import { workNavLinksFromPortfolio } from "@/features/portfolio/lib/workNavLinks";
+"use client";
+
+import { useEffect } from "react";
+import { DentalHomePage } from "@/features/portfolio/components/dental/DentalHomePage";
+import { postShowreelEmbedReady } from "./showreelEmbedMessage";
 import type { PortfolioData } from "@/services/portfolio";
 
 type Props = {
@@ -16,11 +11,15 @@ type Props = {
 };
 
 export function ShowreelSiteEmbed({ data, viewport = "desktop" }: Props) {
-  const brand = data.settings?.brand_name ?? "Imagineer";
-  const brandLogo = data.settings?.brand_logo_url ?? null;
-  const contact = contactFromSettings(data.settings);
-  const workLinks = workNavLinksFromPortfolio(data);
-  const hero = data.hero!;
+  const brand = data.settings?.brand_name ?? "The Dental Lounge";
+  const brandLogo =
+    data.settings?.brand_logo_url ??
+    "/dental/766800441_18084577118253727_1449914596899119909_n.jpg";
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => postShowreelEmbedReady("site"));
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   return (
     <div
@@ -30,27 +29,7 @@ export function ShowreelSiteEmbed({ data, viewport = "desktop" }: Props) {
           : "showreel-demo-site"
       }
     >
-      <PortfolioMotion />
-      <SiteNav
-        brand={brand}
-        brandLogo={brandLogo}
-        contact={contact}
-        workLinks={workLinks}
-      />
-      <div className="site-shell">
-        <main>
-          <HeroSection hero={hero} />
-          <HomeMainSections data={data} />
-        </main>
-        <SiteFooter
-          brand={brand}
-          tagline={data.settings?.footer_tagline ?? TALES_TAGLINE}
-          taglineImageUrl={data.settings?.footer_tagline_image_url}
-          email={data.settings?.contact_email ?? "hello@imagineer.studio"}
-          footerLinks={data.footerLinks}
-          socialLinks={data.socialLinks}
-        />
-      </div>
+      <DentalHomePage data={data} brand={brand} brandLogo={brandLogo} />
     </div>
   );
 }

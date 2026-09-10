@@ -83,6 +83,19 @@ export function groupCommandHits(hits: CommandHit[]): CommandGroup[] {
   });
 }
 
+export type CommandDisplayGroup = CommandGroup & { recent?: boolean };
+
+/** Recents must be passed in — do not read window/localStorage during render. */
+export function commandPaletteGroups(
+  filtered: CommandHit[],
+  query: string,
+  recents: CommandHit[],
+): CommandDisplayGroup[] {
+  const grouped = groupCommandHits(filtered);
+  if (query.trim() || recents.length === 0) return grouped;
+  return [{ kind: "page", items: recents, recent: true }, ...grouped];
+}
+
 export function buildStaticCommandHits(labels: StaticCommandLabels): CommandHit[] {
   const pages = Object.keys(adminPageLabelKeys).map((href) => {
     const title = labels.pageLabel(href);
@@ -196,13 +209,17 @@ type ReservationSearchRow = {
 
 export function hitsFromReservations(rows: ReservationSearchRow[]): CommandHit[] {
   return rows.map((row) => {
-    const q = encodeURIComponent(row.patient_name);
+    const day = row.starts_at.slice(0, 10);
+    const params = new URLSearchParams({
+      selected: row.id,
+      ...(day ? { date: day } : {}),
+    });
     return {
       id: `reservation:${row.id}`,
       kind: "reservation" as const,
       title: row.patient_name,
       subtitle: row.service ?? undefined,
-      href: `/admin/reservations?q=${q}`,
+      href: `/admin/reservations?${params.toString()}`,
       keywords: `${row.patient_name} ${row.phone} ${row.service ?? ""} reservation`,
     };
   });

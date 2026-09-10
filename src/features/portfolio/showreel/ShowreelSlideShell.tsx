@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import Image from "next/image";
 import { ShowreelAnimatedText } from "./ShowreelAnimatedText";
 import type { ShowreelCopySlide, ShowreelFeatureSlide } from "./showreelSlides";
 
@@ -92,6 +93,15 @@ export function ShowreelSlideCopy({ slide, index, total }: CopyProps) {
           {slide.body ? (
             <p className="showreel-intro-body showreel-anim-body">{slide.body}</p>
           ) : null}
+        </div>
+        <div className="showreel-intro-glimpse" aria-hidden>
+          <Image
+            src="/showreel/intro-glimpse.webp"
+            alt=""
+            width={2400}
+            height={1282}
+            priority
+          />
         </div>
       </div>
     );

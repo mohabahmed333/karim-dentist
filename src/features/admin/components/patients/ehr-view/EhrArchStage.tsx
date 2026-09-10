@@ -4,7 +4,8 @@ import { ArrowLeftRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnatomicalArchViewer } from "../shared/anatomical-arch";
 import { ADMIN_THEME_EVENT } from "@/features/admin/lib/adminThemeEvent";
-import { EHR, type EhrCondition, UNIVERSAL_TO_FDI } from "./ehr.types";
+import { EHR, type EhrCondition } from "./ehr.types";
+import { resolveArchFocus } from "./resolveArchFocus";
 
 type Props = {
   conditions: EhrCondition[];
@@ -35,10 +36,8 @@ export function EhrArchStage({
   fill = false,
 }: Props) {
   const [highlight, setHighlight] = useState(readAdminPrimary);
-  const focusId = selectedToothId ?? active?.toothUniversal ?? null;
-  const selectedFdi =
-    active?.fdi ??
-    (focusId != null ? UNIVERSAL_TO_FDI[focusId] ?? null : null);
+  const focus = resolveArchFocus({ selectedToothId, condition: active });
+  const selectedFdi = focus.fdi;
   const markedFdis = [
     ...new Set(
       conditions
@@ -81,11 +80,7 @@ export function EhrArchStage({
           className="min-h-[16px] text-[11px] font-medium tabular-nums"
           style={{ color: EHR.ink }}
         >
-          {active?.fdi
-            ? `Tooth #${active.fdi}`
-            : focusId != null
-              ? `Tooth #${focusId}`
-              : "Select a tooth"}
+          {focus.fdi ? `Tooth #${focus.fdi}` : "Select a tooth"}
         </p>
         <button
           type="button"

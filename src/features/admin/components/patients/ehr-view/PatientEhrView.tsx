@@ -92,8 +92,8 @@ export function PatientEhrView(props: Props) {
               />
             </section>
             <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
-              {ledger}
               {detail}
+              {ledger}
             </div>
           </div>
         ) : (

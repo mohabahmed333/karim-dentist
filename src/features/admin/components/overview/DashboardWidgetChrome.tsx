@@ -71,7 +71,6 @@ export function DashboardWidgetChrome({
         {editing ? (
           <motion.div
             key="toolbar"
-            data-no-widget-drag
             variants={variants}
             initial="initial"
             animate="animate"
@@ -79,13 +78,25 @@ export function DashboardWidgetChrome({
             transition={transition}
             className="relative z-20 flex shrink-0 items-center gap-1 border-b border-[var(--admin-border)] bg-[var(--admin-panel)]/95 px-2 py-1 backdrop-blur-sm"
           >
-            <span className="rounded p-1 text-[var(--admin-muted)]" aria-hidden>
-              <GripVertical className="size-4" />
-            </span>
+            <div
+              draggable
+              data-dash-widget-drag-surface
+              aria-label={t("admin.overview.customize.dragHandle")}
+              className={cn(
+                "rounded p-1 text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]",
+                dragging ? "cursor-grabbing" : "cursor-grab",
+              )}
+              style={{ WebkitUserDrag: "element" } as CSSProperties}
+              onDragStart={(e) => onDragStart(placement.id, e)}
+              onDragEnd={onDragEnd}
+            >
+              <GripVertical className="size-4" aria-hidden />
+            </div>
             <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-[var(--admin-text)]">
               {t(meta.labelKey)}
             </span>
             <div
+              data-no-widget-drag
               role="group"
               aria-label={t("admin.overview.customize.size")}
               title={t("admin.overview.customize.sizeHint")}
@@ -119,6 +130,7 @@ export function DashboardWidgetChrome({
             </div>
             <button
               type="button"
+              data-no-widget-drag
               aria-label={t("admin.overview.customize.remove")}
               className="cursor-pointer rounded p-1 text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-red-600"
               onClick={() => onRemove(placement.id)}

@@ -14,7 +14,7 @@ import type {
   WhatsappNote,
 } from "@/services/whatsapp/types";
 import { sanitizeWhatsappBody } from "@/services/whatsapp/messageMedia";
-import { isWhatsappSessionOpen } from "@/services/whatsapp/sessionWindow";
+import { isWhatsappSessionOpen, latestInboundAt } from "@/services/whatsapp/sessionWindow";
 import type {
   SupportConversation,
   SupportDetails,
@@ -314,6 +314,12 @@ export function mapWhatsappToSupportUi(
     const name =
       patient?.displayName || c.contact_name?.trim() || c.phone_number;
     const patientKey = patient?.patientKey ?? c.patient_key ?? undefined;
+    const inboundAt = latestInboundAt(
+      c.last_inbound_at,
+      (messagesByConversation[c.id] ?? [])
+        .filter((m) => m.direction === "inbound")
+        .map((m) => m.wa_timestamp),
+    );
     return {
       id: c.id,
       name,
@@ -347,8 +353,8 @@ export function mapWhatsappToSupportUi(
       lastMessageType: c.last_message_type || undefined,
       lastMessageAt: c.last_message_at ?? undefined,
       lastMessageStatus: (c.last_message_status as SupportMessage["status"]) || undefined,
-      lastInboundAt: c.last_inbound_at,
-      sessionOpen: isWhatsappSessionOpen(c.last_inbound_at),
+      lastInboundAt: inboundAt,
+      sessionOpen: isWhatsappSessionOpen(inboundAt),
       timestamp: formatTime(c.last_message_at),
       status: c.status,
       tags: [

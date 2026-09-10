@@ -24,6 +24,10 @@ import type { Reservation } from "@/services/reservations/types";
 import { PatientEhrView } from "@/features/admin/components/patients/ehr-view/PatientEhrView";
 import { HomePatientClinicDrawerSkeleton } from "./HomePatientClinicDrawerSkeleton";
 import { ADMIN_THEME_EVENT } from "@/features/admin/lib/adminThemeEvent";
+import {
+  demoClinicalForPatient,
+  type AdminDemoClinical,
+} from "@/features/admin/lib/adminDemoClinical";
 import { useAdminDrawerSide } from "@/features/admin/hooks/useAdminDrawerSide";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +36,10 @@ type Props = {
   reservation: Reservation | null;
   reservations: Reservation[];
   onClose: () => void;
+  /** Showreel/offline: skip Supabase clinical loads and render empty EHR shell. */
+  skipRemoteLoad?: boolean;
+  /** Showreel: seed imaging/notes for the schedule patient with real fixtures. */
+  demoClinical?: AdminDemoClinical | null;
 };
 
 const ADMIN_VAR_KEYS = [
@@ -77,6 +85,8 @@ export function HomePatientClinicDrawer({
   reservation,
   reservations,
   onClose,
+  skipRemoteLoad = false,
+  demoClinical = null,
 }: Props) {
   const directory = useMemo(
     () => groupReservationsByPatient(reservations),
@@ -116,6 +126,14 @@ export function HomePatientClinicDrawer({
       return;
     }
     if (!patientKey) return;
+    if (skipRemoteLoad) {
+      const seeded = demoClinicalForPatient(demoClinical, patientKey);
+      setNotes(seeded?.notes ?? []);
+      setImaging(seeded?.imaging ?? []);
+      setTreatments(seeded?.treatments ?? []);
+      setLoadedKey(patientKey);
+      return;
+    }
     let alive = true;
     setNotes([]);
     setImaging([]);
@@ -144,7 +162,16 @@ export function HomePatientClinicDrawer({
     return () => {
       alive = false;
     };
-  }, [open, patientKey]);
+  }, [open, patientKey, skipRemoteLoad, demoClinical]);
+
+  useEffect(() => {
+    function onShowreelClose() {
+      onClose();
+    }
+    window.addEventListener("showreel-clinic-drawer-close", onShowreelClose);
+    return () =>
+      window.removeEventListener("showreel-clinic-drawer-close", onShowreelClose);
+  }, [onClose]);
 
   if (!mounted) return null;
 
@@ -155,6 +182,7 @@ export function HomePatientClinicDrawer({
           className={cn("fixed inset-0 flex", drawer.shellClass)}
           dir={drawer.shellDir}
           style={themeVars as CSSProperties}
+          data-showreel-action="clinic-drawer"
         >
           <motion.button
             type="button"
@@ -203,7 +231,11 @@ export function HomePatientClinicDrawer({
               <button
                 type="button"
                 aria-label="Close"
-                onClick={onClose}
+                data-showreel-action="clinic-drawer-close"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
                 className="shrink-0 rounded-md p-1.5 text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]"
               >
                 <X className="size-4" />

@@ -12,6 +12,7 @@ import type { PatientToothNote } from "@/services/patient_tooth_notes";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 import type { Service } from "@/services/services/types";
 import type { TreatmentAiDraft } from "@/services/ai_groq";
+import type { ProposalReviewState } from "@/features/admin/components/chat/ActionReviewCard";
 import type { usePatientTreatments } from "../usePatientTreatments";
 import type { PendingFile } from "../treatments/TreatmentEditorForm";
 import { AiTreatmentChatPanel } from "./AiTreatmentChatPanel";
@@ -51,6 +52,8 @@ type Props = {
     draft: TreatmentAiDraft,
     existingTreatmentId?: string | null,
   ) => void;
+  demoReview?: ProposalReviewState | null;
+  localOnly?: boolean;
 };
 
 export function WorkspaceTreatmentsPane({
@@ -64,6 +67,8 @@ export function WorkspaceTreatmentsPane({
   wizardLaunch,
   onWizardLaunchApplied,
   onApplyAiDraft,
+  demoReview = null,
+  localOnly = false,
 }: Props) {
   const { locale } = useLocale();
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -274,6 +279,8 @@ export function WorkspaceTreatmentsPane({
           toothFdi: row.toothFdi,
         }))}
         onApplyDraft={onApplyAiDraft}
+        demoReview={demoReview}
+        localOnly={localOnly}
         onCreateDraft={async (aiDraft, files: PendingFile[]) => {
           const match = findExistingTreatmentForDraft(
             chart.items,

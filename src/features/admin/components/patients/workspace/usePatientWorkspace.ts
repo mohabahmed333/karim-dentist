@@ -20,6 +20,7 @@ export function usePatientWorkspace(
   notes: PatientToothNote[],
   imaging: PatientImaging[],
   treatments: PatientTreatmentRow[],
+  forcedToothFdi: string | null = null,
 ) {
   const clinicalNotes = useClinicalNotes(group.patientKey);
   const session = useChartingSession(group.patientKey);
@@ -28,11 +29,15 @@ export function usePatientWorkspace(
     toothFromUrl && fdiSet(session.dentition).includes(toothFromUrl)
       ? toothFromUrl
       : null;
+  const seedTooth =
+    forcedToothFdi && fdiSet(session.dentition).includes(forcedToothFdi)
+      ? forcedToothFdi
+      : urlTooth;
 
   const notesChart = usePatientToothNotes(
     group.patientKey,
     notes,
-    urlTooth,
+    seedTooth,
   );
   const imagingChart = usePatientImaging(group.patientKey, imaging);
   const treatmentsChart = usePatientTreatments(
@@ -44,24 +49,43 @@ export function usePatientWorkspace(
   const [chartStyle, setChartStyle] = useState<TeethChartStyle>("anatomic");
 
   useEffect(() => {
+    if (forcedToothFdi) {
+      if (notesChart.selectedFdi !== forcedToothFdi) {
+        notesChart.selectTooth(forcedToothFdi);
+      }
+      return;
+    }
     if (urlTooth) {
       if (notesChart.selectedFdi !== urlTooth) notesChart.selectTooth(urlTooth);
       return;
     }
     if (notesChart.selectedFdi) notesChart.deselectTooth();
-    // Hydrate / clear from URL only — do not depend on selectedFdi (avoids race with replace).
+    // Hydrate / clear from URL / forced tooth only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlTooth]);
+  }, [urlTooth, forcedToothFdi]);
 
   function selectTooth(fdi: string) {
     notesChart.selectTooth(fdi);
-    setToothInUrl(fdi);
+    if (!forcedToothFdi) setToothInUrl(fdi);
   }
 
   function deselectTooth() {
     notesChart.deselectTooth();
-    setToothInUrl(null);
+    if (!forcedToothFdi) setToothInUrl(null);
   }
+
+  useEffect(() => {
+    function onClinical(event: Event) {
+      const detail = (
+        event as CustomEvent<{ type?: string; fdi?: string }>
+      ).detail;
+      if (detail?.type !== "select-tooth" || !detail.fdi) return;
+      if (!fdiSet(session.dentition).includes(detail.fdi)) return;
+      notesChart.selectTooth(detail.fdi);
+    }
+    window.addEventListener("showreel-clinical", onClinical);
+    return () => window.removeEventListener("showreel-clinical", onClinical);
+  }, [notesChart, session.dentition]);
 
   const selected = notesChart.selectedFdi;
   const selectedFdi =

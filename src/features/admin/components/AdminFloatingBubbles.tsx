@@ -1,6 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  cloneElement,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MessagesSquare } from "lucide-react";
 import { useTranslations } from "@/lib/i18n";
@@ -20,6 +30,10 @@ import {
   dockTabVariants,
 } from "./dockTabMotion";
 import type { AdminChatLayout } from "@/features/admin/hooks/useAdminChatLayout";
+import { ChatUnreadBadge } from "./ChatUnreadBadge";
+import { formatUnreadBadge } from "@/features/admin/lib/whatsappInboundAlert";
+import { dispatchCloseCommandPalette } from "@/features/admin/lib/adminShellEvents";
+import type { AdminDemoInbox } from "@/features/admin/lib/adminDemoInbox";
 
 type Props = {
   chatOpen: boolean;
@@ -33,6 +47,9 @@ type Props = {
   onToggleLayout: () => void;
   onCollapseDock: () => void;
   onExpandDock: () => void;
+  demoInbox?: AdminDemoInbox | null;
+  /** Showreel: replace Clinic Assist body (keeps float/dock chrome). */
+  demoAssistPanel?: ReactNode | null;
 };
 
 const DOCK_WIDTH = 420;
@@ -90,6 +107,8 @@ export function AdminFloatingBubbles({
   onToggleLayout,
   onCollapseDock,
   onExpandDock,
+  demoInbox = null,
+  demoAssistPanel = null,
 }: Props) {
   const t = useTranslations();
   const reduced = useReducedMotion();
@@ -102,6 +121,8 @@ export function AdminFloatingBubbles({
   const [dockTab, setDockTab] = useState<DockChatTab>("whatsapp");
   const [tabDir, setTabDir] = useState(1);
   const [tabLoading, setTabLoading] = useState(false);
+  const [unreadTotal, setUnreadTotal] = useState(0);
+  const unreadLabel = formatUnreadBadge(unreadTotal);
   const menuRef = useRef<HTMLDivElement>(null);
   const docked = layout === "dock";
   const useSideDock = docked && isLg;
@@ -181,6 +202,7 @@ export function AdminFloatingBubbles({
   }
 
   function openDockFromRail() {
+    dispatchCloseCommandPalette();
     const tab = readStoredTab();
     setTabDir(tab === "assist" ? 1 : -1);
     setTabLoading(true);
@@ -197,6 +219,42 @@ export function AdminFloatingBubbles({
     onCollapseDock: docked ? onCollapseDock : undefined,
   };
 
+  function renderAssistPanel(onClose: () => void) {
+    if (!demoAssistPanel) {
+      return (
+        <ReceptionChat
+          className="h-full min-h-0"
+          statsSummary={t("admin.chat.title")}
+          onClose={onClose}
+          {...layoutProps}
+        />
+      );
+    }
+    if (isValidElement(demoAssistPanel)) {
+      return cloneElement(
+        demoAssistPanel as ReactElement<Record<string, unknown>>,
+        {
+          chatLayout: layout,
+          onToggleChatLayout: onToggleLayout,
+          onCollapseDock: docked ? onCollapseDock : undefined,
+          onClose,
+        },
+      );
+    }
+    return demoAssistPanel;
+  }
+
+  const inboxDemoProps = demoInbox
+    ? {
+        useKapso: false as const,
+        conversations: demoInbox.conversations,
+        detailsById: demoInbox.detailsById,
+        messagesById: demoInbox.messagesById,
+        openCount: demoInbox.openCount ?? demoInbox.conversations.length,
+        forcedSelectedId: demoInbox.forcedSelectedId,
+      }
+    : { useKapso: true as const };
+
   function renderFab() {
     return (
       <div ref={menuRef} className="pointer-events-auto relative">
@@ -211,12 +269,21 @@ export function AdminFloatingBubbles({
           type="button"
           aria-expanded={menuOpen}
           aria-haspopup="menu"
-          aria-label={t("admin.bubbles.open")}
-          onClick={() => setMenuOpen((v) => !v)}
-          className="flex size-12 items-center justify-center rounded-full text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition-transform hover:scale-105 sm:size-14"
+          data-showreel-action="chat-fab"
+          aria-label={
+            unreadLabel
+              ? `${t("admin.bubbles.open")}, ${unreadLabel} ${t("admin.bubbles.unread")}`
+              : t("admin.bubbles.open")
+          }
+          onClick={() => {
+            dispatchCloseCommandPalette();
+            setMenuOpen((v) => !v);
+          }}
+          className="relative flex size-12 items-center justify-center rounded-full text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition-transform hover:scale-105 sm:size-14"
           style={{ background: "var(--admin-primary)" }}
         >
           <MessagesSquare className="size-5 sm:size-6" />
+          <ChatUnreadBadge label={unreadLabel} />
         </button>
       </div>
     );
@@ -226,19 +293,21 @@ export function AdminFloatingBubbles({
   if (useSideDock) {
     return (
       <>
-        <AnimatePresence initial={false}>
-          {showDockColumn ? (
-            <motion.aside
-              key="admin-chat-dock"
-              className="relative h-screen shrink-0"
-              initial={reduced ? false : { width: 0, opacity: 0 }}
-              animate={{ width: DOCK_WIDTH, opacity: 1 }}
-              exit={reduced ? undefined : { width: 0, opacity: 0 }}
-              transition={{
-                duration: reduced ? 0.01 : 0.28,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-            >
+        <motion.aside
+          className="relative h-screen shrink-0 overflow-hidden"
+          initial={false}
+          animate={{
+            width: showDockColumn ? DOCK_WIDTH : 0,
+            opacity: showDockColumn ? 1 : 0,
+          }}
+          transition={{
+            duration: reduced ? 0.01 : 0.28,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          aria-hidden={!showDockColumn}
+          inert={!showDockColumn}
+          style={{ pointerEvents: showDockColumn ? "auto" : "none" }}
+        >
               <div className={cn(dockPanelClass, "bg-[var(--admin-panel)]")}>
                 <AdminChatDockTabs
                   tab={dockTab}
@@ -265,11 +334,15 @@ export function AdminFloatingBubbles({
                     aria-hidden={dockTab !== "whatsapp" || tabLoading}
                   >
                     <SupportInboxView
-                      useKapso
+                      {...inboxDemoProps}
                       compact
                       showClinicAssist={false}
                       onClose={onCollapseDock}
                       agentName={t("admin.frontDesk.agentName")}
+                      panelVisible={
+                        showDockColumn && dockTab === "whatsapp"
+                      }
+                      onUnreadTotal={setUnreadTotal}
                     />
                   </motion.div>
                   <motion.div
@@ -287,11 +360,7 @@ export function AdminFloatingBubbles({
                     }}
                     aria-hidden={dockTab !== "assist" || tabLoading}
                   >
-                    <ReceptionChat
-                      className="h-full min-h-0"
-                      statsSummary={t("admin.chat.title")}
-                      onClose={onCollapseDock}
-                    />
+                    {renderAssistPanel(onCollapseDock)}
                   </motion.div>
                   <AnimatePresence initial={false} custom={tabDir}>
                     {tabLoading ? (
@@ -311,14 +380,13 @@ export function AdminFloatingBubbles({
                   </AnimatePresence>
                 </div>
               </div>
-            </motion.aside>
-          ) : null}
-        </AnimatePresence>
+        </motion.aside>
 
         {showDockRail ? (
-          <div className="relative h-screen shrink-0">
+          <div className="relative z-[100] h-screen shrink-0">
             <AdminChatDockRail
               label={t("admin.bubbles.dockLabel")}
+              unreadLabel={unreadLabel}
               onActivate={openDockFromRail}
             />
           </div>
@@ -329,7 +397,7 @@ export function AdminFloatingBubbles({
 
   // Float (or dock preference on small screens).
   return (
-    <div className="pointer-events-none fixed inset-x-2 bottom-2 z-[70] flex flex-col items-end gap-3 sm:inset-x-auto sm:end-4 sm:bottom-4 md:end-6 md:bottom-6">
+    <div className="pointer-events-none fixed inset-x-2 bottom-2 z-[100] flex flex-col items-end gap-3 sm:inset-x-auto sm:end-4 sm:bottom-4 md:end-6 md:bottom-6">
       <div
         className={cn(
           floatPanelClass,
@@ -337,13 +405,22 @@ export function AdminFloatingBubbles({
           !whatsappOpen && "hidden",
         )}
         aria-hidden={!whatsappOpen}
+        inert={!whatsappOpen}
+        data-showreel-action="whatsapp-panel"
       >
         <SupportInboxView
-          useKapso
+          key={
+            demoInbox?.forcedSelectedId
+              ? `demo-${demoInbox.forcedSelectedId}`
+              : "live-whatsapp"
+          }
+          {...inboxDemoProps}
           compact
           showClinicAssist={false}
           onClose={onWhatsappClose}
           agentName={t("admin.frontDesk.agentName")}
+          panelVisible={whatsappOpen}
+          onUnreadTotal={setUnreadTotal}
           {...layoutProps}
         />
       </div>
@@ -354,13 +431,9 @@ export function AdminFloatingBubbles({
           !chatOpen && "hidden",
         )}
         aria-hidden={!chatOpen}
+        data-showreel-action="assist-panel"
       >
-        <ReceptionChat
-          className="h-full min-h-0"
-          statsSummary={t("admin.chat.title")}
-          onClose={onChatClose}
-          {...layoutProps}
-        />
+        {renderAssistPanel(onChatClose)}
       </div>
       {renderFab()}
     </div>

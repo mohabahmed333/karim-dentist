@@ -16,6 +16,9 @@ type Props = {
   onAddFiles?: (list: FileList | null) => void;
   onOpenLibrary?: () => void;
   topSlot?: ReactNode;
+  showreelInputAction?: string;
+  showreelAttachAction?: string;
+  showreelSendAction?: string;
 };
 
 /** Shared bottom composer bar — treatment chat + clinic AI. */
@@ -30,6 +33,9 @@ export function ChatComposerBar({
   onAddFiles,
   onOpenLibrary,
   topSlot,
+  showreelInputAction,
+  showreelAttachAction,
+  showreelSendAction,
 }: Props) {
   const t = useTranslations();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -53,6 +59,7 @@ export function ChatComposerBar({
           <button
             type="button"
             aria-label={t("admin.chat.attach")}
+            data-showreel-action={showreelAttachAction}
             onClick={() => fileRef.current?.click()}
             className="flex w-11 shrink-0 items-center justify-center border-e border-[#E8EAED] text-[#70758A] hover:bg-[#F3F4F6] sm:w-12"
           >
@@ -72,6 +79,7 @@ export function ChatComposerBar({
         <input
           value={value}
           disabled={pending}
+          data-showreel-action={showreelInputAction}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
@@ -85,6 +93,7 @@ export function ChatComposerBar({
         <button
           type="button"
           disabled={disabled}
+          data-showreel-action={showreelSendAction}
           onClick={onSend}
           aria-label={t("admin.chat.send")}
           className="flex w-11 shrink-0 items-center justify-center border-s border-[#E8EAED] text-[#70758A] hover:bg-[#F3F4F6] disabled:opacity-40 sm:w-12"

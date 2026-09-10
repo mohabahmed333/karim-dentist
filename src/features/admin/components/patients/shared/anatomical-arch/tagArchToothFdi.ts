@@ -1,7 +1,18 @@
 import * as THREE from "three";
 import { fdiForUniversalAdult } from "@/services/notation";
 import { assignArchUniversals } from "./assignArchUniversals";
-import { isArchTissueMesh } from "./applyArchClinicalMaterials";
+import { isArchTissueMesh, materialName } from "./applyArchClinicalMaterials";
+
+/**
+ * This GLB's non-tissue meshes don't separate upper/lower by y at all (every
+ * tooth sits in the same narrow y band) — but every mesh belonging to the
+ * mandible is named/materialed with "Mandible", consistently, on both sides
+ * of the arch. Use that instead of geometry for this asset.
+ */
+function isArchMandibleMesh(mesh: THREE.Mesh): boolean {
+  const key = `${mesh.name} ${materialName(mesh)}`.toLowerCase();
+  return key.includes("mandible");
+}
 
 /** Stamp each tooth mesh with a unique FDI from arch order (not raw x bins). */
 export function tagArchToothFdi(root: THREE.Object3D): void {
@@ -13,6 +24,7 @@ export function tagArchToothFdi(root: THREE.Object3D): void {
     x: number;
     y: number;
     z: number;
+    arch: "upper" | "lower";
   }[] = [];
 
   root.traverse((child) => {
@@ -27,11 +39,12 @@ export function tagArchToothFdi(root: THREE.Object3D): void {
     mesh.userData.archTissue = false;
     new THREE.Box3().setFromObject(mesh).getCenter(center);
     const id = mesh.uuid;
-    teeth.push({ mesh, id, x: center.x, y: center.y, z: center.z });
+    const arch = isArchMandibleMesh(mesh) ? "lower" : "upper";
+    teeth.push({ mesh, id, x: center.x, y: center.y, z: center.z, arch });
   });
 
   const assigned = assignArchUniversals(
-    teeth.map(({ id, x, y, z }) => ({ id, x, y, z })),
+    teeth.map(({ id, x, y, z, arch }) => ({ id, x, y, z, arch })),
   );
 
   for (const tooth of teeth) {

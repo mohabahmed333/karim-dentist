@@ -24,6 +24,7 @@ export type DashboardWidgetHostProps = {
   stats: ReservationStats;
   conversations: WhatsappConversation[];
   onPatientSelect: (reservation: Reservation) => void;
+  conversationsLive?: boolean;
   className?: string;
 };
 

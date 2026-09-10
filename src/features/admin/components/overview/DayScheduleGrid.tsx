@@ -107,6 +107,8 @@ export function DayScheduleGrid({
                   key={reservation.id}
                   type="button"
                   variants={cardVariants}
+                  data-showreel-action="schedule-appointment"
+                  data-reservation-id={reservation.id}
                   onClick={() => onPatientSelect?.(reservation)}
                   title={`${reservation.patient_name} · ${reservation.service_label}`}
                   className="absolute flex flex-col justify-center overflow-hidden rounded-lg border px-2.5 py-1.5 text-start hover:opacity-90"

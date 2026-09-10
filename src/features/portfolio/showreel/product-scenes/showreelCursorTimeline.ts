@@ -219,7 +219,7 @@ export const SHOWREEL_SMART_UX_CURSOR_STEPS: ShowreelCursorStep[] = [
   },
   {
     id: "fill-reservation-name",
-    at: 9000,
+    at: 8100,
     selector: '[data-showreel-action="reservation-patient-name"]',
     click: true,
     dispatch: {
@@ -229,7 +229,7 @@ export const SHOWREEL_SMART_UX_CURSOR_STEPS: ShowreelCursorStep[] = [
   },
   {
     id: "fill-reservation-phone",
-    at: 10200,
+    at: 9100,
     selector: '[data-showreel-action="reservation-phone"]',
     click: true,
     dispatch: {
@@ -239,14 +239,14 @@ export const SHOWREEL_SMART_UX_CURSOR_STEPS: ShowreelCursorStep[] = [
   },
   {
     id: "create-reservation",
-    at: 11800,
+    at: 10300,
     selector: '[data-showreel-action="reservation-create"]',
     click: true,
     beat: "Create it — done",
   },
   {
     id: "hold-created",
-    at: 13500,
+    at: 11800,
     selector: '[data-showreel-action="demo-page-reservations"]',
   },
 ];

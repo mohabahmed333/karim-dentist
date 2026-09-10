@@ -31,7 +31,10 @@ export function useToothSurfaces(patientKey: string, dentition: Dentition) {
   useEffect(() => {
     void listToothSurfaces(patientKey)
       .then(setRows)
-      .catch(() => toast.error("Failed to load chart"));
+      .catch(() => {
+        if (document.documentElement.dataset.showreelDemo === "1") return;
+        toast.error("Failed to load chart");
+      });
   }, [patientKey]);
 
   const byFdi = useMemo(() => {

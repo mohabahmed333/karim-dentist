@@ -11,11 +11,21 @@ import {
   PanelRight,
   Search,
   Sparkles,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useQuickBook } from "@/features/admin/components/quick-book/QuickBookContext";
 import { useTranslations } from "@/lib/i18n";
+import {
+  SHOWREEL_WHATSAPP_EVENT,
+  type ShowreelWhatsappDetail,
+} from "@/features/portfolio/showreel/product-scenes/showreelAdminEvents";
+import {
+  SHOWREEL_BOOK_CONFIRM_TEXT,
+  ShowreelWhatsappBookCard,
+} from "@/features/portfolio/showreel/product-scenes/ShowreelWhatsappBookCard";
+import { isWhatsappSessionOpen, latestInboundAt } from "@/services/whatsapp/sessionWindow";
 import { SupportAvatar } from "./SupportAvatar";
 import { ChatComposer } from "./chat/ChatComposer";
 import { ChatGalleryProvider } from "./chat/ChatGalleryContext";
@@ -59,6 +69,8 @@ type Props = {
   showWorkspace?: boolean;
   /** Messenger-style back to conversation list. */
   onBack?: () => void;
+  /** Close floating WhatsApp bubble (compact panel). */
+  onClose?: () => void;
 };
 
 export function SupportChatColumn({
@@ -81,17 +93,27 @@ export function SupportChatColumn({
   onAskAi,
   showWorkspace = true,
   onBack,
+  onClose,
 }: Props) {
   const t = useTranslations();
   const { openQuickBook } = useQuickBook();
   const archived = conversation.status === "archived";
   const allowMessageSearch = !onBack;
   const [searchOpen, setSearchOpen] = useState(false);
+  const [demoBookOpen, setDemoBookOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const galleryImages = useMemo(
     () => collectConversationMedia(messages).images,
     [messages],
+  );
+  const sessionOpen = isWhatsappSessionOpen(
+    latestInboundAt(
+      conversation.lastInboundAt,
+      messages
+        .filter((m) => m.author === "customer")
+        .map((m) => m.waTimestamp),
+    ),
   );
   const { listRef } = useChatScroll(messages.length, {
     loadingMore: Boolean(loadingMore),
@@ -129,6 +151,10 @@ export function SupportChatColumn({
   }, [listRef]);
 
   function openAppointmentForClient() {
+    if (document.documentElement.dataset.showreelDemo === "1") {
+      setDemoBookOpen(true);
+      return;
+    }
     toast.message(t("admin.frontDesk.newAppointment"), {
       description: t("admin.frontDesk.waConfirmHint"),
     });
@@ -139,6 +165,71 @@ export function SupportChatColumn({
       patientKey: conversation.patientKey,
     });
   }
+
+  function confirmDemoBook() {
+    if (!demoBookOpen) return;
+    setDemoBookOpen(false);
+    onSend({ kind: "text", text: SHOWREEL_BOOK_CONFIRM_TEXT });
+    toast.success("Reservation created");
+  }
+
+  useEffect(() => {
+    function onShowreel(event: Event) {
+      const detail = (event as CustomEvent<ShowreelWhatsappDetail>).detail;
+      if (!detail) return;
+      if (detail.type === "book") {
+        if (document.documentElement.dataset.showreelDemo === "1") {
+          setDemoBookOpen(true);
+          return;
+        }
+        toast.message(t("admin.frontDesk.newAppointment"), {
+          description: t("admin.frontDesk.waConfirmHint"),
+        });
+        openQuickBook({
+          waConversationId: conversation.id,
+          name: conversation.name,
+          phone: conversation.phone,
+          patientKey: conversation.patientKey,
+        });
+      }
+      if (detail.type === "confirm-book") {
+        confirmDemoBook();
+      }
+      if (detail.type === "ask-ai") onAskAi?.();
+      if (detail.type === "workspace") {
+        const href = conversation.workspaceHref;
+        if (!href) return;
+        if (document.documentElement.dataset.showreelDemo === "1") {
+          window.dispatchEvent(
+            new CustomEvent("showreel-navigate", {
+              detail: {
+                href,
+                title: conversation.name,
+                id: conversation.id,
+                kind: "workspace",
+              },
+            }),
+          );
+          return;
+        }
+        window.location.assign(href);
+      }
+    }
+    window.addEventListener(SHOWREEL_WHATSAPP_EVENT, onShowreel);
+    return () =>
+      window.removeEventListener(SHOWREEL_WHATSAPP_EVENT, onShowreel);
+  }, [
+    conversation.id,
+    conversation.name,
+    conversation.phone,
+    conversation.patientKey,
+    conversation.workspaceHref,
+    demoBookOpen,
+    onAskAi,
+    onSend,
+    openQuickBook,
+    t,
+  ]);
 
   return (
     <ChatGalleryProvider images={galleryImages}>
@@ -193,6 +284,7 @@ export function SupportChatColumn({
             <button
               type="button"
               onClick={onAskAi}
+              data-showreel-action="whatsapp-ask-ai"
               className="inline-flex items-center gap-1.5 rounded-md bg-[var(--admin-primary)]/10 px-2.5 py-1.5 text-xs font-semibold text-[var(--admin-primary)] hover:bg-[var(--admin-primary)]/15"
               aria-label={t("admin.frontDesk.askAi")}
               title={t("admin.frontDesk.askAiTitle")}
@@ -204,6 +296,7 @@ export function SupportChatColumn({
           <button
             type="button"
             onClick={openAppointmentForClient}
+            data-showreel-action="whatsapp-book"
             className="rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6]"
             aria-label={t("admin.frontDesk.book")}
             title={t("admin.frontDesk.bookTitle")}
@@ -255,11 +348,34 @@ export function SupportChatColumn({
           {showWorkspace && conversation.workspaceHref ? (
             <Link
               href={conversation.workspaceHref}
+              data-showreel-action="whatsapp-workspace"
+              onClick={(event) => {
+                if (document.documentElement.dataset.showreelDemo !== "1") {
+                  return;
+                }
+                event.preventDefault();
+                window.dispatchEvent(
+                  new CustomEvent(SHOWREEL_WHATSAPP_EVENT, {
+                    detail: { type: "workspace" } satisfies ShowreelWhatsappDetail,
+                  }),
+                );
+              }}
               className="ml-2 inline-flex items-center gap-1.5 rounded-md bg-[#111827] px-3 py-1.5 text-xs font-semibold text-white"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               {t("admin.frontDesk.workspace")}
             </Link>
+          ) : null}
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              data-showreel-action="chat-close"
+              className="rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6]"
+              aria-label={t("admin.frontDesk.closeBubble")}
+            >
+              <X className="h-4 w-4" />
+            </button>
           ) : null}
         </div>
       </header>
@@ -298,23 +414,31 @@ export function SupportChatColumn({
         ))}
       </div>
 
-      {conversation.sessionOpen === false && onSendTemplate ? (
+      {sessionOpen === false && onSendTemplate ? (
         <SessionExpiredTemplatePanel
           conversationId={conversation.id}
           sending={sending}
           onSendTemplate={onSendTemplate}
         />
       ) : (
-        <ChatComposer
-          draft={draft}
-          onDraftChange={onDraftChange}
-          onSend={onSend}
-          disabled={sending}
-          replyTo={replyTo}
-          onClearReply={onClearReply}
-          conversationId={conversation.id}
-          onSendTemplate={onSendTemplate}
-        />
+        <>
+          {demoBookOpen ? (
+            <ShowreelWhatsappBookCard
+              onConfirm={confirmDemoBook}
+              onCancel={() => setDemoBookOpen(false)}
+            />
+          ) : null}
+          <ChatComposer
+            draft={draft}
+            onDraftChange={onDraftChange}
+            onSend={onSend}
+            disabled={sending}
+            replyTo={replyTo}
+            onClearReply={onClearReply}
+            conversationId={conversation.id}
+            onSendTemplate={onSendTemplate}
+          />
+        </>
       )}
     </section>
     </ChatGalleryProvider>

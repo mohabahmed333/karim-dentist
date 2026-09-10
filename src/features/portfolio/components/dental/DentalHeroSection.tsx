@@ -3,7 +3,12 @@
 import type { Tables } from "@/lib/supabase/database.types";
 import { resolveDentalHeroCopy } from "@/features/portfolio/lib/dentalThemeCopy";
 import { splitHeroAccent } from "@/features/portfolio/lib/splitHeroAccent";
-import { dentalFullBleed } from "@/features/portfolio/lib/dentalLayout";
+import {
+  dentalHeroCopyColumnClass,
+  dentalHeroGridClass,
+  dentalHeroSectionClass,
+  dentalHeroTopbarClass,
+} from "@/features/portfolio/lib/dentalHeroLayout";
 import { mediaSrc } from "@/features/portfolio/lib/mediaSrc";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { Brand } from "./Brand";
@@ -60,21 +65,13 @@ export function DentalHeroSection({
 
   return (
     <section
-      className={cn("bg-white", dentalFullBleed, "py-[var(--page-gutter)]")}
+      className={dentalHeroSectionClass}
       id="home"
       data-customize-section="hero"
     >
-      <div
-        className={cn(
-          "grid w-full grid-cols-1 items-stretch gap-6 lg:[min-height:min(860px,calc(100vh-2.5rem))]",
-          image ? "lg:grid-cols-2" : null,
-        )}
-      >
-        <div className="flex min-h-0 flex-col px-5 pb-6 pt-3 sm:px-6 lg:pe-6 lg:ps-5">
-          <div
-            data-hero-topbar
-            className="mb-10 flex items-center justify-between gap-4"
-          >
+      <div className={cn(dentalHeroGridClass, image && "lg:grid-cols-2")}>
+        <div className={dentalHeroCopyColumnClass}>
+          <div data-hero-topbar className={dentalHeroTopbarClass}>
             <Brand
               name={brand}
               logoUrl={brandLogo}

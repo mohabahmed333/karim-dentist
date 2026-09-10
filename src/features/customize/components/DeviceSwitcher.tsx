@@ -24,6 +24,7 @@ export function DeviceSwitcher({ value, onChange }: Props) {
             aria-pressed={active}
             title={device.label}
             onClick={() => onChange(device.id)}
+            data-showreel-action={`customize-device-${device.id}`}
             className={
               active
                 ? "inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-white px-3.5 text-[12px] font-medium text-[#1a1a1a] shadow-[0_1px_2px_rgba(0,0,0,0.06)]"

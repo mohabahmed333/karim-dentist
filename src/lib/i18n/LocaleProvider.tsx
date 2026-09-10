@@ -13,6 +13,7 @@ import { en, type MessageKey } from "./messages/en";
 import { adminAr } from "./messages/admin/ar";
 import { adminEn, type AdminMessageKey } from "./messages/admin/en";
 import {
+  isShowreelDemoLocaleLock,
   localeDir,
   parseLocale,
   persistLocale,
@@ -48,6 +49,10 @@ export function LocaleProvider({
 
   // Migrate older localStorage-only preference into cookie + state once.
   useEffect(() => {
+    if (isShowreelDemoLocaleLock()) {
+      setLocaleState("en");
+      return;
+    }
     try {
       const stored = parseLocale(localStorage.getItem(LOCALE_STORAGE_KEY));
       if (stored && stored !== initialLocale) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   buildStartsAt,
@@ -36,6 +36,7 @@ export type ReservationFilter = "upcoming" | "today" | "pending" | "all";
 
 export function useReservationEditor(initial: Reservation[]) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [items, setItems] = useState(initial);
   const [filter, setFilter] = useState<ReservationFilter>("upcoming");
@@ -53,7 +54,10 @@ export function useReservationEditor(initial: Reservation[]) {
       else params.set(key, value);
     }
     const qs = params.toString();
-    return qs ? `/admin/reservations?${qs}` : "/admin/reservations";
+    // Not hardcoded to /admin/reservations: this hook is also reused inside
+    // the showreel's reservations demo (a different route), and a hardcoded
+    // path would navigate that demo away to the real admin page.
+    return qs ? `${pathname}?${qs}` : pathname;
   }
 
   useEffect(() => {
@@ -201,6 +205,38 @@ export function useReservationEditor(initial: Reservation[]) {
   }
 
   async function saveReservation(): Promise<boolean> {
+    // Showreel first — the demo's date/time never went through a real slot
+    // fetch, so schema validation would fail, and a scripted click must
+    // never reach the real create/update mutation below.
+    if (
+      selectedId === "new" &&
+      typeof document !== "undefined" &&
+      document.documentElement.dataset.showreelDemo === "1"
+    ) {
+      const now = new Date().toISOString();
+      const startsAt = form.date
+        ? new Date(`${form.date}T${form.time || "10:00"}:00`).toISOString()
+        : now;
+      const row: Reservation = {
+        id: crypto.randomUUID(),
+        patient_name: form.patient_name || "New patient",
+        phone: form.phone,
+        email: form.email || null,
+        service_id: form.service_id ?? null,
+        service_label: form.service_label || "General consultation",
+        starts_at: startsAt,
+        notes: form.notes ?? "",
+        status: "pending",
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      };
+      upsertItem(row);
+      toast.success("Reservation created");
+      closeDialog({ keepDate: form.date });
+      return true;
+    }
+
     const parsed = reservationFormSchema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Invalid form");

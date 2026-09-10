@@ -45,6 +45,8 @@ export function OdontogramTooth({
       tabIndex={0}
       aria-pressed={state !== "unmarked"}
       aria-label={`Tooth ${position.fdi}`}
+      data-showreel-action="odontogram-tooth"
+      data-fdi={position.fdi}
       className="cursor-pointer outline-none"
       transform={`translate(${position.x} ${position.y}) rotate(${position.rotate}) scale(${scale})`}
       onClick={() => onSelect(position.fdi)}

@@ -5,9 +5,12 @@ import type { WhatsappConversation } from "@/services/whatsapp/types";
 import { DASHBOARD_LIST_LIMIT, relativeTimeLabel } from "@/features/admin/lib/dashboardModel";
 import { useTranslations } from "@/lib/i18n";
 import { dispatchOpenWhatsapp } from "@/features/admin/lib/adminShellEvents";
+import { useWhatsappConversationsLive } from "@/features/admin/hooks/useWhatsappConversationsLive";
 
 type Props = {
   conversations: WhatsappConversation[];
+  /** When false, keep fixture rows only (showreel / offline demos). */
+  live?: boolean;
 };
 
 function displayName(row: WhatsappConversation): string {
@@ -16,8 +19,12 @@ function displayName(row: WhatsappConversation): string {
   return row.phone_number || "—";
 }
 
-export function DashboardMessagesPanel({ conversations }: Props) {
+export function DashboardMessagesPanel({
+  conversations: initial,
+  live = true,
+}: Props) {
   const t = useTranslations();
+  const conversations = useWhatsappConversationsLive(initial, live);
   const rows = conversations.slice(0, DASHBOARD_LIST_LIMIT);
   const unreadTotal = rows.reduce((sum, row) => sum + (row.unread_count ?? 0), 0);
 
@@ -36,6 +43,7 @@ export function DashboardMessagesPanel({ conversations }: Props) {
         </div>
         <Link
           href="/admin/support"
+          data-showreel-action="open-front-desk"
           className="shrink-0 text-xs font-medium text-[var(--admin-primary)] hover:underline"
           onClick={() => dispatchOpenWhatsapp()}
         >

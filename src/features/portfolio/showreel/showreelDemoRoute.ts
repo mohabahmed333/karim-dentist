@@ -1,5 +1,8 @@
 import type { CustomizeRoute } from "@/features/customize/context/CustomizeRouteContext";
-import { isCustomizeSection } from "@/features/customize";
+// From types.ts, not the feature barrel — the barrel drags the whole
+// customize editor into every /showreel/demo iframe that only needs this
+// one predicate.
+import { isCustomizeSection } from "@/features/customize/types";
 import type { PortfolioData } from "@/services/portfolio";
 import type { ShowreelCustomizeRouteParams } from "./showreelEmbedMessage";
 import {

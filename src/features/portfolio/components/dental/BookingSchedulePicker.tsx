@@ -73,6 +73,7 @@ export function BookingSchedulePicker({
                   role="option"
                   aria-selected={selected}
                   aria-disabled={full}
+                  data-showreel-action="booking-date"
                   title={full ? labels.full : date.label}
                   onClick={() => {
                     if (!full) onSelectDate(date.value);
@@ -137,6 +138,7 @@ export function BookingSchedulePicker({
                   aria-checked={selected}
                   aria-disabled={taken}
                   disabled={taken}
+                  data-showreel-action="booking-slot"
                   onClick={() => {
                     if (!taken) onSelectSlot(slot.id);
                   }}

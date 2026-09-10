@@ -486,6 +486,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.overview.customize.catalogEmpty": "كل الودجت موجودة على اللوحة.",
   "admin.overview.customize.drag":
     "اسحب أي بطاقة بمفردها: أعلى/أسفل = تحت بعض، يمين/يسار = جنباً إلى جنب",
+  "admin.overview.customize.dragHandle": "اسحب لنقل الودجت",
   "admin.overview.customize.cardEmpty": "لا يوجد ما يُعرض بعد",
   "admin.overview.customize.size": "عرض الودجت",
   "admin.overview.customize.sizeHint":

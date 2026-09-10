@@ -40,6 +40,7 @@ import { HomePatientClinicDrawer } from "./HomePatientClinicDrawer";
 import { DashboardDropPlaceholder } from "./DashboardDropPlaceholder";
 import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
 import { DashboardWidgetHost } from "./DashboardWidgetHost";
+import type { AdminDemoClinical } from "@/features/admin/lib/adminDemoClinical";
 
 type Props = {
   email: string | null;
@@ -54,6 +55,10 @@ type Props = {
   conversations: WhatsappConversation[];
   settings: SiteSettings | null;
   initialLayout: DashboardLayout;
+  /** Showreel/offline: fixture inbox rows + skip clinical fetches. */
+  demoMode?: boolean;
+  /** Showreel: clinical imaging/notes for Day Schedule drawer. */
+  demoClinical?: AdminDemoClinical | null;
 };
 
 export function ClinicDashboard({
@@ -69,6 +74,8 @@ export function ClinicDashboard({
   conversations,
   settings,
   initialLayout,
+  demoMode = false,
+  demoClinical = null,
 }: Props) {
   const [clinicReservation, setClinicReservation] =
     useState<Reservation | null>(null);
@@ -93,6 +100,7 @@ export function ClinicDashboard({
     stats,
     conversations,
     onPatientSelect: setClinicReservation,
+    conversationsLive: !demoMode,
   };
 
   return (
@@ -282,6 +290,8 @@ export function ClinicDashboard({
         reservation={clinicReservation}
         reservations={reservations}
         onClose={() => setClinicReservation(null)}
+        skipRemoteLoad={demoMode}
+        demoClinical={demoMode ? demoClinical : null}
       />
     </>
   );

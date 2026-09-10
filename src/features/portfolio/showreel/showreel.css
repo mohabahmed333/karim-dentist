@@ -7,6 +7,13 @@ body:has(.showreel-page) {
 }
 
 .showreel-page {
+  /* The header band: the fixed brand lockup and the slide title both hang
+     off these two, so they cannot drift apart. --sr-brand-line is the mark's
+     line box (font-size at line-height 1), which is what makes the band's
+     height, so the title matches it to share a centre line. */
+  --sr-band-top: clamp(1rem, 2.5vh, 1.75rem);
+  --sr-brand-line: clamp(1.9rem, 3vw, 2.6rem);
+
   --sr-bg: #fbfbfc;
   --sr-bg-deep: #f1f3f7;
   --sr-ink: #0f2744;
@@ -62,7 +69,7 @@ body:has(.showreel-page) {
 
 .showreel-brand {
   position: fixed;
-  top: clamp(1rem, 2.5vh, 1.75rem);
+  top: var(--sr-band-top);
   left: clamp(1.25rem, 3vw, 2.25rem);
   z-index: 25;
   display: flex;
@@ -78,7 +85,7 @@ body:has(.showreel-page) {
   display: inline-flex;
   align-items: baseline;
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(1.9rem, 3vw, 2.6rem);
+  font-size: var(--sr-brand-line);
   font-weight: 650;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -121,10 +128,9 @@ body:has(.showreel-page) {
 .showreel-deck {
   /* Exported so the scene height below is derived from the real padding
      instead of a hardcoded guess that drifts at most viewport heights. */
-  /* Same clamp as .showreel-brand's `top`, deliberately: this padding is
-     what sets the slide title's top edge, so matching it lands the title
-     on the logo's line — logo left, title right, one header band. */
-  --sr-deck-pad-top: clamp(1rem, 2.5vh, 1.75rem);
+  /* The stage's top edge, and so the feature title's top edge, lands here —
+     the same offset the fixed brand uses. */
+  --sr-deck-pad-top: var(--sr-band-top);
   --sr-deck-pad-bottom: clamp(0.5rem, 1.2vh, 0.85rem);
 
   position: relative;
@@ -140,13 +146,18 @@ body:has(.showreel-page) {
 
 .showreel-stage {
   display: grid;
-  place-items: center;
+  /* stretch, not centre: the layer must span the full stage so a feature
+     scene can start at the stage's top edge (= the brand's line) instead of
+     being pushed down by the slack under its min-height. */
+  align-items: stretch;
+  justify-items: center;
   min-height: 0;
 }
 
 .showreel-slide {
   display: grid;
-  place-items: center;
+  align-items: stretch;
+  justify-items: center;
   width: 100%;
   will-change: transform, opacity;
 }
@@ -155,10 +166,17 @@ body:has(.showreel-page) {
   grid-area: 1 / 1;
   display: grid;
   place-items: center;
+  /* Hero, copy and outro slides stay optically centred; only feature slides
+     pin to the top so their title lands on the brand's line. */
+  align-content: center;
   width: 100%;
   visibility: hidden;
   pointer-events: none;
   will-change: transform, opacity;
+}
+
+.showreel-slide-layer:has(.showreel-scene--feature) {
+  align-content: start;
 }
 
 .showreel-slide-layer.is-active {
@@ -185,8 +203,9 @@ body:has(.showreel-page) {
   min-height: min(84vh, 960px);
 }
 
-/* Soft per-slide wash behind the header, so the tint changes as the deck
-   advances instead of every slide sharing the same flat background. */
+/* Soft per-slide wash behind the header — white canvas, soft black vignette.
+   Intensity (not hue) still shifts slightly per slide so the deck reads as
+   changing, without the busier multicolor palette. */
 .showreel-scene--feature::before {
   content: "";
   position: absolute;
@@ -200,28 +219,28 @@ body:has(.showreel-page) {
 }
 
 .showreel-scene--feature[data-slide-id="site"] {
-  --sr-slide-tint: color-mix(in srgb, #5e6ad2 26%, transparent);
+  --sr-slide-tint: color-mix(in srgb, var(--sr-ink) 10%, transparent);
 }
 .showreel-scene--feature[data-slide-id="site-to-chat"] {
-  --sr-slide-tint: color-mix(in srgb, #22c55e 22%, transparent);
+  --sr-slide-tint: color-mix(in srgb, var(--sr-ink) 8%, transparent);
 }
 .showreel-scene--feature[data-slide-id="ai-booking"] {
-  --sr-slide-tint: color-mix(in srgb, #c9a962 28%, transparent);
+  --sr-slide-tint: color-mix(in srgb, var(--sr-ink) 12%, transparent);
 }
 .showreel-scene--feature[data-slide-id="whatsapp"] {
-  --sr-slide-tint: color-mix(in srgb, #25d366 24%, transparent);
+  --sr-slide-tint: color-mix(in srgb, var(--sr-ink) 9%, transparent);
 }
 .showreel-scene--feature[data-slide-id="clinical-ai"] {
-  --sr-slide-tint: color-mix(in srgb, #f97362 22%, transparent);
+  --sr-slide-tint: color-mix(in srgb, var(--sr-ink) 8%, transparent);
 }
 .showreel-scene--feature[data-slide-id="smart-ux"] {
-  --sr-slide-tint: color-mix(in srgb, #a78bfa 26%, transparent);
+  --sr-slide-tint: color-mix(in srgb, var(--sr-ink) 11%, transparent);
 }
 .showreel-scene--feature[data-slide-id="dashboard"] {
-  --sr-slide-tint: color-mix(in srgb, #38bdf8 22%, transparent);
+  --sr-slide-tint: color-mix(in srgb, var(--sr-ink) 9%, transparent);
 }
 .showreel-scene--feature[data-slide-id="customize"] {
-  --sr-slide-tint: color-mix(in srgb, #fb923c 26%, transparent);
+  --sr-slide-tint: color-mix(in srgb, var(--sr-ink) 10%, transparent);
 }
 
 .showreel-scene--feature:not(.showreel-scene--desktop-only) {
@@ -241,7 +260,15 @@ body:has(.showreel-page) {
   margin-inline-start: auto;
   padding-inline: clamp(1rem, 4vw, 2rem);
   text-align: left;
-  align-self: end;
+  /* Same line box as the brand mark, with the title centred inside it — the
+     two blocks now share a top edge AND a height, so their centre lines
+     meet however the clamps resolve. Matching only the top edge left the
+     smaller title sitting low. */
+  min-height: var(--sr-brand-line);
+  /* grid, not flex: the headline stays a full-width block (the word-split
+     animation lays out against it) while the row centres in the band. */
+  display: grid;
+  align-content: center;
 }
 
 .showreel-feature-title-card .showreel-headline {
@@ -274,11 +301,28 @@ body:has(.showreel-page) {
   padding-top: clamp(1rem, 4vh, 2.5rem);
 }
 
-.showreel-scene--intro,
 .showreel-scene--outro {
   position: relative;
   width: min(100%, 56rem);
   max-width: none;
+  min-height: min(60vh, 640px);
+  padding-top: clamp(1.5rem, 5vh, 3rem);
+  margin-inline: auto;
+}
+
+/* Intro is a two-sided cover: keywords on the left, product glimpse on the
+   right — not overlapping copy stacked over a background image. */
+.showreel-scene--intro {
+  display: grid;
+  /* A literal length track always renders at that exact size (unlike
+     minmax(0, <length>), which fought the fr track for space and starved
+     the headline down to one-or-two-words-per-line). The glimpse column
+     just takes what's left. */
+  grid-template-columns: 56rem minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  width: min(100%, 112rem);
+  max-width: 100%;
   min-height: min(60vh, 640px);
   padding-top: clamp(1.5rem, 5vh, 3rem);
   margin-inline: auto;
@@ -290,6 +334,47 @@ body:has(.showreel-page) {
   z-index: 2;
   width: 100%;
   padding-inline: clamp(1rem, 4vw, 2rem);
+}
+
+/* Product glimpse: a real (demo-data) screenshot, its own column — signals
+   "working product," not just copy. */
+.showreel-intro-glimpse {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 44rem);
+  transform: rotate(-2deg);
+}
+
+.showreel-intro-glimpse::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  background: radial-gradient(
+    60% 60% at 45% 50%,
+    color-mix(in srgb, var(--sr-accent) 12%, transparent),
+    transparent 72%
+  );
+}
+
+.showreel-intro-glimpse img {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  box-shadow:
+    0 40px 80px -26px color-mix(in srgb, var(--sr-ink) 42%, transparent),
+    0 10px 26px -10px color-mix(in srgb, var(--sr-ink) 26%, transparent);
+}
+
+@media (max-width: 900px) {
+  .showreel-scene--intro {
+    grid-template-columns: 1fr;
+  }
+
+  .showreel-intro-glimpse {
+    display: none;
+  }
 }
 
 .showreel-intro-core {
@@ -352,26 +437,6 @@ body:has(.showreel-page) {
 
 .showreel-intro-line--2 {
   padding-left: clamp(0.5rem, 3vw, 2rem);
-  /* No text-shadow/gradient here: this line's actual text lives in child
-     .showreel-anim-word spans (the word-by-word reveal), and this element
-     has no text nodes of its own — background-clip: text on a parent with
-     no direct text breaks glyph layout instead of clipping cleanly. */
-  text-shadow: none;
-}
-
-.showreel-intro-line--2 .showreel-anim-word {
-  background: linear-gradient(
-    100deg,
-    var(--sr-accent) 15%,
-    color-mix(in srgb, var(--sr-accent) 55%, #c76bd8) 85%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(
-    0 6px 18px color-mix(in srgb, var(--sr-accent) 30%, transparent)
-  );
 }
 
 .showreel-intro-line--3,

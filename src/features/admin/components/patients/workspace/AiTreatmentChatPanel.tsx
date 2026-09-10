@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "@/lib/i18n";
 import type { TreatmentAiDraft, TreatmentAiPoll } from "@/services/ai_groq";
@@ -90,6 +90,8 @@ type Props = {
   ) => Promise<string | null>;
   onBook: (treatmentId: string) => void;
   onScheduleAt: (treatmentId: string, startsAtIso: string) => Promise<void>;
+  demoReview?: ProposalReviewState | null;
+  localOnly?: boolean;
 };
 
 export function AiTreatmentChatPanel({
@@ -108,6 +110,8 @@ export function AiTreatmentChatPanel({
   onCreateDraft,
   onBook,
   onScheduleAt,
+  demoReview = null,
+  localOnly = false,
 }: Props) {
   const t = useTranslations();
   const [tab, setTab] = useState<ChatPanelTab>("chat");
@@ -115,6 +119,7 @@ export function AiTreatmentChatPanel({
   const [messages, setMessages] = useState<ChatTurn[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
+  const showreelSendLock = useRef(false);
   const [draft, setDraft] = useState<TreatmentAiDraft | null>(null);
   const [poll, setPoll] = useState<TreatmentAiPoll | null>(null);
   const [pollSelectedId, setPollSelectedId] = useState<string | null>(null);
@@ -129,21 +134,95 @@ export function AiTreatmentChatPanel({
   const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
-    const stored = loadChatHistory(patientKey, toothFdi);
-    setMessages(stored?.messages ?? []);
-    setDraft(stored?.draft ?? null);
-    setPoll(stored?.poll ?? null);
-    setPollSelectedId(stored?.pollSelectedId ?? null);
+    const showreel =
+      localOnly &&
+      typeof document !== "undefined" &&
+      document.documentElement.dataset.showreelDemo === "1";
+    if (showreel) {
+      clearChatHistory(patientKey, toothFdi);
+      showreelSendLock.current = false;
+      setMessages([]);
+      setDraft(null);
+      setPoll(null);
+      setPollSelectedId(null);
+    } else {
+      const stored = loadChatHistory(patientKey, toothFdi);
+      setMessages(stored?.messages ?? []);
+      setDraft(stored?.draft ?? null);
+      setPoll(stored?.poll ?? null);
+      setPollSelectedId(stored?.pollSelectedId ?? null);
+    }
     setInput("");
     setPendingUploads((prev) => {
       revokePendingUploads(prev);
       return [];
     });
     setCreatedId(null);
+    setProposalReview(null);
     setTab("chat");
     setReady(true);
     return () => setReady(false);
-  }, [patientKey, toothFdi]);
+  }, [patientKey, toothFdi, localOnly]);
+
+  useEffect(() => {
+    if (demoReview) {
+      setProposalReview(demoReview);
+      setTab("chat");
+    }
+  }, [demoReview]);
+
+  useEffect(() => {
+    function onClinical(event: Event) {
+      const detail = (
+        event as CustomEvent<{
+          type?: string;
+          tab?: ChatPanelTab;
+          text?: string;
+        }>
+      ).detail;
+      if (!detail?.type) return;
+      if (detail.type === "tab" && detail.tab) {
+        setTab(detail.tab);
+        return;
+      }
+      if (detail.type === "compose-note" && typeof detail.text === "string") {
+        setTab("chat");
+        setInput(detail.text);
+        showreelSendLock.current = false;
+        return;
+      }
+      if (detail.type === "attach-demo-images") {
+        setTab("chat");
+        showreelSendLock.current = false;
+        setPendingUploads((prev) => {
+          revokePendingUploads(prev);
+          return imaging.map((img) => ({
+            id: `demo-${img.id}`,
+            file: new File(
+              [new Uint8Array([0])],
+              `${img.title.replace(/\s+/g, "-").toLowerCase()}.jpg`,
+              { type: "image/jpeg" },
+            ),
+            previewUrl: img.url,
+            kind:
+              img.kind === "cbct"
+                ? ("cbct" as const)
+                : img.kind === "xray"
+                  ? ("xray" as const)
+                  : ("photo" as const),
+          }));
+        });
+        return;
+      }
+      if (detail.type === "send-note") {
+        if (showreelSendLock.current) return;
+        showreelSendLock.current = true;
+        void send();
+      }
+    }
+    window.addEventListener("showreel-clinical", onClinical);
+    return () => window.removeEventListener("showreel-clinical", onClinical);
+  }, [imaging, input, pendingUploads, pending, localOnly]);
 
   useEffect(() => {
     if (!ready) return;
@@ -195,9 +274,57 @@ export function AiTreatmentChatPanel({
     return urls;
   }
 
+  function sendShowreelNote() {
+    if (pending) return;
+    const text = input.trim();
+    const imageUrls = pendingUploads.map((item) => item.previewUrl).filter(Boolean);
+    if (!text && imageUrls.length === 0) return;
+    const content =
+      text ||
+      (imageUrls.length > 0
+        ? `Attached ${imageUrls.length} clinical image(s) for review.`
+        : "");
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        content,
+        at: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        imageUrls,
+      },
+      {
+        role: "assistant",
+        content:
+          "Noted. Imaging attached for #16 — review the proposed treatment before saving.",
+        at: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      },
+    ]);
+    setInput("");
+    setPendingUploads((prev) => {
+      revokePendingUploads(prev);
+      return [];
+    });
+    if (demoReview) setProposalReview(demoReview);
+  }
+
   async function send(textOverride?: string) {
     const text = (textOverride ?? input).trim();
     if ((!text && pendingUploads.length === 0) || pending) return;
+
+    if (
+      localOnly &&
+      typeof document !== "undefined" &&
+      document.documentElement.dataset.showreelDemo === "1"
+    ) {
+      sendShowreelNote();
+      return;
+    }
     setPending(true);
     try {
       const imageUrls = await uploadPending();
@@ -557,10 +684,14 @@ export function AiTreatmentChatPanel({
             }}
           />
           {proposalReview ? (
-            <div className="border-t border-[#E8EAED] px-4 pb-2">
+            <div
+              data-showreel-action="clinical-ai-summary"
+              className="border-t border-[#E8EAED] px-4 pb-2"
+            >
               <ActionReviewCard
                 review={proposalReview}
                 disabled={pending}
+                localOnly={localOnly}
                 onResolved={() => setProposalReview(null)}
               />
             </div>

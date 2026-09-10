@@ -8,6 +8,14 @@ export type ShowreelCopySlide = {
   tags?: string[];
 };
 
+export type ShowreelProductScene =
+  | "ai-booking"
+  | "whatsapp"
+  | "clinical-ai"
+  | "smart-ux"
+  | "dashboard"
+  | "site-to-chat";
+
 export type ShowreelFeatureSlide = {
   id: string;
   kind: "feature";
@@ -27,7 +35,10 @@ export type ShowreelFeatureSlide = {
   scrollHeroPhaseRatio?: number;
   desktopOnly?: boolean;
   /** Scripted customize demo played while this slide is active. */
-  customizeScript?: "case-title" | "homepage-order";
+  customizeScript?: "case-title" | "homepage-order" | "translate-all";
+  /** Deterministic product wireframe scene (no live admin auth). */
+  productScene?: ShowreelProductScene;
+  requiresAiReview?: boolean;
 };
 
 export type ShowreelSlide = ShowreelCopySlide | ShowreelFeatureSlide;

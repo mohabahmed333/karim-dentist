@@ -80,9 +80,10 @@ export function AnatomicalArchModel({
         let universal = hitMesh?.userData.archUniversal as number | undefined;
 
         if (!fdi) {
-          const point = event.point.clone();
-          if (flipped) point.x *= -1;
-          const nearest = nearestArchToothFdi(root, point);
+          // event.point and the mesh centers nearestArchToothFdi measures are
+          // both world-space, so both already carry the flip — un-mirroring
+          // the point here picked the tooth on the opposite side of the arch.
+          const nearest = nearestArchToothFdi(root, event.point);
           if (!nearest) return;
           fdi = nearest.fdi;
           universal = nearest.universal;

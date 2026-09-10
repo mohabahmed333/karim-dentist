@@ -2,6 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  if (path.startsWith("/showreel/demo")) {
+    const headers = new Headers(request.headers);
+    headers.set("x-showreel-demo", "1");
+    return NextResponse.next({ request: { headers } });
+  }
+
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
@@ -39,7 +46,6 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
   const isAdmin = path.startsWith("/admin");
   const isLogin = path === "/admin/login";
 
@@ -55,5 +61,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/showreel/demo", "/showreel/demo/:path*"],
 };

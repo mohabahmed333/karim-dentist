@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Cairo, Instrument_Serif, Inter } from "next/font/google";
 import { RouteScrollToTop } from "@/features/portfolio";
 import { HomeHashScroll } from "@/features/portfolio/components/HomeHashScroll";
 import { LocaleProvider } from "@/lib/i18n";
+import { LocaleBootstrapScript } from "@/lib/i18n/LocaleBootstrapScript";
 import {
-  LOCALE_BOOTSTRAP_SCRIPT,
   LOCALE_COOKIE_KEY,
   localeDir,
   parseLocale,
@@ -51,8 +51,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies();
-  const initialLocale =
-    parseLocale(cookieStore.get(LOCALE_COOKIE_KEY)?.value) ?? "en";
+  const isShowreelDemo = (await headers()).get("x-showreel-demo") === "1";
+  const initialLocale = isShowreelDemo
+    ? "en"
+    : (parseLocale(cookieStore.get(LOCALE_COOKIE_KEY)?.value) ?? "en");
   const dir = localeDir(initialLocale);
 
   return (
@@ -62,11 +64,6 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={cn(inter.variable, instrument.variable, cairo.variable)}
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{ __html: LOCALE_BOOTSTRAP_SCRIPT }}
-        />
-      </head>
       <body
         className={cn(
           "bg-white font-sans text-[#0f2744] antialiased",
@@ -74,6 +71,7 @@ export default async function RootLayout({
             "font-[family-name:var(--font-arabic)]",
         )}
       >
+        <LocaleBootstrapScript />
         <LocaleProvider initialLocale={initialLocale}>
           <RouteScrollToTop />
           <HomeHashScroll />

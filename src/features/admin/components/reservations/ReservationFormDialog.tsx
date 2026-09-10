@@ -58,6 +58,7 @@ export function ReservationFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        data-showreel-action="reservation-form-modal"
         className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
         style={adminThemeStyle(themeVars)}
       >
@@ -118,7 +119,12 @@ export function ReservationFormDialog({
         </div>
 
         <DialogFooter className="m-0 shrink-0 rounded-none border-[var(--admin-border)] bg-[var(--admin-hover)]/40 px-4 py-3">
-          <Button type="button" disabled={pending} onClick={onSave}>
+          <Button
+            type="button"
+            data-showreel-action="reservation-create"
+            disabled={pending}
+            onClick={onSave}
+          >
             {pending
               ? t("admin.saving")
               : saveMode === "replace" && replaceTarget

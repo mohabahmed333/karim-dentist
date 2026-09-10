@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { pickLocalized, useLocale, useTranslations } from "@/lib/i18n";
 import { hasVisibleServiceTitle } from "@/features/portfolio/lib/serviceKindGroups";
+import { buildShowreelBookingSlots } from "@/features/portfolio/showreel/product-scenes/buildShowreelBookingSlots";
 import {
   BookingSchedulePicker,
   type BookingDateOption,
@@ -69,46 +70,19 @@ export function BookingForm({ services }: BookingFormProps) {
   async function loadSlots() {
     setSlotsLoading(true);
     try {
-      const isShowreel = document.documentElement.dataset.showreelDemo === "1";
-      let body: { slots?: SlotDto[]; error?: string };
-      if (isShowreel) {
-        // The site-to-chat scene primes this before it ever mounts
-        // BookingForm (see ShowreelPrefetch's prefetchBookingSlots), so the
-        // date picker doesn't show a loading flash the moment it appears.
-        // Falls back to a normal fetch if nothing was primed (e.g. this
-        // route loaded on its own, outside the full deck).
-        const { getShowreelBookingSlotsPrefetch } = await import(
-          "@/features/portfolio/showreel/showreelBookingSlotsPrefetch"
-        );
-        const prefetched = getShowreelBookingSlotsPrefetch();
-        body = prefetched
-          ? await prefetched
-          : ((await (await fetch("/api/v1/booking/slots")).json()) as {
-              slots?: SlotDto[];
-              error?: string;
-            });
-      } else {
-        const res = await fetch("/api/v1/booking/slots");
-        body = (await res.json()) as { slots?: SlotDto[]; error?: string };
-      }
-      if (body.error) throw new Error(body.error);
-      let next = body.slots ?? [];
-      if (isShowreel) {
-        const { ensureOpenBookingSlots } = await import(
-          "@/features/portfolio/showreel/product-scenes/buildShowreelBookingSlots"
-        );
-        next = ensureOpenBookingSlots(next);
-      }
-      setSlots(next);
-    } catch {
       if (document.documentElement.dataset.showreelDemo === "1") {
-        const { buildShowreelBookingSlots } = await import(
-          "@/features/portfolio/showreel/product-scenes/buildShowreelBookingSlots"
-        );
+        // Deterministic, zero-network demo slots — a real fetch ties the
+        // demo to live production availability (and its latency) for a
+        // form nothing here ever actually submits.
         setSlots(buildShowreelBookingSlots());
-      } else {
-        setSlots([]);
+        return;
       }
+      const res = await fetch("/api/v1/booking/slots");
+      const body = (await res.json()) as { slots?: SlotDto[]; error?: string };
+      if (body.error) throw new Error(body.error);
+      setSlots(body.slots ?? []);
+    } catch {
+      setSlots([]);
     } finally {
       setSlotsLoading(false);
     }

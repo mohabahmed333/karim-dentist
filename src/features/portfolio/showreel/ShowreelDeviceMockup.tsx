@@ -28,7 +28,10 @@ export function ShowreelDeviceMockup({
   const fallbackRef = useRef<number | null>(null);
   const pollRef = useRef<number | null>(null);
   const onReadyRef = useRef(onReady);
-  onReadyRef.current = onReady;
+
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
 
   const rootClass = [
     "showreel-device",
@@ -65,12 +68,13 @@ export function ShowreelDeviceMockup({
 
   useEffect(() => {
     readyRef.current = false;
-    setReady(false);
+    const resetId = window.setTimeout(() => setReady(false), 0);
     rootRef.current?.classList.add("is-device-pending");
 
     fallbackRef.current = window.setTimeout(() => markReady(), EMBED_READY_FALLBACK_MS);
 
     return () => {
+      window.clearTimeout(resetId);
       stopPolling();
       if (fallbackRef.current !== null) {
         window.clearTimeout(fallbackRef.current);
@@ -98,7 +102,11 @@ export function ShowreelDeviceMockup({
     const root = iframeRef.current?.contentDocument;
     if (!root) return false;
 
-    const mode = src.includes("mode=customize") ? "customize" : "site";
+    const mode = src.includes("mode=product")
+      ? "product"
+      : src.includes("mode=customize")
+        ? "customize"
+        : "site";
     if (!isShowreelEmbedReady(root, mode)) return false;
 
     markReady();
@@ -153,10 +161,7 @@ export function ShowreelDeviceMockup({
             onLoad={onIframeLoad}
           />
         </div>
-      </div>
-      <div className="showreel-device-stand" aria-hidden>
-        <div className="showreel-device-stand-neck" />
-        <div className="showreel-device-stand-base" />
+        <div className="showreel-device-keyboard-deck" aria-hidden />
       </div>
     </div>
   );

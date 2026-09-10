@@ -30,7 +30,10 @@ export function ChatDetailsTab({
   notes,
 }: Props) {
   return (
-    <div className={`min-h-0 flex-1 overflow-y-auto ${CHAT_BODY} p-4`}>
+    <div
+      className={`min-h-0 flex-1 overflow-y-auto ${CHAT_BODY} p-4`}
+      data-showreel-action="clinical-details"
+    >
       <section className="mb-5">
         <p className={`mb-2 text-[11px] font-medium tracking-wide uppercase ${CHAT_META}`}>
           Case · {toothLabel}

@@ -19,7 +19,7 @@ export {
   upsertConversationFromKapso,
 } from "./mutations";
 export { resolveConversationStatus } from "./resolveConversationStatus";
-export { isWhatsappSessionOpen } from "./sessionWindow";
+export { isWhatsappSessionOpen, latestInboundAt, laterIsoTimestamp } from "./sessionWindow";
 export {
   listCannedReplies,
   createCannedReply,

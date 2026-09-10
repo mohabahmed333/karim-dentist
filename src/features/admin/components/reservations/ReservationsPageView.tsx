@@ -14,6 +14,7 @@ import { ReservationsPageSkeleton } from "@/features/admin/components/reservatio
 import { ReservationsTodayRail } from "@/features/admin/components/reservations/ReservationsTodayRail";
 import { CalendarMonthGrid } from "@/features/admin/components/timeline/CalendarMonthGrid";
 import { useReservationEditor } from "@/features/admin/hooks/useReservationEditor";
+import { useReservationFormShowreel } from "@/features/admin/hooks/useReservationFormShowreel";
 import {
   calendarMonthGridVariants,
   calendarMonthMotionKey,
@@ -83,11 +84,17 @@ export function ReservationsPageView({
   const [openSlotDays, setOpenSlotDays] = useState<Set<string>>(
     () => new Set(),
   );
+  const [showreel, setShowreel] = useState(false);
   const filterQuery = useReservationFilterQuery(setFiltering);
   const serverFiltering = useReservationTableServerFiltering(
     tableTotal,
     filterQuery,
   );
+
+  useEffect(() => {
+    setShowreel(document.documentElement.dataset.showreelDemo === "1");
+  }, []);
+  useReservationFormShowreel({ enabled: showreel, setForm: editor.setForm });
 
   const dateParam = searchParams.get("date");
   const monthRef = useRef(month);
@@ -128,6 +135,20 @@ export function ReservationsPageView({
 
   useEffect(() => {
     if (calendarDays.length === 0) return;
+    // The showreel's calendar-click demo can't depend on real open slots
+    // existing in whatever environment it's recorded in — mark today
+    // (and a few days out) bookable so the click always opens the dialog.
+    if (document.documentElement.dataset.showreelDemo === "1") {
+      const today = new Date();
+      const days = new Set<string>();
+      for (let offset = 0; offset <= 6; offset += 1) {
+        const d = new Date(today);
+        d.setDate(d.getDate() + offset);
+        days.add(localTodayIso(d));
+      }
+      setOpenSlotDays(days);
+      return;
+    }
     const from = calendarDays[0]!.iso;
     const to = calendarDays[calendarDays.length - 1]!.iso;
     let cancelled = false;

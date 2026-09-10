@@ -10,7 +10,7 @@ import {
   getConversation,
   insertOutboundMessage,
 } from "@/services/whatsapp";
-import { isWhatsappSessionOpen } from "@/services/whatsapp/sessionWindow";
+import { isWhatsappSessionOpen, latestInboundAt } from "@/services/whatsapp/sessionWindow";
 import { buildTemplateSendParts } from "@/services/whatsapp/templateFields";
 import {
   sendKapsoPayload,
@@ -231,9 +231,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
+    const { data: lastInbound } = await service
+      .from("whatsapp_messages")
+      .select("wa_timestamp")
+      .eq("conversation_id", conversationId)
+      .eq("direction", "inbound")
+      .order("wa_timestamp", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     if (
       kind !== "template" &&
-      !isWhatsappSessionOpen(conversation.last_inbound_at)
+      !isWhatsappSessionOpen(
+        latestInboundAt(conversation.last_inbound_at, [
+          lastInbound?.wa_timestamp,
+        ]),
+      )
     ) {
       return NextResponse.json(
         {

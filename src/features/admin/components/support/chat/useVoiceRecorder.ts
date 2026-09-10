@@ -20,9 +20,14 @@ export type VoicePhase = "starting" | "recording" | "paused";
 type Options = {
   onCancel: () => void;
   onSend: (file: File) => void;
+  enabled?: boolean;
 };
 
-export function useVoiceRecorder({ onCancel, onSend }: Options) {
+export function useVoiceRecorder({
+  onCancel,
+  onSend,
+  enabled = true,
+}: Options) {
   const [phase, setPhase] = useState<VoicePhase>("starting");
   const [seconds, setSeconds] = useState(0);
   const [waves, setWaves] = useState<number[]>(() =>
@@ -165,6 +170,7 @@ export function useVoiceRecorder({ onCancel, onSend }: Options) {
   }, [wireAudio]);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     async function start() {
       try {
@@ -215,8 +221,8 @@ export function useVoiceRecorder({ onCancel, onSend }: Options) {
       }
       stopTracks();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount / enabled only
+  }, [enabled]);
 
   function pause() {
     const recorder = recorderRef.current;

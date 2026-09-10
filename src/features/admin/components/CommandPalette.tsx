@@ -29,10 +29,11 @@ import { cn } from "@/lib/utils";
 import { adminPageLabelKeys } from "@/features/admin/lib/adminNav";
 import {
   buildStaticCommandHits,
+  commandPaletteGroups,
   filterCommandHits,
-  groupCommandHits,
   pushRecentId,
   recentHits,
+  type CommandDisplayGroup,
   type CommandHit,
   type CommandKind,
 } from "@/features/admin/lib/commandPalette";
@@ -47,6 +48,13 @@ import {
 import { SECTION_LABEL_KEYS } from "@/features/customize/sectionRegistry";
 import { isCustomizeSection } from "@/features/customize/types";
 import { useOptionalQuickBook } from "@/features/admin/components/quick-book/QuickBookContext";
+import {
+  SHOWREEL_COMMAND_EVENT,
+  dispatchShowreelNavigate,
+  type ShowreelCommandDetail,
+} from "@/features/portfolio/showreel/product-scenes/showreelAdminEvents";
+import { COMMAND_SEARCH_FIXTURE } from "@/features/portfolio/showreel/product-scenes/fixtures/commandSearchFixtures";
+import { ADMIN_CLOSE_COMMAND_EVENT } from "@/features/admin/lib/adminShellEvents";
 
 const GROUP_KEYS: Record<CommandKind, AdminMessageKey> = {
   page: "admin.search.group.page",
@@ -72,12 +80,6 @@ const KIND_ICON = {
   public: Globe,
 } as const;
 
-type DisplayGroup = {
-  kind: CommandKind;
-  items: CommandHit[];
-  recent?: boolean;
-};
-
 function shortcutLabel(): string {
   if (typeof navigator === "undefined") return "⌘K";
   return /Mac|iPhone|iPad/i.test(navigator.platform) ? "⌘K" : "Ctrl+K";
@@ -97,6 +99,7 @@ export function CommandPalette() {
   const [mounted, setMounted] = useState(false);
   const [aiIds, setAiIds] = useState<string[]>([]);
   const [aiUsed, setAiUsed] = useState(false);
+  const [demoLocked, setDemoLocked] = useState(false);
 
   const staticHits = useMemo(
     () =>
@@ -135,13 +138,15 @@ export function CommandPalette() {
     [aiIds, allHits, localFiltered],
   );
 
-  const groups = useMemo((): DisplayGroup[] => {
-    const grouped = groupCommandHits(filtered);
-    if (query.trim() || typeof window === "undefined") return grouped;
-    const recents = recentHits(allHits, window.localStorage);
-    if (recents.length === 0) return grouped;
-    return [{ kind: "page", items: recents, recent: true }, ...grouped];
-  }, [allHits, filtered, query]);
+  const recents = useMemo(
+    () => (mounted ? recentHits(allHits, window.localStorage) : []),
+    [allHits, mounted, open],
+  );
+
+  const groups = useMemo(
+    (): CommandDisplayGroup[] => commandPaletteGroups(filtered, query, recents),
+    [filtered, query, recents],
+  );
 
   const flat = useMemo(() => groups.flatMap((group) => group.items), [groups]);
 
@@ -152,6 +157,7 @@ export function CommandPalette() {
     setResultsReady(false);
     setAiIds([]);
     setAiUsed(false);
+    setDemoLocked(false);
   }, []);
 
   const openPalette = useCallback(() => {
@@ -165,7 +171,17 @@ export function CommandPalette() {
   }, []);
 
   useEffect(() => {
+    function onCloseCommand() {
+      close();
+    }
+    window.addEventListener(ADMIN_CLOSE_COMMAND_EVENT, onCloseCommand);
+    return () =>
+      window.removeEventListener(ADMIN_CLOSE_COMMAND_EVENT, onCloseCommand);
+  }, [close]);
+
+  useEffect(() => {
     if (!open) return;
+    if (demoLocked) return;
     const q = query.trim();
     if (!q) {
       setDynamicHits([]);
@@ -188,11 +204,12 @@ export function CommandPalette() {
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [open, query]);
+  }, [open, query, demoLocked]);
 
   useEffect(() => {
     setAiIds([]);
     setAiUsed(false);
+    if (demoLocked) return;
     if (!open || !query.trim()) return;
     const best = Math.max(
       0,
@@ -240,7 +257,54 @@ export function CommandPalette() {
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [allHits, localFiltered, open, query]);
+  }, [allHits, demoLocked, localFiltered, open, query]);
+
+  useEffect(() => {
+    function onShowreel(event: Event) {
+      const detail = (event as CustomEvent<ShowreelCommandDetail>).detail;
+      if (!detail) return;
+      if (detail.type === "open") {
+        openPalette();
+        return;
+      }
+      if (detail.type === "close") {
+        close();
+        setDemoLocked(false);
+        return;
+      }
+      if (detail.type === "query") {
+        setDemoLocked(true);
+        setQuery(detail.query);
+        setOpen(true);
+        setResultsReady(true);
+        setActive(0);
+        return;
+      }
+      if (detail.type === "demo-hits" || detail.type === "seed-demo") {
+        setDemoLocked(true);
+        setOpen(true);
+        setResultsReady(true);
+        setAiUsed(true);
+        const seed =
+          detail.type === "demo-hits"
+            ? detail.hits
+            : COMMAND_SEARCH_FIXTURE.hits.map((hit) => ({
+                id: hit.id,
+                kind: hit.kind,
+                title: hit.title,
+                subtitle: hit.subtitle,
+                href: hit.href ?? "#",
+                keywords: hit.title,
+              }));
+        setDynamicHits(seed as CommandHit[]);
+        setAiIds(seed.map((hit) => hit.id));
+        setActive(0);
+      }
+    }
+    window.addEventListener(SHOWREEL_COMMAND_EVENT, onShowreel);
+    return () =>
+      window.removeEventListener(SHOWREEL_COMMAND_EVENT, onShowreel);
+  }, [close, openPalette]);
 
   useEffect(() => {
     function onKey(event: globalThis.KeyboardEvent) {
@@ -275,10 +339,24 @@ export function CommandPalette() {
       pushRecentId(hit.id, window.localStorage);
     }
     close();
+    setDemoLocked(false);
+    if (document.documentElement.dataset.showreelDemo === "1") {
+      if (hit.href && hit.href !== "#") {
+        dispatchShowreelNavigate({
+          href: hit.href,
+          title: hit.title,
+          id: hit.id,
+          kind: hit.kind,
+        });
+      }
+      return;
+    }
+    if (demoLocked) return;
     if (hit.href === "action:quick-book") {
       quickBook?.openQuickBook();
       return;
     }
+    if (hit.href === "#") return;
     router.push(hit.href);
   }
 
@@ -328,6 +406,7 @@ export function CommandPalette() {
             layoutId={COMMAND_LAYOUT_ID}
             transition={shellTransition}
             onClick={openPalette}
+            data-showreel-action="command-palette-open"
             aria-label={t("admin.search.open")}
             className={cn(
               shellClass,
@@ -360,7 +439,7 @@ export function CommandPalette() {
                     className="fixed inset-0 z-[90] bg-[#111111]/20"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    exit={{ opacity: 0, pointerEvents: "none" }}
                     transition={commandBackdropTransition(reduced)}
                     onClick={close}
                   />
@@ -383,6 +462,7 @@ export function CommandPalette() {
                         <input
                           ref={inputRef}
                           value={query}
+                          data-showreel-action="command-palette-input"
                           onChange={(event) => {
                             setQuery(event.target.value);
                             setActive(0);
@@ -437,6 +517,8 @@ export function CommandPalette() {
                                     <li key={item.id}>
                                       <button
                                         type="button"
+                                        data-showreel-action="command-hit"
+                                        data-showreel-hit={item.id}
                                         onMouseEnter={() =>
                                           setActive(flat.findIndex((row) => row.id === item.id))
                                         }

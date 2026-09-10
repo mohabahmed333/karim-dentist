@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Mic, Plus, Send, Smile } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,10 @@ import { lastStrongLocale } from "./textDirection";
 import { useDismissOnOutsidePointer } from "./useDismissOnOutsidePointer";
 import type { SupportMessage } from "../supportDummyData";
 import type { Locale } from "@/lib/i18n/LocaleProvider";
+import {
+  SHOWREEL_WHATSAPP_EVENT,
+  type ShowreelWhatsappDetail,
+} from "@/features/portfolio/showreel/product-scenes/showreelAdminEvents";
 
 type Props = {
   draft: string;
@@ -77,6 +81,47 @@ export function ChatComposer({
     null,
   );
   const [slashIndex, setSlashIndex] = useState(0);
+  const showreelDemo =
+    typeof document !== "undefined" &&
+    document.documentElement.dataset.showreelDemo === "1";
+
+  useEffect(() => {
+    function onShowreel(event: Event) {
+      const detail = (event as CustomEvent<ShowreelWhatsappDetail>).detail;
+      if (!detail) return;
+      if (detail.type === "quick-replies") {
+        setInteractive({
+          mode: "buttons",
+          labels: ["Tue 10:30", "Wed 14:00", "Call me back"],
+        });
+        return;
+      }
+      if (detail.type === "compose-message") {
+        onDraftChange(detail.text);
+        return;
+      }
+      if (detail.type === "voice-start") {
+        onDraftChange("");
+        setInteractive(null);
+        setAttachOpen(false);
+        setEmojiOpen(false);
+        setRecording(true);
+        return;
+      }
+      if (detail.type === "send-message") {
+        const text = detail.text.trim();
+        if (!text) return;
+        onSend({ kind: "text", text });
+        onDraftChange("");
+        setInteractive(null);
+        onClearReply?.();
+      }
+    }
+    window.addEventListener(SHOWREEL_WHATSAPP_EVENT, onShowreel);
+    return () =>
+      window.removeEventListener(SHOWREEL_WHATSAPP_EVENT, onShowreel);
+  }, [onClearReply, onDraftChange, onSend]);
+
   /** Sticky keyboard language — chrome stays on app locale, text follows this. */
   const [inputLocale, setInputLocale] = useState<Locale>(() =>
     locale === "ar" ? "ar" : "en",
@@ -261,6 +306,7 @@ export function ChatComposer({
             transition={swap}
           >
             <VoiceRecorderBar
+              demo={showreelDemo}
               onCancel={() => setRecording(false)}
               onSend={sendRecording}
             />
@@ -331,6 +377,7 @@ export function ChatComposer({
                     ref={taRef}
                     value={draft}
                     disabled={disabled}
+                    data-showreel-action="whatsapp-composer"
                     dir={textDir}
                     lang={inputLocale}
                     onChange={(e) => {
@@ -403,6 +450,7 @@ export function ChatComposer({
                   <button
                     type="button"
                     disabled={disabled}
+                    data-showreel-action="whatsapp-send"
                     onClick={submitText}
                     className="mb-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--admin-primary)] text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                     aria-label={t("admin.frontDesk.send")}
@@ -416,6 +464,7 @@ export function ChatComposer({
                   <motion.button
                     type="button"
                     disabled={disabled}
+                    data-showreel-action="whatsapp-voice"
                     whileTap={reduced || disabled ? undefined : { scale: 0.88 }}
                     className="mb-0.5 flex size-10 shrink-0 items-center justify-center rounded-full text-[#54656F] hover:bg-[#E9EDEF] disabled:opacity-40"
                     aria-label={t("admin.frontDesk.recordVoice")}

@@ -356,13 +356,22 @@ export function useDashboardLayoutEditor(
       if (target.kind === "end") {
         return moveToNewDashboardStack(d, fromId, 12);
       }
-      if (fromId === target.id) return d;
-      const from = d.findIndex((w) => w.id === fromId);
-      const to = d.findIndex((w) => w.id === target.id);
-      if (from < 0 || to < 0 || from === to) return d;
-      return placeDashboardWidget(d, from, to, target.edge);
+      return moveWidgetById(d, fromId, target.id, target.edge);
     });
     clearDragUi();
+  }
+
+  function moveWidgetById(
+    d: DashboardLayout,
+    fromId: DashboardWidgetId,
+    targetId: DashboardWidgetId,
+    edge: DashboardDropEdge,
+  ): DashboardLayout {
+    if (fromId === targetId) return d;
+    const from = d.findIndex((w) => w.id === fromId);
+    const to = d.findIndex((w) => w.id === targetId);
+    if (from < 0 || to < 0 || from === to) return d;
+    return placeDashboardWidget(d, from, to, edge);
   }
 
   function handleAction(action: DashboardLayoutAction) {
@@ -390,6 +399,11 @@ export function useDashboardLayoutEditor(
         break;
       case "closeCatalog":
         setCatalogOpen(false);
+        break;
+      case "move":
+        mutateDraft((d) =>
+          moveWidgetById(d, action.fromId, action.targetId, action.edge),
+        );
         break;
       case "add":
         mutateDraft((d) => addDashboardWidget(d, action.id));

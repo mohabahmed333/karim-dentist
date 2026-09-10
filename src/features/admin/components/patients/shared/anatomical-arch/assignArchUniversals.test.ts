@@ -34,4 +34,21 @@ describe("assignArchUniversals", () => {
     assert.ok((map.get("u-r") as number) < (map.get("u-l") as number));
     assert.ok((map.get("l-l") as number) < (map.get("l-r") as number));
   });
+
+  it("uses explicit arch when y doesn't separate upper/lower (e.g. arch.glb)", () => {
+    // All y > 0, like the real asset — the y-sign heuristic alone would put
+    // every tooth in the "upper" bucket.
+    const teeth = [
+      { id: "u-r", x: -2, y: 1.5, z: 0, arch: "upper" as const },
+      { id: "u-l", x: 2, y: 1.5, z: 0, arch: "upper" as const },
+      { id: "l-r", x: -2, y: 0.9, z: 0, arch: "lower" as const },
+      { id: "l-l", x: 2, y: 0.9, z: 0, arch: "lower" as const },
+    ];
+    const map = assignArchUniversals(teeth);
+    assert.equal(map.size, 4);
+    assert.ok((map.get("u-r") as number) <= 16);
+    assert.ok((map.get("u-l") as number) <= 16);
+    assert.ok((map.get("l-r") as number) >= 17);
+    assert.ok((map.get("l-l") as number) >= 17);
+  });
 });

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   buildStaticCommandHits,
+  commandPaletteGroups,
   filterCommandHits,
   groupCommandHits,
   hitsFromPatients,
@@ -181,7 +182,7 @@ describe("hitsFromPatients", () => {
 });
 
 describe("hitsFromReservations", () => {
-  it("links a visit to the reservations search", () => {
+  it("links a visit to the reservations page with that row selected", () => {
     const [row] = hitsFromReservations([
       {
         id: "res-1",
@@ -192,8 +193,38 @@ describe("hitsFromReservations", () => {
       },
     ]);
     assert.equal(row?.kind, "reservation");
-    assert.equal(row?.href.includes("/admin/reservations"), true);
-    assert.equal(row?.href.includes("q=Karim"), true);
+    assert.equal(row?.href, "/admin/reservations?selected=res-1&date=2026-09-08");
+  });
+});
+
+describe("commandPaletteGroups", () => {
+  it("stays SSR-safe when recents are not loaded yet", () => {
+    const items = [hit({ id: "page-patients", title: "Patients" })];
+    const groups = commandPaletteGroups(items, "", []);
+    assert.equal(
+      groups.some((group) => group.recent),
+      false,
+    );
+    assert.equal(groups[0]?.items[0]?.id, "page-patients");
+  });
+
+  it("prepends recents only after they are provided and the query is empty", () => {
+    const patients = hit({
+      id: "page-patients",
+      title: "Patients",
+      href: "/admin/patients",
+    });
+    const overview = hit({
+      id: "page-overview",
+      title: "Overview",
+      href: "/admin",
+    });
+    const groups = commandPaletteGroups([patients, overview], "", [overview]);
+    assert.equal(groups[0]?.recent, true);
+    assert.deepEqual(
+      groups[0]?.items.map((item) => item.id),
+      ["page-overview"],
+    );
   });
 });
 

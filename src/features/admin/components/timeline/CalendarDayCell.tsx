@@ -56,6 +56,8 @@ export function CalendarDayCell({
     <div
       role="button"
       tabIndex={0}
+      data-showreel-action="calendar-day"
+      data-showreel-today={day.isToday ? "true" : undefined}
       onClick={(event) => {
         if ((event.target as HTMLElement).closest("[data-reservation-chip]")) {
           return;

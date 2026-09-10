@@ -32,6 +32,9 @@ function findSlide(productScene: string) {
   );
 }
 
+/** Breathing room allowed after the last step before the deck moves on. */
+const MAX_TAIL_MS = 3500;
+
 function lastAt(steps: ShowreelCursorStep[]): number {
   return steps.reduce((max, step) => Math.max(max, step.at), 0);
 }
@@ -45,6 +48,19 @@ describe("showreel timeline integrity", () => {
         slide!.durationMs > lastAt(steps),
         `${productScene}: durationMs ${slide!.durationMs} does not clear ` +
           `last step at ${lastAt(steps)}`,
+      );
+    });
+
+    it(`${productScene}: does not idle long after its last cursor step`, () => {
+      // The deck advances on durationMs alone, so anything past the last step
+      // is dead air the viewer sits through with nothing happening.
+      const slide = findSlide(productScene);
+      const tail = slide!.durationMs - lastAt(steps);
+      assert.ok(
+        tail <= MAX_TAIL_MS,
+        `${productScene}: ${tail}ms of dead air after the last step ` +
+          `(durationMs ${slide!.durationMs}, last step ${lastAt(steps)}) ` +
+          `— trim durationMs to at most ${lastAt(steps) + MAX_TAIL_MS}`,
       );
     });
 

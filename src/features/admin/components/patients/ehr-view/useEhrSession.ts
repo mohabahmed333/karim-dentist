@@ -5,7 +5,7 @@ import type { PatientImaging } from "@/services/patient_imaging";
 import type { PatientToothNote } from "@/services/patient_tooth_notes";
 import type { TreatmentItem } from "@/services/patient_treatments";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
-import { UNIVERSAL_TO_FDI } from "./ehr.types";
+import { resolveArchFocus } from "./resolveArchFocus";
 import { buildEhrModel } from "./buildEhrModel";
 import { linkedMediaFor } from "./ehrScene";
 import { buildTreatmentPropNodes } from "./treatmentProps";
@@ -22,7 +22,7 @@ export function useEhrSession({ group, treatments, imaging, notes }: Props) {
     () => buildEhrModel(treatments, group, imaging, notes),
     [treatments, group, imaging, notes],
   );
-  const [conditionId, setConditionId] = useState(
+  const [conditionId, setConditionId] = useState<string | null>(
     model.conditions[0]?.id ?? null,
   );
   const [selectedToothId, setSelectedToothId] = useState<number | null>(
@@ -33,16 +33,14 @@ export function useEhrSession({ group, treatments, imaging, notes }: Props) {
   const [archFlip, setArchFlip] = useState(false);
 
   const activeCondition =
-    model.conditions.find((c) => c.id === conditionId) ??
-    model.conditions[0] ??
-    null;
+    model.conditions.find((c) => c.id === conditionId) ?? null;
   const activeVisit =
     model.visits.find((v) => v.id === visitId) ?? model.visits.at(-1) ?? null;
   const activeTreatment =
     treatments.find((t) => t.id === activeCondition?.id) ?? null;
   const activeFdi =
-    activeCondition?.fdi ??
-    (selectedToothId != null ? UNIVERSAL_TO_FDI[selectedToothId] : undefined);
+    resolveArchFocus({ selectedToothId, condition: activeCondition }).fdi ??
+    undefined;
   const sceneNotes = useMemo(() => {
     const scoped = activeFdi
       ? notes.filter((n) => n.fdi_number === activeFdi)
@@ -53,8 +51,10 @@ export function useEhrSession({ group, treatments, imaging, notes }: Props) {
   function selectTooth(universal: number) {
     setSelectedToothId(universal);
     setExpandedTx(true);
+    // Clear, not keep: a tooth with no condition of its own must not leave the
+    // previous condition open, or the arch highlights that tooth instead.
     const match = model.conditions.find((c) => c.toothUniversal === universal);
-    if (match) setConditionId(match.id);
+    setConditionId(match?.id ?? null);
   }
 
   function selectCondition(id: string, toothUniversal: number | null) {

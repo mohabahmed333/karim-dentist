@@ -109,6 +109,7 @@ export function ChatPanelHeader({
               type="button"
               aria-label={t("admin.chat.close")}
               onClick={onClose}
+              data-showreel-action="chat-close"
               className="rounded-lg p-1.5 text-[#70758A] hover:bg-[#F3F4F6] hover:text-[#111111]"
             >
               <X className="size-4" />
@@ -131,6 +132,7 @@ export function ChatPanelHeader({
                 type="button"
                 role="tab"
                 aria-selected={active}
+                data-showreel-action={`clinical-tab-${item.id}`}
                 onClick={() => onTabChange(item.id)}
                 className={`rounded-lg px-3.5 py-1.5 text-[12px] font-semibold transition-colors ${
                   active

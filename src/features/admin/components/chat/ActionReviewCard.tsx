@@ -17,14 +17,26 @@ type Props = {
   review: ProposalReviewState;
   disabled?: boolean;
   onResolved: (ok: boolean) => void;
+  /** Showreel/offline: skip confirm API and resolve locally. */
+  localOnly?: boolean;
 };
 
-export function ActionReviewCard({ review, disabled, onResolved }: Props) {
+export function ActionReviewCard({
+  review,
+  disabled,
+  onResolved,
+  localOnly = false,
+}: Props) {
   const [busy, setBusy] = useState(false);
 
   async function confirm() {
     setBusy(true);
     try {
+      if (localOnly) {
+        toast.success("Changes applied");
+        onResolved(true);
+        return;
+      }
       const res = await fetch("/api/v1/ai/admin-actions/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,11 +67,13 @@ export function ActionReviewCard({ review, disabled, onResolved }: Props) {
   async function cancel() {
     setBusy(true);
     try {
-      await fetch("/api/v1/ai/admin-actions/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proposalId: review.proposalId }),
-      });
+      if (!localOnly) {
+        await fetch("/api/v1/ai/admin-actions/cancel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ proposalId: review.proposalId }),
+        });
+      }
       toast.message("Proposal cancelled");
       onResolved(false);
     } catch (err) {
@@ -97,6 +111,9 @@ export function ActionReviewCard({ review, disabled, onResolved }: Props) {
         <Button
           type="button"
           size="sm"
+          data-showreel-action="clinical-review-apply"
+          data-showreel-assist-confirm=""
+          data-showreel-review-confirm=""
           disabled={disabled || busy}
           onClick={() => void confirm()}
         >

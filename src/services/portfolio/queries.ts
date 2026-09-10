@@ -194,3 +194,39 @@ export async function getPortfolioData(): Promise<PortfolioData> {
     return portfolioFallback;
   }
 }
+
+/** Settings + published services only — everything the showreel's public
+    booking panel reads. The full getPortfolioData() fires 18 uncached
+    round trips per iframe load; this one fires two. */
+export async function getShowreelBookingData(): Promise<PortfolioData> {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    return portfolioFallback;
+  }
+
+  try {
+    const supabase = createPublicClient();
+    const [settings, services] = await Promise.all([
+      supabase.from("site_settings").select("*").limit(1).maybeSingle(),
+      supabase
+        .from("services")
+        .select("*")
+        .is("deleted_at", null)
+        .eq("is_published", true)
+        .order("sort_order"),
+    ]);
+
+    return {
+      ...portfolioFallback,
+      settings: settings.data ?? portfolioFallback.settings,
+      services:
+        (services.data?.length ?? 0) > 0
+          ? services.data!
+          : portfolioFallback.services,
+    };
+  } catch {
+    return portfolioFallback;
+  }
+}

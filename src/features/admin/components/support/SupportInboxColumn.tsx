@@ -86,9 +86,18 @@ export function SupportInboxColumn({
 }: Props) {
   const t = useTranslations();
   const reduced = useReducedMotion();
+  const showreelDemo =
+    typeof document !== "undefined" &&
+    document.documentElement.dataset.showreelDemo === "1";
   const [searchOpen, setSearchOpen] = useState(Boolean(search));
   const [sortOpen, setSortOpen] = useState(false);
   const [poppingUnreadId, setPoppingUnreadId] = useState<string | null>(null);
+  // Showreel only: the demo inbox is static props with no live updates, so
+  // nothing ever clears `unread` — without this the badge would come back as
+  // soon as the script moved to the next thread.
+  const [demoReadIds, setDemoReadIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const popTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heading = title ?? t("admin.frontDesk.title");
   const openText = openLabel ?? t("admin.frontDesk.open");
@@ -104,7 +113,10 @@ export function SupportInboxColumn({
       clearTimeout(popTimerRef.current);
       popTimerRef.current = null;
     }
-    if (compact && unread && !reduced) {
+    if (showreelDemo) {
+      setDemoReadIds((prev) => new Set(prev).add(id));
+    }
+    if (compact && unread && !reduced && !showreelDemo) {
       setPoppingUnreadId(id);
       popTimerRef.current = setTimeout(() => {
         popTimerRef.current = null;
@@ -187,6 +199,7 @@ export function SupportInboxColumn({
               <button
                 type="button"
                 onClick={onClose}
+                data-showreel-action="chat-close"
                 className="hidden rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6] sm:inline-flex"
                 aria-label={t("admin.frontDesk.closeBubble")}
               >
@@ -330,6 +343,8 @@ export function SupportInboxColumn({
             <button
               key={c.id}
               type="button"
+              data-showreel-action="whatsapp-conversation"
+              data-conversation-id={c.id}
               onClick={() => selectConversation(c.id, c.unread)}
               className={cn(
                 "flex w-full gap-3.5 border-b border-[#E5E7EB] text-left transition-colors",
@@ -389,7 +404,7 @@ export function SupportInboxColumn({
                 </div>
                 <InboxMessagePreview conversation={c} />
                 <AnimatePresence initial={false}>
-                  {c.unread ? (
+                  {c.unread && !active && !demoReadIds.has(c.id) ? (
                     <div className="mt-2 flex justify-end">
                       <motion.span
                         key={`${c.id}-unread`}

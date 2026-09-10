@@ -3,6 +3,10 @@ export type ArchToothCenter = {
   x: number;
   y: number;
   z: number;
+  /** Explicit arch, when known (e.g. from mesh/material naming). Falls back
+      to the y-sign heuristic when omitted — some GLBs (e.g. the current
+      arch.glb) don't separate upper/lower along y at all. */
+  arch?: "upper" | "lower";
 };
 
 const UPPER_UNIVERSAL = [
@@ -31,11 +35,13 @@ export function centeredArchSlots(
 export function assignArchUniversals(
   teeth: ArchToothCenter[],
 ): Map<string, number> {
+  const isLower = (t: ArchToothCenter) =>
+    t.arch ? t.arch === "lower" : t.y < 0;
   const upper = teeth
-    .filter((t) => t.y >= 0)
+    .filter((t) => !isLower(t))
     .sort((a, b) => a.x - b.x || a.z - b.z);
   const lower = teeth
-    .filter((t) => t.y < 0)
+    .filter((t) => isLower(t))
     .sort((a, b) => b.x - a.x || a.z - b.z);
 
   const out = new Map<string, number>();

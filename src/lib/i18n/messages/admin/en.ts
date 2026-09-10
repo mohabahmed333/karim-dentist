@@ -484,6 +484,7 @@ export const adminEn = {
   "admin.overview.customize.catalogEmpty": "All widgets are on the dashboard.",
   "admin.overview.customize.drag":
     "Drag any card by itself: top/bottom = stack, left/right = side by side",
+  "admin.overview.customize.dragHandle": "Drag to move widget",
   "admin.overview.customize.cardEmpty": "Nothing to show yet",
   "admin.overview.customize.size": "Widget width",
   "admin.overview.customize.sizeHint":

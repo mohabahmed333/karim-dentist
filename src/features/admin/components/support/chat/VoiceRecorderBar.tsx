@@ -1,18 +1,29 @@
 "use client";
 
+import { useEffect } from "react";
 import { Mic, Pause, Play, Send, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "@/lib/i18n";
+import {
+  SHOWREEL_WHATSAPP_EVENT,
+  type ShowreelWhatsappDetail,
+} from "@/features/portfolio/showreel/product-scenes/showreelAdminEvents";
+import { useDemoVoiceRecorder } from "./useDemoVoiceRecorder";
 import { useVoiceRecorder } from "./useVoiceRecorder";
 import { VoiceWaveform } from "./VoiceWaveform";
 
 type Props = {
   onCancel: () => void;
   onSend: (file: File) => void;
+  /** Showreel: fake waves, no microphone permission. */
+  demo?: boolean;
 };
 
-export function VoiceRecorderBar({ onCancel, onSend }: Props) {
+export function VoiceRecorderBar({ onCancel, onSend, demo = false }: Props) {
   const t = useTranslations();
   const { locale } = useLocale();
+  const live = useVoiceRecorder({ onCancel, onSend, enabled: !demo });
+  const fake = useDemoVoiceRecorder({ onCancel, onSend, enabled: demo });
+  const rec = demo ? fake : live;
   const {
     phase,
     clock,
@@ -25,12 +36,25 @@ export function VoiceRecorderBar({ onCancel, onSend }: Props) {
     seekPreview,
     discard,
     stopAndSend,
-  } = useVoiceRecorder({ onCancel, onSend });
-
+  } = rec;
   const paused = phase === "paused";
 
+  useEffect(() => {
+    if (!demo) return;
+    function onShowreel(event: Event) {
+      const detail = (event as CustomEvent<ShowreelWhatsappDetail>).detail;
+      if (detail?.type === "voice-send") stopAndSend();
+    }
+    window.addEventListener(SHOWREEL_WHATSAPP_EVENT, onShowreel);
+    return () =>
+      window.removeEventListener(SHOWREEL_WHATSAPP_EVENT, onShowreel);
+  }, [demo, stopAndSend]);
+
   return (
-    <div className="flex w-full items-center gap-2 px-1 py-1 sm:gap-3">
+    <div
+      className="flex w-full items-center gap-2 px-1 py-1 sm:gap-3"
+      data-showreel-action="whatsapp-voice-recorder"
+    >
       <button
         type="button"
         onClick={discard}
@@ -104,6 +128,7 @@ export function VoiceRecorderBar({ onCancel, onSend }: Props) {
         type="button"
         onClick={stopAndSend}
         disabled={phase === "starting"}
+        data-showreel-action="whatsapp-voice-send"
         className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--admin-primary)] text-white shadow-sm hover:opacity-90 disabled:opacity-40"
         aria-label={t("admin.frontDesk.send")}
       >

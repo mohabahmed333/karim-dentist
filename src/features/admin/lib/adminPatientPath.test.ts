@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   canAddClinicalNote,
   patientKeyFromAdminPath,
+  shouldHideAdminChatBubbles,
 } from "./adminPatientPath.ts";
 
 describe("patientKeyFromAdminPath", () => {
@@ -43,5 +44,28 @@ describe("canAddClinicalNote", () => {
       canAddClinicalNote("/admin/patients/phone%3A201012345678/workspace"),
       true,
     );
+  });
+});
+
+describe("shouldHideAdminChatBubbles", () => {
+  it("hides on full WhatsApp support and open patient clinical UI", () => {
+    assert.equal(shouldHideAdminChatBubbles("/admin/support"), true);
+    assert.equal(
+      shouldHideAdminChatBubbles("/admin/patients/phone%3A201012345678"),
+      true,
+    );
+    assert.equal(
+      shouldHideAdminChatBubbles(
+        "/admin/patients/phone%3A201012345678/workspace",
+      ),
+      true,
+    );
+  });
+
+  it("keeps the FAB on overview, patient list, and other admin pages", () => {
+    assert.equal(shouldHideAdminChatBubbles("/admin"), false);
+    assert.equal(shouldHideAdminChatBubbles("/admin/patients"), false);
+    assert.equal(shouldHideAdminChatBubbles("/admin/reservations"), false);
+    assert.equal(shouldHideAdminChatBubbles("/admin/customize"), false);
   });
 });

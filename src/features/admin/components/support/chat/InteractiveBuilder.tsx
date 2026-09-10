@@ -24,6 +24,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
       <div className="mb-2 flex gap-2">
         <button
           type="button"
+          data-showreel-action="whatsapp-quick-replies"
           className="inline-flex items-center gap-1 rounded-md border border-[#E5E7EB] px-2 py-1 text-xs text-[#6B7280] hover:bg-[#F3F4F6]"
           onClick={() =>
             onChange({ mode: "buttons", labels: ["Yes", "No"] })
@@ -51,7 +52,10 @@ export function InteractiveBuilder({ value, onChange }: Props) {
   }
 
   return (
-    <div className="mb-2 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] p-3">
+    <div
+      className="mb-2 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] p-3"
+      data-showreel-action="whatsapp-quick-replies-open"
+    >
       <div className="mb-2 flex items-center justify-between">
         <div className="flex gap-1">
           <Tab

@@ -1,5 +1,10 @@
 import { DentalButton } from "./DentalButton";
 import { ScrollReveal } from "./ScrollReveal";
+import {
+  dentalHeroBodyClass,
+  dentalHeroCopyShellClass,
+  dentalHeroHeadlineClass,
+} from "@/features/portfolio/lib/dentalHeroLayout";
 
 type Props = {
   kicker: string;
@@ -21,7 +26,7 @@ export function DentalHeroCopy({
   ctaHref,
 }: Props) {
   return (
-    <div className="flex max-w-[34rem] flex-1 flex-col justify-center">
+    <div className={dentalHeroCopyShellClass}>
       <ScrollReveal>
         {kicker ? (
           <p
@@ -31,10 +36,7 @@ export function DentalHeroCopy({
             {kicker}
           </p>
         ) : null}
-        <h1
-          className="max-w-[11ch] text-[clamp(2.6rem,5.4vw,4.6rem)] font-bold leading-[1.02] tracking-[-0.045em] text-[#0f2744]"
-          data-customize-field="headline"
-        >
+        <h1 className={dentalHeroHeadlineClass} data-customize-field="headline">
           {headline}
           {accent ? (
             <em
@@ -47,11 +49,8 @@ export function DentalHeroCopy({
           {after}
         </h1>
       </ScrollReveal>
-      <ScrollReveal className="mt-[1.35rem]">
-        <p
-          className="mb-[1.7rem] max-w-[30rem] text-base leading-relaxed text-[#6b7280]"
-          data-customize-field="body"
-        >
+      <ScrollReveal className="mt-3 sm:mt-[1.35rem]">
+        <p className={dentalHeroBodyClass} data-customize-field="body">
           {body}
         </p>
       </ScrollReveal>

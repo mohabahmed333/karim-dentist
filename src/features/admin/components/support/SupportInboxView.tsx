@@ -19,6 +19,7 @@ import {
 import type { ComposerSendPayload } from "./chat/composerTypes";
 import {
   useWhatsappInboxLive,
+  type InboxAlertView,
   type LiveInbox,
 } from "./useWhatsappInboxLive";
 import { mapWhatsappMessage } from "./supportWhatsappMap";
@@ -48,6 +49,8 @@ import {
 } from "./compactInboxMotion";
 
 const DETAILS_WIDTH = 300;
+/** Demo/showreel only: how long a sent bubble shows its pending clock. */
+const DEMO_DELIVERY_MS = 700;
 
 type Props = {
   conversations?: SupportConversation[];
@@ -62,12 +65,17 @@ type Props = {
   onClose?: () => void;
   /** Pin Clinic Assist as first inbox row (default true on full page). */
   showClinicAssist?: boolean;
+  /** False when the compact panel is hidden (floating/dock closed). */
+  panelVisible?: boolean;
+  onUnreadTotal?: (count: number) => void;
   inboxQ?: string;
   inboxStatus?: InboxStatusFilter;
   inboxSort?: InboxSort;
   chatLayout?: import("@/features/admin/hooks/useAdminChatLayout").AdminChatLayout;
   onToggleChatLayout?: () => void;
   onCollapseDock?: () => void;
+  /** Showreel / demos: keep selection in sync with a scripted id. */
+  forcedSelectedId?: string;
 };
 
 export function SupportInboxView({
@@ -81,12 +89,15 @@ export function SupportInboxView({
   compact = false,
   onClose,
   showClinicAssist = true,
+  panelVisible = true,
+  onUnreadTotal,
   inboxQ: inboxQProp = "",
   inboxStatus: inboxStatusProp = "open",
   inboxSort: inboxSortProp = "newest",
   chatLayout,
   onToggleChatLayout,
   onCollapseDock,
+  forcedSelectedId,
 }: Props) {
   const t = useTranslations();
   const { locale } = useLocale();
@@ -144,11 +155,16 @@ export function SupportInboxView({
     [inboxFilter, inboxSearch, inboxSort],
   );
 
+  const alertViewRef = useRef<InboxAlertView>({
+    selectedId: "",
+    threadVisible: panelVisible,
+  });
   const live = useWhatsappInboxLive(
     useKapso,
     initial,
     agentName,
     conversationFilters,
+    { viewRef: alertViewRef, onUnreadTotal },
   );
   const {
     conversations,
@@ -171,7 +187,9 @@ export function SupportInboxView({
     dragging: inboxResizing,
     startResize: startInboxResize,
   } = useInboxColumnWidth();
-  const [selectedId, setSelectedId] = useState(conversations[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState(
+    forcedSelectedId || conversations[0]?.id || "",
+  );
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [extraMessages, setExtraMessages] = useState<
     Record<string, SupportMessage[]>
@@ -181,6 +199,8 @@ export function SupportInboxView({
     Record<string, SupportMessage | null>
   >({});
   const [sending, setSending] = useState(false);
+  /** Demo mode has no send API to report delivery back — see handleSend. */
+  const demoTickTimersRef = useRef<number[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [assistPatient, setAssistPatient] = useState<ActivePatient | null>(
@@ -188,13 +208,29 @@ export function SupportInboxView({
   );
   const [assistReturnId, setAssistReturnId] = useState("");
   /** Messenger list↔chat for floating bubble only. */
-  const [compactPane, setCompactPane] = useState<"list" | "thread">("list");
-  /** +1 open thread, -1 back to list — drives slide direction. */
+  const [compactPane, setCompactPane] = useState<"list" | "thread">(
+    compact && forcedSelectedId ? "thread" : "list",
+  );
+  /** +1 open thread, -1 back to the list — drives slide direction. */
   const [paneDir, setPaneDir] = useState(1);
+  alertViewRef.current = {
+    selectedId,
+    threadVisible: compact
+      ? panelVisible && compactPane === "thread"
+      : panelVisible,
+  };
 
   useEffect(() => {
     setSearchDraft(inboxSearch);
   }, [inboxSearch]);
+
+  useEffect(() => {
+    const timers = demoTickTimersRef;
+    return () => {
+      timers.current.forEach((handle) => window.clearTimeout(handle));
+      timers.current = [];
+    };
+  }, []);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -237,6 +273,15 @@ export function SupportInboxView({
       setSelectedId(conversations[0].id);
     }
   }, [conversations, selectedId]);
+
+  useEffect(() => {
+    if (!forcedSelectedId) return;
+    setSelectedId(forcedSelectedId);
+    if (compact) {
+      setPaneDir(1);
+      setCompactPane("thread");
+    }
+  }, [forcedSelectedId, compact, panelVisible]);
 
   useEffect(() => {
     if (!useKapso || !selectedId || selectedId === CLINIC_ASSIST_CHAT_ID) {
@@ -479,7 +524,37 @@ export function SupportInboxView({
       timestamp: timeLabel,
     });
 
-    if (!useKapso) return;
+    if (!useKapso) {
+      // Persist onto demo inbox so float ↔ dock remounts keep the send.
+      const prior = messagesById[id] ?? [];
+      if (!prior.some((m) => m.id === optimisticId)) {
+        messagesById[id] = [...prior, optimistic];
+      }
+      // No send API here to report delivery back, so walk the ticks forward
+      // the way a real send does — otherwise the bubble sits on "pending".
+      const handle = window.setTimeout(() => {
+        const delivered: SupportMessage = {
+          ...optimistic,
+          status: "delivered",
+          statusTimestamps: {
+            sent_at: nowIso,
+            delivered_at: new Date().toISOString(),
+          },
+        };
+        setExtraMessages((prev) => ({
+          ...prev,
+          [id]: (prev[id] ?? []).map((m) =>
+            m.id === optimisticId ? delivered : m,
+          ),
+        }));
+        messagesById[id] = (messagesById[id] ?? []).map((m) =>
+          m.id === optimisticId ? delivered : m,
+        );
+        touchConversation(id, { lastMessageStatus: "delivered" });
+      }, DEMO_DELIVERY_MS);
+      demoTickTimersRef.current.push(handle);
+      return;
+    }
 
     setSending(true);
     try {
@@ -829,25 +904,30 @@ export function SupportInboxView({
               exit="exit"
               transition={paneTransition}
             >
-              <ReceptionChat
-                key={
-                  assistPatient
-                    ? `assist-${assistPatient.patientKey}`
-                    : "assist-default"
-                }
-                className="h-full min-h-0"
-                statsSummary={t("admin.chat.title")}
-                initialPatient={assistPatient}
-                chatLayout={chatLayout}
-                onToggleChatLayout={onToggleChatLayout}
-                onCollapseDock={onCollapseDock}
-                onClose={() => {
-                  setAssistPatient(null);
-                  setAssistReturnId("");
-                  setSelectedId(assistReturnId || selectedId);
-                  goToList();
-                }}
-              />
+              <div
+                data-showreel-action="clinic-assist-chat"
+                className="flex h-full min-h-0 flex-col"
+              >
+                <ReceptionChat
+                  key={
+                    assistPatient
+                      ? `assist-${assistPatient.patientKey}`
+                      : "assist-default"
+                  }
+                  className="h-full min-h-0"
+                  statsSummary={t("admin.chat.title")}
+                  initialPatient={assistPatient}
+                  chatLayout={chatLayout}
+                  onToggleChatLayout={onToggleChatLayout}
+                  onCollapseDock={onCollapseDock}
+                  onClose={() => {
+                    setAssistPatient(null);
+                    setAssistReturnId("");
+                    setSelectedId(assistReturnId || selectedId);
+                    goToList();
+                  }}
+                />
+              </div>
             </motion.div>
           ) : (
             <motion.div
@@ -884,8 +964,9 @@ export function SupportInboxView({
                   }))
                 }
                 detailsOpen={false}
-                showWorkspace={false}
+                showWorkspace
                 onBack={goToList}
+                onClose={onClose}
                 onLoadMore={() => {
                   void handleLoadMore();
                 }}

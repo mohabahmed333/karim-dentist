@@ -13,8 +13,16 @@ export function localeDir(locale: Locale): "ltr" | "rtl" {
   return locale === "ar" ? "rtl" : "ltr";
 }
 
+/** Showreel iframes stay English and must not rewrite the visitor locale cookie. */
+export function isShowreelDemoLocaleLock(): boolean {
+  if (typeof document === "undefined") return false;
+  if (document.documentElement.dataset.showreelDemo === "1") return true;
+  return location.pathname.startsWith("/showreel/demo");
+}
+
 /** Client-only: persist locale to cookie + localStorage. */
 export function persistLocale(locale: Locale): void {
+  if (isShowreelDemoLocaleLock()) return;
   try {
     localStorage.setItem(LOCALE_STORAGE_KEY, locale);
   } catch {
@@ -28,11 +36,19 @@ export function persistLocale(locale: Locale): void {
 }
 
 /**
- * Inline script for <head>: apply stored locale to <html> before paint,
+ * Inline script: apply stored locale to <html> before paint,
  * and migrate localStorage → cookie so the next SSR request is correct.
+ *
+ * React 19 never executes <script> created during a client render, so this
+ * HTML must only be emitted during SSR / hydration.
  */
 export const LOCALE_BOOTSTRAP_SCRIPT = [
   "(function(){try{",
+  'if(location.pathname.indexOf("/showreel/demo")===0){',
+  'document.documentElement.lang="en";',
+  'document.documentElement.dir="ltr";',
+  "return;",
+  "}",
   'var k="dental-lounge-locale";',
   "var m=document.cookie.match(/(?:^|; )dental-lounge-locale=([^;]*)/);",
   "var v=m?decodeURIComponent(m[1]):null;",
@@ -47,3 +63,9 @@ export const LOCALE_BOOTSTRAP_SCRIPT = [
   "}",
   "}catch(e){}})();",
 ].join("");
+
+export function localeBootstrapScriptHtml(
+  render: "server" | "client",
+): string | null {
+  return render === "server" ? LOCALE_BOOTSTRAP_SCRIPT : null;
+}

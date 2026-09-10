@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   groupReservationsByPatient,
@@ -8,7 +15,6 @@ import {
 import type { Reservation } from "@/services/reservations/types";
 import type {
   WhatsappConversation,
-  WhatsappMessage,
   WhatsappNote,
 } from "@/services/whatsapp";
 import {
@@ -20,10 +26,31 @@ import {
   mapWhatsappToSupportUi,
 } from "./supportWhatsappMap";
 import type {
+  SupportConversation,
   SupportDetails,
   SupportMessage,
 } from "./supportDummyData";
-import type { SupportConversation } from "./supportDummyData";
+import {
+  parseUnreadCount,
+  takeInboundChime,
+  unreadTotalFromConversations,
+} from "@/features/admin/lib/whatsappInboundAlert";
+import {
+  playWhatsappInboundChime,
+  unlockWhatsappInboundChime,
+} from "@/features/admin/lib/whatsappInboundChime";
+import { subscribeWhatsappLive } from "@/features/admin/lib/whatsappLiveClient";
+import { mergeSupportMessages } from "@/features/admin/lib/whatsappLiveApply";
+
+export type InboxAlertView = {
+  selectedId: string;
+  threadVisible: boolean;
+};
+
+export type InboxLiveAlert = {
+  viewRef?: RefObject<InboxAlertView | null>;
+  onUnreadTotal?: (count: number) => void;
+};
 
 export type LiveInbox = {
   conversations: SupportConversation[];
@@ -38,10 +65,18 @@ export function useWhatsappInboxLive(
   initial: LiveInbox,
   agentName = "Front desk",
   conversationFilters?: ConversationListFilters | null,
+  alert?: InboxLiveAlert,
 ) {
-  const instanceId = useId().replace(/:/g, "");
+  const viewRef = alert?.viewRef;
+  const onUnreadRef = useRef(alert?.onUnreadTotal);
+  onUnreadRef.current = alert?.onUnreadTotal;
   const [live, setLive] = useState(initial);
   const [filterLoading, setFilterLoading] = useState(false);
+
+  useEffect(() => {
+    if (enabled) return;
+    setLive(initial);
+  }, [enabled, initial]);
   const prevFilterKeyRef = useRef<string | null>(null);
   const filterKey = JSON.stringify(conversationFilters ?? null);
   const filters = useMemo((): ConversationListFilters | null => {
@@ -55,6 +90,7 @@ export function useWhatsappInboxLive(
   }, [filterKey]);
 
   useEffect(() => {
+    if (enabled && initial.conversations.length === 0) return;
     setLive((prev) => ({
       ...initial,
       // Keep any pages already loaded for the same conversation ids
@@ -73,7 +109,7 @@ export function useWhatsappInboxLive(
         ...prev.cursorsById,
       },
     }));
-  }, [initial]);
+  }, [enabled, initial]);
 
   const refreshConversations = useCallback(async () => {
     const supabase = createClient();
@@ -240,118 +276,180 @@ export function useWhatsappInboxLive(
 
   useEffect(() => {
     if (!enabled) return;
-
     const supabase = createClient();
-    const channel = supabase
-      .channel(`whatsapp-inbox-live-${instanceId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "whatsapp_messages" },
-        (payload) => {
-          const row = (payload.new ?? payload.old) as WhatsappMessage | null;
-          if (!row?.conversation_id) {
-            void refreshConversations();
-            return;
-          }
-          setLive((prev) => {
-            const conv = prev.conversations.find(
-              (c) => c.id === row.conversation_id,
-            );
-            const mapped = mapWhatsappMessage(
-              row,
-              conv?.name ?? "Patient",
-              agentName,
-            );
-            const existing = prev.messagesById[row.conversation_id] ?? [];
-            let nextMsgs: SupportMessage[];
-            if (payload.eventType === "DELETE") {
-              nextMsgs = existing.filter((m) => m.id !== row.id);
-            } else {
-              const idx = existing.findIndex((m) => m.id === mapped.id);
-              if (idx >= 0) {
-                nextMsgs = [...existing];
-                nextMsgs[idx] = mapped;
-              } else {
-                const withoutLocal = existing.filter(
-                  (m) =>
-                    !(
-                      m.id.startsWith("local-") &&
-                      m.body === mapped.body &&
-                      m.author === "agent"
-                    ),
-                );
-                nextMsgs = [...withoutLocal, mapped].sort((a, b) =>
-                  (a.waTimestamp ?? "").localeCompare(b.waTimestamp ?? ""),
-                );
-              }
-            }
-
-            const isLatest =
-              payload.eventType !== "DELETE" &&
-              nextMsgs[nextMsgs.length - 1]?.id === mapped.id;
-            let conversations = prev.conversations;
-            if (isLatest && conv) {
-              const touched: SupportConversation = {
-                ...conv,
-                preview: mapped.body || conv.preview,
-                lastMessageType: mapped.messageType ?? conv.lastMessageType,
-                lastMessageAt: mapped.waTimestamp ?? conv.lastMessageAt,
-                lastMessageStatus: mapped.status ?? conv.lastMessageStatus,
-                timestamp: mapped.time || conv.timestamp,
+    let cancelled = false;
+    async function pull() {
+      try {
+        const conversations = await listConversations(supabase, filters);
+        if (cancelled) return;
+        setLive((prev) => {
+          const mapped = mapWhatsappToSupportUi(
+            conversations,
+            {},
+            {},
+            [],
+            agentName,
+          );
+          const prevById = new Map(
+            prev.conversations.map((row) => [row.id, row]),
+          );
+          return {
+            ...prev,
+            conversations: mapped.uiConversations.map((row) => {
+              const older = prevById.get(row.id);
+              if (!older) return row;
+              return {
+                ...older,
+                preview: row.preview,
+                lastMessageType: row.lastMessageType,
+                lastMessageAt: row.lastMessageAt,
+                lastMessageStatus: row.lastMessageStatus,
+                lastInboundAt: row.lastInboundAt,
+                sessionOpen: row.sessionOpen,
+                timestamp: row.timestamp,
+                status: row.status,
+                unread: row.unread,
               };
-              conversations = [
-                touched,
-                ...prev.conversations.filter((c) => c.id !== conv.id),
-              ];
-            } else if (
-              payload.eventType === "UPDATE" &&
-              conv &&
-              conv.lastMessageAt &&
-              mapped.waTimestamp &&
-              mapped.waTimestamp >= conv.lastMessageAt
-            ) {
-              conversations = prev.conversations.map((c) =>
-                c.id === conv.id
-                  ? {
-                      ...c,
-                      lastMessageStatus: mapped.status ?? c.lastMessageStatus,
-                    }
-                  : c,
-              );
-            }
+            }),
+            openCount: mapped.openCount,
+          };
+        });
+      } catch {
+        /* keep last list */
+      }
+    }
+    const pollId = window.setInterval(pull, 3000);
+    function onVis() {
+      if (document.visibilityState === "visible") void pull();
+    }
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", pull);
+    return () => {
+      cancelled = true;
+      window.clearInterval(pollId);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", pull);
+    };
+  }, [enabled, filters, agentName]);
 
-            return {
-              ...prev,
-              conversations,
-              messagesById: {
-                ...prev.messagesById,
-                [row.conversation_id]: nextMsgs,
-              },
-            };
-          });
-          void refreshConversations();
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "whatsapp_conversations" },
-        () => {
-          void refreshConversations();
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "whatsapp_notes" },
-        () => {
-          void refreshConversations();
-        },
-      )
-      .subscribe();
+  useEffect(() => {
+    if (!enabled) return;
+
+    const unsub = subscribeWhatsappLive((event) => {
+      if (event.table !== "whatsapp_messages") {
+        void refreshConversations();
+        return;
+      }
+      const row = event.row;
+      if (!row?.conversation_id) {
+        void refreshConversations();
+        return;
+      }
+      const view = viewRef?.current;
+      if (
+        takeInboundChime({
+          eventType: event.eventType,
+          direction: row.direction,
+          conversationId: row.conversation_id,
+          messageId: row.id,
+          selectedConversationId: view?.selectedId ?? "",
+          threadVisible: view?.threadVisible ?? false,
+        })
+      ) {
+        playWhatsappInboundChime();
+      }
+      setLive((prev) => {
+        const conv = prev.conversations.find(
+          (c) => c.id === row.conversation_id,
+        );
+        const mapped = mapWhatsappMessage(
+          row,
+          conv?.name ?? "Patient",
+          agentName,
+        );
+        const existing = prev.messagesById[row.conversation_id] ?? [];
+        let nextMsgs: SupportMessage[];
+        if (event.eventType === "DELETE") {
+          nextMsgs = existing.filter((m) => m.id !== row.id);
+        } else {
+          const idx = existing.findIndex((m) => m.id === mapped.id);
+          if (idx >= 0) {
+            nextMsgs = [...existing];
+            nextMsgs[idx] = mapped;
+          } else {
+            const withoutLocal = existing.filter(
+              (m) =>
+                !(
+                  m.id.startsWith("local-") &&
+                  m.body === mapped.body &&
+                  m.author === "agent"
+                ),
+            );
+            nextMsgs = [...withoutLocal, mapped].sort((a, b) =>
+              (a.waTimestamp ?? "").localeCompare(b.waTimestamp ?? ""),
+            );
+          }
+        }
+
+        const isLatest =
+          event.eventType !== "DELETE" &&
+          nextMsgs[nextMsgs.length - 1]?.id === mapped.id;
+        let conversations = prev.conversations;
+        if (isLatest && conv) {
+          const inbound = mapped.author === "customer";
+          const unreadN = parseUnreadCount(conv.unread);
+          const touched: SupportConversation = {
+            ...conv,
+            preview: mapped.body || conv.preview,
+            lastMessageType: mapped.messageType ?? conv.lastMessageType,
+            lastMessageAt: mapped.waTimestamp ?? conv.lastMessageAt,
+            lastMessageStatus: mapped.status ?? conv.lastMessageStatus,
+            timestamp: mapped.time || conv.timestamp,
+            unread: inbound ? String(unreadN + 1) : conv.unread,
+          };
+          conversations = [
+            touched,
+            ...prev.conversations.filter((c) => c.id !== conv.id),
+          ];
+        } else if (
+          event.eventType === "UPDATE" &&
+          conv &&
+          conv.lastMessageAt &&
+          mapped.waTimestamp &&
+          mapped.waTimestamp >= conv.lastMessageAt
+        ) {
+          conversations = prev.conversations.map((c) =>
+            c.id === conv.id
+              ? {
+                  ...c,
+                  lastMessageStatus: mapped.status ?? c.lastMessageStatus,
+                }
+              : c,
+          );
+        }
+
+        return {
+          ...prev,
+          conversations,
+          messagesById: {
+            ...prev.messagesById,
+            [row.conversation_id]: nextMsgs,
+          },
+        };
+      });
+      void refreshConversations();
+    });
+
+    function unlock() {
+      unlockWhatsappInboundChime();
+    }
+    window.addEventListener("pointerdown", unlock, { once: true });
 
     return () => {
-      void supabase.removeChannel(channel);
+      window.removeEventListener("pointerdown", unlock);
+      unsub();
     };
-  }, [enabled, refreshConversations, agentName, instanceId]);
+  }, [enabled, refreshConversations, agentName, viewRef]);
 
   const replaceConversationMessages = useCallback(
     (
@@ -361,7 +459,13 @@ export function useWhatsappInboxLive(
     ) => {
       setLive((prev) => ({
         ...prev,
-        messagesById: { ...prev.messagesById, [conversationId]: messages },
+        messagesById: {
+          ...prev.messagesById,
+          [conversationId]: mergeSupportMessages(
+            messages,
+            prev.messagesById[conversationId] ?? [],
+          ),
+        },
         cursorsById: {
           ...prev.cursorsById,
           [conversationId]: nextCursor,
@@ -372,6 +476,13 @@ export function useWhatsappInboxLive(
   );
 
   const state = enabled ? live : initial;
+
+  useEffect(() => {
+    onUnreadRef.current?.(
+      enabled ? unreadTotalFromConversations(state.conversations) : 0,
+    );
+  }, [enabled, state.conversations]);
+
   return {
     ...state,
     filterLoading: enabled ? filterLoading : false,

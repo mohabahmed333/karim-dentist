@@ -4,7 +4,7 @@ import * as THREE from "three";
 export const ARCH_CROWN = "#FFFEF8";
 export const ARCH_ROOT = "#CDB892";
 
-function materialName(mesh: THREE.Mesh): string {
+export function materialName(mesh: THREE.Mesh): string {
   const mat = mesh.material;
   if (Array.isArray(mat)) return mat.map((m) => m?.name ?? "").join(" ");
   return mat?.name ?? "";

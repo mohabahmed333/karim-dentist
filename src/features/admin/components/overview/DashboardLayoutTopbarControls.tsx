@@ -36,12 +36,14 @@ function TipButton({
   onClick,
   disabled,
   active,
+  showreelAction,
   children,
 }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
   active?: boolean;
+  showreelAction?: string;
   children: ReactNode;
 }) {
   return (
@@ -55,6 +57,7 @@ function TipButton({
             disabled={disabled}
             onClick={onClick}
             aria-label={label}
+            data-showreel-action={showreelAction}
             className={cn(
               "inline-flex size-8 items-center justify-center rounded-md text-[var(--admin-muted)]",
               "hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]",
@@ -109,6 +112,7 @@ export function DashboardLayoutTopbarControls() {
             >
               <TipButton
                 label={t("admin.overview.customize.edit")}
+                showreelAction="dashboard-customize"
                 onClick={() =>
                   dispatchDashboardLayoutAction({ type: "toggleEdit" })
                 }
@@ -148,6 +152,7 @@ export function DashboardLayoutTopbarControls() {
                 <TipButton
                   label={t("admin.overview.customize.add")}
                   active={state.catalogOpen}
+                  showreelAction="dashboard-add-widget"
                   onClick={() =>
                     dispatchDashboardLayoutAction({ type: "toggleCatalog" })
                   }
