@@ -110,6 +110,55 @@ Plus the two Vault secrets in
   the reminder. Sends use `senderKind: 'system'`, which also keeps them out of
   the responder's rate budget and away from its `human_active` gate.
 
+## Beyond confirmations
+
+### Waitlist offers — `/admin/waitlist`
+
+When a booked slot goes back to `open` (a cancellation, a reschedule away from
+it), the trigger `appointment_slots_offer_waitlist` queues a `waitlist_offer`
+for the **three longest-waiting** patients whose preferred window contains the
+slot, and marks them `offered`.
+
+- At send time the dispatcher re-checks the slot is still open and skips with
+  `slot_taken` if not — a deferral can hold an offer back for hours.
+- After the send it registers the slot in `whatsapp_ai_state.offered_slot_ids`
+  with a 30-minute expiry. That is what lets the assistant accept "take it":
+  `processJob` now reads held slots back into its slot list. Before this, that
+  column was written and never read.
+- First answer wins through `book_open_appointment_slot`, which is atomic; the
+  others get "that time was just taken".
+- Removing someone from the waitlist withdraws any offer not yet sent.
+
+### Follow-ups and recalls
+
+Neither has a triggering row, so `enqueueFollowupsAndRecalls` scans on every
+dispatch tick. Each enqueue is idempotent on `dedupe_key`, so the scan can run
+any number of times.
+
+| Kind | When | Dedupe key |
+|---|---|---|
+| `followup` | 18h–3 days after a visit marked `completed` | `<reservation>:followup` |
+| `recall_6m` | last completed visit over 180 days ago, nothing booked | `<phone suffix>:recall_6m:<that visit>` |
+
+The scan does **not** run while `mode = 'off'`: a row queued then would be
+skipped as `mode_off` with its dedupe key spent, and that lapse would never be
+recalled.
+
+**Recalls have their own switch**, `recall_enabled`, off by default and separate
+from `mode`. A "you're due a check-up" message is marketing in Meta's
+classification and in the patient's eyes, and needs its own template and consent.
+
+### Templates still missing
+
+Every kind below queues correctly and records `no_approved_template` until its
+template is approved and added to `PATIENT_TEMPLATES` / `buildTemplateForKind`:
+
+`cancellation` · `reschedule` · `waitlist_offer` · `followup` · `recall_6m` (MARKETING)
+
+Review requests after a good follow-up reply are **not built**: they need the
+assistant to judge a reply's sentiment, which is a change to its decision logic
+rather than to this pipeline.
+
 ## If nothing is being sent
 
 1. **Is the endpoint deployed and locked?**

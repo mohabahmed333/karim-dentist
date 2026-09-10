@@ -45,6 +45,32 @@ worst change an appointment for the number that sent the message.
 | `src/app/api/v1/whatsapp/webhook/route.ts` | Enqueues, then generates in `after()` |
 | `src/app/api/v1/whatsapp/ai/sweep/route.ts` | Cron backstop for interrupted jobs |
 
+## Grounding and learning
+
+**Clinic knowledge — `/admin/knowledge`.** Retrieved per message by
+`search_clinic_knowledge` and injected as a trusted prompt block. Full-text, not
+embeddings: the patient's message is tokenised and its lexemes OR-ed, then kept
+relative to the best match (`selectRelevant`). An AND query — the obvious first
+version — matched nothing, because the `simple` config keeps stopwords. New
+entries start unpublished; unpublished entries are invisible to the assistant.
+
+**Assistant review — `/admin/assistant-review`.** Every draft staff edit before
+sending is stored in `whatsapp_ai_corrections`, with the model's original read
+from `whatsapp_ai_events.envelope` (the draft row may already hold staff's
+wording). From the queue: mark reviewed, or add the staff answer to knowledge as
+an unpublished entry. "Promote to golden case" does not write a test file —
+Vercel's filesystem is read-only — so reviewed examples are exported as JSON for
+a developer to commit.
+
+**Voice notes.** Kapso transcribes them (`kapso.transcript`); a transcribed note
+is readable like text. Pending transcripts and non-speech markers such as
+`[outro jingle]` stay unreadable.
+
+**Replying to a reminder.** "cancel"/"الغاء" with one upcoming appointment
+cancels it; with more than one the assistant must ask. `booking_cancel` needs 0.9
+confidence, and a cancel emitted while `needs` still contains `reservation_id` is
+drafted as `ambiguous_reservation`.
+
 ## Operating it
 
 ```sql
