@@ -181,6 +181,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.reservations.noResults": "لا توجد حجوزات تطابق عوامل التصفية.",
   "admin.reservations.today": "اليوم",
   "admin.reservations.nextThreeDays": "الأيام الثلاثة القادمة",
+  "admin.reservations.noAppointmentsNextThreeDays": "لا توجد مواعيد خلال الأيام الثلاثة القادمة",
   "admin.reservations.patient": "المريض",
   "admin.reservations.service": "الخدمة",
   "admin.reservations.date": "التاريخ",
