@@ -88,3 +88,40 @@ test("never emits duplicate URLs", () => {
   const urls = entries.map((e) => e.url);
   assert.equal(new Set(urls).size, urls.length);
 });
+
+test("emits an Arabic entry for every English one, with reciprocal hreflang", () => {
+  const entries = buildSitemapEntries({
+    siteUrl: "https://thedentallounge.com",
+    hiddenSections: [],
+    caseStudies: [
+      { slug: "a", is_published: true, deleted_at: null, updated_at: NOW.toISOString() },
+    ],
+    featuredProjects: [],
+  });
+  const urls = entries.map((e) => e.url);
+  assert.ok(urls.includes("https://thedentallounge.com/ar"));
+  assert.ok(urls.includes("https://thedentallounge.com/ar/case-studies"));
+  assert.ok(urls.includes("https://thedentallounge.com/ar/case-studies/a"));
+
+  const home = entries.find((e) => e.url === "https://thedentallounge.com/");
+  const homeAr = entries.find((e) => e.url === "https://thedentallounge.com/ar");
+  assert.deepEqual(home?.alternates?.languages, {
+    en: "https://thedentallounge.com/",
+    ar: "https://thedentallounge.com/ar",
+  });
+  // Every language version declares all of them, including itself.
+  assert.deepEqual(home?.alternates?.languages, homeAr?.alternates?.languages);
+});
+
+test("hiding a section removes both its English and Arabic entries", () => {
+  const entries = buildSitemapEntries({
+    siteUrl: "https://thedentallounge.com",
+    hiddenSections: ["case-studies"],
+    caseStudies: [
+      { slug: "a", is_published: true, deleted_at: null, updated_at: NOW.toISOString() },
+    ],
+    featuredProjects: [],
+  });
+  const urls = entries.map((e) => e.url);
+  assert.ok(!urls.some((u) => u.includes("case-studies")));
+});

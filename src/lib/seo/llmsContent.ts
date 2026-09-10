@@ -99,6 +99,9 @@ export function buildLlmsIndex(input: IndexInput): string {
   if (hours) lines.push(`- Hours: ${hours}`);
   const doctor = text(settings.contact_doctor_name);
   if (doctor) lines.push(`- Lead dentist: ${doctor}`);
+  lines.push(
+    `- Languages: [English](${input.siteUrl}/), [Arabic (العربية)](${input.siteUrl}/ar)`,
+  );
 
   lines.push("");
   lines.push("## Pages");

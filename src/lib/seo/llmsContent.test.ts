@@ -73,6 +73,7 @@ test("index lists NAP, hours, and the services and pages sections", () => {
   assert.match(text, /Teeth whitening/);
   // Placeholder titles never appear.
   assert.ok(!text.includes("Untitled"));
+  assert.match(text, /Languages: \[English\]\(https:\/\/thedentallounge\.com\/\), \[Arabic \(العربية\)\]\(https:\/\/thedentallounge\.com\/ar\)/);
   assert.match(text, /## Pages/);
   assert.match(text, /https:\/\/thedentallounge\.com\/case-studies/);
   assert.match(text, /llms-full\.txt/);

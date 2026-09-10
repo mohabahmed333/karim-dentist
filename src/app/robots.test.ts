@@ -40,7 +40,7 @@ test("production keeps admin, api and showreel out of the index", () => {
   const rules = robots().rules as { userAgent: string; disallow?: string[] }[];
   const wildcard = rules.find((rule) => rule.userAgent === "*");
   assert.ok(wildcard);
-  for (const path of ["/admin", "/api/", "/showreel", "/showreel2", "/en/"]) {
+  for (const path of ["/admin", "/api/", "/showreel", "/showreel2", "/en", "/en/"]) {
     assert.ok(
       wildcard.disallow?.includes(path),
       `expected ${path} to be disallowed`,

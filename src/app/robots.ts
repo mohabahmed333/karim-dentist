@@ -17,7 +17,10 @@ const DISALLOW = [
   "/api/",
   "/showreel",
   "/showreel2",
-  // Internal rewrite target for the English tree; `/` is the canonical form.
+  // Internal rewrite target for the English tree; `/` is the canonical
+  // form and next.config.ts 308-redirects both of these to it, but a
+  // crawler that somehow reaches them first should still be told not to.
+  "/en",
   "/en/",
 ];
 
