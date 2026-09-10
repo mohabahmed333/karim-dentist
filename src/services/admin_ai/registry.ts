@@ -27,6 +27,7 @@ import {
   navigateOpenPatientAdapter,
 } from "./navFollowupAdapters";
 import { reservationAdapters } from "./reservationAdapters";
+import { whatsappAdapters } from "./whatsappAdapters";
 import type { ActionKind } from "./schemas";
 import { isWriteActionKind } from "./writeKinds";
 
@@ -51,6 +52,7 @@ const adapters: ActionAdapter[] = [
   labUpdateStatusAdapter,
   followupBookAdapter,
   ...reservationAdapters,
+  ...whatsappAdapters,
 ];
 
 const byKind = new Map(adapters.map((a) => [a.kind, a]));

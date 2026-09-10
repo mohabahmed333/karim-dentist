@@ -23,6 +23,10 @@ export const WRITE_ACTION_KINDS = new Set<ActionKind>([
   "reservation.reschedule",
   "reservation.cancel",
   "reservation.set_status",
+  "whatsapp.send_text",
+  "whatsapp.send_template",
+  "whatsapp.set_status",
+  "whatsapp.add_note",
 ]);
 
 export function isWriteActionKind(kind: string): boolean {

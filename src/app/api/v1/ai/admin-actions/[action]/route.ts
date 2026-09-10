@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/api/requireAdmin";
+import { createWhatsappSender } from "@/services/admin_ai/whatsappSender";
 import { cancelProposal, confirmProposal } from "@/services/admin_ai";
 
 const bodySchema = z.object({
@@ -25,6 +26,7 @@ export async function POST(request: Request, { params }: Params) {
   const ctx = {
     db: auth.supabase,
     actorId: auth.user.id,
+    sendWhatsapp: createWhatsappSender(),
   };
 
   try {

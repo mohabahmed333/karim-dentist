@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/requireAdmin";
+import { createWhatsappSender } from "@/services/admin_ai/whatsappSender";
 import { createProposal, createProposalInputSchema } from "@/services/admin_ai";
 
 export async function POST(request: Request) {
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
         db: auth.supabase,
         actorId: auth.user.id,
         patientKey: parsed.data.patientKey,
+        sendWhatsapp: createWhatsappSender(),
       },
       parsed.data,
     );

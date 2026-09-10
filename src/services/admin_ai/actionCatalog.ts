@@ -27,6 +27,10 @@ Allowed action kinds:
 - reservation.reschedule { reservationId, slotId }
 - reservation.cancel { reservationId }
 - reservation.set_status { reservationId, status: confirmed|completed|no_show } (cancel via reservation.cancel)
+- whatsapp.send_text { conversationId, text } (free text only inside the 24h window)
+- whatsapp.send_template { conversationId, name, language?, body?: string[] } (allowed outside 24h)
+- whatsapp.set_status { conversationId, status: active|archived }
+- whatsapp.add_note { conversationId, body, pinned?, author? } (internal only — never sent to the patient)
 
 When useful, end with a JSON fence:
 \`\`\`json

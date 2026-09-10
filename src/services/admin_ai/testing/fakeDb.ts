@@ -23,7 +23,8 @@ export type FakeDbOptions = {
 export type FakeDbCall =
   | { type: "rpc"; fn: string; args: FakeRow }
   | { type: "select"; table: string; filters: FakeRow }
-  | { type: "update"; table: string; values: FakeRow; filters: FakeRow };
+  | { type: "update"; table: string; values: FakeRow; filters: FakeRow }
+  | { type: "insert"; table: string; values: FakeRow };
 
 export function createFakeDb(options: FakeDbOptions = {}) {
   const tables = options.tables ?? {};
@@ -32,7 +33,11 @@ export function createFakeDb(options: FakeDbOptions = {}) {
   const matches = (row: FakeRow, filters: FakeRow) =>
     Object.entries(filters).every(([k, v]) => row[k] === v);
 
-  function builder(table: string, op: "select" | "update", payload: FakeRow) {
+  function builder(
+    table: string,
+    op: "select" | "update" | "insert",
+    payload: FakeRow,
+  ) {
     const filters: FakeRow = {};
     const fail = options.failOn?.[`${table}.${op}`] ?? null;
 
@@ -70,6 +75,8 @@ export function createFakeDb(options: FakeDbOptions = {}) {
             values: payload,
             filters: { ...filters },
           });
+        } else if (op === "insert") {
+          calls.push({ type: "insert", table, values: payload });
         }
         return Promise.resolve(
           fail ? { data: null, error: fail } : { data: null, error: null },
@@ -87,6 +94,12 @@ export function createFakeDb(options: FakeDbOptions = {}) {
           c.type === "update" && c.table === table,
       );
     },
+    insertsTo(table: string) {
+      return calls.filter(
+        (c): c is Extract<FakeDbCall, { type: "insert" }> =>
+          c.type === "insert" && c.table === table,
+      );
+    },
     rpcCalls() {
       return calls.filter(
         (c): c is Extract<FakeDbCall, { type: "rpc" }> => c.type === "rpc",
@@ -100,6 +113,7 @@ export function createFakeDb(options: FakeDbOptions = {}) {
       return {
         select: () => builder(table, "select", {}),
         update: (values: FakeRow) => builder(table, "update", values),
+        insert: (values: FakeRow) => builder(table, "insert", values),
       };
     },
   };

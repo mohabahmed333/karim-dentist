@@ -4,10 +4,27 @@ import type { ActionDiff, ActionOutcome, ProposedAction } from "./schemas";
 
 export type AdminDb = SupabaseClient<Database>;
 
+/**
+ * Sends a WhatsApp message on the clinic's behalf. Injected so the whatsapp.*
+ * adapters can be tested without Kapso credentials or a network call; the
+ * registry supplies the real implementation at runtime.
+ */
+export type WhatsappSendFn = (input: {
+  conversationId: string;
+  sentBy: string | null;
+  text?: string;
+  template?: {
+    name: string;
+    language: string;
+    body?: { type: "text"; text: string; parameterName?: string }[];
+  };
+}) => Promise<{ id: string }>;
+
 export type ActionContext = {
   db: AdminDb;
   actorId: string;
   patientKey?: string | null;
+  sendWhatsapp?: WhatsappSendFn;
 };
 
 export type ActionAdapter = {
