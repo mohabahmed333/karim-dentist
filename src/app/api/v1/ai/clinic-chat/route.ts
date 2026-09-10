@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/api/requireAdmin";
 import { formatClinicSlotAvailability } from "@/services/ai_groq/formatClinicSlotAvailability";
+import { groqChat } from "@/services/ai_groq/callGroq";
 import { ADMIN_AI_ACTION_CATALOG } from "@/services/admin_ai/actionCatalog";
 import { extractClinicChatPayload } from "@/services/admin_ai/extractClinicChat";
 
@@ -109,37 +110,17 @@ export async function POST(request: Request) {
   ].join("\n");
 
   try {
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: process.env.GROQ_MODEL ?? "openai/gpt-oss-120b",
-          temperature: 0.3,
-          messages: [
-            { role: "system", content: system },
-            ...parsed.data.messages.map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
-          ],
-        }),
-      },
-    );
-    if (!response.ok) {
-      const detail = await response.text();
-      throw new Error(`Groq error ${response.status}: ${detail.slice(0, 200)}`);
-    }
-    const payload = (await response.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const raw =
-      payload.choices?.[0]?.message?.content?.trim() ||
-      "I could not draft a reply.";
+    const raw = await groqChat({
+      apiKey,
+      temperature: 0.3,
+      messages: [
+        { role: "system", content: system },
+        ...parsed.data.messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+      ],
+    });
     const { reply, suggestedActions, proposedActions } =
       extractClinicChatPayload(raw, DEFAULT_ACTIONS);
     return NextResponse.json({ reply, suggestedActions, proposedActions });

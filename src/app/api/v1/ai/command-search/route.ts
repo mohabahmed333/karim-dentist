@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/api/requireAdmin";
 import { extractCommandSearchIds } from "@/features/admin/lib/commandSearchExtract";
+import { groqChat } from "@/services/ai_groq/callGroq";
 
 const bodySchema = z.object({
   query: z.string().trim().min(2).max(160),
@@ -52,36 +53,22 @@ export async function POST(request: Request) {
     .join("\n");
 
   try {
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
+    // Ranking is a nicety on top of local search: keep it snappy and let any
+    // failure fall through to the empty-ids degradation below.
+    const raw = await groqChat({
+      apiKey,
+      temperature: 0,
+      attempts: 1,
+      timeoutMs: 6000,
+      messages: [
+        { role: "system", content: prompt },
+        {
+          role: "user",
+          content: `Query: ${parsed.data.query}\n\nCatalog:\n${catalog}`,
         },
-        body: JSON.stringify({
-          model: process.env.GROQ_MODEL ?? "openai/gpt-oss-120b",
-          temperature: 0,
-          messages: [
-            { role: "system", content: prompt },
-            {
-              role: "user",
-              content: `Query: ${parsed.data.query}\n\nCatalog:\n${catalog}`,
-            },
-          ],
-        }),
-      },
-    );
-    if (!response.ok) {
-      return NextResponse.json({ ids: [] });
-    }
-    const payload = (await response.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const ids = extractCommandSearchIds(
-      payload.choices?.[0]?.message?.content ?? "",
-    ).filter((id) => allowed.has(id));
+      ],
+    });
+    const ids = extractCommandSearchIds(raw).filter((id) => allowed.has(id));
     return NextResponse.json({ ids });
   } catch {
     return NextResponse.json({ ids: [] });

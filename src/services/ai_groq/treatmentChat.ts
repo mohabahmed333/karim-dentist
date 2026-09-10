@@ -5,10 +5,9 @@ import {
   type TreatmentAiResponse,
 } from "./schemas";
 import { ADMIN_AI_ACTION_CATALOG } from "@/services/admin_ai/actionCatalog";
+import { groqChat } from "./callGroq";
 import { parseProposedActions } from "@/services/admin_ai/parseProposedActions";
 
-const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
 
 export type ChatTurn = { role: "user" | "assistant"; content: string };
 
@@ -86,35 +85,21 @@ export async function runTreatmentChat(input: {
     .filter(Boolean)
     .join("\n");
 
-  const response = await fetch(GROQ_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${input.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: GROQ_MODEL,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: `${system}\n\n${ADMIN_AI_ACTION_CATALOG}\n\n${contextBlock}` },
-        ...input.messages.map((row) => ({
-          role: row.role,
-          content: row.content,
-        })),
-      ],
-    }),
+  const raw = await groqChat({
+    apiKey: input.apiKey,
+    temperature: 0.2,
+    responseFormat: "json_object",
+    messages: [
+      {
+        role: "system",
+        content: `${system}\n\n${ADMIN_AI_ACTION_CATALOG}\n\n${contextBlock}`,
+      },
+      ...input.messages.map((row) => ({
+        role: row.role,
+        content: row.content,
+      })),
+    ],
   });
-
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(`Groq error ${response.status}: ${detail.slice(0, 240)}`);
-  }
-
-  const payload = (await response.json()) as {
-    choices?: { message?: { content?: string } }[];
-  };
-  const raw = payload.choices?.[0]?.message?.content ?? "";
   const parsed = JSON.parse(raw) as unknown;
   const result = treatmentAiResponseSchema.parse(parsed);
   const proposed = parseProposedActions(result.proposedActions);
