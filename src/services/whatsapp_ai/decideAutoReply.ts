@@ -28,7 +28,10 @@ const AUTO_SEND_THRESHOLDS: Partial<Record<AutoReplyIntent, number>> = {
   booking_confirm: 0.8,
   booking_request: 0.85,
   booking_reschedule: 0.85,
-  booking_cancel: 0.85,
+  // Higher than booking or rescheduling on purpose. Cancelling is asymmetric:
+  // a wrong booking is visible and reversible, a wrong cancel silently frees a
+  // slot that the next caller takes.
+  booking_cancel: 0.9,
 };
 
 /** Intents whose actions write to the database. */
@@ -116,6 +119,13 @@ export function decideAutoReply(input: DecideInput): ReplyDecision {
         !input.ownReservationIds.includes(action.reservationId)
       ) {
         return draft("reservation_not_owned");
+      }
+      // A patient replying "cancel" to a reminder often says nothing else. If
+      // the model still reports that it needs to know *which* appointment, then
+      // emitting a cancel anyway is a guess — and the cost of guessing is a
+      // freed slot the patient still expected to keep.
+      if (envelope.needs.includes("reservation_id")) {
+        return draft("ambiguous_reservation");
       }
     }
   }
