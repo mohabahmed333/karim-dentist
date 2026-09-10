@@ -5,6 +5,7 @@ import {
   buildArticleNode,
   buildBreadcrumbList,
   buildClinicGraph,
+  buildFaqPageNode,
   wrapGraph,
 } from "./jsonLd.ts";
 
@@ -354,4 +355,72 @@ test("the service url reflects the current locale", () => {
   });
   const withSlug = graph["@graph"].find((n: { "@id"?: string }) => n["@id"]?.endsWith("#service-s1"));
   assert.equal(withSlug.url, "https://thedentallounge.com/ar/services/teeth-whitening");
+});
+
+// --- FAQPage ---
+
+test("buildFaqPageNode maps published FAQs into Question/Answer pairs", () => {
+  const node = buildFaqPageNode({
+    locale: "en",
+    items: [
+      {
+        id: "f1",
+        question: "Is laser whitening safe?",
+        question_ar: "",
+        answer: "Yes, it is a well-established, low-sensitivity procedure.",
+        answer_ar: "",
+        sort_order: 1,
+      },
+      {
+        id: "f2",
+        question: "Do you treat children?",
+        question_ar: "",
+        answer: "Yes, we offer pediatric dentistry.",
+        answer_ar: "",
+        sort_order: 0,
+      },
+    ],
+  });
+  assert.equal(node?.["@type"], "FAQPage");
+  const questions = node?.mainEntity as { name: string }[];
+  // Sorted by sort_order, not insertion order.
+  assert.deepEqual(
+    questions.map((q) => q.name),
+    ["Do you treat children?", "Is laser whitening safe?"],
+  );
+  const first = node?.mainEntity[0];
+  assert.equal(first.acceptedAnswer["@type"], "Answer");
+  assert.equal(first.acceptedAnswer.text, "Yes, we offer pediatric dentistry.");
+});
+
+test("buildFaqPageNode localizes into Arabic when filled in", () => {
+  const node = buildFaqPageNode({
+    locale: "ar",
+    items: [
+      {
+        id: "f1",
+        question: "Is laser whitening safe?",
+        question_ar: "هل تبييض الأسنان بالليزر آمن؟",
+        answer: "Yes.",
+        answer_ar: "نعم.",
+        sort_order: 0,
+      },
+    ],
+  });
+  assert.equal(node?.mainEntity[0].name, "هل تبييض الأسنان بالليزر آمن؟");
+  assert.equal(node?.mainEntity[0].acceptedAnswer.text, "نعم.");
+});
+
+test("buildFaqPageNode skips a question with no answer — never fabricates one", () => {
+  const node = buildFaqPageNode({
+    locale: "en",
+    items: [
+      { id: "f1", question: "Question with no answer", question_ar: "", answer: "", answer_ar: "", sort_order: 0 },
+    ],
+  });
+  assert.equal(node, null);
+});
+
+test("buildFaqPageNode returns null for an empty list rather than an empty FAQPage", () => {
+  assert.equal(buildFaqPageNode({ locale: "en", items: [] }), null);
 });

@@ -13,6 +13,7 @@ export const en = {
   navContact: "Contact",
   navCaseStudies: "Case studies",
   navProjects: "Projects",
+  navFaq: "FAQ",
   caseStudiesLabel: "Case studies",
   caseStudiesHeading: "Smile results & treatment stories",
   caseStudiesIntro:
@@ -24,6 +25,10 @@ export const en = {
   projectsIntro: "Highlights from treatments, spaces, and studio work.",
   projectsEmpty: "No published projects yet.",
   projectsView: "View project",
+  faqLabel: "FAQ",
+  faqHeading: "Frequently asked questions",
+  faqIntro: "",
+  faqEmpty: "No published questions yet.",
   menuOpenAria: "Open menu",
   menuCloseAria: "Close menu",
   aboutJumpAria: "Go to services",

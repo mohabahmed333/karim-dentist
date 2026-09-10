@@ -448,6 +448,12 @@ export type Database = {
           slider_heading_ar: string;
           case_studies_title_ar: string;
           case_studies_description_ar: string;
+          faq_title: string;
+          faq_title_ar: string;
+          faq_heading: string;
+          faq_heading_ar: string;
+          faq_description: string;
+          faq_description_ar: string;
           created_at: string;
           updated_at: string;
         };
@@ -526,6 +532,12 @@ export type Database = {
           slider_heading_ar?: string;
           case_studies_title_ar?: string;
           case_studies_description_ar?: string;
+          faq_title?: string;
+          faq_title_ar?: string;
+          faq_heading?: string;
+          faq_heading_ar?: string;
+          faq_description?: string;
+          faq_description_ar?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -604,6 +616,12 @@ export type Database = {
           slider_heading_ar?: string;
           case_studies_title_ar?: string;
           case_studies_description_ar?: string;
+          faq_title?: string;
+          faq_title_ar?: string;
+          faq_heading?: string;
+          faq_heading_ar?: string;
+          faq_description?: string;
+          faq_description_ar?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -1524,6 +1542,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ];
+      };
+      faqs: {
+        Row: {
+          id: string;
+          question: string;
+          question_ar: string;
+          answer: string;
+          answer_ar: string;
+          sort_order: number;
+          is_published: boolean;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          question: string;
+          question_ar?: string;
+          answer?: string;
+          answer_ar?: string;
+          sort_order?: number;
+          is_published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          question?: string;
+          question_ar?: string;
+          answer?: string;
+          answer_ar?: string;
+          sort_order?: number;
+          is_published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Relationships: [];
       };
       services: {
         Row: {

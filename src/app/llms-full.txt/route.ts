@@ -22,6 +22,7 @@ export async function GET() {
     services: portfolio.services,
     aboutBody: portfolio.about?.body,
     caseStudies: portfolio.caseStudies,
+    faqs: portfolio.faqs,
   });
 
   return new Response(body, {

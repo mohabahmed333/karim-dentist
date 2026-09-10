@@ -30,6 +30,7 @@ const EMPTY_PORTFOLIO: PortfolioData = {
   featuredDetailPageIds: [],
   experience: [],
   services: [],
+  faqs: [],
   clients: [],
   footerLinks: [],
   socialLinks: [],

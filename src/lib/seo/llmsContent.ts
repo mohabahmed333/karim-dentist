@@ -45,6 +45,14 @@ type CaseStudyInput = {
   is_published: boolean;
 };
 
+type FaqInput = {
+  id: string;
+  question?: string | null;
+  answer?: string | null;
+  sort_order: number;
+  is_published: boolean;
+};
+
 function text(value: string | null | undefined): string {
   return (value ?? "").trim();
 }
@@ -148,6 +156,9 @@ export function buildLlmsIndex(input: IndexInput): string {
   lines.push(
     `- [Services JSON](${input.siteUrl}/api/v1/public/services) — bilingual catalogue with each service's page URL`,
   );
+  lines.push(
+    `- [FAQ JSON](${input.siteUrl}/api/v1/public/faq) — bilingual question/answer pairs`,
+  );
 
   return lines.join("\n");
 }
@@ -155,6 +166,7 @@ export function buildLlmsIndex(input: IndexInput): string {
 type FullInput = IndexInput & {
   aboutBody?: string | null;
   caseStudies: CaseStudyInput[];
+  faqs?: FaqInput[];
 };
 
 /** llms-full.txt — the index plus full service descriptions, about copy, and
@@ -190,6 +202,17 @@ export function buildLlmsFull(input: FullInput): string {
       lines.push("", `### ${title}`);
       lines.push(`${input.siteUrl}/case-studies/${study.slug}`);
       if (description) lines.push(description);
+    }
+  }
+
+  const faqs = [...(input.faqs ?? [])]
+    .filter((faq) => faq.is_published && text(faq.question) && text(faq.answer))
+    .sort((a, b) => a.sort_order - b.sort_order);
+  if (faqs.length > 0) {
+    lines.push("", "---", "", "## FAQ");
+    for (const faq of faqs) {
+      lines.push("", `### ${text(faq.question)}`);
+      lines.push(text(faq.answer));
     }
   }
 

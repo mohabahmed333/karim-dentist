@@ -360,3 +360,47 @@ export function buildArticleNode(input: BuildArticleInput): JsonLdNode {
     publisher: { "@id": clinicId },
   };
 }
+
+export type FaqItemInput = {
+  id: string;
+  question?: string | null;
+  question_ar?: string | null;
+  answer?: string | null;
+  answer_ar?: string | null;
+  sort_order: number;
+};
+
+/**
+ * FAQPage node, one Question/acceptedAnswer pair per published FAQ. A
+ * question with no answer is skipped rather than emitting an empty Answer
+ * — for a medical business, fabricated or incomplete structured data is a
+ * YMYL risk, not a minor spec violation. Returns null (not an empty
+ * FAQPage) when nothing qualifies, so the caller can omit the script tag
+ * entirely.
+ */
+export function buildFaqPageNode(input: {
+  locale: Locale;
+  items: FaqItemInput[];
+}): JsonLdNode | null {
+  const { locale, items } = input;
+  const questions = [...items]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((item): JsonLdNode | null => {
+      const question = pickLocalized(locale, item.question, item.question_ar);
+      const answer = pickLocalized(locale, item.answer, item.answer_ar);
+      if (!question || !answer) return null;
+      return {
+        "@type": "Question",
+        name: question,
+        acceptedAnswer: { "@type": "Answer", text: answer },
+      };
+    })
+    .filter((q): q is JsonLdNode => q !== null);
+
+  if (questions.length === 0) return null;
+
+  return {
+    "@type": "FAQPage",
+    mainEntity: questions,
+  };
+}

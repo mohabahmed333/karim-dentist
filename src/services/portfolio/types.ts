@@ -22,6 +22,7 @@ export type PortfolioData = {
   featuredDetailPageIds: string[];
   experience: Tables<"experience_entries">[];
   services: Tables<"services">[];
+  faqs: Tables<"faqs">[];
   clients: Tables<"clients">[];
   footerLinks: Tables<"footer_links">[];
   socialLinks: Tables<"social_links">[];

@@ -58,6 +58,30 @@ const CASE_STUDIES = [
   },
 ];
 
+const FAQS = [
+  {
+    id: "f1",
+    question: "Is laser whitening safe?",
+    answer: "Yes, it is a well-established, low-sensitivity procedure.",
+    sort_order: 1,
+    is_published: true,
+  },
+  {
+    id: "f2",
+    question: "Do you treat children?",
+    answer: "Yes, we offer pediatric dentistry.",
+    sort_order: 0,
+    is_published: true,
+  },
+  {
+    id: "f3",
+    question: "Draft question",
+    answer: "",
+    sort_order: 2,
+    is_published: false,
+  },
+];
+
 test("index lists NAP, hours, and the services and pages sections", () => {
   const text = buildLlmsIndex({
     siteUrl: "https://thedentallounge.com",
@@ -81,6 +105,7 @@ test("index lists NAP, hours, and the services and pages sections", () => {
   assert.match(text, /sitemap\.xml/);
   assert.match(text, /\/api\/v1\/public\/clinic/);
   assert.match(text, /\/api\/v1\/public\/services/);
+  assert.match(text, /\/api\/v1\/public\/faq/);
 });
 
 test("index omits a section's link when it is hidden on the homepage", () => {
@@ -144,4 +169,36 @@ test("index links each service to its own page when it has a slug", () => {
     text,
     /- \[Teeth whitening\]\(https:\/\/thedentallounge\.com\/services\/teeth-whitening\)/,
   );
+});
+
+test("full dump includes published FAQs, sorted, skipping drafts", () => {
+  const text = buildLlmsFull({
+    siteUrl: "https://thedentallounge.com",
+    settings: SETTINGS,
+    hours: HOURS,
+    services: SERVICES,
+    aboutBody: "",
+    caseStudies: [],
+    faqs: FAQS,
+  });
+  assert.match(text, /## FAQ/);
+  const childrenIndex = text.indexOf("Do you treat children?");
+  const whiteningIndex = text.indexOf("Is laser whitening safe?");
+  assert.ok(childrenIndex > 0 && whiteningIndex > 0);
+  // sort_order 0 before sort_order 1.
+  assert.ok(childrenIndex < whiteningIndex);
+  assert.ok(!text.includes("Draft question"));
+});
+
+test("full dump omits the FAQ section entirely when there are none", () => {
+  const text = buildLlmsFull({
+    siteUrl: "https://thedentallounge.com",
+    settings: SETTINGS,
+    hours: HOURS,
+    services: SERVICES,
+    aboutBody: "",
+    caseStudies: [],
+    faqs: [],
+  });
+  assert.ok(!text.includes("## FAQ"));
 });

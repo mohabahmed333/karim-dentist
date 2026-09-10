@@ -17,13 +17,14 @@ type Props = {
   onNavigate?: () => void;
 };
 
-const NAV_LABEL: Record<HomepageSectionKey, "navAbout" | "navServices" | "navGallery" | "navMore" | "navCaseStudies" | "navProjects" | "navContact"> = {
+const NAV_LABEL: Record<HomepageSectionKey, "navAbout" | "navServices" | "navGallery" | "navMore" | "navCaseStudies" | "navProjects" | "navFaq" | "navContact"> = {
   about: "navAbout",
   services: "navServices",
   gallery: "navGallery",
   slider: "navMore",
   "case-studies": "navCaseStudies",
   featured: "navProjects",
+  faq: "navFaq",
   contact: "navContact",
 };
 

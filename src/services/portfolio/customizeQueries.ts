@@ -106,6 +106,11 @@ export async function getCustomizePortfolioData(): Promise<PortfolioData> {
         .is("deleted_at", null)
         .order("sort_order"),
       supabase
+        .from("faqs")
+        .select("*")
+        .is("deleted_at", null)
+        .order("sort_order"),
+      supabase
         .from("clients")
         .select("*")
         .is("deleted_at", null)
@@ -134,6 +139,7 @@ export async function getCustomizePortfolioData(): Promise<PortfolioData> {
       featuredSectionRows,
       experience,
       services,
+      faqs,
       clients,
       footerLinks,
       socialLinks,
@@ -188,6 +194,7 @@ export async function getCustomizePortfolioData(): Promise<PortfolioData> {
       ),
       experience: experience.data ?? [],
       services: services.data ?? [],
+      faqs: faqs.data ?? [],
       clients: clients.data ?? [],
       footerLinks: footerLinks.data ?? [],
       socialLinks: socialLinks.data ?? [],

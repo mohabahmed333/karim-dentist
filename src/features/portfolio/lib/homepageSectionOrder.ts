@@ -5,6 +5,7 @@ export const HOMEPAGE_SECTION_KEYS = [
   "slider",
   "case-studies",
   "featured",
+  "faq",
   "contact",
 ] as const;
 
@@ -23,6 +24,7 @@ export const HOMEPAGE_SECTION_LABELS: Record<HomepageSectionKey, string> = {
   slider: "More Images",
   "case-studies": "Case studies",
   featured: "Projects",
+  faq: "FAQ",
   contact: "Contact",
 };
 
