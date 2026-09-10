@@ -245,6 +245,8 @@ export function mapWhatsappMessage(
     waTimestamp: m.wa_timestamp,
     read: m.status === "read" || m.status === "delivered",
     status: m.status,
+    isDraft: m.status === "draft",
+    senderKind: (m.sender_kind ?? "human") as "human" | "ai" | "system",
     statusTimestamps: parseStatusTimestamps(m.status_timestamps),
     messageType: m.message_type,
     media: parseMedia(m.media),

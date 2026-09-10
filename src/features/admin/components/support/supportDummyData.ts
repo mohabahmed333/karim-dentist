@@ -38,12 +38,16 @@ export type SupportMessage = {
   time: string;
   read?: boolean;
   status?:
+    | "draft"
     | "pending"
     | "received"
     | "sent"
     | "delivered"
     | "read"
     | "failed";
+  /** AI-written and awaiting staff approval. Never delivered to the patient. */
+  isDraft?: boolean;
+  senderKind?: "human" | "ai" | "system";
   statusTimestamps?: {
     sent_at?: string;
     delivered_at?: string;

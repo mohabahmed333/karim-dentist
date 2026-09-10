@@ -117,6 +117,36 @@ describe("whatsappLiveApply", () => {
     assert.equal(next[0]?.last_message_preview, "from desk");
   });
 
+  /**
+   * An AI draft is written into whatsapp_messages so it reaches the realtime
+   * inbox, but it was never delivered. If it set the conversation preview,
+   * staff would see text in the inbox list that the patient never received —
+   * a failure with no visible symptom.
+   */
+  it("ignores an AI draft entirely when patching the conversation", () => {
+    const rows = [
+      conv({
+        id: "c1",
+        unread_count: 2,
+        last_message_preview: "real last message",
+        last_message_status: "delivered",
+      }),
+    ];
+    const next = patchConversationsFromMessage(
+      rows,
+      msg({
+        id: "m-draft",
+        conversation_id: "c1",
+        body: "AI suggested reply",
+        direction: "outbound",
+        status: "draft",
+      }),
+    );
+    assert.equal(next[0]?.last_message_preview, "real last message");
+    assert.equal(next[0]?.last_message_status, "delivered");
+    assert.equal(next[0]?.unread_count, 2);
+  });
+
   it("keeps realtime messages when a fetched page is older", () => {
     const fetched = [
       supportMsg({ id: "m1", body: "old", waTimestamp: "2026-09-08T11:00:00.000Z" }),

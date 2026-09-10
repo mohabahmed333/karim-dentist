@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/v1/whatsapp/ai/sweep",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

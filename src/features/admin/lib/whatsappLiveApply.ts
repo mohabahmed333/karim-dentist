@@ -18,6 +18,9 @@ export function patchConversationsFromMessage(
 ): WhatsappConversation[] {
   const current = rows.find((row) => row.id === message.conversation_id);
   if (!current) return rows;
+  // An AI draft was never delivered. Letting it set last_message_preview would
+  // show staff, in the inbox list, text the patient never received.
+  if (message.status === "draft") return rows;
   const inbound = message.direction === "inbound";
   return upsertConversationRow(rows, {
     ...current,

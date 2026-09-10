@@ -55,14 +55,21 @@ function messagePreview(message: KapsoMessagePayload): string {
   return `[${type}]`;
 }
 
+export type InboundMessageRef = {
+  conversationId: string;
+  messageId: string;
+  messageType: string;
+  body: string;
+};
+
 async function handleMessageEvent(
   supabase: ServiceClient,
   event: string,
   payload: KapsoWebhookBody,
-): Promise<void> {
+): Promise<InboundMessageRef | null> {
   const message = payload.message;
   const conversation = payload.conversation;
-  if (!message) return;
+  if (!message) return null;
 
   if (
     event === "whatsapp.message.delivered" ||
@@ -81,11 +88,11 @@ async function handleMessageEvent(
               : "sent";
       await updateMessageStatusByWamid(supabase, message.id, status);
     }
-    return;
+    return null;
   }
 
   if (event !== "whatsapp.message.received" && event !== "whatsapp.message.sent") {
-    return;
+    return null;
   }
 
   const direction = directionOf(message);
@@ -110,7 +117,16 @@ async function handleMessageEvent(
       lastInboundAt: direction === "inbound" ? at : undefined,
     },
   );
-  await upsertMessageFromKapso(supabase, conv.id, message, direction);
+  const stored = await upsertMessageFromKapso(supabase, conv.id, message, direction);
+
+  if (direction !== "inbound") return null;
+  if (!stored) return null;
+  return {
+    conversationId: conv.id,
+    messageId: stored.id,
+    messageType: messageTypeOf(message),
+    body: kapsoMessageBody(message) ?? "",
+  };
 }
 
 async function handleConversationEvent(
@@ -126,25 +142,33 @@ async function handleConversationEvent(
   });
 }
 
+export type ProcessResult = {
+  status: "ok" | "duplicate";
+  /** New inbound messages, for the auto-responder to answer. */
+  inbound: InboundMessageRef[];
+};
+
 export async function processKapsoWebhook(
   supabase: ServiceClient,
   event: string,
   idempotencyKey: string,
   body: KapsoWebhookBody,
-): Promise<"ok" | "duplicate"> {
+): Promise<ProcessResult> {
   const claimed = await claimWebhookEvent(supabase, idempotencyKey, event);
-  if (!claimed) return "duplicate";
+  if (!claimed) return { status: "duplicate", inbound: [] };
 
   const payloads =
     body.batch && Array.isArray(body.data) ? body.data : [body];
 
+  const inbound: InboundMessageRef[] = [];
   for (const payload of payloads) {
     if (event.startsWith("whatsapp.message.")) {
-      await handleMessageEvent(supabase, event, payload);
+      const ref = await handleMessageEvent(supabase, event, payload);
+      if (ref) inbound.push(ref);
     } else if (event.startsWith("whatsapp.conversation.")) {
       await handleConversationEvent(supabase, event, payload);
     }
   }
 
-  return "ok";
+  return { status: "ok", inbound };
 }

@@ -156,6 +156,7 @@ export type Database = {
           body: string;
           message_type: string;
           status:
+            | "draft"
             | "pending"
             | "received"
             | "sent"
@@ -181,6 +182,7 @@ export type Database = {
           body?: string;
           message_type?: string;
           status?:
+            | "draft"
             | "pending"
             | "received"
             | "sent"
@@ -206,6 +208,7 @@ export type Database = {
           body?: string;
           message_type?: string;
           status?:
+            | "draft"
             | "pending"
             | "received"
             | "sent"

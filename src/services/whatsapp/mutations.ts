@@ -176,7 +176,8 @@ export async function upsertMessageFromKapso(
   conversationId: string,
   message: KapsoMessagePayload,
   direction: "inbound" | "outbound",
-): Promise<void> {
+  /** The stored row, or null when this was a redelivery of a known message. */
+): Promise<{ id: string } | null> {
   const wamid = message.id ?? null;
   const body = messageBody(message);
   const status = mapStatus(direction, message.kapso?.status);
@@ -248,11 +249,16 @@ export async function upsertMessageFromKapso(
         .update(row)
         .eq("id", existing.id);
       if (error) throw error;
-      return;
+      // A redelivery of a message we already stored: nothing new to answer.
+      return null;
     }
   }
 
-  const { error } = await supabase.from("whatsapp_messages").insert(row);
+  const { data: inserted, error } = await supabase
+    .from("whatsapp_messages")
+    .insert(row)
+    .select("id")
+    .single();
   if (error) throw error;
   if (direction === "inbound") {
     const { data: conv } = await supabase
@@ -271,6 +277,7 @@ export async function upsertMessageFromKapso(
         .eq("id", conversationId);
     }
   }
+  return inserted as { id: string };
 }
 
 export async function updateMessageStatusByWamid(
@@ -328,7 +335,8 @@ export async function insertOutboundMessage(
     body: string;
     sentBy: string | null;
     wamid?: string | null;
-    status?: "sent" | "failed";
+    status?: "sent" | "failed" | "draft";
+    senderKind?: "human" | "ai" | "system";
     messageType?: string;
     media?: MessageMediaItem[];
     flow?: MessageFlowPayload | null;
@@ -353,28 +361,35 @@ export async function insertOutboundMessage(
       message_type: messageType,
       status,
       sent_by: input.sentBy,
+      sender_kind: input.senderKind ?? "human",
       media: mediaToJson(input.media ?? []),
       flow: flowToJson(input.flow ?? null),
       reply_to: replyToJson(input.replyTo ?? null),
       wa_timestamp: now,
-      status_timestamps: statusTimestampPatch(
-        status === "failed" ? "failed" : "sent",
-      ) as Json,
+      status_timestamps:
+        status === "draft"
+          ? ({} as Json)
+          : (statusTimestampPatch(status === "failed" ? "failed" : "sent") as Json),
     })
     .select("*")
     .single();
   if (error) throw error;
 
-  await supabase
-    .from("whatsapp_conversations")
-    .update({
-      last_message_at: data.wa_timestamp,
-      last_message_preview: preview.slice(0, 240),
-      last_message_type: messageType,
-      last_message_status: status,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", input.conversationId);
+  // A draft was never delivered, so it must not become the thread's preview or
+  // last-message status. The CHECK on last_message_status would reject 'draft'
+  // anyway; this keeps the inbox list honest.
+  if (status !== "draft") {
+    await supabase
+      .from("whatsapp_conversations")
+      .update({
+        last_message_at: data.wa_timestamp,
+        last_message_preview: preview.slice(0, 240),
+        last_message_type: messageType,
+        last_message_status: status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", input.conversationId);
+  }
 
   return data;
 }

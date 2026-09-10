@@ -391,8 +391,13 @@ export function useWhatsappInboxLive(
           }
         }
 
+        // A draft appears in the thread but was never delivered, so it must not
+        // become the conversation's preview, timestamp or last-message status.
+        // This is the one place a draft could silently show staff, in the inbox
+        // list, text the patient never received.
         const isLatest =
           event.eventType !== "DELETE" &&
+          !mapped.isDraft &&
           nextMsgs[nextMsgs.length - 1]?.id === mapped.id;
         let conversations = prev.conversations;
         if (isLatest && conv) {
