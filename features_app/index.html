@@ -1,0 +1,646 @@
+<title>Dental Lounge Patient Messaging</title>
+<meta name="description" content="What every WhatsApp messaging feature at The Dental Lounge does for patients, the rules behind it, and why it might not be working.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500&display=swap">
+<style>
+:root {
+  --ground: #FBFAF7;
+  --surface: #FFFFFF;
+  --ink: #1A1A1A;
+  --muted: #6B6F76;
+  --rule: #E7E3DA;
+  --gold: #9A7B34;
+  --gold-soft: #C9A962;
+  --gold-wash: #F4EEDF;
+  --bubble-out: #E6F2EA;
+  --bubble-in: #FFFFFF;
+  --wait-ink: #8A5A06;  --wait-bg: #FBF1DC;
+  --block-ink: #A33A28; --block-bg: #F9E6E1;
+  --setup-ink: #3F5F8A; --setup-bg: #E6EDF6;
+  --focus: #9A7B34;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #131311; --surface: #1B1A17; --ink: #ECEAE4; --muted: #9D9A92; --rule: #2D2B26;
+    --gold: #D9BD7C; --gold-soft: #C9A962; --gold-wash: #2A2519;
+    --bubble-out: #1D2B23; --bubble-in: #22211D;
+    --wait-ink: #F0C675; --wait-bg: #33280F;
+    --block-ink: #F0A392; --block-bg: #3A1F19;
+    --setup-ink: #A9C2E4; --setup-bg: #1C2636;
+    --focus: #D9BD7C;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #131311; --surface: #1B1A17; --ink: #ECEAE4; --muted: #9D9A92; --rule: #2D2B26;
+  --gold: #D9BD7C; --gold-soft: #C9A962; --gold-wash: #2A2519;
+  --bubble-out: #1D2B23; --bubble-in: #22211D;
+  --wait-ink: #F0C675; --wait-bg: #33280F;
+  --block-ink: #F0A392; --block-bg: #3A1F19;
+  --setup-ink: #A9C2E4; --setup-bg: #1C2636;
+  --focus: #D9BD7C;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 16px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+[lang="ar"] { font-family: "IBM Plex Sans Arabic", "Geeza Pro", "Segoe UI", Tahoma, sans-serif; }
+code, .mono, figcaption, .count, .label, th { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+a { color: var(--gold); text-underline-offset: 3px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 3px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 48px 32px 96px;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 56px;
+}
+
+/* index */
+nav { position: sticky; top: 32px; align-self: start; display: grid; gap: 24px; font-size: 14px; }
+nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav a { display: block; padding: 3px 0 3px 12px; border-left: 1px solid var(--rule); color: var(--ink); text-decoration: none; }
+nav a:hover { color: var(--gold); border-left-color: var(--gold-soft); }
+.eyebrow { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.nav-extra { display: grid; gap: 2px; }
+
+/* opening */
+.intro { display: grid; gap: 20px; padding-bottom: 40px; border-bottom: 1px solid var(--rule); }
+.intro h1 { font-size: clamp(2rem, 3.4vw, 2.6rem); font-weight: 600; line-height: 1.15; }
+.intro .dek { margin: 0; max-width: 64ch; color: var(--muted); font-size: 17px; }
+.standing { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.standing > div { background: var(--surface); padding: 14px 16px; display: grid; gap: 4px; align-content: start; }
+.standing strong { font-size: 15px; font-weight: 600; }
+.standing span { font-size: 13.5px; color: var(--muted); }
+
+/* shared rules */
+.shared { display: grid; gap: 18px; padding: 40px 0; border-bottom: 1px solid var(--rule); }
+.shared h2 { font-size: 1.35rem; font-weight: 600; }
+.shared > p { margin: 0; max-width: 66ch; }
+.clock { display: grid; gap: 8px; max-width: 640px; }
+.hours { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; }
+.hour { height: 22px; border-radius: 2px; background: var(--gold-wash); }
+.hour.quiet { background: repeating-linear-gradient(135deg, var(--rule) 0 3px, transparent 3px 6px), var(--surface); outline: 1px solid var(--rule); outline-offset: -1px; }
+.ticks { display: grid; grid-template-columns: repeat(24, 1fr); font: 11px/1 ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ticks span:nth-child(1) { grid-column: 1; } .ticks span:nth-child(2) { grid-column: 7; } .ticks span:nth-child(3) { grid-column: 10; }
+.ticks span:nth-child(4) { grid-column: 13; } .ticks span:nth-child(5) { grid-column: 19; } .ticks span:nth-child(6) { grid-column: 23; }
+.clock-key { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--muted); }
+.clock-key i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 6px; background: var(--gold-wash); }
+.clock-key i.q { background: repeating-linear-gradient(135deg, var(--rule) 0 3px, transparent 3px 6px), var(--surface); outline: 1px solid var(--rule); }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 40px; margin: 0; max-width: 760px; }
+.facts div { display: grid; gap: 2px; }
+.facts dt { font-size: 13px; color: var(--muted); }
+.facts dd { margin: 0; font-size: 15px; }
+
+/* groups & features */
+.group { display: grid; gap: 0; padding-top: 48px; }
+.group-head { display: grid; gap: 4px; padding-bottom: 8px; }
+.group-head h2 { font-size: 1.35rem; font-weight: 600; }
+.group-head p { margin: 0; color: var(--muted); }
+.feature { display: grid; gap: 12px; padding: 32px 0; border-top: 1px solid var(--rule); scroll-margin-top: 24px; }
+.group-head + .feature { border-top: 0; }
+.feature-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.feature-head h3 { font-size: 1.2rem; font-weight: 600; }
+.summary { margin: 0; font-size: 17px; max-width: 64ch; }
+.when { margin: 0; max-width: 70ch; color: var(--muted); display: flex; gap: 12px; align-items: baseline; }
+.label { flex: none; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); }
+
+.chip { font-size: 12px; font-weight: 500; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.chip.wait { color: var(--wait-ink); background: var(--wait-bg); }
+.chip.block { color: var(--block-ink); background: var(--block-bg); }
+.chip.setup { color: var(--setup-ink); background: var(--setup-bg); }
+
+.feature-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 320px); gap: 28px; align-items: start; }
+.feature-body.no-phone { grid-template-columns: minmax(0, 1fr); }
+.rules { display: grid; gap: 14px; min-width: 0; }
+.rules ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 64ch; }
+.rules li::marker { color: var(--gold-soft); }
+.staff { margin: 0; display: flex; gap: 12px; align-items: baseline; font-size: 15px; }
+
+.phone { display: grid; gap: 8px; padding: 14px; border-radius: 14px; background: var(--gold-wash); }
+.bubble { margin: 0; padding: 8px 11px 6px; border-radius: 12px; max-width: 92%; box-shadow: 0 1px 0 var(--rule); font-size: 14.5px; line-height: 1.5; }
+.bubble p { margin: 0; }
+.bubble.out { background: var(--bubble-out); justify-self: end; border-bottom-right-radius: 4px; }
+.bubble.in { background: var(--bubble-in); justify-self: start; border-bottom-left-radius: 4px; }
+.bubble[dir="rtl"].out { border-bottom-right-radius: 12px; border-bottom-left-radius: 4px; }
+.bubble[dir="rtl"].in { border-bottom-left-radius: 12px; border-bottom-right-radius: 4px; }
+.bubble figcaption { margin-top: 4px; font-size: 11px; color: var(--muted); direction: ltr; text-align: right; }
+
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 460px; }
+th { text-align: left; font-size: 11px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding: 6px 12px 6px 0; border-bottom: 1px solid var(--rule); }
+td { padding: 8px 12px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+
+.conds { border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+.conds summary { cursor: pointer; padding: 10px 14px; font-weight: 500; display: flex; justify-content: space-between; gap: 12px; list-style: none; }
+.conds summary::-webkit-details-marker { display: none; }
+.conds summary::after { content: "+"; color: var(--gold); font-weight: 400; margin-left: 8px; }
+.conds[open] summary::after { content: "−"; }
+.conds summary .count { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--muted); }
+.conds-note { margin: 0; padding: 0 14px 6px; font-size: 13px; color: var(--muted); }
+.conds ul { list-style: none; margin: 0; padding: 4px 14px 14px; display: grid; gap: 10px; }
+.conds li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 10px; }
+.conds .box { width: 14px; height: 14px; margin-top: 4px; border: 1.5px solid var(--muted); border-radius: 3px; }
+.conds li div { display: grid; gap: 1px; }
+.conds strong { font-weight: 500; font-size: 15px; }
+.conds li span { font-size: 13.5px; color: var(--muted); }
+
+/* go-live, templates, gaps */
+.appendix { display: grid; gap: 18px; padding-top: 56px; }
+.appendix + .appendix { padding-top: 40px; }
+.appendix h2 { font-size: 1.35rem; font-weight: 600; }
+.appendix > p { margin: 0; max-width: 66ch; color: var(--muted); }
+ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 14px; max-width: 72ch; }
+ol.steps li { counter-increment: step; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; }
+ol.steps li::before { content: counter(step); font: 600 13px/26px ui-monospace, "SF Mono", Menlo, monospace; text-align: center; width: 26px; height: 26px; border-radius: 50%; color: var(--gold); border: 1px solid var(--gold-soft); font-variant-numeric: tabular-nums; }
+ol.steps strong { font-weight: 600; }
+ol.steps p { margin: 2px 0 0; color: var(--muted); font-size: 14.5px; }
+code { font-size: 0.88em; background: var(--gold-wash); padding: 1px 5px; border-radius: 4px; }
+.warn { color: var(--block-ink); }
+.gaps { margin: 0; padding-left: 18px; display: grid; gap: 8px; max-width: 70ch; }
+footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 32px; padding: 32px 20px 72px; }
+  nav { position: static; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .feature-body { grid-template-columns: minmax(0, 1fr); }
+  .phone { max-width: 420px; }
+  .standing, .facts { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+
+<div class="wrap">
+  <nav aria-label="Features">
+    
+      <div class="nav-group">
+        <p class="eyebrow">Messages the clinic sends</p>
+        <ul><li><a href="#confirmations">Booking confirmations</a></li><li><a href="#reminders">Day-before reminders</a></li><li><a href="#cancellations">Cancellation notices</a></li><li><a href="#reschedules">Reschedule notices</a></li><li><a href="#waitlist">Waitlist offers</a></li><li><a href="#followups">Post-visit follow-ups</a></li><li><a href="#recalls">Six-month check-up recalls</a></li><li><a href="#reviews">Review requests</a></li></ul>
+      </div>
+      <div class="nav-group">
+        <p class="eyebrow">What the assistant does with replies</p>
+        <ul><li><a href="#cancel_by_reply">Cancel by replying to a reminder</a></li><li><a href="#voice_notes">Voice notes answered</a></li><li><a href="#knowledge">Clinic knowledge answers</a></li><li><a href="#review_queue">Learning from staff corrections</a></li></ul>
+      </div>
+      <div class="nav-group">
+        <p class="eyebrow">Patient control</p>
+        <ul><li><a href="#stop">STOP opt-outs</a></li></ul>
+      </div>
+    <div class="nav-group">
+      <p class="eyebrow">Before it goes live</p>
+      <ul>
+        <li><a href="#shared">Rules every message follows</a></li>
+        <li><a href="#templates">WhatsApp templates</a></li>
+        <li><a href="#golive">Go-live order</a></li>
+        <li><a href="#gaps">Known gaps</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="intro">
+      <p class="eyebrow">The Dental Lounge · WhatsApp</p>
+      <h1>Patient messaging</h1>
+      <p class="dek">Every message the clinic sends a patient on WhatsApp, what the assistant does with their replies, the business rules behind each one, and every reason one might not be working.</p>
+      <div class="standing" aria-label="Where things stand on 11 September 2026">
+        <div><strong>Built, and switched off</strong><span>Nothing reaches a patient until someone turns it on in Settings.</span></div>
+        <div><strong>4 templates waiting for Meta</strong><span>Confirmations and reminders. Six other message types have no template yet.</span></div>
+        <div><strong>Production database not updated</strong><span>Nine changes are ready to apply.</span></div>
+        <div><strong>Not yet deployed</strong><span>The code is on local main, and another session's branch still needs merging first.</span></div>
+      </div>
+    </header>
+
+    <section class="shared" id="shared">
+      <h2>Rules every message follows</h2>
+      <p>Whatever triggers a message, it waits in one queue and passes the same checks before it is sent. A message is either sent, held for later, or dropped with a recorded reason — and the reason is visible under Patient messages.</p>
+      <div class="clock" aria-label="Quiet hours, Cairo time">
+        <div class="hours"><span class="hour quiet" title="00:00 — held"></span><span class="hour quiet" title="01:00 — held"></span><span class="hour quiet" title="02:00 — held"></span><span class="hour quiet" title="03:00 — held"></span><span class="hour quiet" title="04:00 — held"></span><span class="hour quiet" title="05:00 — held"></span><span class="hour quiet" title="06:00 — held"></span><span class="hour quiet" title="07:00 — held"></span><span class="hour quiet" title="08:00 — held"></span><span class="hour" title="09:00"></span><span class="hour" title="10:00"></span><span class="hour" title="11:00"></span><span class="hour" title="12:00"></span><span class="hour" title="13:00"></span><span class="hour" title="14:00"></span><span class="hour" title="15:00"></span><span class="hour" title="16:00"></span><span class="hour" title="17:00"></span><span class="hour" title="18:00"></span><span class="hour" title="19:00"></span><span class="hour" title="20:00"></span><span class="hour" title="21:00"></span><span class="hour quiet" title="22:00 — held"></span><span class="hour quiet" title="23:00 — held"></span></div>
+        <div class="ticks"><span>00</span><span>06</span><span>09</span><span>12</span><span>18</span><span>22</span></div>
+        <div class="clock-key"><span><i class="q"></i>22:00 – 09:00 held until morning</span><span><i></i>sent straight away</span><span>Africa/Cairo, including summer time</span></div>
+      </div>
+      <dl class="facts">
+        <div><dt>Held, not dropped</dt><dd>Quiet hours, and a patient already sent 3 messages today (held an hour)</dd></div>
+        <div><dt>Dropped</dt><dd>Opted out · appointment already passed · waiting over 6 hours · a reminder no longer for tomorrow</dd></div>
+        <div><dt>Never sent twice</dt><dd>Each message has one key. Once sending has started it is never retried — a duplicate is worse than a miss</dd></div>
+        <div><dt>Rehearsal</dt><dd>Dry run writes the exact message and template without sending, so staff can read a week of it first</dd></div>
+      </dl>
+    </section>
+
+    
+  <div class="group" id="group-send">
+    <div class="group-head"><h2>Messages the clinic sends</h2><p>Each is queued by what happens in the clinic, then held, dropped or sent by the same rules.</p></div>
+    
+    <section class="feature" id="confirmations">
+      <header class="feature-head">
+        <h3>Booking confirmations</h3>
+        <span class="chip wait">Templates submitted — waiting for Meta</span>
+      </header>
+      <p class="summary">The patient gets a WhatsApp message as soon as an appointment is booked, from any source.</p>
+      <p class="when"><span class="label">When</span>The moment an appointment is saved — from the website booking form, the admin panel, the admin AI chat, or the WhatsApp assistant.</p>
+      <div class="feature-body">
+        <div class="rules">
+          <ul><li>Written in the patient's language: the language of their last WhatsApp message, otherwise the script of their name, otherwise Arabic.</li><li>One confirmation per booking, however many times the form is submitted.</li><li>If the booking fails because the slot was just taken, no confirmation is queued.</li><li>A booking made during quiet hours is confirmed at 09:00.</li><li>A patient who has already had three messages today waits an hour.</li></ul>
+          
+          <p class="staff"><span class="label">For staff</span>Nothing to do. Every message and what happened to it is listed under Patient messages.</p>
+        </div>
+        <div class="phone" aria-label="Example WhatsApp messages">
+        <figure class="bubble out" lang="en">
+          <p>Hi Ahmed, your appointment at The Dental Lounge is confirmed for Sunday 20 September 2026 at 10:00 am. Service: Cleaning. Reply here if you need to change it.</p>
+          <figcaption>appoinment_en</figcaption>
+        </figure>
+        <figure class="bubble out" dir="rtl" lang="ar">
+          <p>أهلاً أحمد، تم تأكيد حجزك في The Dental Lounge يوم الأحد، 20 سبتمبر 2026 في 10:00 ص. الخدمة: تنظيف. لو محتاج تعدّل الميعاد ابعتلنا هنا.</p>
+          <figcaption>appoinment_ar</figcaption>
+        </figure></div>
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">7 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>Database updated with the notification tables</strong><span>Without them nothing is queued at all. Run supabase db push --linked.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Patient notifications switched to Send</strong><span>Off queues nothing that will ever send; Dry run renders messages but sends none.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>CRON_SECRET set on the server</strong><span>The dispatch endpoint refuses every call without it. Set it in Vercel and redeploy.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Scheduler calls the dispatcher every minute</strong><span>Messages wait in the queue forever. Run supabase/scripts/schedule_notifications_dispatch.sql.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp (Kapso) credentials set</strong><span>Every message is postponed with no_transport.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Supabase service role key set</strong><span>The dispatcher cannot read the queue.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Templates approved in Meta: appoinment_en, appoinment_ar</strong><span>Not approved yet: appoinment_en, appoinment_ar. If Meta shows them approved, the business account ID points at the wrong account.</span></div></li></ul>
+      </details>
+    </section>
+    <section class="feature" id="reminders">
+      <header class="feature-head">
+        <h3>Day-before reminders</h3>
+        <span class="chip wait">Templates submitted — waiting for Meta</span>
+      </header>
+      <p class="summary">The patient is reminded the day before, in their own language.</p>
+      <p class="when"><span class="label">When</span>24 hours before the appointment — only if that moment is more than an hour away. A booking for this afternoon gets the confirmation alone.</p>
+      <div class="feature-body">
+        <div class="rules">
+          <ul><li>The approved text says “tomorrow”. If a reminder is held past midnight — by quiet hours, say — it is dropped rather than sent naming the wrong day.</li><li>Moving the appointment withdraws the old reminder and sets a new one.</li><li>Cancelling, deleting, completing or marking a no-show withdraws it.</li><li>The patient can answer it with “cancel” or “الغاء” — see Cancel by replying.</li></ul>
+          
+          
+        </div>
+        <div class="phone" aria-label="Example WhatsApp messages">
+        <figure class="bubble out" lang="en">
+          <p>Reminder: Ahmed, you have an appointment at The Dental Lounge tomorrow at 10:00 am. See you soon.</p>
+          <figcaption>reminder_ar  (English text)</figcaption>
+        </figure>
+        <figure class="bubble out" dir="rtl" lang="ar">
+          <p>تذكير: أحمد، عندك ميعاد في The Dental Lounge بكرة الساعة 10:00 ص. في انتظارك.</p>
+          <figcaption>reminder_en  (Arabic text)</figcaption>
+        </figure></div>
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">8 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>Database updated with the notification tables</strong><span>Without them nothing is queued at all. Run supabase db push --linked.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Patient notifications switched to Send</strong><span>Off queues nothing that will ever send; Dry run renders messages but sends none.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>CRON_SECRET set on the server</strong><span>The dispatch endpoint refuses every call without it. Set it in Vercel and redeploy.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Scheduler calls the dispatcher every minute</strong><span>Messages wait in the queue forever. Run supabase/scripts/schedule_notifications_dispatch.sql.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp (Kapso) credentials set</strong><span>Every message is postponed with no_transport.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Supabase service role key set</strong><span>The dispatcher cannot read the queue.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Templates approved in Meta: reminder_en, reminder_ar</strong><span>Not approved yet: reminder_en, reminder_ar. If Meta shows them approved, the business account ID points at the wrong account.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Reminder sent 24 hours (1440 minutes) ahead</strong><span>The approved text says “tomorrow”. With any other lead time reminders are skipped rather than sent with the wrong day.</span></div></li></ul>
+      </details>
+    </section>
+    <section class="feature" id="cancellations">
+      <header class="feature-head">
+        <h3>Cancellation notices</h3>
+        <span class="chip block">No template yet</span>
+      </header>
+      <p class="summary">The patient is told when staff cancel their appointment.</p>
+      <p class="when"><span class="label">When</span>When staff change an appointment's status to Cancelled.</p>
+      <div class="feature-body">
+        <div class="rules">
+          <ul><li>Deleting an appointment is not cancelling it: a deleted appointment tells the patient nothing.</li><li>Its reminder, if still waiting, is withdrawn.</li><li>Queued today and recorded as no_approved_template until a template exists.</li></ul>
+          
+          
+        </div>
+        <div class="phone" aria-label="Example WhatsApp messages">
+        <figure class="bubble out" lang="en">
+          <p>Hi Ahmed, your appointment on Sunday 20 September has been cancelled. Reply here to book a new time.</p>
+          <figcaption>suggested text</figcaption>
+        </figure></div>
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">7 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>Database updated with the notification tables</strong><span>Without them nothing is queued at all. Run supabase db push --linked.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Patient notifications switched to Send</strong><span>Off queues nothing that will ever send; Dry run renders messages but sends none.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>CRON_SECRET set on the server</strong><span>The dispatch endpoint refuses every call without it. Set it in Vercel and redeploy.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Scheduler calls the dispatcher every minute</strong><span>Messages wait in the queue forever. Run supabase/scripts/schedule_notifications_dispatch.sql.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp (Kapso) credentials set</strong><span>Every message is postponed with no_transport.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Supabase service role key set</strong><span>The dispatcher cannot read the queue.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp template approved and added to the app</strong><span>No template exists for this message yet. Submit one in Meta, then add it to templates.ts. Until then the message is queued and recorded as no_approved_template.</span></div></li></ul>
+      </details>
+    </section>
+    <section class="feature" id="reschedules">
+      <header class="feature-head">
+        <h3>Reschedule notices</h3>
+        <span class="chip block">No template yet</span>
+      </header>
+      <p class="summary">The patient is told when their appointment moves.</p>
+      <p class="when"><span class="label">When</span>When an appointment's date or time changes.</p>
+      <div class="feature-body">
+        <div class="rules">
+          <ul><li>The old reminder is withdrawn and a new one is set for the new time.</li><li>Moving an appointment twice sends two notices — each move is news to the patient.</li></ul>
+          
+          
+        </div>
+        <div class="phone" aria-label="Example WhatsApp messages">
+        <figure class="bubble out" lang="en">
+          <p>Hi Ahmed, your appointment at The Dental Lounge has moved to Monday 21 September at 11:00 am. Reply here if that doesn't suit you.</p>
+          <figcaption>suggested text</figcaption>
+        </figure></div>
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">7 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>Database updated with the notification tables</strong><span>Without them nothing is queued at all. Run supabase db push --linked.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Patient notifications switched to Send</strong><span>Off queues nothing that will ever send; Dry run renders messages but sends none.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>CRON_SECRET set on the server</strong><span>The dispatch endpoint refuses every call without it. Set it in Vercel and redeploy.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Scheduler calls the dispatcher every minute</strong><span>Messages wait in the queue forever. Run supabase/scripts/schedule_notifications_dispatch.sql.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp (Kapso) credentials set</strong><span>Every message is postponed with no_transport.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Supabase service role key set</strong><span>The dispatcher cannot read the queue.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp template approved and added to the app</strong><span>No template exists for this message yet. Submit one in Meta, then add it to templates.ts. Until then the message is queued and recorded as no_approved_template.</span></div></li></ul>
+      </details>
+    </section>
+    <section class="feature" id="waitlist">
+      <header class="feature-head">
+        <h3>Waitlist offers</h3>
+        <span class="chip block">No template yet</span>
+      </header>
+      <p class="summary">A cancelled slot is offered to the three longest-waiting patients; the first to accept books it.</p>
+      <p class="when"><span class="label">When</span>When a booked slot becomes free again — a cancellation, or a patient moved to another time.</p>
+      <div class="feature-body">
+        <div class="rules">
+          <ul><li>Offered to the three patients who have waited longest whose preferred window includes the slot. No window means any time.</li><li>Just before sending, the slot is checked again. If someone already took it, the offer is not sent.</li><li>The first to reply gets it. The booking is atomic, so the others are told it was just taken — never double-booked.</li><li>The claim lasts 30 minutes. Slots less than an hour away are not offered.</li><li>Removing a patient from the waitlist withdraws any offer not yet sent.</li></ul>
+          
+          <p class="staff"><span class="label">For staff</span>Waitlist — add a patient with an earliest and latest time they can come, or remove them.</p>
+        </div>
+        <div class="phone" aria-label="Example WhatsApp messages">
+        <figure class="bubble out" lang="en">
+          <p>Hi Sara, a spot opened at The Dental Lounge on Tuesday 22 September at 4:00 pm. Reply “yes” within 30 minutes to take it.</p>
+          <figcaption>suggested text</figcaption>
+        </figure>
+        <figure class="bubble in" lang="en">
+          <p>yes</p>
+          
+        </figure></div>
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">11 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>Database updated with the notification tables</strong><span>Without them nothing is queued at all. Run supabase db push --linked.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Patient notifications switched to Send</strong><span>Off queues nothing that will ever send; Dry run renders messages but sends none.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>CRON_SECRET set on the server</strong><span>The dispatch endpoint refuses every call without it. Set it in Vercel and redeploy.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Scheduler calls the dispatcher every minute</strong><span>Messages wait in the queue forever. Run supabase/scripts/schedule_notifications_dispatch.sql.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp (Kapso) credentials set</strong><span>Every message is postponed with no_transport.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Supabase service role key set</strong><span>The dispatcher cannot read the queue.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp template approved and added to the app</strong><span>No template exists for this message yet. Submit one in Meta, then add it to templates.ts. Until then the message is queued and recorded as no_approved_template.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>AI model key (GROQ_API_KEY) set</strong><span>The assistant skips every message before calling the model, with no visible error.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp webhook secret set</strong><span>Incoming patient messages are rejected, so nothing reaches the assistant.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp assistant set to Replies</strong><span>In Drafts mode staff must approve every reply, so nothing happens automatically.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Assistant allowed to book and cancel</strong><span>It can talk about appointments but every change is held for staff.</span></div></li></ul>
+      </details>
+    </section>
+    <section class="feature" id="followups">
+      <header class="feature-head">
+        <h3>Post-visit follow-ups</h3>
+        <span class="chip block">No template yet</span>
+      </header>
+      <p class="summary">The day after a visit, the patient is asked how they are feeling.</p>
+      <p class="when"><span class="label">When</span>Between 18 hours and 3 days after a visit that staff mark as Completed.</p>
+      <div class="feature-body">
+        <div class="rules">
+          <ul><li>Only visits marked Completed. No-shows, cancellations and visits left as Confirmed get nothing.</li><li>Once per visit.</li><li>The reply is read by the assistant: pain or swelling goes to staff; a happy reply can lead to a review request.</li></ul>
+          
+          
+        </div>
+        <div class="phone" aria-label="Example WhatsApp messages">
+        <figure class="bubble out" lang="en">
+          <p>Hi Ahmed, how are you feeling after your visit? Reply here if anything is bothering you.</p>
+          <figcaption>suggested text</figcaption>
+        </figure></div>
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">8 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>Database updated with the notification tables</strong><span>Without them nothing is queued at all. Run supabase db push --linked.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Patient notifications switched to Send</strong><span>Off queues nothing that will ever send; Dry run renders messages but sends none.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>CRON_SECRET set on the server</strong><span>The dispatch endpoint refuses every call without it. Set it in Vercel and redeploy.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Scheduler calls the dispatcher every minute</strong><span>Messages wait in the queue forever. Run supabase/scripts/schedule_notifications_dispatch.sql.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp (Kapso) credentials set</strong><span>Every message is postponed with no_transport.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Supabase service role key set</strong><span>The dispatcher cannot read the queue.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp template approved and added to the app</strong><span>No template exists for this message yet. Submit one in Meta, then add it to templates.ts. Until then the message is queued and recorded as no_approved_template.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Staff mark visits as completed</strong><span>Follow-ups are only sent for visits marked completed. A visit left as confirmed never gets one.</span></div></li></ul>
+      </details>
+    </section>
+    <section class="feature" id="recalls">
+      <header class="feature-head">
+        <h3>Six-month check-up recalls</h3>
+        <span class="chip block">No template yet · marketing</span>
+      </header>
+      <p class="summary">A patient whose last visit was over six months ago, with nothing booked, is invited back.</p>
+      <p class="when"><span class="label">When</span>When a patient's most recent completed visit is more than 180 days ago and they have nothing booked.</p>
+      <div class="feature-body">
+        <div class="rules">
+          <ul><li>Judged on the latest visit, across every way the patient's number has been written.</li><li>A patient who already has an appointment booked is never recalled.</li><li>One recall per lapse. A patient who comes back and lapses again is recalled again.</li><li>Marketing: sent only while “Recalls and review requests” is switched on.</li><li>Not looked for while notifications are Off, so nobody is silently marked as already recalled.</li></ul>
+          
+          
+        </div>
+        <div class="phone" aria-label="Example WhatsApp messages">
+        <figure class="bubble out" lang="en">
+          <p>Hi Ahmed, it has been 6 months since your last visit to The Dental Lounge. Would you like to book a check-up?</p>
+          <figcaption>suggested text</figcaption>
+        </figure></div>
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">9 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>Database updated with the notification tables</strong><span>Without them nothing is queued at all. Run supabase db push --linked.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Patient notifications switched to Send</strong><span>Off queues nothing that will ever send; Dry run renders messages but sends none.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>CRON_SECRET set on the server</strong><span>The dispatch endpoint refuses every call without it. Set it in Vercel and redeploy.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Scheduler calls the dispatcher every minute</strong><span>Messages wait in the queue forever. Run supabase/scripts/schedule_notifications_dispatch.sql.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp (Kapso) credentials set</strong><span>Every message is postponed with no_transport.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Supabase service role key set</strong><span>The dispatcher cannot read the queue.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp template approved and added to the app</strong><span>No template exists for this message yet. Submit one in Meta, then add it to templates.ts. Until then the message is queued and recorded as no_approved_template.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Recalls and review requests switched on</strong><span>These are marketing messages with their own switch, off by default.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Patients have agreed to marketing messages</strong><span>Meta requires consent for marketing templates. This cannot be checked automatically.</span></div></li></ul>
+      </details>
+    </section>
+    <section class="feature" id="reviews">
+      <header class="feature-head">
+        <h3>Review requests</h3>
+        <span class="chip block">No template yet · marketing</span>
+      </header>
+      <p class="summary">A patient who replies happily to their follow-up is asked for a review. Unhappy patients never are.</p>
+      <p class="when"><span class="label">When</span>When a patient replies to their follow-up and the assistant reads that reply as positive.</p>
+      <div class="feature-body">
+        <div class="rules">
+          <ul><li>Any unhappy reply in the same three days cancels it. “The filling is fine but I waited an hour” is never sent to a review page.</li><li>Pain mentioned alongside thanks counts as clinical, not positive.</li><li>Once per follow-up. Shares the marketing switch with recalls.</li></ul>
+          
+          
+        </div>
+        <div class="phone" aria-label="Example WhatsApp messages">
+        <figure class="bubble in" dir="rtl" lang="ar">
+          <p>الحمد لله تمام، شكراً ليكم</p>
+          
+        </figure>
+        <figure class="bubble out" lang="en">
+          <p>Thank you, Ahmed! If you have a moment, a review helps other patients find us: maps.app.goo.gl/…</p>
+          <figcaption>suggested text</figcaption>
+        </figure></div>
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">13 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>Database updated with the notification tables</strong><span>Without them nothing is queued at all. Run supabase db push --linked.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Patient notifications switched to Send</strong><span>Off queues nothing that will ever send; Dry run renders messages but sends none.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>CRON_SECRET set on the server</strong><span>The dispatch endpoint refuses every call without it. Set it in Vercel and redeploy.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Scheduler calls the dispatcher every minute</strong><span>Messages wait in the queue forever. Run supabase/scripts/schedule_notifications_dispatch.sql.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp (Kapso) credentials set</strong><span>Every message is postponed with no_transport.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Supabase service role key set</strong><span>The dispatcher cannot read the queue.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp template approved and added to the app</strong><span>No template exists for this message yet. Submit one in Meta, then add it to templates.ts. Until then the message is queued and recorded as no_approved_template.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp template approved and added to the app</strong><span>No template exists for this message yet. Submit one in Meta, then add it to templates.ts. Until then the message is queued and recorded as no_approved_template.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Recalls and review requests switched on</strong><span>Review requests share the marketing switch.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp assistant switched on (Drafts or Replies)</strong><span>The assistant ignores every incoming message while off.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>AI model key (GROQ_API_KEY) set</strong><span>The assistant skips every message before calling the model, with no visible error.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp webhook secret set</strong><span>Incoming patient messages are rejected, so nothing reaches the assistant.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Clinic map / review link set in site settings</strong><span>The review request needs a link to send the patient to.</span></div></li></ul>
+      </details>
+    </section>
+  </div>
+  <div class="group" id="group-reply">
+    <div class="group-head"><h2>What the assistant does with replies</h2><p>The WhatsApp assistant reads what patients send back.</p></div>
+    
+    <section class="feature" id="cancel_by_reply">
+      <header class="feature-head">
+        <h3>Cancel by replying to a reminder</h3>
+        <span class="chip setup">Needs the assistant on Replies</span>
+      </header>
+      <p class="summary">A patient answers a reminder with “cancel” / “الغاء” and the slot is freed.</p>
+      <p class="when"><span class="label">When</span>A patient answers a reminder with a cancellation word.</p>
+      <div class="feature-body">
+        <div class="rules">
+          <ul><li>The assistant must be at least 90% sure to cancel on its own; below that it drafts the reply for staff.</li><li>A patient can only cancel appointments booked under their own number.</li><li>A cancelled slot is then offered to the waitlist.</li></ul>
+          
+      <div class="scroll"><table>
+        <thead><tr><th scope="col">Patient writes</th><th scope="col">Their appointments</th><th scope="col">What happens</th></tr></thead>
+        <tbody><tr><td lang="ar">cancel · الغاء</td><td>one upcoming</td><td>Cancelled; the slot is freed</td></tr><tr><td lang="ar">cancel · الغاء</td><td>two or more</td><td>The assistant asks which — it never guesses</td></tr><tr><td lang="ar">تمام · confirm</td><td>any</td><td>Thanked; nothing changes</td></tr><tr><td lang="ar">cancel · الغاء</td><td>under ~2 hours away</td><td>Handed to staff — it is really a no-show</td></tr></tbody>
+      </table></div>
+          
+        </div>
+        <div class="phone" aria-label="Example WhatsApp messages">
+        <figure class="bubble in" dir="rtl" lang="ar">
+          <p>الغاء</p>
+          
+        </figure>
+        <figure class="bubble out" dir="rtl" lang="ar">
+          <p>تمام، هلغي الميعاد.</p>
+          
+        </figure></div>
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">5 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>Templates approved in Meta: reminder_en, reminder_ar</strong><span>Not approved yet: reminder_en, reminder_ar. If Meta shows them approved, the business account ID points at the wrong account.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>AI model key (GROQ_API_KEY) set</strong><span>The assistant skips every message before calling the model, with no visible error.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp webhook secret set</strong><span>Incoming patient messages are rejected, so nothing reaches the assistant.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp assistant set to Replies</strong><span>In Drafts mode staff must approve every reply, so nothing happens automatically.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>Assistant allowed to book and cancel</strong><span>It can talk about appointments but every change is held for staff.</span></div></li></ul>
+      </details>
+    </section>
+    <section class="feature" id="voice_notes">
+      <header class="feature-head">
+        <h3>Voice notes answered</h3>
+        <span class="chip setup">Needs the assistant on</span>
+      </header>
+      <p class="summary">A patient's voice message is transcribed and answered like text.</p>
+      <p class="when"><span class="label">When</span>A patient sends a voice message.</p>
+      <div class="feature-body">
+        <div class="rules">
+          <ul><li>WhatsApp's provider transcribes it, and the assistant answers the transcript exactly as if it were typed.</li><li>If the transcript has not arrived yet, or is only music or silence — production already holds one reading “[outro jingle]” — it is not answered.</li><li>Clinical questions still go to staff.</li></ul>
+          
+          
+        </div>
+        <div class="phone" aria-label="Example WhatsApp messages">
+        <figure class="bubble in" dir="rtl" lang="ar">
+          <p>عايز أحجز ميعاد تنظيف الأسبوع الجاي</p>
+          <figcaption>voice note · transcript</figcaption>
+        </figure></div>
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">4 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp assistant switched on (Drafts or Replies)</strong><span>The assistant ignores every incoming message while off.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>AI model key (GROQ_API_KEY) set</strong><span>The assistant skips every message before calling the model, with no visible error.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp webhook secret set</strong><span>Incoming patient messages are rejected, so nothing reaches the assistant.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp provider transcribes audio</strong><span>Kapso provides the transcript. A note whose transcript has not arrived, or is only music, is not answered.</span></div></li></ul>
+      </details>
+    </section>
+    <section class="feature" id="knowledge">
+      <header class="feature-head">
+        <h3>Clinic knowledge answers</h3>
+        <span class="chip setup">Needs the assistant on</span>
+      </header>
+      <p class="summary">The assistant answers prices, policies and aftercare from facts staff have written.</p>
+      <p class="when"><span class="label">When</span>A patient asks about prices, policies, directions or aftercare.</p>
+      <div class="feature-body">
+        <div class="rules">
+          <ul><li>Each message searches Clinic knowledge in Arabic and English, and the closest facts are handed to the assistant.</li><li>It may state only those facts. If nothing matches, it passes the question to staff instead of guessing.</li><li>New entries start unpublished, and unpublished facts are invisible to the assistant.</li><li>Started with the clinic's 21 services and any FAQs already written.</li></ul>
+          
+          <p class="staff"><span class="label">For staff</span>Clinic knowledge — write the answer you would want a receptionist to give without checking, then publish it.</p>
+        </div>
+        <div class="phone" aria-label="Example WhatsApp messages">
+        <figure class="bubble in" dir="rtl" lang="ar">
+          <p>بكام تبييض الاسنان؟</p>
+          
+        </figure></div>
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">5 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>Database updated with the new tables</strong><span>The knowledge table does not exist yet, so there is nothing to search. Run supabase db push --linked.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp assistant switched on (Drafts or Replies)</strong><span>The assistant ignores every incoming message while off.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>AI model key (GROQ_API_KEY) set</strong><span>The assistant skips every message before calling the model, with no visible error.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp webhook secret set</strong><span>Incoming patient messages are rejected, so nothing reaches the assistant.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>At least one published knowledge entry</strong><span>With nothing published the assistant has nothing to quote and hands every such question to staff.</span></div></li></ul>
+      </details>
+    </section>
+    <section class="feature" id="review_queue">
+      <header class="feature-head">
+        <h3>Learning from staff corrections</h3>
+        <span class="chip setup">Needs the assistant on</span>
+      </header>
+      <p class="summary">Drafts staff rewrote before sending are collected for review.</p>
+      <p class="when"><span class="label">When</span>Staff send one of the assistant's drafts, edited or not.</p>
+      <div class="feature-body no-phone">
+        <div class="rules">
+          <ul><li>What the assistant proposed and what staff actually sent are saved side by side.</li><li>Assistant review lists every draft staff changed.</li><li>“Add staff answer to knowledge” turns a correction into an unpublished fact.</li><li>“Export reviewed” gives developers the examples to add as tests.</li></ul>
+          
+          <p class="staff"><span class="label">For staff</span>Assistant review — read what was changed, and teach the assistant the facts it was missing.</p>
+        </div>
+        
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">4 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>Database updated with the new tables</strong><span>Corrections are saved to a table that does not exist yet. Saving fails quietly so a send is never blocked — which means nothing is collected. Run supabase db push --linked.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp assistant switched on (Drafts or Replies)</strong><span>The assistant ignores every incoming message while off.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>AI model key (GROQ_API_KEY) set</strong><span>The assistant skips every message before calling the model, with no visible error.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp webhook secret set</strong><span>Incoming patient messages are rejected, so nothing reaches the assistant.</span></div></li></ul>
+      </details>
+    </section>
+  </div>
+  <div class="group" id="group-control">
+    <div class="group-head"><h2>Patient control</h2><p>What a patient can do to stop hearing from the clinic.</p></div>
+    
+    <section class="feature" id="stop">
+      <header class="feature-head">
+        <h3>STOP opt-outs</h3>
+        <span class="chip setup">Needs the database update</span>
+      </header>
+      <p class="summary">A patient who texts STOP or إيقاف receives no more clinic-initiated messages.</p>
+      <p class="when"><span class="label">When</span>A patient's whole message is an opt-out word.</p>
+      <div class="feature-body no-phone">
+        <div class="rules">
+          <ul><li>Recorded before the assistant reads the message, and anything already queued for them is withdrawn.</li><li>Stops messages the clinic starts. If the patient writes in, they are still answered.</li><li>Works even while the assistant is off.</li><li>Only staff can let a patient hear from the clinic again.</li></ul>
+          
+      <div class="scroll"><table>
+        <thead><tr><th scope="col">Patient writes</th><th scope="col">Result</th></tr></thead>
+        <tbody><tr><td>STOP · stop. · 🛑 STOP · unsubscribe</td><td>Opted out</td></tr><tr><td lang="ar">إيقاف · ايقاف · إلغاء الاشتراك</td><td>Opted out</td></tr><tr><td lang="ar">الغاء</td><td>Not opted out — it means “cancel my appointment”</td></tr><tr><td>can you stop the drilling noise next time</td><td>Not opted out — only whole messages count</td></tr></tbody>
+      </table></div>
+          <p class="staff"><span class="label">For staff</span>Patient messages — add someone who asked on the phone, or remove an opt-out.</p>
+        </div>
+        
+      </div>
+      <details class="conds">
+        <summary>Why it may not work <span class="count">2 conditions</span></summary>
+        <p class="conds-note">Settings → Patient notifications ticks each of these live.</p>
+        <ul><li><span class="box" aria-hidden="true"></span><div><strong>Database updated with the notification tables</strong><span>The opt-out has nowhere to be recorded.</span></div></li><li><span class="box" aria-hidden="true"></span><div><strong>WhatsApp webhook secret set</strong><span>Incoming messages are rejected, so a STOP is never seen. This works even while the assistant is off.</span></div></li></ul>
+      </details>
+    </section>
+  </div>
+
+    <section class="appendix" id="templates">
+      <h2>WhatsApp templates</h2>
+      <p>Meta only lets a business start a conversation with a pre-approved template. Names cannot be changed once submitted, so the app works around two mistakes in the ones already sent.</p>
+      <div class="scroll"><table>
+        <thead><tr><th scope="col">Registered name</th><th scope="col">Used for</th><th scope="col">Text is really in</th><th scope="col">Status</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">appoinment_en</td><td>Confirmation</td><td>English</td><td>Waiting for Meta · misspelled, permanently</td></tr>
+          <tr><td class="mono">appoinment_ar</td><td>Confirmation</td><td>Arabic</td><td>Waiting for Meta · misspelled, permanently</td></tr>
+          <tr><td class="mono">reminder_en</td><td>Reminder</td><td><span class="warn">Arabic</span></td><td>Waiting for Meta · name and language swapped</td></tr>
+          <tr><td class="mono">reminder_ar</td><td>Reminder</td><td><span class="warn">English</span></td><td>Waiting for Meta · name and language swapped</td></tr>
+        </tbody>
+      </table></div>
+      <p>All four are registered as <code>en_US</code> whatever their text. The account currently lists approved templates named <code>order_seryah</code>, <code>hedma</code> and others that belong to different businesses — confirm the business account ID is the clinic's own, or the dental templates will never show as approved.</p>
+    </section>
+
+    <section class="appendix" id="golive">
+      <h2>Go-live order</h2>
+      <p>Each step depends on the one before it.</p>
+      <ol class="steps">
+        <li><div><strong>Merge the other session's branch</strong><p>Give it <code>features_app/MERGE_INSTRUCTIONS.md</code>. Two expected conflicts, both resolved toward main.</p></div></li>
+        <li><div><strong>Confirm the WhatsApp business account</strong><p>Its approved templates should be the clinic's.</p></div></li>
+        <li><div><strong>Get templates approved</strong><p>Wait for the four submitted; submit the other six. Each new one is added to <code>templates.ts</code> before it can send.</p></div></li>
+        <li><div><strong>Update the production database</strong><p><code>supabase db push --linked</code> applies the nine changes. Everything starts switched off.</p></div></li>
+        <li><div><strong>Deploy</strong><p>Set <code>CRON_SECRET</code> in Vercel production, push main, and let it redeploy.</p></div></li>
+        <li><div><strong>Start the scheduler</strong><p>Create two Vault secrets, then run <code>supabase/scripts/schedule_notifications_dispatch.sql</code> once.</p></div></li>
+        <li><div><strong>Rehearse for a week</strong><p>Settings → Patient notifications → Dry run. Read the rendered messages under Patient messages.</p></div></li>
+        <li><div><strong>Send</strong><p>Switch to Send once every box that matters is ticked.</p></div></li>
+        <li><div><strong>Let the assistant act</strong><p>WhatsApp AI: Drafts → Replies → allow booking. Cancel-by-reply and waitlist claims need all three.</p></div></li>
+        <li><div><strong>Marketing last</strong><p>Recalls and review requests, only after their templates are approved and patients have agreed.</p></div></li>
+      </ol>
+      <p>To stop everything at once: <code>update patient_notification_settings set mode = 'off';</code> and <code>update whatsapp_ai_settings set mode = 'off';</code> — effective within a minute, no deploy.</p>
+    </section>
+
+    <section class="appendix" id="gaps">
+      <h2>Known gaps</h2>
+      <ul class="gaps">
+        <li>When the assistant cancels at a patient's request, the system cannot yet tell, so once a cancellation template exists that patient could hear it twice.</li>
+        <li>A patient offered a waitlist slot they did not take stays marked as offered and receives no further offers.</li>
+        <li>A patient who sent STOP cannot opt back in by message; only staff can.</li>
+        <li>Arabic search does not match word variants — “الأسنان” and “اسنان” may not find each other.</li>
+        <li>The new pages are reached by address or ⌘K, not the sidebar.</li>
+        <li>The end-to-end browser tests have not been run: local settings point at the live database, where they would create and delete real bookings.</li>
+      </ul>
+    </section>
+
+    <footer>Generated from the feature list the app itself uses for Settings, so the conditions here match what Settings checks. 11 September 2026.</footer>
+  </main>
+</div>

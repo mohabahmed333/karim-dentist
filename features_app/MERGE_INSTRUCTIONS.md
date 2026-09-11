@@ -25,7 +25,7 @@ to the user — do not improvise.**
 
 **`main`** — 25 feature commits plus a docs commit: patient notifications,
 waitlist, follow-ups and recalls, knowledge base, assistant review, voice notes,
-STOP opt-outs. Details in `features_app/README.md`.
+STOP opt-outs. Details in `features_app/index.html`.
 
 ## Step 1 — Pre-flight. Stop if any check fails.
 
@@ -193,7 +193,7 @@ build all pass.
 
 - **Push** — the user decides when. Pushing `main` starts a Vercel production deploy.
 - Run `supabase db push` — production migrations are a separate, deliberate step
-  (`features_app/06-go-live-checklist.md`).
+  (see "Go-live order" in `features_app/index.html`).
 - Run the Playwright e2e suite — `.env.local` points at **production** Supabase, so it
   could create and delete real bookings.
 - Rebase or force-push either branch.
