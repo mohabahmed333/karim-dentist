@@ -1,3 +1,4 @@
+import { nextBookingState, type BookingState } from "./bookingState";
 import { buildAutoReplyPrompt, type BuildPromptInput } from "./buildAutoReplyPrompt";
 import { decideAutoReply } from "./decideAutoReply";
 import { extractAutoReplyEnvelope } from "./extractAutoReplyEnvelope";
@@ -32,6 +33,9 @@ export type RunDeps = {
   draft: (text: string, reason: string) => Promise<{ id: string }>;
   runActions: (actions: BotAction[]) => Promise<{ ok: boolean; message: string }>;
   rememberOfferedSlots: (slotIds: string[]) => Promise<void>;
+  /** Booking progress carried between turns. Absent means a fresh start. */
+  bookingState?: BookingState | null;
+  saveBookingState?: (state: BookingState) => Promise<void>;
   record: (event: {
     decision: "auto_send" | "draft" | "skip" | "error";
     reason: string;
@@ -68,7 +72,10 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     return { status: "skipped", reason: gate.reason };
   }
 
-  const built = buildAutoReplyPrompt(deps.prompt);
+  const built = buildAutoReplyPrompt({
+    ...deps.prompt,
+    collected: deps.bookingState?.pending ?? deps.prompt.collected,
+  });
 
   let raw: string;
   try {
@@ -94,6 +101,36 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
   // too. The prompt asks; this enforces.
   const guarded = stripInternalIds(rawEnvelope.reply);
   const envelope = { ...rawEnvelope, reply: guarded.reply };
+
+  // Record what the patient told us before deciding anything about the reply.
+  // It is true whether or not the reply goes out, and losing it is how the
+  // assistant asked for a service one turn after being told it.
+  const now = deps.now?.() ?? new Date();
+  let booking = nextBookingState(deps.bookingState ?? null, {
+    intent: envelope.intent,
+    collected: envelope.collected,
+    offeredSlots: deps.prompt.slots,
+    bookingCompleted: false,
+    now,
+  });
+  if (!sameBooking(deps.bookingState, booking)) {
+    await deps.saveBookingState?.(booking);
+  }
+
+  // A booking action may omit details the patient already gave on an earlier
+  // turn ("yes, book it"). Fill them from what is settled; decideAutoReply still
+  // requires any slot to be one the server offered.
+  const actionEnvelope = {
+    ...envelope,
+    actions: envelope.actions.map((action) => ({
+      ...action,
+      slotId:
+        action.slotId ??
+        (action.kind === "booking.cancel" ? undefined : booking.pending.slotId),
+      serviceLabel: action.serviceLabel ?? booking.pending.service,
+      patientName: action.patientName ?? booking.pending.patientName,
+    })),
+  };
   if (guarded.violations.length > 0 && !isSendableReply(envelope.reply)) {
     // Nothing meaningful survived the strip — a human should write this one.
     const { id } = await deps.draft(rawEnvelope.reply, "reply_was_all_ids");
@@ -117,7 +154,7 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
   }
 
   const decision = decideAutoReply({
-    envelope,
+    envelope: actionEnvelope,
     injectionFlags: flags,
     offeredSlotIds: built.offeredSlotIds,
     ownReservationIds: deps.prompt.reservations.map((r) => r.id),
@@ -155,6 +192,14 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
       });
       return { status: "drafted", reason: "action_failed", messageId: id, envelope };
     }
+    // The booking really happened: nothing is pending any more.
+    booking = nextBookingState(booking, {
+      collected: {},
+      offeredSlots: deps.prompt.slots,
+      bookingCompleted: true,
+      now,
+    });
+    await deps.saveBookingState?.(booking);
   }
 
   // Last gate before a patient reads it: the reply may not assert a booking
@@ -187,4 +232,14 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     latencyMs: Date.now() - startedAt,
   });
   return { status: "sent", reason, messageId: id, envelope };
+}
+
+function sameBooking(
+  before: BookingState | null | undefined,
+  after: BookingState,
+): boolean {
+  return (
+    (before?.step ?? "idle") === after.step &&
+    JSON.stringify(before?.pending ?? {}) === JSON.stringify(after.pending)
+  );
 }

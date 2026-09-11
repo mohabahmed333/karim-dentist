@@ -7,6 +7,7 @@ import { groqChat } from "@/services/ai_groq/callGroq";
 import { addOptOut, isOptOutMessage } from "@/services/patient_notifications/optouts";
 import { searchClinicKnowledge } from "@/services/clinic_knowledge/search";
 import { buildHistoryTurns } from "./historyTurns";
+import { readBookingState } from "./bookingState";
 import { loadUpcomingReservations } from "@/services/reservations/upcomingReservations";
 import { pickPatientLanguage } from "@/services/patient_notifications/pickLanguage";
 import { insertOutboundMessage } from "@/services/whatsapp/mutations";
@@ -19,6 +20,7 @@ import {
   loadAiSettings,
   loadConversationState,
   recordAiEvent,
+  saveBookingState,
   saveOfferedSlots,
 } from "./store";
 import type { BotAction } from "./schemas";
@@ -317,6 +319,12 @@ export async function processAutoReplyJob(
       },
       async rememberOfferedSlots(slotIds) {
         await saveOfferedSlots(db, conversation.id, slotIds);
+      },
+      // An expired or corrupt row reads as a fresh start, so an abandoned
+      // booking from an hour ago is never resumed as if it were live.
+      bookingState: readBookingState(state, new Date()),
+      async saveBookingState(next) {
+        await saveBookingState(db, conversation.id, next);
       },
       async record(event) {
         await recordAiEvent(db, {

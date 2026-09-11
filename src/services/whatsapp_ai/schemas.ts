@@ -74,6 +74,20 @@ export const autoReplyEnvelopeSchema = z.object({
     .array(z.enum(["patient_name", "service", "slot", "reservation_id"]))
     .max(4)
     .default([]),
+  /**
+   * What the patient has told the assistant so far in this booking. The server
+   * keeps it between turns, so a field reported once is never asked for again.
+   * `.catch` so a malformed report degrades to "nothing new learned" rather
+   * than failing the whole reply into a handoff.
+   */
+  collected: z
+    .object({
+      service: z.string().nullish(),
+      patientName: z.string().nullish(),
+      slotId: z.string().nullish(),
+    })
+    .default({})
+    .catch({}),
 });
 
 export type AutoReplyEnvelope = z.infer<typeof autoReplyEnvelopeSchema>;

@@ -1,4 +1,5 @@
 import type { createServiceClient } from "@/lib/supabase/service";
+import type { BookingState } from "./bookingState";
 import { DEFAULT_AI_SETTINGS, type WhatsappAiSettings, type WhatsappAiState } from "./types";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
@@ -41,6 +42,30 @@ export async function saveOfferedSlots(
       offered_at: new Date().toISOString(),
       // Mirrors the admin proposal expiry: a slot list older than this is stale.
       state_expires_at: new Date(Date.now() + 30 * 60_000).toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "conversation_id" },
+  );
+}
+
+/**
+ * Persist booking progress for a conversation.
+ *
+ * Written even when the reply itself was drafted: what the patient told us is
+ * still true whether or not our answer went out, and dropping it is exactly how
+ * the assistant came to ask the same question twice.
+ */
+export async function saveBookingState(
+  db: ServiceClient,
+  conversationId: string,
+  state: BookingState,
+): Promise<void> {
+  await db.from("whatsapp_ai_state").upsert(
+    {
+      conversation_id: conversationId,
+      step: state.step,
+      pending: state.pending as never,
+      state_expires_at: state.expiresAt,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "conversation_id" },

@@ -316,3 +316,145 @@ describe("runAutoReply — adversarial", () => {
     assert.equal(h.sent.length, 0);
   });
 });
+
+describe("runAutoReply — booking memory", () => {
+  type Saved = { step: string; pending: Record<string, string> };
+
+  function withState(over: Record<string, unknown> = {}) {
+    const saved: Saved[] = [];
+    const h = harness({
+      async saveBookingState(state: Saved) {
+        saved.push(state);
+      },
+      ...over,
+    });
+    return { ...h, saved };
+  }
+
+  /**
+   * The production failure: "تنظيف اسنان" was forgotten one turn later. What the
+   * patient said must be kept even when the reply itself is only a draft.
+   */
+  it("remembers a service the patient named, even when the reply is drafted", async () => {
+    const h = withState({
+      async chat() {
+        return JSON.stringify({
+          language: "ar",
+          intent: "booking_request",
+          confidence: 0.95,
+          reply: "تمام، أي ميعاد يناسبك؟",
+          collected: { service: "تنظيف اسنان" },
+        });
+      },
+    });
+    h.deps.policy.settings = { ...DEFAULT_AI_SETTINGS, mode: "draft_only", allow_booking_writes: true };
+    const out = await runAutoReply(h.deps);
+    assert.equal(out.status, "drafted");
+    assert.equal(h.saved.at(-1)?.pending.service, "تنظيف اسنان");
+  });
+
+  it("shows the model what is already collected", async () => {
+    let system = "";
+    const h = withState({
+      bookingState: { step: "awaiting_slot", pending: { service: "Cleaning" }, expiresAt: null },
+      async chat(messages: { role: string; content: string }[]) {
+        system = messages[0].content;
+        return JSON.stringify({ intent: "booking_request", confidence: 0.9, reply: "Which time suits you?" });
+      },
+    });
+    await runAutoReply(h.deps);
+    assert.match(system, /NEVER ask for these again/);
+    assert.ok(system.includes('"service":"Cleaning"'));
+  });
+
+  it("fills a booking action from details settled on earlier turns", async () => {
+    const ran: Record<string, string>[][] = [];
+    const h = withState({
+      bookingState: {
+        step: "awaiting_confirm",
+        pending: { service: "Cleaning", patientName: "Ali", slotId: SLOT_A, slotStartsAt: "2026-09-13T14:00:00.000Z" },
+        expiresAt: null,
+      },
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_request",
+          confidence: 0.95,
+          reply: "Booking that for you now.",
+          actions: [{ kind: "booking.book_slot" }],
+        });
+      },
+      async runActions(actions: Record<string, string>[]) {
+        ran.push(actions);
+        return { ok: true, message: "done" };
+      },
+    });
+    const out = await runAutoReply(h.deps);
+    assert.equal(out.status, "sent");
+    assert.equal(ran[0][0].slotId, SLOT_A);
+    assert.equal(ran[0][0].serviceLabel, "Cleaning");
+    assert.equal(ran[0][0].patientName, "Ali");
+  });
+
+  it("clears the booking once it has actually been made", async () => {
+    const h = withState({
+      bookingState: {
+        step: "awaiting_confirm",
+        pending: { service: "Cleaning", slotId: SLOT_A },
+        expiresAt: null,
+      },
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_request",
+          confidence: 0.95,
+          reply: "Booking that for you now.",
+          actions: [{ kind: "booking.book_slot", slotId: SLOT_A }],
+        });
+      },
+    });
+    await runAutoReply(h.deps);
+    assert.deepEqual(h.saved.at(-1)?.pending, {});
+    assert.equal(h.saved.at(-1)?.step, "idle");
+  });
+
+  it("keeps the booking when the booking attempt fails", async () => {
+    const h = withState({
+      bookingState: { step: "awaiting_confirm", pending: { service: "Cleaning", slotId: SLOT_A }, expiresAt: null },
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_request",
+          confidence: 0.95,
+          reply: "Booking that for you now.",
+          actions: [{ kind: "booking.book_slot", slotId: SLOT_A }],
+        });
+      },
+      async runActions() {
+        return { ok: false, message: "That time was just taken." };
+      },
+    });
+    const out = await runAutoReply(h.deps);
+    assert.equal(out.reason, "action_failed");
+    assert.ok(!h.saved.some((s) => s.step === "idle"), "a failed booking must not wipe what was collected");
+  });
+
+  it("does not store a slot the server never offered", async () => {
+    const h = withState({
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_request",
+          confidence: 0.9,
+          reply: "Which service would you like?",
+          collected: { slotId: "99999999-9999-4999-8999-999999999999" },
+        });
+      },
+    });
+    await runAutoReply(h.deps);
+    assert.ok(h.saved.every((s) => s.pending.slotId === undefined));
+  });
+
+  it("leaves booking state alone when the assistant is off", async () => {
+    const h = withState();
+    h.deps.policy.settings = { ...DEFAULT_AI_SETTINGS, mode: "off" };
+    await runAutoReply(h.deps);
+    assert.equal(h.saved.length, 0);
+  });
+});
