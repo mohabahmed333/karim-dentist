@@ -31,6 +31,7 @@ import { ChatComposer } from "./chat/ChatComposer";
 import { ChatGalleryProvider } from "./chat/ChatGalleryContext";
 import { ChatMessageBubble } from "./chat/ChatMessageBubble";
 import { AiDraftCard } from "./chat/AiDraftCard";
+import { SaveQuickReplyDialog } from "./chat/SaveQuickReplyDialog";
 import { ChatThreadSearch } from "./chat/ChatThreadSearch";
 import { collectConversationMedia } from "./chat/collectConversationMedia";
 import type { ComposerSendPayload } from "./chat/composerTypes";
@@ -41,13 +42,14 @@ import type {
   SupportMessage,
 } from "./supportDummyData";
 import type { TemplateField } from "@/services/whatsapp/templateFields";
+import type { CannedReplyAttachment } from "@/services/whatsapp/cannedReplyInput";
 
 type Props = {
   conversation: SupportConversation;
   messages: SupportMessage[];
   draft: string;
   onDraftChange: (value: string) => void;
-  onSend: (payload: ComposerSendPayload) => void;
+  onSend: (payload: ComposerSendPayload) => void | Promise<void>;
   onSendTemplate?: (payload: {
     name: string;
     language: string;
@@ -63,6 +65,8 @@ type Props = {
   replyTo?: SupportMessage | null;
   onReply?: (message: SupportMessage) => void;
   onClearReply?: () => void;
+  quickAttachment?: CannedReplyAttachment | null;
+  onQuickAttachmentChange?: (attachment: CannedReplyAttachment | null) => void;
   onArchiveToggle?: () => void;
   archiving?: boolean;
   onAskAi?: () => void;
@@ -89,6 +93,8 @@ export function SupportChatColumn({
   replyTo,
   onReply,
   onClearReply,
+  quickAttachment,
+  onQuickAttachmentChange,
   onArchiveToggle,
   archiving,
   onAskAi,
@@ -103,6 +109,7 @@ export function SupportChatColumn({
   const [searchOpen, setSearchOpen] = useState(false);
   const [demoBookOpen, setDemoBookOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [saveQuickReplyFrom, setSaveQuickReplyFrom] = useState<SupportMessage | null>(null);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const galleryImages = useMemo(
     () => collectConversationMedia(messages).images,
@@ -408,6 +415,7 @@ export function SupportChatColumn({
             message={m}
             highlighted={highlightId === m.id}
             onReply={onReply}
+            onSaveAsQuickReply={setSaveQuickReplyFrom}
             booking={{
               conversationId: conversation.id,
               name: conversation.name,
@@ -434,17 +442,26 @@ export function SupportChatColumn({
             />
           ) : null}
           <ChatComposer
+            key={conversation.id}
             draft={draft}
             onDraftChange={onDraftChange}
             onSend={onSend}
             disabled={sending}
             replyTo={replyTo}
             onClearReply={onClearReply}
+            quickAttachment={quickAttachment}
+            onQuickAttachmentChange={onQuickAttachmentChange}
             conversationId={conversation.id}
             onSendTemplate={onSendTemplate}
           />
         </>
       )}
+      <SaveQuickReplyDialog
+        message={saveQuickReplyFrom}
+        onOpenChange={(open) => {
+          if (!open) setSaveQuickReplyFrom(null);
+        }}
+      />
     </section>
     </ChatGalleryProvider>
   );

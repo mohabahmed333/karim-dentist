@@ -4,24 +4,12 @@ import { z } from "zod";
 import {
   createCannedReply,
   deleteCannedReply,
+  isDuplicateSlashKey,
   listCannedReplies,
 } from "@/services/whatsapp/cannedReplies";
+import { createCannedReplySchema } from "@/services/whatsapp/cannedReplyInput";
 
 export const runtime = "nodejs";
-
-const postSchema = z.object({
-  slash_key: z
-    .string()
-    .trim()
-    .min(1)
-    .max(40)
-    .regex(/^[a-z0-9_-]+$/i),
-  title: z.string().trim().min(1).max(80),
-  title_ar: z.string().trim().max(80).optional().nullable(),
-  body: z.string().trim().min(1).max(2000),
-  body_ar: z.string().trim().max(2000).optional().nullable(),
-  sort_order: z.number().int().optional(),
-});
 
 export async function GET(request: Request) {
   try {
@@ -40,24 +28,28 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
+  const parsed = createCannedReplySchema.safeParse(
+    await request.json().catch(() => null),
+  );
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return NextResponse.json(
+      { error: issue?.message ?? "Invalid body", path: issue?.path },
+      { status: 400 },
+    );
+  }
   try {
-    const auth = await requireAdmin();
-    if (auth.error) return auth.error;
-    const supabase = auth.supabase;
-    const parsed = postSchema.safeParse(await request.json());
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-    }
-    const reply = await createCannedReply(supabase, {
-      slash_key: parsed.data.slash_key.toLowerCase(),
-      title: parsed.data.title,
-      title_ar: parsed.data.title_ar,
-      body: parsed.data.body,
-      body_ar: parsed.data.body_ar,
-      sort_order: parsed.data.sort_order,
-    });
+    const reply = await createCannedReply(auth.supabase, parsed.data);
     return NextResponse.json({ reply });
   } catch (error) {
+    if (isDuplicateSlashKey(error)) {
+      return NextResponse.json(
+        { error: "Slash key already used", code: "SLASH_KEY_TAKEN" },
+        { status: 409 },
+      );
+    }
     console.error("[whatsapp/canned-replies POST]", error);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }

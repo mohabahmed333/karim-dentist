@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { deliverInbound, uniquePhone } from "./helpers/inbound";
 import {
   conversationByPhone,
   messagesFor,
@@ -6,31 +7,6 @@ import {
   setAiMode,
 } from "./helpers/seed";
 import { inboundTextEvent, signWebhookBody } from "./helpers/signWebhook";
-
-/**
- * A distinct number per test, so each gets its own conversation. Sharing one
- * conversation makes "how many AI replies exist" ambiguous across tests.
- */
-function uniquePhone() {
-  return `+2010${String(Date.now()).slice(-7)}${Math.floor(Math.random() * 10)}`;
-}
-
-async function deliverInbound(
-  request: import("@playwright/test").APIRequestContext,
-  phone: string,
-  text: string,
-) {
-  const body = JSON.stringify(inboundTextEvent({ phone, text }));
-  return request.post("/api/v1/whatsapp/webhook", {
-    headers: {
-      "content-type": "application/json",
-      "x-webhook-event": "whatsapp.message.received",
-      "x-webhook-signature": signWebhookBody(body),
-      "x-idempotency-key": `e2e-${Date.now()}-${Math.random()}`,
-    },
-    data: body,
-  });
-}
 
 /** Poll, because the reply is produced in after() once the response is sent. */
 async function waitForOutbound(

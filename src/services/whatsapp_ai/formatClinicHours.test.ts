@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
-import { formatClinicHours } from "./formatClinicHours.ts";
+import { collapseWeekdays, formatClinicHours } from "./formatClinicHours.ts";
 
 describe("formatClinicHours", () => {
   it("collapses consecutive days into a range, as a person would say it", () => {
@@ -52,5 +52,15 @@ describe("formatClinicHours", () => {
     ]) {
       assert.match(formatClinicHours(input), /do not state opening hours/i);
     }
+  });
+});
+
+describe("collapseWeekdays", () => {
+  it("groups consecutive days, dropping duplicates and invalid days", () => {
+    assert.deepEqual(collapseWeekdays([4, 0, 1, 1, 2, 6, 9, -1]), [[0, 1, 2], [4], [6]]);
+  });
+
+  it("returns no groups for no valid days", () => {
+    assert.deepEqual(collapseWeekdays([7, 1.5]), []);
   });
 });

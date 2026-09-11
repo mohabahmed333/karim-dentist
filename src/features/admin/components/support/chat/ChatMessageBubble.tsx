@@ -1,6 +1,6 @@
 "use client";
 
-import { Reply } from "lucide-react";
+import { BookmarkPlus, Reply } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "@/lib/i18n";
 import { MessageMediaGrid } from "./MessageMediaGrid";
@@ -23,6 +23,7 @@ type Props = {
   message: SupportMessage;
   booking?: FlowBookingContext;
   onReply?: (message: SupportMessage) => void;
+  onSaveAsQuickReply?: (message: SupportMessage) => void;
   highlighted?: boolean;
 };
 
@@ -64,6 +65,7 @@ export function ChatMessageBubble({
   message: m,
   booking,
   onReply,
+  onSaveAsQuickReply,
   highlighted = false,
 }: Props) {
   const t = useTranslations();
@@ -94,6 +96,12 @@ export function ChatMessageBubble({
     m.flow?.kind === "contacts";
   const body = hideBody ? "" : m.body;
   const bodyDir = textDirection(body || "");
+  // Only plain text staff or the assistant sent: that is what a quick reply can hold.
+  const canSaveAsQuickReply =
+    Boolean(onSaveAsQuickReply) &&
+    isAgent &&
+    Boolean(body.trim()) &&
+    (!m.messageType || m.messageType === "text");
 
   function startReply() {
     if (!onReply) return;
@@ -210,19 +218,30 @@ export function ChatMessageBubble({
             </p>
           ) : null}
           <div className="mt-1.5 flex items-center justify-between gap-2 text-[12px] text-[#6B7280]">
-            {onReply ? (
-              <button
-                type="button"
-                onClick={startReply}
-                className="inline-flex items-center gap-1 rounded px-1 py-0.5 font-medium text-[#6B7280] opacity-70 hover:bg-black/5 hover:text-[#111827] hover:opacity-100 group-hover:opacity-100"
-                aria-label={t("admin.frontDesk.reply")}
-              >
-                <Reply className="h-3 w-3" />
-                {t("admin.frontDesk.reply")}
-              </button>
-            ) : (
-              <span />
-            )}
+            <span className="inline-flex items-center gap-1">
+              {onReply ? (
+                <button
+                  type="button"
+                  onClick={startReply}
+                  className="inline-flex items-center gap-1 rounded px-1 py-0.5 font-medium text-[#6B7280] opacity-70 hover:bg-black/5 hover:text-[#111827] hover:opacity-100 group-hover:opacity-100"
+                  aria-label={t("admin.frontDesk.reply")}
+                >
+                  <Reply className="h-3 w-3" />
+                  {t("admin.frontDesk.reply")}
+                </button>
+              ) : null}
+              {canSaveAsQuickReply ? (
+                <button
+                  type="button"
+                  onClick={() => onSaveAsQuickReply?.(m)}
+                  className="inline-flex items-center rounded p-1 text-[#6B7280] opacity-70 hover:bg-black/5 hover:text-[#111827] hover:opacity-100 group-hover:opacity-100"
+                  aria-label={t("admin.frontDesk.saveAsQuickReply")}
+                  title={t("admin.frontDesk.saveAsQuickReply")}
+                >
+                  <BookmarkPlus className="h-3 w-3" />
+                </button>
+              ) : null}
+            </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="tabular-nums">{m.time}</span>
               {isAgent ? (

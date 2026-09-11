@@ -6,6 +6,7 @@ import type { createServiceClient } from "@/lib/supabase/service";
 import { groqChat } from "@/services/ai_groq/callGroq";
 import { addOptOut, isOptOutMessage } from "@/services/patient_notifications/optouts";
 import { searchClinicKnowledge } from "@/services/clinic_knowledge/search";
+import { loadUpcomingReservations } from "@/services/reservations/upcomingReservations";
 import { pickPatientLanguage } from "@/services/patient_notifications/pickLanguage";
 import { insertOutboundMessage } from "@/services/whatsapp/mutations";
 import { sendWhatsappMessage } from "@/services/whatsapp/sendMessage";
@@ -125,7 +126,7 @@ export async function processAutoReplyJob(
       { data: settingsRow },
       { data: serviceRows },
       { data: history },
-      { data: reservations },
+      reservations,
       { data: clinicHours },
       knowledge,
       { data: heldSlotRows },
@@ -159,15 +160,7 @@ export async function processAutoReplyJob(
         .eq("conversation_id", conversation.id)
         .order("wa_timestamp", { ascending: false })
         .limit(HISTORY_TURNS),
-      db
-        .from("reservations")
-        .select("id,service_label,starts_at,status")
-        .eq("phone_suffix", conversation.phone_number.replace(/\D/g, "").slice(-8))
-        .is("deleted_at", null)
-        .gte("starts_at", nowIso)
-        .neq("status", "cancelled")
-        .order("starts_at", { ascending: true })
-        .limit(5),
+      loadUpcomingReservations(db, conversation.phone_number, 5, new Date(nowIso)),
       db
         .from("clinic_hours")
         .select("open_weekdays,time_windows,timezone")
@@ -243,12 +236,14 @@ export async function processAutoReplyJob(
           name: conversation.contact_name,
           known: Boolean(conversation.patient_key),
         },
-        reservations: (reservations ?? []) as {
-          id: string;
-          service_label: string;
-          starts_at: string;
-          status: string;
-        }[],
+        // Exactly the fields the prompt used before: patient_name is loaded for
+        // quick replies and must not start appearing in the model's context.
+        reservations: reservations.map(({ id, service_label, starts_at, status }) => ({
+          id,
+          service_label,
+          starts_at,
+          status,
+        })),
         history: [...(history ?? [])]
           .reverse()
           .map((m) => ({

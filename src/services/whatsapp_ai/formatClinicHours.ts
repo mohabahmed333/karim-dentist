@@ -14,6 +14,20 @@ export type ClinicHoursInput = {
   timezone?: string | null;
 };
 
+/** Valid weekdays (0 = Sunday), de-duplicated and grouped into runs of consecutive days. */
+export function collapseWeekdays(weekdays: number[]): number[][] {
+  const days = [...new Set(weekdays)]
+    .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
+    .sort((a, b) => a - b);
+  const groups: number[][] = [];
+  for (const day of days) {
+    const last = groups[groups.length - 1];
+    if (last && day === last[last.length - 1] + 1) last.push(day);
+    else groups.push([day]);
+  }
+  return groups;
+}
+
 /**
  * Render opening hours for the auto-responder's prompt.
  *
@@ -29,18 +43,9 @@ export function formatClinicHours(hours: ClinicHoursInput | null): string {
     return "Opening hours: (not configured — do not state opening hours)";
   }
 
-  const days = [...new Set(hours.open_weekdays)]
-    .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
-    .sort((a, b) => a - b);
-  if (!days.length) {
+  const groups = collapseWeekdays(hours.open_weekdays);
+  if (!groups.length) {
     return "Opening hours: (not configured — do not state opening hours)";
-  }
-
-  const groups: number[][] = [];
-  for (const day of days) {
-    const last = groups[groups.length - 1];
-    if (last && day === last[last.length - 1] + 1) last.push(day);
-    else groups.push([day]);
   }
 
   const dayText = groups

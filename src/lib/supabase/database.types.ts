@@ -494,6 +494,10 @@ export type Database = {
           body_ar: string | null;
           sort_order: number;
           active: boolean;
+          category: string | null;
+          use_count: number;
+          last_used_at: string | null;
+          attachment: Json | null;
           created_at: string;
           updated_at: string;
         };
@@ -506,6 +510,10 @@ export type Database = {
           body_ar?: string | null;
           sort_order?: number;
           active?: boolean;
+          category?: string | null;
+          use_count?: number;
+          last_used_at?: string | null;
+          attachment?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -518,6 +526,10 @@ export type Database = {
           body_ar?: string | null;
           sort_order?: number;
           active?: boolean;
+          category?: string | null;
+          use_count?: number;
+          last_used_at?: string | null;
+          attachment?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -2601,6 +2613,12 @@ export type Database = {
         }[];
       };
       is_admin: { Args: Record<string, never>; Returns: boolean };
+      record_canned_reply_use: {
+        Args: {
+          p_id: string;
+        };
+        Returns: undefined;
+      };
       cancel_reservation_and_release_slot: {
         Args: {
           p_reservation_id: string;
