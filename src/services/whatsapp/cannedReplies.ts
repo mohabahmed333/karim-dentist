@@ -45,6 +45,7 @@ export async function createCannedReply(
       sort_order: input.sort_order ?? 100,
       active: input.active ?? true,
       attachment: input.attachment ?? null,
+      buttons: input.buttons ?? null,
     })
     .select("*")
     .single();
@@ -67,6 +68,7 @@ export function toCannedReplyPatch(
   if (input.sort_order !== undefined) patch.sort_order = input.sort_order;
   if (input.active !== undefined) patch.active = input.active;
   if (input.attachment !== undefined) patch.attachment = input.attachment;
+  if (input.buttons !== undefined) patch.buttons = input.buttons;
   return patch;
 }
 
