@@ -4,42 +4,44 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { PatientNotificationSettings } from "@/services/patient_notifications/types";
 import { FeatureReadinessList } from "./FeatureReadinessList";
-import {
-  NotificationReadinessPanel,
-  type Readiness,
-} from "./NotificationReadinessPanel";
+import { NotificationModeSwitch, type NotificationMode } from "./NotificationModeSwitch";
+import { NotificationRootCauses } from "./NotificationRootCauses";
+import { NotificationScheduleFields } from "./NotificationScheduleFields";
+import { FeaturesSkeleton, RootCausesSkeleton } from "./NotificationStatusSkeleton";
+import type { Readiness } from "./notificationReadinessTypes";
 
-const SELECT_CLASS =
-  "h-9 w-full cursor-pointer rounded-lg border border-[var(--admin-border,#e5e7eb)] bg-[var(--admin-panel,#fff)] px-3 text-sm text-[var(--admin-text,#1a1a1a)] outline-none";
-
-type Mode = "off" | "dry_run" | "send";
-
-const MODE_HINTS: Record<Mode, string> = {
-  off: "No patient is messaged. Notifications are still queued, so nothing is lost while this is off.",
-  dry_run:
-    "Queues and renders every message — the real template, the real wording — but sends nothing. Use this for a week and read the queue before switching on.",
-  send: "Patients receive booking confirmations and a reminder the day before.",
+const MODE_BADGE: Record<NotificationMode, { label: string; className: string }> = {
+  off: { label: "Off", className: "border-[var(--admin-border)] text-[var(--admin-muted)]" },
+  dry_run: { label: "Rehearsing", className: "border-[#93C5FD] bg-[#EFF6FF] text-[#1D4ED8]" },
+  send: { label: "Live", className: "border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]" },
 };
 
-const MODE_BADGE: Record<Mode, string> = {
-  off: "border-[var(--admin-border)] text-[var(--admin-muted)]",
-  dry_run: "border-[#93C5FD] bg-[#EFF6FF] text-[#1D4ED8]",
-  send: "border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]",
-};
+// Loaded separately on purpose: settings come back at once, but the status
+// check asks Meta for the template list and can take seconds. The controls
+// should not wait for it.
+async function fetchSettings(): Promise<PatientNotificationSettings | null> {
+  const res = await fetch("/api/v1/notifications/settings");
+  if (!res.ok) return null;
+  const body = (await res.json()) as { settings?: PatientNotificationSettings };
+  return body.settings ?? null;
+}
 
-async function fetchAll(): Promise<{
-  settings: PatientNotificationSettings | null;
-  readiness: Readiness | null;
-}> {
-  const [s, r] = await Promise.all([
-    fetch("/api/v1/notifications/settings").then((res) => (res.ok ? res.json() : null)),
-    fetch("/api/v1/notifications/readiness").then((res) => (res.ok ? res.json() : null)),
-  ]);
-  return { settings: s?.settings ?? null, readiness: r ?? null };
+async function fetchReadiness(): Promise<Readiness | null> {
+  const res = await fetch("/api/v1/notifications/readiness");
+  return res.ok ? ((await res.json()) as Readiness) : null;
+}
+
+/** "pending 3 · sent 12 · skipped 4", from the readiness queue counts. */
+function queueSummary(queue: Record<string, number>): string {
+  const totals = new Map<string, number>();
+  for (const [key, count] of Object.entries(queue)) {
+    const status = key.split(":")[0];
+    totals.set(status, (totals.get(status) ?? 0) + count);
+  }
+  return [...totals.entries()].map(([status, n]) => `${status} ${n}`).join(" · ");
 }
 
 export function NotificationSettingsForm() {
@@ -47,20 +49,27 @@ export function NotificationSettingsForm() {
   const [pending, setPending] = useState(false);
   const [settings, setSettings] = useState<PatientNotificationSettings | null>(null);
   const [readiness, setReadiness] = useState<Readiness | null>(null);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     let alive = true;
-    void fetchAll()
+    void fetchSettings()
       .then((next) => {
-        if (!alive) return;
-        setSettings(next.settings);
-        setReadiness(next.readiness);
+        if (alive) setSettings(next);
       })
       .catch(() => {
         if (alive) toast.error("Failed to load notification settings");
       })
       .finally(() => {
         if (alive) setLoading(false);
+      });
+    void fetchReadiness()
+      .then((next) => {
+        if (alive) setReadiness(next);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (alive) setChecking(false);
       });
     return () => {
       alive = false;
@@ -83,25 +92,18 @@ export function NotificationSettingsForm() {
           recall_enabled: settings.recall_enabled,
         }),
       });
-      const body = (await res.json()) as {
-        settings?: PatientNotificationSettings;
-        error?: string;
-        blocking?: string[];
-      };
+      const body = (await res.json()) as { settings?: PatientNotificationSettings; error?: string; blocking?: string[] };
       if (!res.ok) {
-        // The server refuses to arm sending while something required is
-        // missing, so say which thing rather than "save failed".
-        toast.error(
-          body.blocking?.length
-            ? `Still missing: ${body.blocking.join(", ")}`
-            : (body.error ?? "Could not save"),
-        );
+        // The server refuses Send while something required is missing, so name it.
+        toast.error(body.blocking?.length ? `Still missing: ${body.blocking.join(", ")}` : (body.error ?? "Could not save"));
         return;
       }
       toast.success("Notification settings saved");
-      const next = await fetchAll();
-      setSettings(next.settings ?? body.settings ?? settings);
-      setReadiness(next.readiness);
+      setSettings(body.settings ?? settings);
+      // Keep the current status on screen while it refreshes, instead of
+      // flashing back to skeletons after every save.
+      const next = await fetchReadiness();
+      if (next) setReadiness(next);
     } finally {
       setPending(false);
     }
@@ -111,136 +113,74 @@ export function NotificationSettingsForm() {
   if (!settings) {
     return (
       <p className="text-sm text-[var(--admin-muted)]">
-        No settings row found. Apply the patient notification migrations first.
+        No settings found. The database has not been updated with the patient notification tables yet.
       </p>
     );
   }
 
-  const mode = settings.mode as Mode;
-  const set = (patch: Partial<PatientNotificationSettings>) =>
-    setSettings({ ...settings, ...patch });
-  const sendBlocked = Boolean(readiness && !readiness.canSend);
+  const mode = settings.mode as NotificationMode;
+  const badge = MODE_BADGE[mode] ?? MODE_BADGE.off;
+  const set = (patch: Partial<PatientNotificationSettings>) => setSettings({ ...settings, ...patch });
+  const features = readiness?.features ?? [];
+  const queue = readiness ? queueSummary(readiness.queue) : "";
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-2">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-medium">Patient notifications</h2>
+          <h2 className="text-base font-medium">Patient notifications</h2>
           <p className="text-xs text-[var(--admin-muted)]">
-            WhatsApp confirmations when an appointment is booked, and a reminder
-            the day before.
+            WhatsApp confirmations, reminders and follow-ups sent to patients.
           </p>
         </div>
-        <span className={`rounded-full border px-2 py-0.5 text-xs ${MODE_BADGE[mode]}`}>
-          {mode === "off" ? "Off" : mode === "dry_run" ? "Rehearsing" : "Live"}
-        </span>
-      </div>
+        <span className={`rounded-full border px-2.5 py-0.5 text-xs ${badge.className}`}>{badge.label}</span>
+      </header>
 
-      {readiness ? <NotificationReadinessPanel readiness={readiness} /> : null}
-      <Link
-        href="/admin/outbox"
-        className="-mt-2 inline-block text-xs text-[var(--admin-muted)] underline underline-offset-2"
-      >
-        See every queued message and who has opted out →
-      </Link>
-
-      {readiness?.features?.length ? <FeatureReadinessList features={readiness.features} /> : null}
-
-      <label className="space-y-1.5">
-        <Label>Mode</Label>
-        <select
-          className={SELECT_CLASS}
-          value={mode}
-          onChange={(e) => set({ mode: e.target.value })}
-        >
-          <option value="off">Off</option>
-          <option value="dry_run">Dry run — render everything, send nothing</option>
-          <option value="send" disabled={sendBlocked}>
-            Send to patients{sendBlocked ? " (blocked — see above)" : ""}
-          </option>
-        </select>
-        <p className="text-xs text-[var(--admin-muted)]">{MODE_HINTS[mode]}</p>
-      </label>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="space-y-1.5">
-          <Label>Quiet from (hour)</Label>
-          <Input
-            type="number"
-            min={0}
-            max={23}
-            value={settings.quiet_hours_start}
-            onChange={(e) => set({ quiet_hours_start: Number(e.target.value) })}
+      <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <aside className="space-y-5 lg:sticky lg:top-4 lg:self-start">
+          <NotificationModeSwitch
+            value={mode}
+            onChange={(next) => set({ mode: next })}
+            // Locked until the status check has answered, as well as when it says no.
+            sendBlocked={checking || Boolean(readiness && !readiness.canSend)}
           />
-        </label>
-        <label className="space-y-1.5">
-          <Label>Quiet until (hour)</Label>
-          <Input
-            type="number"
-            min={0}
-            max={23}
-            value={settings.quiet_hours_end}
-            onChange={(e) => set({ quiet_hours_end: Number(e.target.value) })}
-          />
-        </label>
-      </div>
-      <p className="-mt-2 text-xs text-[var(--admin-muted)]">
-        Local time in {settings.timezone}. Nothing is sent inside this window; it
-        waits for the morning.
-      </p>
+          <NotificationScheduleFields settings={settings} onChange={set} />
+          <Button type="button" className="w-full" onClick={onSave} disabled={pending}>
+            {pending ? "Saving…" : "Save"}
+          </Button>
+        </aside>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="space-y-1.5">
-          <Label>Max messages per patient per day</Label>
-          <Input
-            type="number"
-            min={0}
-            max={20}
-            value={settings.max_per_patient_per_day}
-            onChange={(e) => set({ max_per_patient_per_day: Number(e.target.value) })}
-          />
-        </label>
-        <label className="space-y-1.5">
-          <Label>Reminder sent this many minutes ahead</Label>
-          <Input
-            type="number"
-            min={60}
-            max={10080}
-            step={60}
-            value={settings.reminder_lead_minutes}
-            onChange={(e) => set({ reminder_lead_minutes: Number(e.target.value) })}
-          />
-        </label>
-      </div>
-      <p className="-mt-2 text-xs text-[var(--admin-muted)]">
-        The approved reminder template says &quot;tomorrow&quot;, so 1440
-        (24&nbsp;hours) is the only value that reads correctly. Anything else and
-        the reminder is skipped rather than sent with the wrong day.
-      </p>
+        <TooltipProvider delay={150}>
+        <div className="min-w-0 space-y-5">
+          {checking ? (
+            <>
+              <RootCausesSkeleton />
+              <FeaturesSkeleton />
+            </>
+          ) : features.length ? (
+            <>
+              <NotificationRootCauses features={features} />
+              <FeatureReadinessList features={features} />
+            </>
+          ) : (
+            <p className="text-sm text-[var(--admin-muted)]">
+              Could not check the status. Reload the page to try again.
+            </p>
+          )}
 
-      <label className="flex items-start justify-between gap-3 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] px-3 py-2.5 text-sm">
-        <span className="space-y-0.5">
-          <span className="block font-medium">Recalls and review requests</span>
-          <span className="block text-xs text-[var(--admin-muted)]">
-            Messages patients whose last visit was over six months ago and who
-            have nothing booked, and asks for a review — but only from a patient
-            who replied positively to their follow-up. Both are marketing, not
-            service messages: they need their own approved templates and
-            patients&apos; consent, so they stay off even when sending is on.
-          </span>
-        </span>
-        <input
-          type="checkbox"
-          className="mt-1"
-          checked={settings.recall_enabled}
-          onChange={(e) => set({ recall_enabled: e.target.checked })}
-        />
-      </label>
-
-      <div className="flex justify-end">
-        <Button type="button" onClick={onSave} disabled={pending}>
-          {pending ? "Saving…" : "Save"}
-        </Button>
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--admin-muted)]">
+            {readiness?.requiredTemplates?.length ? (
+              <span>
+                Templates: <span className="font-mono">{readiness.requiredTemplates.join(" · ")}</span>
+              </span>
+            ) : null}
+            {queue ? <span>Queue: {queue}</span> : null}
+            <Link href="/admin/outbox" className="underline underline-offset-2 hover:text-[var(--admin-text,#1a1a1a)]">
+              Patient messages →
+            </Link>
+          </p>
+        </div>
+        </TooltipProvider>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import {
   assistantActs,
   assistantOn,
   databaseUpdated,
+  FIX,
   sendPipeline,
   templateCondition,
   type Condition,
@@ -26,11 +27,12 @@ export type Feature = {
   state: FeatureState;
 };
 
-const manual = (key: string, label: string, why: string): Condition => ({
+const manual = (key: string, label: string, why: string, fix: string): Condition => ({
   key,
   label,
   met: null,
   why,
+  fix,
 });
 
 /** Any unmet condition blocks; anything unverifiable asks for a human check. */
@@ -63,6 +65,7 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
           label: "Reminder sent 24 hours (1440 minutes) ahead",
           met: lead === undefined ? null : lead === 1440,
           why: "The approved text says “tomorrow”. With any other lead time reminders are skipped rather than sent with the wrong day.",
+          fix: "Set Reminder lead to 1440 minutes in this tab, then Save.",
         },
       ],
     },
@@ -102,7 +105,8 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
         ...pipeline,
         templateCondition("followup", f),
         manual("mark_completed", "Staff mark visits as completed",
-          "Follow-ups are only sent for visits marked completed. A visit left as confirmed never gets one."),
+          "Follow-ups are only sent for visits marked completed. A visit left as confirmed never gets one.",
+          "Mark each visit as Completed in Reservations once the patient has been seen."),
       ],
     },
     {
@@ -117,9 +121,11 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
           label: "Recalls and review requests switched on",
           met: Boolean(f.notifications?.recallEnabled),
           why: "These are marketing messages with their own switch, off by default.",
+          fix: "Turn on “Recalls and review requests” in this tab, then Save.",
         },
         manual("consent", "Patients have agreed to marketing messages",
-          "Meta requires consent for marketing templates. This cannot be checked automatically."),
+          "Meta requires consent for marketing templates. This cannot be checked automatically.",
+          "Collect each patient's agreement to marketing messages before switching recalls on."),
       ],
     },
     {
@@ -135,6 +141,7 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
           label: "Recalls and review requests switched on",
           met: Boolean(f.notifications?.recallEnabled),
           why: "Review requests share the marketing switch.",
+          fix: "Turn on “Recalls and review requests” in this tab, then Save.",
         },
         ...assistantOn(f),
         {
@@ -142,6 +149,7 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
           label: "Clinic map / review link set in site settings",
           met: f.clinicMapUrl,
           why: "The review request needs a link to send the patient to.",
+          fix: "Add the clinic's Google Maps link in the contact settings.",
         },
       ],
     },
@@ -152,7 +160,8 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       conditions: [
         ...assistantOn(f),
         manual("transcription", "WhatsApp provider transcribes audio",
-          "Kapso provides the transcript. A note whose transcript has not arrived, or is only music, is not answered."),
+          "Kapso provides the transcript. A note whose transcript has not arrived, or is only music, is not answered.",
+          "Nothing to build — Kapso transcribes automatically. Send a test voice note to confirm it is answered."),
       ],
     },
     {
@@ -160,13 +169,14 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       title: "Clinic knowledge answers",
       summary: "The assistant answers prices, policies and aftercare from facts staff have written.",
       conditions: [
-        databaseUpdated(f, "The knowledge table does not exist yet, so there is nothing to search. Run supabase db push --linked."),
+        databaseUpdated(f, "The knowledge table does not exist yet, so there is nothing to search."),
         ...assistantOn(f),
         {
           key: "knowledge_entries",
           label: "At least one published knowledge entry",
           met: f.publishedKnowledge === null ? null : f.publishedKnowledge > 0,
           why: "With nothing published the assistant has nothing to quote and hands every such question to staff.",
+          fix: "Add and publish at least one entry in Clinic knowledge.",
         },
       ],
     },
@@ -175,7 +185,7 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       title: "Learning from staff corrections",
       summary: "Drafts staff rewrote before sending are collected for review.",
       conditions: [
-        databaseUpdated(f, "Corrections are saved to a table that does not exist yet. Saving fails quietly so a send is never blocked — which means nothing is collected. Run supabase db push --linked."),
+        databaseUpdated(f, "Corrections are saved to a table that does not exist yet. Saving fails quietly so a send is never blocked — which means nothing is collected."),
         ...assistantOn(f),
       ],
     },
@@ -189,12 +199,14 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
           label: "Database updated with the notification tables",
           met: f.notificationTablesPresent,
           why: "The opt-out has nowhere to be recorded.",
+          fix: FIX.migrations,
         },
         {
           key: "webhook",
           label: "WhatsApp webhook secret set",
           met: f.env.kapsoWebhookSecret,
           why: "Incoming messages are rejected, so a STOP is never seen. This works even while the assistant is off.",
+          fix: FIX.webhook,
         },
       ],
     },

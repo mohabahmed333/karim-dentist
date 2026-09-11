@@ -94,7 +94,7 @@ export function SettingsEditor({ settings }: Props) {
           <WhatsappAiSettingsForm />
         </Card>
       ) : tab === "notifications" ? (
-        <Card className="max-w-3xl gap-0 p-6">
+        <Card className="max-w-6xl gap-0 p-6">
           <NotificationSettingsForm />
         </Card>
       ) : (

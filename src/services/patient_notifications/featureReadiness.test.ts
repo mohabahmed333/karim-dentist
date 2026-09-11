@@ -113,6 +113,22 @@ describe("evaluateFeatures", () => {
     assert.ok(!unmet(facts, "cancel_by_reply").includes("migrations"));
   });
 
+  it("tells the user what to do for every condition, set up or not", () => {
+    // The "?" in Settings shows this text. An empty one would be a tooltip with
+    // nothing in it, on exactly the item someone is stuck on.
+    for (const facts of [ready(), ready({
+      env: { cronSecret: false, kapso: false, kapsoWebhookSecret: false, serviceRole: false, groqKey: false },
+      notificationTablesPresent: false, notifications: null, cronScheduled: null,
+      approvedTemplateNames: null, ai: null, publishedKnowledge: 0, clinicMapUrl: false,
+    })]) {
+      for (const f of evaluateFeatures(facts)) {
+        for (const c of f.conditions) {
+          assert.ok(c.fix && c.fix.trim().length > 10, `${f.key}/${c.key} has no fix text`);
+        }
+      }
+    }
+  });
+
   it("stays consistent with what the dispatcher can actually build", () => {
     // If a template is added to PATIENT_TEMPLATES without a builder, Settings
     // would say "ready" while the dispatcher records no_approved_template.

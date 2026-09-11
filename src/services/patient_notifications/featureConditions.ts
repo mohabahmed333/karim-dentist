@@ -13,8 +13,10 @@ export type Condition = {
   key: string;
   label: string;
   met: boolean | null;
-  /** What goes wrong without it, and how to fix it. */
+  /** What goes wrong without it. */
   why: string;
+  /** What someone has to do to make it true — shown behind the "?" in Settings. */
+  fix: string;
 };
 
 export type AiMode = "off" | "draft_only" | "auto";
@@ -42,28 +44,45 @@ export type FeatureFacts = {
   clinicMapUrl: boolean;
 };
 
-const c = (key: string, label: string, met: boolean | null, why: string): Condition => ({
+const c = (key: string, label: string, met: boolean | null, why: string, fix: string): Condition => ({
   key,
   label,
   met,
   why,
+  fix,
 });
+
+export const FIX = {
+  migrations: "Run `supabase db push --linked` to apply the database changes to production.",
+  modeSend: "Set Mode to Send in this tab, then Save.",
+  cronSecret: "Add CRON_SECRET in Vercel → Settings → Environment Variables (Production), then redeploy.",
+  scheduler: "In the Supabase SQL editor, create the two Vault secrets, then run supabase/scripts/schedule_notifications_dispatch.sql once.",
+  whatsapp: "Add KAPSO_API_KEY and KAPSO_PHONE_NUMBER_ID in Vercel (Production), then redeploy.",
+  serviceRole: "Add SUPABASE_SERVICE_ROLE_KEY in Vercel (Production), then redeploy.",
+  noTemplate: "Submit a template for this message in Meta Business Manager. Once approved, add it to PATIENT_TEMPLATES in templates.ts.",
+  businessAccount: "Set KAPSO_BUSINESS_ACCOUNT_ID to the clinic's own WhatsApp Business Account ID.",
+  aiOn: "Settings → WhatsApp AI: set the assistant to Drafts or Replies.",
+  groq: "Add GROQ_API_KEY in Vercel (Production), then redeploy.",
+  webhook: "Add KAPSO_WEBHOOK_SECRET in Vercel, and point the Kapso webhook at /api/v1/whatsapp/webhook.",
+  aiAuto: "Settings → WhatsApp AI: set the assistant to Replies.",
+  bookingWrites: "Settings → WhatsApp AI: allow the assistant to book and cancel appointments.",
+} as const;
 
 /** Everything any outbound message needs, before its own template. */
 export function sendPipeline(f: FeatureFacts): Condition[] {
   return [
     c("migrations", "Database updated with the notification tables", f.notificationTablesPresent,
-      "Without them nothing is queued at all. Run supabase db push --linked."),
+      "Without them nothing is queued at all.", FIX.migrations),
     c("mode_send", "Patient notifications switched to Send", f.notifications?.mode === "send",
-      "Off queues nothing that will ever send; Dry run renders messages but sends none."),
+      "Off queues nothing that will ever send; Dry run renders messages but sends none.", FIX.modeSend),
     c("cron_secret", "CRON_SECRET set on the server", f.env.cronSecret,
-      "The dispatch endpoint refuses every call without it. Set it in Vercel and redeploy."),
+      "The dispatch endpoint refuses every call without it.", FIX.cronSecret),
     c("scheduler", "Scheduler calls the dispatcher every minute", f.cronScheduled,
-      "Messages wait in the queue forever. Run supabase/scripts/schedule_notifications_dispatch.sql."),
+      "Messages wait in the queue forever.", FIX.scheduler),
     c("whatsapp", "WhatsApp (Kapso) credentials set", f.env.kapso,
-      "Every message is postponed with no_transport."),
+      "Every message is postponed with no_transport.", FIX.whatsapp),
     c("service_role", "Supabase service role key set", f.env.serviceRole,
-      "The dispatcher cannot read the queue."),
+      "The dispatcher cannot read the queue.", FIX.serviceRole),
   ];
 }
 
@@ -74,21 +93,25 @@ export function sendPipeline(f: FeatureFacts): Condition[] {
  * cannot even be asked about it — the honest answer is "not set up", not
  * "unknown".
  */
+/** The label of a template condition for a message type with no template at all. */
+export const NO_TEMPLATE_LABEL = "WhatsApp template approved and added to the app";
+
 export function templateCondition(kind: string, f: FeatureFacts): Condition {
   const names = PATIENT_TEMPLATES.filter((t) => t.kind === kind).map((t) => t.name);
   if (names.length === 0) {
-    return c(`template_${kind}`, "WhatsApp template approved and added to the app", false,
-      "No template exists for this message yet. Submit one in Meta, then add it to templates.ts. Until then the message is queued and recorded as no_approved_template.");
+    return c(`template_${kind}`, NO_TEMPLATE_LABEL, false,
+      "No template exists for this message yet. Until then the message is queued and recorded as no_approved_template.", FIX.noTemplate);
   }
   if (f.approvedTemplateNames === null) {
     return c(`template_${kind}`, `Templates approved in Meta: ${names.join(", ")}`, null,
-      "Meta could not be asked. Check KAPSO_BUSINESS_ACCOUNT_ID.");
+      "Meta could not be asked which templates are approved.", FIX.businessAccount);
   }
   const missing = names.filter((n) => !f.approvedTemplateNames!.includes(n));
   return c(`template_${kind}`, `Templates approved in Meta: ${names.join(", ")}`, missing.length === 0,
+    missing.length === 0 ? "Approved." : `Not approved yet: ${missing.join(", ")}.`,
     missing.length === 0
-      ? "Approved."
-      : `Not approved yet: ${missing.join(", ")}. If Meta shows them approved, the business account ID points at the wrong account.`);
+      ? "Nothing to do."
+      : `Wait for Meta to approve ${missing.join(", ")}. If Meta already shows them approved, correct KAPSO_BUSINESS_ACCOUNT_ID.`);
 }
 
 /**
@@ -98,17 +121,17 @@ export function templateCondition(kind: string, f: FeatureFacts): Condition {
  * "working" on a database that has none of its tables.
  */
 export function databaseUpdated(f: FeatureFacts, why: string): Condition {
-  return c("migrations", "Database updated with the new tables", f.notificationTablesPresent, why);
+  return c("migrations", "Database updated with the new tables", f.notificationTablesPresent, why, FIX.migrations);
 }
 
 export function assistantOn(f: FeatureFacts): Condition[] {
   return [
     c("ai_on", "WhatsApp assistant switched on (Drafts or Replies)", Boolean(f.ai && f.ai.mode !== "off"),
-      "The assistant ignores every incoming message while off."),
+      "The assistant ignores every incoming message while off.", FIX.aiOn),
     c("groq", "AI model key (GROQ_API_KEY) set", f.env.groqKey,
-      "The assistant skips every message before calling the model, with no visible error."),
+      "The assistant skips every message before calling the model, with no visible error.", FIX.groq),
     c("webhook", "WhatsApp webhook secret set", f.env.kapsoWebhookSecret,
-      "Incoming patient messages are rejected, so nothing reaches the assistant."),
+      "Incoming patient messages are rejected, so nothing reaches the assistant.", FIX.webhook),
   ];
 }
 
@@ -116,8 +139,8 @@ export function assistantActs(f: FeatureFacts): Condition[] {
   return [
     ...assistantOn(f).slice(1),
     c("ai_auto", "WhatsApp assistant set to Replies", f.ai?.mode === "auto",
-      "In Drafts mode staff must approve every reply, so nothing happens automatically."),
+      "In Drafts mode staff must approve every reply, so nothing happens automatically.", FIX.aiAuto),
     c("booking_writes", "Assistant allowed to book and cancel", Boolean(f.ai?.allowBookingWrites),
-      "It can talk about appointments but every change is held for staff."),
+      "It can talk about appointments but every change is held for staff.", FIX.bookingWrites),
   ];
 }
