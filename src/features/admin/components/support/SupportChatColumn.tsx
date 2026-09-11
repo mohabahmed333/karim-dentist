@@ -31,6 +31,7 @@ import { ChatComposer } from "./chat/ChatComposer";
 import { ChatGalleryProvider } from "./chat/ChatGalleryContext";
 import { ChatMessageBubble } from "./chat/ChatMessageBubble";
 import { AiDraftCard } from "./chat/AiDraftCard";
+import { SaveQuickReplyDialog } from "./chat/SaveQuickReplyDialog";
 import { ChatThreadSearch } from "./chat/ChatThreadSearch";
 import { collectConversationMedia } from "./chat/collectConversationMedia";
 import type { ComposerSendPayload } from "./chat/composerTypes";
@@ -103,6 +104,7 @@ export function SupportChatColumn({
   const [searchOpen, setSearchOpen] = useState(false);
   const [demoBookOpen, setDemoBookOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [saveQuickReplyFrom, setSaveQuickReplyFrom] = useState<SupportMessage | null>(null);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const galleryImages = useMemo(
     () => collectConversationMedia(messages).images,
@@ -408,6 +410,7 @@ export function SupportChatColumn({
             message={m}
             highlighted={highlightId === m.id}
             onReply={onReply}
+            onSaveAsQuickReply={setSaveQuickReplyFrom}
             booking={{
               conversationId: conversation.id,
               name: conversation.name,
@@ -446,6 +449,12 @@ export function SupportChatColumn({
           />
         </>
       )}
+      <SaveQuickReplyDialog
+        message={saveQuickReplyFrom}
+        onOpenChange={(open) => {
+          if (!open) setSaveQuickReplyFrom(null);
+        }}
+      />
     </section>
     </ChatGalleryProvider>
   );
