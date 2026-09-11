@@ -434,6 +434,7 @@ export function SupportChatColumn({
             />
           ) : null}
           <ChatComposer
+            key={conversation.id}
             draft={draft}
             onDraftChange={onDraftChange}
             onSend={onSend}
