@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
-import { matchesQuickReply, sortQuickReplies } from "./quickReplyMenu.ts";
+import { localizeQuickReply, matchesQuickReply, sortQuickReplies } from "./quickReplyMenu.ts";
 
 const reply = (id: string, use_count: number, sort_order: number, extra = {}) => ({
   id,
@@ -46,5 +46,52 @@ describe("matchesQuickReply", () => {
 
   it("does not match unrelated text", () => {
     assert.equal(matchesQuickReply(reply("a", 0, 0), "parking"), false);
+  });
+});
+
+describe("localizeQuickReply", () => {
+  const bilingual = {
+    id: "v",
+    slash_key: "visit",
+    title: "Reminder",
+    title_ar: "تذكير",
+    body: "See you soon",
+    body_ar: "نراكم قريباً",
+  };
+
+  it("uses the Arabic text, with Arabic fill-ins, in an Arabic chat", () => {
+    assert.deepEqual(localizeQuickReply(bilingual, "ar"), {
+      title: "تذكير",
+      body: "نراكم قريباً",
+      locale: "ar",
+    });
+  });
+
+  it("falls back to the English body, with English fill-ins, when the Arabic body is blank", () => {
+    for (const body_ar of ["", "   ", null]) {
+      const result = localizeQuickReply({ ...bilingual, body_ar }, "ar");
+      assert.equal(result.body, "See you soon");
+      assert.equal(result.locale, "en");
+    }
+  });
+
+  it("fills in Arabic when an Arabic reply was saved in the English column", () => {
+    const result = localizeQuickReply({ ...bilingual, body: "أهلاً بكم", body_ar: null }, "en");
+    assert.equal(result.body, "أهلاً بكم");
+    assert.equal(result.locale, "ar");
+  });
+
+  it("falls back to the English title on the same rule", () => {
+    assert.equal(localizeQuickReply({ ...bilingual, title_ar: "  " }, "ar").title, "Reminder");
+    assert.equal(localizeQuickReply(bilingual, "en").title, "Reminder");
+  });
+
+  it("trims what it returns and defaults to English fill-ins when the body has no letters", () => {
+    assert.deepEqual(localizeQuickReply({ ...bilingual, title: " Hi ", body: " 10:30 " }, "en"), {
+      title: "Hi",
+      body: "10:30",
+      locale: "en",
+    });
+    assert.equal(localizeQuickReply({ ...bilingual, body: "10:30", body_ar: null }, "ar").locale, "en");
   });
 });

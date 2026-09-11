@@ -5,11 +5,11 @@ import Link from "next/link";
 import { ChevronDown, MapPin, Paperclip, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/lib/i18n";
-import { pickLocalized } from "@/lib/i18n/pickLocalized";
 import type { Locale } from "@/lib/i18n/LocaleProvider";
 import { AdminInput } from "@/features/admin/ui";
 import type { CannedReplyAttachment } from "@/services/whatsapp/cannedReplyInput";
 import {
+  localizeQuickReply,
   matchesQuickReply,
   sortQuickReplies,
   type QuickReplyMenuItem,
@@ -20,6 +20,8 @@ export type CannedReply = {
   slash_key: string;
   title: string;
   body: string;
+  /** The language `body` is written in; its fields are filled in this language. */
+  locale: "ar" | "en";
   category: string | null;
   attachment: CannedReplyAttachment | null;
 };
@@ -35,11 +37,13 @@ type Props = {
 };
 
 function localizeReply(r: QuickReplyMenuItem, locale: Locale): CannedReply {
+  const localized = localizeQuickReply(r, locale === "ar" ? "ar" : "en");
   return {
     id: r.id,
     slash_key: r.slash_key,
-    title: pickLocalized(locale, r.title, r.title_ar),
-    body: pickLocalized(locale, r.body, r.body_ar),
+    title: localized.title,
+    body: localized.body,
+    locale: localized.locale,
     category: r.category ?? null,
     attachment: r.attachment ?? null,
   };

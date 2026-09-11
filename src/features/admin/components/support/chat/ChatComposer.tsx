@@ -210,7 +210,8 @@ export function ChatComposer({
     void fetch(`/api/v1/whatsapp/canned-replies/${reply.id}/use`, {
       method: "POST",
     }).catch(() => undefined);
-    const values = await loadQuickReplyValues(inputLocale);
+    // Fill in the language of the body actually inserted, not the keyboard's.
+    const values = await loadQuickReplyValues(reply.locale);
     updateDraft(`${before}${renderQuickReply(reply.body, values).text}${after}`);
     onQuickAttachmentChange?.(reply.attachment ?? null);
   }
