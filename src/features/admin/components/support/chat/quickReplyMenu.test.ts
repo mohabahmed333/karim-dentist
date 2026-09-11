@@ -86,6 +86,30 @@ describe("localizeQuickReply", () => {
     assert.equal(localizeQuickReply(bilingual, "en").title, "Reminder");
   });
 
+  it("detects Arabic when the body ends in a fill-in field", () => {
+    const result = localizeQuickReply(
+      { ...bilingual, body: "موعدكم يوم {{next_appointment}}", body_ar: null },
+      "en",
+    );
+    assert.equal(result.locale, "ar");
+    assert.equal(result.body, "موعدكم يوم {{next_appointment}}");
+  });
+
+  it("detects Arabic when the body ends in a spaced fill-in field", () => {
+    const result = localizeQuickReply({ ...bilingual, body: "أهلاً {{ name }}", body_ar: null }, "en");
+    assert.equal(result.locale, "ar");
+    assert.equal(result.body, "أهلاً {{ name }}");
+  });
+
+  it("keeps English detection for an English body with a fill-in field", () => {
+    const result = localizeQuickReply(
+      { ...bilingual, body: "See you on {{next_appointment}}", body_ar: null },
+      "en",
+    );
+    assert.equal(result.locale, "en");
+    assert.equal(result.body, "See you on {{next_appointment}}");
+  });
+
   it("trims what it returns and defaults to English fill-ins when the body has no letters", () => {
     assert.deepEqual(localizeQuickReply({ ...bilingual, title: " Hi ", body: " 10:30 " }, "en"), {
       title: "Hi",

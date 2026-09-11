@@ -25,6 +25,9 @@ export function sortQuickReplies<T extends QuickReplyMenuItem>(replies: T[]): T[
 
 export type LocalizedQuickReply = { title: string; body: string; locale: "ar" | "en" };
 
+/** Fill-in tokens are Latin; ignore them so an Arabic body ending in {{field}} is still Arabic. */
+const FIELD_TOKEN = /\{\{\s*[a-zA-Z_]+\s*\}\}/g;
+
 /**
  * The title and body a chat in `locale` inserts. Arabic only when the Arabic
  * column has text; otherwise English. `locale` is the language the chosen body
@@ -40,7 +43,7 @@ export function localizeQuickReply(reply: QuickReplyMenuItem, locale: "ar" | "en
   const arabicBody = locale === "ar" ? (reply.body_ar ?? "").trim() : "";
   if (arabicBody) return { title, body: arabicBody, locale: "ar" };
   const body = (reply.body ?? "").trim();
-  return { title, body, locale: lastStrongLocale(body) ?? "en" };
+  return { title, body, locale: lastStrongLocale(body.replace(FIELD_TOKEN, " ")) ?? "en" };
 }
 
 export function matchesQuickReply(reply: QuickReplyMenuItem, query: string): boolean {
