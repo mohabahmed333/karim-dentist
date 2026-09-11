@@ -17,6 +17,7 @@ import {
   type InboxStatusFilter,
 } from "./SupportInboxColumn";
 import type { ComposerSendPayload } from "./chat/composerTypes";
+import type { CannedReplyAttachment } from "@/services/whatsapp/cannedReplyInput";
 import {
   useWhatsappInboxLive,
   type InboxAlertView,
@@ -198,6 +199,10 @@ export function SupportInboxView({
   const [draftsById, setDraftsById] = useState<Record<string, string>>({});
   const [replyById, setReplyById] = useState<
     Record<string, SupportMessage | null>
+  >({});
+  /** A quick reply's attachment stays with its chat's draft across switches. */
+  const [attachmentsById, setAttachmentsById] = useState<
+    Record<string, CannedReplyAttachment | null>
   >({});
   const [sending, setSending] = useState(false);
   /** Demo mode has no send API to report delivery back — see handleSend. */
@@ -517,6 +522,7 @@ export function SupportInboxView({
     }));
     setDraftsById((prev) => ({ ...prev, [id]: "" }));
     setReplyById((prev) => ({ ...prev, [id]: null }));
+    setAttachmentsById((prev) => ({ ...prev, [id]: null }));
     touchConversation(id, {
       preview,
       lastMessageType: messageType,
@@ -964,6 +970,13 @@ export function SupportInboxView({
                     [conversation.id]: null,
                   }))
                 }
+                quickAttachment={attachmentsById[conversation.id] ?? null}
+                onQuickAttachmentChange={(attachment) =>
+                  setAttachmentsById((prev) => ({
+                    ...prev,
+                    [conversation.id]: attachment,
+                  }))
+                }
                 detailsOpen={false}
                 showWorkspace
                 onBack={goToList}
@@ -1070,6 +1083,13 @@ export function SupportInboxView({
                   setReplyById((prev) => ({
                     ...prev,
                     [conversation.id]: null,
+                  }))
+                }
+                quickAttachment={attachmentsById[conversation.id] ?? null}
+                onQuickAttachmentChange={(attachment) =>
+                  setAttachmentsById((prev) => ({
+                    ...prev,
+                    [conversation.id]: attachment,
                   }))
                 }
                 detailsOpen={detailsOpen}

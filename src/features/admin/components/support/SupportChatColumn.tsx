@@ -42,6 +42,7 @@ import type {
   SupportMessage,
 } from "./supportDummyData";
 import type { TemplateField } from "@/services/whatsapp/templateFields";
+import type { CannedReplyAttachment } from "@/services/whatsapp/cannedReplyInput";
 
 type Props = {
   conversation: SupportConversation;
@@ -64,6 +65,8 @@ type Props = {
   replyTo?: SupportMessage | null;
   onReply?: (message: SupportMessage) => void;
   onClearReply?: () => void;
+  quickAttachment?: CannedReplyAttachment | null;
+  onQuickAttachmentChange?: (attachment: CannedReplyAttachment | null) => void;
   onArchiveToggle?: () => void;
   archiving?: boolean;
   onAskAi?: () => void;
@@ -90,6 +93,8 @@ export function SupportChatColumn({
   replyTo,
   onReply,
   onClearReply,
+  quickAttachment,
+  onQuickAttachmentChange,
   onArchiveToggle,
   archiving,
   onAskAi,
@@ -444,6 +449,8 @@ export function SupportChatColumn({
             disabled={sending}
             replyTo={replyTo}
             onClearReply={onClearReply}
+            quickAttachment={quickAttachment}
+            onQuickAttachmentChange={onQuickAttachmentChange}
             conversationId={conversation.id}
             onSendTemplate={onSendTemplate}
           />

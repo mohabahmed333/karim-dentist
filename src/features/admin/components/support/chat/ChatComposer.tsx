@@ -57,6 +57,9 @@ type Props = {
   onClearReply?: () => void;
   conversationId?: string;
   onSendTemplate?: (payload: TemplateSendPayload) => Promise<boolean>;
+  /** The quick reply attachment that goes out with this chat's draft. */
+  quickAttachment?: CannedReplyAttachment | null;
+  onQuickAttachmentChange?: (attachment: CannedReplyAttachment | null) => void;
 };
 
 function insertAtCaret(
@@ -78,6 +81,8 @@ export function ChatComposer({
   onClearReply,
   conversationId,
   onSendTemplate,
+  quickAttachment = null,
+  onQuickAttachmentChange,
 }: Props) {
   const t = useTranslations();
   const { locale } = useLocale();
@@ -96,8 +101,10 @@ export function ChatComposer({
     null,
   );
   const [slashIndex, setSlashIndex] = useState(0);
-  const [quickAttachment, setQuickAttachment] =
-    useState<CannedReplyAttachment | null>(null);
+  // The ref flips synchronously, so a second click or Enter during the file
+  // download is ignored; the state disables the Send button.
+  const quickSendingRef = useRef(false);
+  const [quickSending, setQuickSending] = useState(false);
   const loadQuickReplyValues = useQuickReplyValues(conversationId);
   const unfilled = useMemo(() => findUnfilledFields(draft), [draft]);
   // A known {{field}} anywhere in the draft — from a reply or typed by hand —
@@ -160,6 +167,8 @@ export function ChatComposer({
     const detected = lastStrongLocale(value);
     if (detected) setInputLocale(detected);
     onDraftChange(value);
+    // Clearing the message box also drops the quick reply's attachment.
+    if (!value.trim() && quickAttachment) onQuickAttachmentChange?.(null);
   }
 
   function clearSlashCommand() {
@@ -203,64 +212,75 @@ export function ChatComposer({
     }).catch(() => undefined);
     const values = await loadQuickReplyValues(inputLocale);
     updateDraft(`${before}${renderQuickReply(reply.body, values).text}${after}`);
-    if (reply.attachment) setQuickAttachment(reply.attachment);
+    onQuickAttachmentChange?.(reply.attachment ?? null);
   }
 
   async function sendWithAttachment(
     text: string,
     attachment: CannedReplyAttachment,
   ) {
-    let file: File | null = null;
-    if (attachment.kind !== "location") {
-      const { data, error } = await createClient()
-        .storage.from(QUICK_REPLY_BUCKET)
-        .download(attachment.path);
-      if (error || !data) {
-        // Keep the draft and the chip: staff can retry or remove the attachment.
-        toast.error(t("admin.frontDesk.quickReplyAttachmentFail"));
-        return;
+    if (quickSendingRef.current) return;
+    quickSendingRef.current = true;
+    setQuickSending(true);
+    try {
+      let file: File | null = null;
+      if (attachment.kind !== "location") {
+        const { data, error } = await createClient()
+          .storage.from(QUICK_REPLY_BUCKET)
+          .download(attachment.path);
+        if (error || !data) {
+          // Keep the draft and the chip: staff can retry or remove the attachment.
+          toast.error(t("admin.frontDesk.quickReplyAttachmentFail"));
+          return;
+        }
+        file = new File([data], attachment.name, { type: attachment.mime });
       }
-      file = new File([data], attachment.name, { type: attachment.mime });
-    }
 
-    const steps = planQuickReplySend(text, attachment);
-    onDraftChange("");
-    setQuickAttachment(null);
-    for (const [index, step] of steps.entries()) {
-      // Only the first message quotes the reply-to, as a single send would.
-      const prepare = (payload: ComposerSendPayload) =>
-        index === 0 ? withReply(payload) : payload;
-      if (step.kind === "text") {
-        await onSend(prepare({ kind: "text", text: step.text }));
-      } else if (step.kind === "location") {
-        const pin = clinicLocationPin();
-        await onSend(
-          prepare({
-            kind: "location",
-            text: pin.address,
-            location: pin,
-            flow: {
+      const steps = planQuickReplySend(text, attachment);
+      onDraftChange("");
+      onQuickAttachmentChange?.(null);
+      // Every step reuses the onSend captured at click time. Don't refactor this
+      // to read a "latest onSend" ref: the parent's `sending` guard would drop
+      // the later steps.
+      for (const [index, step] of steps.entries()) {
+        // Only the first message quotes the reply-to, as a single send would.
+        const prepare = (payload: ComposerSendPayload) =>
+          index === 0 ? withReply(payload) : payload;
+        if (step.kind === "text") {
+          await onSend(prepare({ kind: "text", text: step.text }));
+        } else if (step.kind === "location") {
+          const pin = clinicLocationPin();
+          await onSend(
+            prepare({
               kind: "location",
-              title: pin.name,
-              address: pin.address,
-              latitude: pin.latitude,
-              longitude: pin.longitude,
-            },
-          }),
-        );
-      } else if (file) {
-        const url = URL.createObjectURL(file);
-        await onSend(
-          prepare({
-            kind: attachment.kind === "image" ? "image" : "document",
-            file,
-            text: step.caption || undefined,
-            localMedia: [{ url, mime: file.type, name: file.name, size: file.size }],
-          }),
-        );
+              text: pin.address,
+              location: pin,
+              flow: {
+                kind: "location",
+                title: pin.name,
+                address: pin.address,
+                latitude: pin.latitude,
+                longitude: pin.longitude,
+              },
+            }),
+          );
+        } else if (file) {
+          const url = URL.createObjectURL(file);
+          await onSend(
+            prepare({
+              kind: attachment.kind === "image" ? "image" : "document",
+              file,
+              text: step.caption || undefined,
+              localMedia: [{ url, mime: file.type, name: file.name, size: file.size }],
+            }),
+          );
+        }
       }
+      onClearReply?.();
+    } finally {
+      quickSendingRef.current = false;
+      setQuickSending(false);
     }
-    onClearReply?.();
   }
 
   function withReply(payload: ComposerSendPayload): ComposerSendPayload {
@@ -424,7 +444,7 @@ export function ChatComposer({
             <QuickReplyComposerBar
               unfilled={unfilled}
               attachment={quickAttachment}
-              onRemoveAttachment={() => setQuickAttachment(null)}
+              onRemoveAttachment={() => onQuickAttachmentChange?.(null)}
             />
             <div className="relative flex flex-col gap-1.5">
               <div ref={slashRef}>
@@ -544,7 +564,7 @@ export function ChatComposer({
                 {canSend ? (
                   <button
                     type="button"
-                    disabled={disabled || blocked}
+                    disabled={disabled || blocked || quickSending}
                     data-showreel-action="whatsapp-send"
                     onClick={() => void submitText()}
                     className="mb-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--admin-primary)] text-white shadow-sm hover:opacity-90 disabled:opacity-40"
