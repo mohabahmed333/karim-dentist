@@ -265,7 +265,7 @@ export function ChatComposer({
               },
             }),
           );
-        } else if (file) {
+        } else if (step.kind === "file" && file) {
           const url = URL.createObjectURL(file);
           await onSend(
             prepare({
