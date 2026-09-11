@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api/requireAdmin";
 import { createServiceClient } from "@/lib/supabase/service";
+import { gatherFeatureFacts } from "@/services/patient_notifications/gatherFeatureFacts";
+import { evaluateFeatures } from "@/services/patient_notifications/featureReadiness";
 import { gatherReadinessFacts } from "@/services/patient_notifications/gatherReadiness";
 import {
   evaluateReadiness,
@@ -15,7 +17,16 @@ export async function GET() {
   if (auth.error) return auth.error;
 
   const db = createServiceClient();
-  const readiness = evaluateReadiness(await gatherReadinessFacts(db));
+  const facts = await gatherReadinessFacts(db);
+  const readiness = evaluateReadiness(facts);
+  // Every feature and each reason it might not work, for the checklist in
+  // Settings. Reuses the template list and scheduler probe fetched above.
+  const features = evaluateFeatures(
+    await gatherFeatureFacts(db, {
+      approvedTemplateNames: facts.approvedTemplateNames,
+      cronScheduled: facts.cronScheduled,
+    }),
+  );
 
   // A rough picture of the queue, so "nothing is sending" can be told apart
   // from "nothing is queued".
@@ -31,7 +42,7 @@ export async function GET() {
   }
 
   return NextResponse.json(
-    { ...readiness, requiredTemplates: requiredTemplateNames(), queue: counts },
+    { ...readiness, features, requiredTemplates: requiredTemplateNames(), queue: counts },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

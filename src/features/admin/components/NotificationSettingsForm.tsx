@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PatientNotificationSettings } from "@/services/patient_notifications/types";
+import { FeatureReadinessList } from "./FeatureReadinessList";
 import {
   NotificationReadinessPanel,
   type Readiness,
@@ -142,6 +143,8 @@ export function NotificationSettingsForm() {
       >
         See every queued message and who has opted out →
       </Link>
+
+      {readiness?.features?.length ? <FeatureReadinessList features={readiness.features} /> : null}
 
       <label className="space-y-1.5">
         <Label>Mode</Label>

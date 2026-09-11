@@ -12,7 +12,7 @@ import type { ReadinessFacts } from "./readiness";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
-async function approvedTemplateNames(): Promise<string[] | null> {
+export async function approvedTemplateNames(): Promise<string[] | null> {
   try {
     const { businessAccountId } = getKapsoConfig();
     if (!businessAccountId) return null;
@@ -29,13 +29,23 @@ async function approvedTemplateNames(): Promise<string[] | null> {
   }
 }
 
-async function cronScheduled(db: ServiceClient): Promise<boolean | null> {
+export async function cronScheduled(db: ServiceClient): Promise<boolean | null> {
   try {
     const { data, error } = await db.rpc("patient_notifications_cron_scheduled");
     if (error) return null;
     return typeof data === "boolean" ? data : null;
   } catch {
     return null;
+  }
+}
+
+/** Whether the WhatsApp transport is configured. Never throws. */
+export function hasKapsoConfig(): boolean {
+  try {
+    getKapsoConfig();
+    return true;
+  } catch {
+    return false;
   }
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, HelpCircle } from "lucide-react";
+import type { FeatureStatus } from "./FeatureReadinessList";
 
 export type ReadinessCheck = {
   key: string;
@@ -15,6 +16,8 @@ export type Readiness = {
   blocking: string[];
   requiredTemplates: string[];
   queue: Record<string, number>;
+  /** Every feature and each condition it needs. */
+  features?: FeatureStatus[];
 };
 
 /** Human labels; the API returns stable keys so it stays translatable later. */
