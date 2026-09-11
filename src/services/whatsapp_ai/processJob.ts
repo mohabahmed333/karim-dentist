@@ -6,6 +6,7 @@ import type { createServiceClient } from "@/lib/supabase/service";
 import { groqChat } from "@/services/ai_groq/callGroq";
 import { addOptOut, isOptOutMessage } from "@/services/patient_notifications/optouts";
 import { searchClinicKnowledge } from "@/services/clinic_knowledge/search";
+import { buildHistoryTurns } from "./historyTurns";
 import { loadUpcomingReservations } from "@/services/reservations/upcomingReservations";
 import { pickPatientLanguage } from "@/services/patient_notifications/pickLanguage";
 import { insertOutboundMessage } from "@/services/whatsapp/mutations";
@@ -24,7 +25,9 @@ import type { BotAction } from "./schemas";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
-const HISTORY_TURNS = 10;
+const HISTORY_TURNS = 20;
+/** Fetched wider than the window, since drafts and empty rows are filtered out. */
+const HISTORY_FETCH = 60;
 const SLOT_OFFER_LIMIT = 5;
 /** Below the webhook route's maxDuration, so the reply is never cut off mid-send. */
 const GROQ_TIMEOUT_MS = 8000;
@@ -153,13 +156,21 @@ export async function processAutoReplyJob(
         .select("contact_phone, contact_address, contact_clinic_name")
         .limit(1)
         .maybeSingle(),
-      db.from("services").select("title").eq("is_published", true).limit(20),
+      // deleted_at matters: without it the model was shown soft-deleted agency
+      // leftovers ("Brand", "Campaign") beside the real dental services.
+      db
+        .from("services")
+        .select("title")
+        .eq("is_published", true)
+        .is("deleted_at", null)
+        .limit(30),
       db
         .from("whatsapp_messages")
-        .select("body,direction,wa_timestamp")
+        .select("id,body,direction,status,sender_kind,wa_timestamp")
         .eq("conversation_id", conversation.id)
         .order("wa_timestamp", { ascending: false })
-        .limit(HISTORY_TURNS),
+        .order("id", { ascending: false })
+        .limit(HISTORY_FETCH),
       loadUpcomingReservations(db, conversation.phone_number, 5, new Date(nowIso)),
       db
         .from("clinic_hours")
@@ -235,7 +246,10 @@ export async function processAutoReplyJob(
         knowledge,
         patient: {
           name: conversation.contact_name,
-          known: Boolean(conversation.patient_key),
+          // patient_key is never written, so this was permanently false and the
+          // prompt told the model the name was unknown even with a WhatsApp
+          // profile name in hand — one reason it kept asking for it.
+          known: Boolean(conversation.patient_key || conversation.contact_name),
         },
         // Exactly the fields the prompt used before: patient_name is loaded for
         // quick replies and must not start appearing in the model's context.
@@ -245,13 +259,7 @@ export async function processAutoReplyJob(
           starts_at,
           status,
         })),
-        history: [...(history ?? [])]
-          .reverse()
-          .map((m) => ({
-            role: m.direction === "inbound" ? ("user" as const) : ("assistant" as const),
-            content: (m.body as string) ?? "",
-          }))
-          .filter((m) => m.content.trim()),
+        history: buildHistoryTurns(history ?? [], HISTORY_TURNS),
       },
       async chat(messages) {
         return groqChat({
