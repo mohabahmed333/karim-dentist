@@ -225,6 +225,7 @@ export async function processAutoReplyJob(
           phone: clinic.phone,
           address: clinic.address,
         },
+        canBook: settings.allow_booking_writes,
         hours: clinicHours as {
           open_weekdays: number[];
           time_windows: string[];

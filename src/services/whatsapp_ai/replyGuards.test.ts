@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
-import { isSendableReply, stripInternalIds } from "./replyGuards.ts";
+import {
+  claimsCompletedBooking,
+  isSendableReply,
+  stripInternalIds,
+} from "./replyGuards.ts";
 
 describe("stripInternalIds", () => {
   /** The exact message a patient received in production. */
@@ -81,5 +85,72 @@ describe("isSendableReply", () => {
     assert.equal(isSendableReply("   "), false);
     assert.equal(isSendableReply("(), ."), false);
     assert.equal(isSendableReply("- ,"), false);
+  });
+});
+
+describe("claimsCompletedBooking", () => {
+  /**
+   * The production failure this guard exists for. The bot told a patient
+   * "تمام، حجزت لك موعد 11 سبتمبر الساعة 10:30" while booking writes were
+   * disabled. No reservation was created and the slot stayed open, so the
+   * patient believed they had an appointment that did not exist.
+   */
+  it("catches the Arabic claim that shipped to a real patient", () => {
+    assert.equal(
+      claimsCompletedBooking("تمام، حجزت لك موعد 11 سبتمبر الساعة 10:30."),
+      true,
+    );
+  });
+
+  it("catches Arabic booking, cancellation and reschedule claims", () => {
+    for (const text of [
+      "تم الحجز بنجاح",
+      "حجزنا لك الموعد",
+      "تم إلغاء موعدك",
+      "تم تغيير موعدك إلى الخميس",
+      "موعدك مؤكد يوم الأحد",
+    ]) {
+      assert.equal(claimsCompletedBooking(text), true, text);
+    }
+  });
+
+  it("catches the English equivalents", () => {
+    for (const text of [
+      "I've booked you for Sunday at 2pm.",
+      "You're booked in for Thursday.",
+      "Your appointment is confirmed.",
+      "Your appointment has been cancelled.",
+      "I have rescheduled you to Monday.",
+    ]) {
+      assert.equal(claimsCompletedBooking(text), true, text);
+    }
+  });
+
+  /**
+   * Offering to book is the correct behaviour and must not be blocked, or the
+   * assistant cannot hold a booking conversation at all.
+   */
+  it("does not fire on offers or questions", () => {
+    for (const text of [
+      "Would you like me to book Sunday at 2pm?",
+      "Shall I confirm that time for you?",
+      "هل تريد أن أحجز لك يوم الأحد؟",
+      "تحب احجزلك الموعد ده؟",
+      "I can book that for you — just confirm the service.",
+      "Please confirm which service you would like.",
+      "من فضلك أكد الخدمة المطلوبة",
+    ]) {
+      assert.equal(claimsCompletedBooking(text), false, text);
+    }
+  });
+
+  it("does not fire on availability answers", () => {
+    for (const text of [
+      "المواعيد المتاحة هي: 11 سبتمبر 10:30، 14 سبتمبر 14:00.",
+      "We have Sunday 10:30 and Thursday 14:00 free.",
+      "We open at 10:00 and close at 18:00.",
+    ]) {
+      assert.equal(claimsCompletedBooking(text), false, text);
+    }
   });
 });

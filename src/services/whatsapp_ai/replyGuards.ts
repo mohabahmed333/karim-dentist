@@ -58,3 +58,70 @@ export function stripInternalIds(input: string): ReplyGuardResult {
 export function isSendableReply(reply: string): boolean {
   return /[\p{L}\p{N}]{3,}/u.test(reply);
 }
+
+/**
+ * Sentences that assert a booking change already happened, in Arabic and
+ * English. Deliberately narrow: each requires a completed-action verb, not the
+ * mere presence of "book" or "confirm".
+ *
+ * No \b in the Arabic patterns: JS word boundaries are ASCII-only, so they
+ * never match beside an Arabic letter and silently disable the rule. The same
+ * mistake already cost us a working injection heuristic once.
+ */
+const COMPLETION_CLAIMS: RegExp[] = [
+  // Arabic — booked
+  /حجزت\s+لك/,
+  /حجزنا\s+لك/,
+  /تم\s+(ال)?حجز/,
+  // Arabic — cancelled
+  /تم\s+(ال)?إلغاء/,
+  /ألغينا/,
+  // Arabic — rescheduled / changed
+  /تم\s+(ال)?تغيير/,
+  /تم\s+(ال)?نقل/,
+  /غيرنا\s+لك/,
+  // Arabic — confirmed state
+  /موعدك\s+(مؤكد|تم\s+تأكيده)/,
+  /تم\s+(ال)?تأكيد/,
+  // English — booked
+  /\b(i('ve| have)?\s+)?booked\s+(you|your)\b/i,
+  /\byou('re| are)\s+booked\b/i,
+  /\bhas\s+been\s+booked\b/i,
+  // English — confirmed
+  /\b(your\s+)?appointment\s+is\s+confirmed\b/i,
+  /\bhas\s+been\s+confirmed\b/i,
+  // English — cancelled / rescheduled
+  /\bhas\s+been\s+(cancelled|canceled|rescheduled|moved)\b/i,
+  /\bi('ve| have)?\s+(cancelled|canceled|rescheduled|moved)\s+(you|your)\b/i,
+];
+
+/** Phrasing that turns a claim into an offer, which is legitimate. */
+const OFFER_MARKERS: RegExp[] = [
+  /\?\s*$/,
+  /[؟]/,
+  /\bwould\s+you\s+like\b/i,
+  /\bshall\s+i\b/i,
+  /\bdo\s+you\s+want\b/i,
+  /\bi\s+can\s+book\b/i,
+  /\bplease\s+confirm\b/i,
+  /هل\s+تريد/,
+  /تحب/,
+  /تريد\s+أن\s+أحجز/,
+  /(من\s+فضلك\s+)?أكد/,
+];
+
+/**
+ * Does this reply assert that a booking change already happened?
+ *
+ * Used to stop the assistant telling a patient they are booked when nothing was
+ * written. The prompt already forbids it and the model did it anyway, in
+ * production, to a real patient — so this is the enforcement rather than the
+ * request.
+ *
+ * Offers and questions ("shall I book that?") are explicitly not claims: the
+ * assistant has to be able to hold a booking conversation.
+ */
+export function claimsCompletedBooking(reply: string): boolean {
+  if (OFFER_MARKERS.some((re) => re.test(reply))) return false;
+  return COMPLETION_CLAIMS.some((re) => re.test(reply));
+}
