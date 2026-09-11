@@ -3,6 +3,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Mic, Plus, Send, Smile } from "lucide-react";
+import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
+import {
+  QUICK_REPLY_BUCKET,
+  type CannedReplyAttachment,
+} from "@/services/whatsapp/cannedReplyInput";
+import {
+  findUnfilledFields,
+  renderQuickReply,
+} from "@/services/whatsapp/quickReplyFields";
+import { clinicLocationPin } from "./clinicLocationPin";
+import { QuickReplyComposerBar } from "./QuickReplyComposerBar";
+import { planQuickReplySend } from "./quickReplySend";
+import { useQuickReplyValues } from "./useQuickReplyValues";
 import { cn } from "@/lib/utils";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { AttachmentPopover } from "./AttachmentPopover";
@@ -36,7 +50,8 @@ import {
 type Props = {
   draft: string;
   onDraftChange: (value: string) => void;
-  onSend: (payload: ComposerSendPayload) => void;
+  /** May return a promise; multi-message quick replies wait for each send in turn. */
+  onSend: (payload: ComposerSendPayload) => void | Promise<void>;
   disabled?: boolean;
   replyTo?: SupportMessage | null;
   onClearReply?: () => void;
@@ -81,6 +96,13 @@ export function ChatComposer({
     null,
   );
   const [slashIndex, setSlashIndex] = useState(0);
+  const [quickAttachment, setQuickAttachment] =
+    useState<CannedReplyAttachment | null>(null);
+  const loadQuickReplyValues = useQuickReplyValues(conversationId);
+  const unfilled = useMemo(() => findUnfilledFields(draft), [draft]);
+  // A known {{field}} anywhere in the draft — from a reply or typed by hand —
+  // means the message is unfinished. It must not reach a patient.
+  const blocked = unfilled.length > 0;
   const showreelDemo =
     typeof document !== "undefined" &&
     document.documentElement.dataset.showreelDemo === "1";
@@ -155,6 +177,7 @@ export function ChatComposer({
 
   const canSend =
     Boolean(draft.trim()) ||
+    Boolean(quickAttachment) ||
     interactive?.mode === "buttons" ||
     interactive?.mode === "cta";
 
@@ -171,11 +194,73 @@ export function ChatComposer({
     });
   }
 
-  function injectCanned(reply: CannedReply) {
+  async function injectCanned(reply: CannedReply) {
     if (!slash) return;
     const before = draft.slice(0, slash.start);
     const after = draft.slice(slash.start + 1 + slash.query.length);
-    updateDraft(`${before}${reply.body}${after}`);
+    void fetch(`/api/v1/whatsapp/canned-replies/${reply.id}/use`, {
+      method: "POST",
+    }).catch(() => undefined);
+    const values = await loadQuickReplyValues(inputLocale);
+    updateDraft(`${before}${renderQuickReply(reply.body, values).text}${after}`);
+    if (reply.attachment) setQuickAttachment(reply.attachment);
+  }
+
+  async function sendWithAttachment(
+    text: string,
+    attachment: CannedReplyAttachment,
+  ) {
+    let file: File | null = null;
+    if (attachment.kind !== "location") {
+      const { data, error } = await createClient()
+        .storage.from(QUICK_REPLY_BUCKET)
+        .download(attachment.path);
+      if (error || !data) {
+        // Keep the draft and the chip: staff can retry or remove the attachment.
+        toast.error(t("admin.frontDesk.quickReplyAttachmentFail"));
+        return;
+      }
+      file = new File([data], attachment.name, { type: attachment.mime });
+    }
+
+    const steps = planQuickReplySend(text, attachment);
+    onDraftChange("");
+    setQuickAttachment(null);
+    for (const [index, step] of steps.entries()) {
+      // Only the first message quotes the reply-to, as a single send would.
+      const prepare = (payload: ComposerSendPayload) =>
+        index === 0 ? withReply(payload) : payload;
+      if (step.kind === "text") {
+        await onSend(prepare({ kind: "text", text: step.text }));
+      } else if (step.kind === "location") {
+        const pin = clinicLocationPin();
+        await onSend(
+          prepare({
+            kind: "location",
+            text: pin.address,
+            location: pin,
+            flow: {
+              kind: "location",
+              title: pin.name,
+              address: pin.address,
+              latitude: pin.latitude,
+              longitude: pin.longitude,
+            },
+          }),
+        );
+      } else if (file) {
+        const url = URL.createObjectURL(file);
+        await onSend(
+          prepare({
+            kind: attachment.kind === "image" ? "image" : "document",
+            file,
+            text: step.caption || undefined,
+            localMedia: [{ url, mime: file.type, name: file.name, size: file.size }],
+          }),
+        );
+      }
+    }
+    onClearReply?.();
   }
 
   function withReply(payload: ComposerSendPayload): ComposerSendPayload {
@@ -191,7 +276,8 @@ export function ChatComposer({
     };
   }
 
-  function submitText() {
+  async function submitText() {
+    if (blocked) return;
     const text = draft.trim();
     if (interactive?.mode === "buttons") {
       const labels = interactive.labels.map((l) => l.trim()).filter(Boolean);
@@ -243,6 +329,10 @@ export function ChatComposer({
       setInteractive(null);
       onDraftChange("");
       onClearReply?.();
+      return;
+    }
+    if (quickAttachment) {
+      await sendWithAttachment(text, quickAttachment);
       return;
     }
     if (!text) return;
@@ -331,6 +421,11 @@ export function ChatComposer({
               />
             ) : null}
             <InteractiveBuilder value={interactive} onChange={setInteractive} />
+            <QuickReplyComposerBar
+              unfilled={unfilled}
+              attachment={quickAttachment}
+              onRemoveAttachment={() => setQuickAttachment(null)}
+            />
             <div className="relative flex flex-col gap-1.5">
               <div ref={slashRef}>
                 <SlashCommandMenu
@@ -339,7 +434,7 @@ export function ChatComposer({
                   contentLocale={inputLocale}
                   selectedIndex={slashIndex}
                   onSelectedIndexChange={setSlashIndex}
-                  onSelect={injectCanned}
+                  onSelect={(reply) => void injectCanned(reply)}
                 />
               </div>
               <div className="flex items-end gap-2">
@@ -412,7 +507,7 @@ export function ChatComposer({
                       }
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
-                        submitText();
+                        void submitText();
                       }
                     }}
                     rows={1}
@@ -449,9 +544,9 @@ export function ChatComposer({
                 {canSend ? (
                   <button
                     type="button"
-                    disabled={disabled}
+                    disabled={disabled || blocked}
                     data-showreel-action="whatsapp-send"
-                    onClick={submitText}
+                    onClick={() => void submitText()}
                     className="mb-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--admin-primary)] text-white shadow-sm hover:opacity-90 disabled:opacity-40"
                     aria-label={t("admin.frontDesk.send")}
                   >

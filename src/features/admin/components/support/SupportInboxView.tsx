@@ -985,7 +985,8 @@ export function SupportInboxView({
                 }}
                 onSend={(payload) => {
                   if (sending) return;
-                  void handleSend(payload);
+                  // Returned so a quick reply's text, file and pin go out in order.
+                  return handleSend(payload);
                 }}
                 onSendTemplate={
                   useKapso
@@ -1090,7 +1091,8 @@ export function SupportInboxView({
                 }}
                 onSend={(payload) => {
                   if (sending) return;
-                  void handleSend(payload);
+                  // Returned so a quick reply's text, file and pin go out in order.
+                  return handleSend(payload);
                 }}
                 onSendTemplate={
                   useKapso

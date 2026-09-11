@@ -47,7 +47,7 @@ type Props = {
   messages: SupportMessage[];
   draft: string;
   onDraftChange: (value: string) => void;
-  onSend: (payload: ComposerSendPayload) => void;
+  onSend: (payload: ComposerSendPayload) => void | Promise<void>;
   onSendTemplate?: (payload: {
     name: string;
     language: string;
