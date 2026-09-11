@@ -81,9 +81,10 @@ Quick replies are plain text today. Typing `/` opens `SlashCommandMenu`, and `Ch
 
 ## Message box
 - **Menu:** sorted by `use_count` (highest first), then `sort_order`. Rows show a category badge and an attachment icon. Search also matches the category. A "Manage" link goes to the page.
-- **Choosing a reply:** fetch the context values, cached per conversation and language, then call `renderQuickReply`, insert the text, and call `/use` without waiting for it.
+- **Choosing a reply:** fetch the context values, cached per conversation and the language of the inserted reply text, then call `renderQuickReply`, insert the text, and call `/use` without waiting for it.
 - **Unfilled fields:** while any known `{{field}}` remains, show a warning chip, disable Send and ignore Enter.
 - **Attachment chip:** removable. On send:
+  - The attachment is kept per conversation. Inserting a reply replaces it with that reply's attachment (or none), and clearing the message box removes it.
   - **Image or document:** download from the bucket, wrap in a `File`, and send `{kind, file, text}` so the text becomes the caption. If the text is over 1024 characters, send the text first, then the file.
   - **Location:** send the text, then `clinicLocationPin()`.
 
@@ -116,4 +117,5 @@ There are 4 PRs, each under ~400 lines:
   1. The reply shows on the management page.
   2. An unlinked chat keeps the markers and blocks Send.
   3. Once the markers are replaced, Send works.
-- **Attachment sends** are not covered end to end. `E2E_FAKE_KAPSO` fakes the send but not the media upload. They are covered by `quickReplySend.test.ts` and a manual check.
+  4. A PNG attached in the editor (browser upload to the private bucket, then save) goes out with the reply: `/api/v1/whatsapp/send` is intercepted with `page.route`, and a double-click on Send yields exactly one multipart request carrying the file (`filename`, `image/png`) and the text as its caption. Clearing the message box removes the attachment.
+- **Attachment sends** are covered end to end up to the send request. The server's media upload to Kapso is not, because `E2E_FAKE_KAPSO` fakes the send but not the upload; that part is covered by `quickReplySend.test.ts` and a manual check.
