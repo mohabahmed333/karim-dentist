@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Tables } from "@/lib/supabase/database.types";
+import { AdminSkeleton } from "./AdminSkeleton";
 
 type OptOut = Pick<Tables<"patient_notification_optouts">, "phone_suffix" | "phone" | "reason" | "created_at">;
 
@@ -85,7 +86,18 @@ export function OptOutManager() {
       </form>
 
       {rows === null ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <div aria-busy="true" className="divide-y">
+          <span className="sr-only">Loading opted-out numbers…</span>
+          {["w-36", "w-32"].map((w) => (
+            <div key={w} className="flex items-center justify-between gap-3 py-2">
+              <div className="space-y-1.5">
+                <AdminSkeleton className={`h-3.5 ${w}`} />
+                <AdminSkeleton className="h-3 w-48" />
+              </div>
+              <AdminSkeleton className="h-8 w-20 rounded-md" />
+            </div>
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nobody has opted out.</p>
       ) : (

@@ -1,13 +1,4 @@
-import { Skeleton as KitSkeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-
-/**
- * The kit's skeleton fills with `bg-muted`, which is white in the admin theme,
- * so its bars do not show. This one takes its fill from the admin palette.
- */
-function Skeleton({ className }: { className?: string }) {
-  return <KitSkeleton className={cn("bg-[var(--admin-border,#e6e6e6)]", className)} />;
-}
+import { AdminSkeleton as Skeleton } from "./AdminSkeleton";
 
 const frame = "overflow-hidden rounded-lg border border-[var(--admin-border,#e5e7eb)] bg-[var(--admin-panel,#fff)]";
 const row = "flex items-center gap-2.5 border-b border-[var(--admin-border,#e5e7eb)] px-3 py-2.5 last:border-b-0";
@@ -57,5 +48,64 @@ export function FeaturesSkeleton() {
         ))}
       </div>
     </section>
+  );
+}
+
+const label = "h-3 w-16";
+
+/** The controls column: mode switch, schedule rows, marketing switch, Save. */
+export function NotificationControlsSkeleton() {
+  return (
+    <div aria-hidden className="space-y-5">
+      <div className="space-y-1.5">
+        <Skeleton className={label} />
+        <Skeleton className="h-10 w-full rounded-lg" />
+        <Skeleton className="h-3 w-4/5" />
+      </div>
+      <div className="space-y-2.5">
+        <Skeleton className={label} />
+        {["w-24", "w-40", "w-36"].map((w) => (
+          <div key={w} className="flex items-center justify-between gap-2">
+            <Skeleton className={`h-3.5 ${w}`} />
+            <Skeleton className="h-8 w-16 rounded-md" />
+          </div>
+        ))}
+        <Skeleton className="h-3 w-3/5" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className={label} />
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1.5">
+            <Skeleton className="h-3.5 w-40" />
+            <Skeleton className="h-3 w-52" />
+          </div>
+          <Skeleton className="size-4 rounded" />
+        </div>
+      </div>
+      <Skeleton className="h-9 w-full rounded-md" />
+    </div>
+  );
+}
+
+/** The whole tab while its settings load, laid out exactly like the real one. */
+export function NotificationSettingsSkeleton() {
+  return (
+    <div aria-busy="true" className="space-y-5">
+      <span className="sr-only">Loading patient notification settings…</span>
+      <div className="flex items-center justify-between gap-3">
+        <div className="space-y-1.5">
+          <Skeleton className="h-5 w-44" />
+          <Skeleton className="h-3 w-80" />
+        </div>
+        <Skeleton className="h-5 w-12 rounded-full" />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <NotificationControlsSkeleton />
+        <div className="min-w-0 space-y-5">
+          <RootCausesSkeleton />
+          <FeaturesSkeleton />
+        </div>
+      </div>
+    </div>
   );
 }

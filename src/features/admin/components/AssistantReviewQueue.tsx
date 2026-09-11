@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { CorrectionRow } from "@/services/whatsapp_ai/corrections";
+import { AdminSkeleton } from "./AdminSkeleton";
 
 async function fetchQueue(): Promise<CorrectionRow[]> {
   const res = await fetch("/api/v1/whatsapp/ai/corrections");
@@ -60,7 +61,38 @@ export function AssistantReviewQueue() {
     }
   }
 
-  if (rows === null) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (rows === null) {
+    return (
+      <div aria-busy="true" className="space-y-3">
+        <span className="sr-only">Loading drafts to review…</span>
+        <div className="flex items-center justify-between gap-2">
+          <AdminSkeleton className="h-4 w-72" />
+          <AdminSkeleton className="h-8 w-44 rounded-md" />
+        </div>
+        {[0, 1].map((card) => (
+          <Card key={card} className="gap-3 p-4">
+            <div className="flex gap-2">
+              <AdminSkeleton className="h-4 w-24" />
+              <AdminSkeleton className="h-4 w-20" />
+              <AdminSkeleton className="h-4 w-32" />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {[0, 1].map((side) => (
+                <div key={side} className="space-y-1">
+                  <AdminSkeleton className="h-3 w-28" />
+                  <AdminSkeleton className="h-16 w-full" />
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2">
+              <AdminSkeleton className="h-8 w-28 rounded-md" />
+              <AdminSkeleton className="h-8 w-48 rounded-md" />
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

@@ -10,7 +10,11 @@ import { FeatureReadinessList } from "./FeatureReadinessList";
 import { NotificationModeSwitch, type NotificationMode } from "./NotificationModeSwitch";
 import { NotificationRootCauses } from "./NotificationRootCauses";
 import { NotificationScheduleFields } from "./NotificationScheduleFields";
-import { FeaturesSkeleton, RootCausesSkeleton } from "./NotificationStatusSkeleton";
+import {
+  FeaturesSkeleton,
+  NotificationSettingsSkeleton,
+  RootCausesSkeleton,
+} from "./NotificationStatusSkeleton";
 import type { Readiness } from "./notificationReadinessTypes";
 
 const MODE_BADGE: Record<NotificationMode, { label: string; className: string }> = {
@@ -109,7 +113,7 @@ export function NotificationSettingsForm() {
     }
   }
 
-  if (loading) return <p className="text-sm text-[var(--admin-muted)]">Loading…</p>;
+  if (loading) return <NotificationSettingsSkeleton />;
   if (!settings) {
     return (
       <p className="text-sm text-[var(--admin-muted)]">

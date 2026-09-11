@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Tables } from "@/lib/supabase/database.types";
+import { AdminSkeleton } from "./AdminSkeleton";
 
 type Row = Pick<
   Tables<"patient_notifications">,
@@ -71,7 +72,28 @@ export function NotificationsOutboxTable() {
       {failed ? (
         <p className="text-sm text-[#B91C1C]">Could not load the outbox.</p>
       ) : rows === null ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <div aria-busy="true" className="overflow-x-auto">
+          <span className="sr-only">Loading queued messages…</span>
+          <div className="min-w-[640px]">
+            <div className="grid grid-cols-[130px_1.2fr_120px_1fr_1fr] gap-3 border-b py-2">
+              {["w-14", "w-14", "w-10", "w-16", "w-16"].map((w, i) => (
+                <AdminSkeleton key={i} className={`h-3 ${w}`} />
+              ))}
+            </div>
+            {[0, 1, 2, 3, 4].map((row) => (
+              <div key={row} className="grid grid-cols-[130px_1.2fr_120px_1fr_1fr] items-start gap-3 border-b py-3">
+                <AdminSkeleton className="h-3.5 w-24" />
+                <div className="space-y-1.5">
+                  <AdminSkeleton className="h-3.5 w-28" />
+                  <AdminSkeleton className="h-3 w-24" />
+                </div>
+                <AdminSkeleton className="h-3.5 w-20" />
+                <AdminSkeleton className="h-3.5 w-16" />
+                <AdminSkeleton className="h-3.5 w-28" />
+              </div>
+            ))}
+          </div>
+        </div>
       ) : rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Nothing here. A row appears the moment an appointment is booked.

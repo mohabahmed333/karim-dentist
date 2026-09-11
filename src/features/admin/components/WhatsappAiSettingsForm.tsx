@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminSkeleton } from "./AdminSkeleton";
+
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "@/lib/i18n";
@@ -87,10 +89,42 @@ export function WhatsappAiSettingsForm() {
     }
   }
 
-  if (loading || !settings) {
+  if (loading) {
+    return (
+      <div aria-busy="true" className="space-y-5">
+        <span className="sr-only">Loading AI assistant settings…</span>
+        <div className="space-y-2">
+          <AdminSkeleton className="h-3.5 w-12" />
+          <AdminSkeleton className="h-9 w-full rounded-lg" />
+          <AdminSkeleton className="h-6 w-72 rounded-md" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {["w-52", "w-56", "w-48"].map((w) => (
+            <div key={w} className="space-y-1.5">
+              <AdminSkeleton className={`h-3.5 ${w}`} />
+              <AdminSkeleton className="h-9 w-full rounded-md" />
+            </div>
+          ))}
+        </div>
+        {[0, 1].map((row) => (
+          <div
+            key={row}
+            className="flex items-center justify-between gap-2 rounded-lg border border-[var(--admin-border)] px-3 py-2.5"
+          >
+            <AdminSkeleton className="h-3.5 w-56" />
+            <AdminSkeleton className="size-4 rounded" />
+          </div>
+        ))}
+        <AdminSkeleton className="h-9 w-24 rounded-md" />
+      </div>
+    );
+  }
+
+  // A failed request used to leave the loading state on screen forever.
+  if (!settings) {
     return (
       <p className="text-sm text-[var(--admin-muted)]">
-        Loading AI assistant settings…
+        Could not load the AI assistant settings. Reload the page to try again.
       </p>
     );
   }

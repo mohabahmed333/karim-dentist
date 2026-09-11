@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Tables } from "@/lib/supabase/database.types";
+import { AdminSkeleton } from "./AdminSkeleton";
 
 type Entry = Tables<"appointment_waitlist">;
 
@@ -103,7 +104,18 @@ export function WaitlistManager() {
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       <Card className="gap-2 p-4">
         {entries === null ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <div aria-busy="true" className="divide-y">
+            <span className="sr-only">Loading the waitlist…</span>
+            {["w-40", "w-32", "w-44"].map((w) => (
+              <div key={w} className="flex items-start justify-between gap-3 py-2.5">
+                <div className="space-y-1.5">
+                  <AdminSkeleton className={`h-4 ${w}`} />
+                  <AdminSkeleton className="h-3 w-64" />
+                </div>
+                <AdminSkeleton className="h-8 w-20 rounded-md" />
+              </div>
+            ))}
+          </div>
         ) : entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Nobody is waiting. When someone asks for an earlier time than you

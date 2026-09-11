@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminSkeleton } from "./AdminSkeleton";
+
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "@/lib/i18n";
@@ -152,7 +154,39 @@ export function ClinicHoursEditor() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--admin-muted)]">Loading clinic hours…</p>;
+    return (
+      <div aria-busy="true" className="space-y-5">
+        <span className="sr-only">Loading clinic hours…</span>
+        <div>
+          <AdminSkeleton className="h-3.5 w-20" />
+          <div className="mt-2 flex flex-wrap gap-2">
+            {Array.from({ length: 7 }, (_, day) => (
+              <AdminSkeleton key={day} className="h-7 w-12 rounded-lg" />
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <AdminSkeleton className="h-3.5 w-24" />
+          <AdminSkeleton className="h-3 w-64" />
+          {[0, 1].map((row) => (
+            <div
+              key={row}
+              className="flex flex-wrap items-end gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-2.5"
+            >
+              {[0, 1].map((field) => (
+                <div key={field} className="grid min-w-[8rem] flex-1 gap-1">
+                  <AdminSkeleton className="h-3 w-10" />
+                  <AdminSkeleton className="h-9 w-full rounded-md" />
+                </div>
+              ))}
+              <AdminSkeleton className="h-8 w-20 rounded-md" />
+            </div>
+          ))}
+          <AdminSkeleton className="h-8 w-28 rounded-md" />
+        </div>
+        <AdminSkeleton className="h-9 w-32 rounded-md" />
+      </div>
+    );
   }
 
   return (
