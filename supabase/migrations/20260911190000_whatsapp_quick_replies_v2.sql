@@ -57,8 +57,9 @@ FROM (
 WHERE whatsapp_canned_replies.slash_key = v.slash_key
   AND whatsapp_canned_replies.category IS NULL;
 
+-- Starts switched off so an older composer can never send its unfilled {{fields}}; staff turn it on in Quick replies.
 INSERT INTO public.whatsapp_canned_replies
-  (slash_key, title, title_ar, body, body_ar, category, sort_order)
+  (slash_key, title, title_ar, body, body_ar, category, sort_order, active)
 VALUES (
   'visit',
   'Appointment reminder',
@@ -66,6 +67,7 @@ VALUES (
   'Hi {{name}}, a reminder of your appointment on {{next_appointment}}. Reply here if you need to change it.',
   'أهلاً {{name}}، نذكّركم بموعدكم يوم {{next_appointment}}. ردّوا هنا إذا احتجتم لتغييره.',
   'Booking',
-  55
+  55,
+  false
 )
 ON CONFLICT (slash_key) DO NOTHING;
