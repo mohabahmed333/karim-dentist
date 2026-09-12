@@ -1112,6 +1112,8 @@ export function ReceptionChat({
                 : t("admin.chat.placeholder")
             }
             showAttach
+            showVoice
+            onVoiceError={(message) => toast.error(message)}
             onOpenLibrary={() => setLibraryOpen(true)}
             onChange={setInput}
             onSend={() => void send()}

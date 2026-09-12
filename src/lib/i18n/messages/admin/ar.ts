@@ -776,6 +776,8 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.chat.briefing.pending": "{count} في انتظار التأكيد",
   "admin.chat.briefing.dismiss": "إخفاء",
   "admin.chat.useInWhatsapp": "استخدم في واتساب",
+  "admin.chat.voiceStart": "إملاء صوتي",
+  "admin.chat.voiceStop": "إيقاف التسجيل",
   "admin.chat.droppedActions": "تم استبعاد {count} من التغييرات المقترحة لأنها غير صالحة",
   "admin.chat.historyTitle": "سجل المحادثات",
   "admin.chat.changePatient": "تغيير المريض",

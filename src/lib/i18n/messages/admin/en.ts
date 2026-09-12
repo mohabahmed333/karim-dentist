@@ -774,6 +774,8 @@ export const adminEn = {
   "admin.chat.briefing.pending": "{count} awaiting confirmation",
   "admin.chat.briefing.dismiss": "Dismiss",
   "admin.chat.useInWhatsapp": "Use in WhatsApp",
+  "admin.chat.voiceStart": "Dictate",
+  "admin.chat.voiceStop": "Stop recording",
   "admin.chat.droppedActions": "{count} suggested change(s) were invalid and left out",
   "admin.chat.historyTitle": "Chat history",
   "admin.chat.changePatient": "Change patient",

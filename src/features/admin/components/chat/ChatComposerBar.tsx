@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { ImageIcon, Paperclip, Send } from "lucide-react";
+import { ImageIcon, Loader2, Mic, Paperclip, Send, Square } from "lucide-react";
 import { useTranslations } from "@/lib/i18n";
 import { CHAT_FOOTER } from "./chatSkin";
+import { useVoiceDictation } from "./useVoiceDictation";
 
 type Props = {
   value: string;
@@ -11,10 +12,13 @@ type Props = {
   disabled?: boolean;
   placeholder?: string;
   showAttach?: boolean;
+  /** Offer a mic button that dictates into the composer via Groq Whisper. */
+  showVoice?: boolean;
   onChange: (value: string) => void;
   onSend: () => void;
   onAddFiles?: (list: FileList | null) => void;
   onOpenLibrary?: () => void;
+  onVoiceError?: (message: string) => void;
   topSlot?: ReactNode;
   showreelInputAction?: string;
   showreelAttachAction?: string;
@@ -28,10 +32,12 @@ export function ChatComposerBar({
   disabled = false,
   placeholder,
   showAttach = false,
+  showVoice = false,
   onChange,
   onSend,
   onAddFiles,
   onOpenLibrary,
+  onVoiceError,
   topSlot,
   showreelInputAction,
   showreelAttachAction,
@@ -41,6 +47,16 @@ export function ChatComposerBar({
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const resolvedPlaceholder = placeholder ?? t("admin.chat.typeMessage");
+
+  const dictation = useVoiceDictation((text) => {
+    onChange(value.trim() ? `${value.trim()} ${text}` : text);
+  });
+  useEffect(() => {
+    if (dictation.error) onVoiceError?.(dictation.error);
+    // Only fire when a new error appears — onVoiceError/value are not stable deps to track here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dictation.error]);
+  useEffect(() => () => dictation.cancel(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** Grows with the text up to ~5 lines, then scrolls instead of pushing the panel taller. */
   const MAX_HEIGHT_PX = 116;
@@ -107,6 +123,30 @@ export function ChatComposerBar({
           placeholder={resolvedPlaceholder}
           className="my-2 min-w-0 flex-1 resize-none bg-transparent px-3 py-1.5 text-[13px] leading-5 text-[#111111] outline-none placeholder:text-[#70758A] sm:px-4"
         />
+        {showVoice ? (
+          <button
+            type="button"
+            aria-label={
+              dictation.state === "recording"
+                ? t("admin.chat.voiceStop")
+                : t("admin.chat.voiceStart")
+            }
+            aria-pressed={dictation.state === "recording"}
+            disabled={pending || dictation.state === "transcribing"}
+            onClick={() => (dictation.state === "recording" ? dictation.stop() : void dictation.start())}
+            className={`flex h-12 w-11 shrink-0 items-center justify-center border-e border-[#E8EAED] hover:bg-[#F3F4F6] disabled:opacity-40 sm:h-13 sm:w-12 ${
+              dictation.state === "recording" ? "text-red-600" : "text-[#70758A]"
+            }`}
+          >
+            {dictation.state === "transcribing" ? (
+              <Loader2 className="size-4 animate-spin" strokeWidth={1.75} />
+            ) : dictation.state === "recording" ? (
+              <Square className="size-4 animate-pulse" strokeWidth={1.75} fill="currentColor" />
+            ) : (
+              <Mic className="size-4" strokeWidth={1.75} />
+            )}
+          </button>
+        ) : null}
         <button
           type="button"
           disabled={disabled}
