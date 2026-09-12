@@ -40,6 +40,7 @@ function evaluate(scenario: (typeof DECISION_SCENARIOS)[number]) {
     offeredSlotIds: [SLOT_OFFERED],
     ownReservationIds: [RES_OWN],
     allowBookingWrites: scenario.allowBookingWrites ?? false,
+    fullConversation: scenario.fullConversation ?? false,
   });
 
   if (
