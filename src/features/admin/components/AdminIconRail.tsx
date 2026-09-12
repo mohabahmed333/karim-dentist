@@ -1,17 +1,73 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useLocale, useTranslations } from "@/lib/i18n";
-import { adminRailItems } from "@/features/admin/lib/adminNav";
+import { adminRailItems, type AdminRailItem } from "@/features/admin/lib/adminNav";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AdminDropdownMenu,
+  AdminDropdownMenuContent,
+  AdminDropdownMenuItem,
+  AdminDropdownMenuTrigger,
+} from "@/features/admin/ui";
 import { AdminAccountMenu } from "./AdminAccountMenu";
+
+function railButtonClass(active: boolean) {
+  return cn(
+    "flex size-7 items-center justify-center rounded-md transition-colors",
+    active
+      ? "bg-[var(--admin-active)] text-[var(--admin-primary)]"
+      : "text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]",
+  );
+}
+
+/** A rail item with children opens a flyout of its pages instead of navigating straight there. */
+function RailDropdownItem({
+  item,
+  active,
+  side,
+}: {
+  item: AdminRailItem;
+  active: boolean;
+  side: "left" | "right";
+}) {
+  const t = useTranslations();
+  const router = useRouter();
+  const Icon = item.icon;
+  const label = t(item.labelKey);
+
+  return (
+    <AdminDropdownMenu>
+      <AdminDropdownMenuTrigger
+        aria-label={label}
+        className={railButtonClass(active)}
+      >
+        <Icon className="size-3.5" aria-hidden />
+        <span className="sr-only">{label}</span>
+      </AdminDropdownMenuTrigger>
+      <AdminDropdownMenuContent side={side} align="start" className="min-w-40">
+        <AdminDropdownMenuItem onClick={() => router.push(item.href)}>
+          {label}
+        </AdminDropdownMenuItem>
+        {(item.children ?? []).map((child) => (
+          <AdminDropdownMenuItem
+            key={child.href}
+            onClick={() => router.push(child.href)}
+          >
+            {t(child.labelKey)}
+          </AdminDropdownMenuItem>
+        ))}
+      </AdminDropdownMenuContent>
+    </AdminDropdownMenu>
+  );
+}
 
 export function AdminIconRail() {
   const pathname = usePathname();
@@ -34,7 +90,20 @@ export function AdminIconRail() {
           const label = t(item.labelKey);
           const active = item.exact
             ? pathname === item.href
-            : pathname.startsWith(item.href);
+            : pathname.startsWith(item.href) ||
+              (item.children?.some((child) => pathname.startsWith(child.href)) ??
+                false);
+
+          if (item.children?.length) {
+            return (
+              <RailDropdownItem
+                key={item.id}
+                item={item}
+                active={active}
+                side={tipSide}
+              />
+            );
+          }
 
           return (
             <Tooltip key={item.id}>
@@ -45,12 +114,7 @@ export function AdminIconRail() {
                   <Link
                     href={item.href}
                     aria-label={label}
-                    className={cn(
-                      "flex size-7 items-center justify-center rounded-md transition-colors",
-                      active
-                        ? "bg-[var(--admin-active)] text-[var(--admin-primary)]"
-                        : "text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]",
-                    )}
+                    className={railButtonClass(active)}
                   />
                 }
               >

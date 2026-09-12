@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
   Home,
+  Inbox,
   LayoutGrid,
   Gauge,
   MessagesSquare,
@@ -56,6 +57,8 @@ export type AdminRailItem = {
   labelKey: AdminMessageKey;
   icon: LucideIcon;
   exact?: boolean;
+  /** Shown as a click-to-open dropdown flyout when the sidebar is the narrow icon rail. */
+  children?: { href: string; labelKey: AdminMessageKey }[];
 };
 
 export const adminRailItems: AdminRailItem[] = [
@@ -71,6 +74,7 @@ export const adminRailItems: AdminRailItem[] = [
     href: "/admin/reservations",
     labelKey: "admin.nav.reservations",
     icon: CalendarDays,
+    children: [{ href: "/admin/waitlist", labelKey: "admin.nav.waitlist" }],
   },
   {
     id: "patients",
@@ -83,6 +87,18 @@ export const adminRailItems: AdminRailItem[] = [
     href: "/admin/support",
     labelKey: "admin.nav.support",
     icon: MessagesSquare,
+  },
+  {
+    id: "messaging",
+    href: "/admin/quick-replies",
+    labelKey: "admin.nav.messagingGroup",
+    icon: Inbox,
+    children: [
+      { href: "/admin/quick-replies", labelKey: "admin.nav.quickReplies" },
+      { href: "/admin/knowledge", labelKey: "admin.nav.knowledge" },
+      { href: "/admin/assistant-review", labelKey: "admin.nav.assistantReview" },
+      { href: "/admin/outbox", labelKey: "admin.nav.outbox" },
+    ],
   },
   {
     id: "customize",
