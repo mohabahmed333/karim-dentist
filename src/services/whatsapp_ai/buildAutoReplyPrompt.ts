@@ -27,7 +27,7 @@ export type BuildPromptInput = {
   hours: ClinicHoursInput | null;
   /** Whether the assistant is permitted to write bookings this turn. */
   canBook: boolean;
-  services: { title: string; price?: string | null }[];
+  services: { title: string; title_ar?: string | null; price?: string | null }[];
   /** Clinic knowledge retrieved for this specific message. */
   knowledge?: { title: string; body: string }[];
   /**
@@ -139,9 +139,15 @@ function collectedBlock(collected: BuildPromptInput["collected"]): string {
 }
 
 export function buildAutoReplyPrompt(input: BuildPromptInput): BuiltPrompt {
+  // Both languages, so an Arabic-speaking patient's wording can be matched to a
+  // listed service. The header no longer says "and prices": none are supplied,
+  // and implying they exist invites the model to make one up.
   const servicesBlock = input.services.length
-    ? `Services and prices:\n${input.services
-        .map((s) => `- ${s.title}${s.price ? `: ${s.price}` : ""}`)
+    ? `Services the clinic offers (prices are not on file unless shown):\n${input.services
+        .map(
+          (s) =>
+            `- ${s.title}${s.title_ar ? ` / ${s.title_ar}` : ""}${s.price ? `: ${s.price}` : ""}`,
+        )
         .join("\n")}`
     : "Services: (none on file — do not quote prices)";
 

@@ -3,7 +3,7 @@ import path from "node:path";
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import { clinicContactFromSettings } from "@/lib/clinic/whatsappClinicContact";
 import type { createServiceClient } from "@/lib/supabase/service";
-import { groqChat } from "@/services/ai_groq/callGroq";
+import { GroqError, groqChat } from "@/services/ai_groq/callGroq";
 import { addOptOut, isOptOutMessage } from "@/services/patient_notifications/optouts";
 import { searchClinicKnowledge } from "@/services/clinic_knowledge/search";
 import { buildHistoryTurns } from "./historyTurns";
@@ -20,6 +20,7 @@ import {
   loadAiSettings,
   loadConversationState,
   recordAiEvent,
+  markHumanHandoff,
   saveBookingState,
   saveOfferedSlots,
 } from "./store";
@@ -133,6 +134,8 @@ export async function processAutoReplyJob(
       { data: history },
       reservations,
       { data: clinicHours },
+      { count: priorAiReplies },
+      { data: recentEvents },
       knowledge,
       { data: heldSlotRows },
     ] = await Promise.all([
@@ -162,7 +165,7 @@ export async function processAutoReplyJob(
       // leftovers ("Brand", "Campaign") beside the real dental services.
       db
         .from("services")
-        .select("title")
+        .select("title,title_ar")
         .eq("is_published", true)
         .is("deleted_at", null)
         .limit(30),
@@ -179,6 +182,19 @@ export async function processAutoReplyJob(
         .select("open_weekdays,time_windows,timezone")
         .limit(1)
         .maybeSingle(),
+      // Has the assistant ever spoken here? Decides the one-time disclosure.
+      db
+        .from("whatsapp_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("conversation_id", conversation.id)
+        .eq("sender_kind", "ai")
+        .eq("status", "sent"),
+      db
+        .from("whatsapp_ai_events")
+        .select("decision,handoff")
+        .eq("conversation_id", conversation.id)
+        .order("created_at", { ascending: false })
+        .limit(3),
       // Retrieved per message rather than dumped wholesale: the prompt has a
       // budget, and an unrelated entry is a distraction the model may act on.
       searchClinicKnowledge(
@@ -198,6 +214,14 @@ export async function processAutoReplyJob(
             .gte("starts_at", nowIso)
         : Promise.resolve({ data: [] as { id: string; starts_at: string }[] }),
     ]);
+
+    // Consecutive rough turns, newest first: a draft or a handoff means the
+    // assistant did not resolve that turn on its own.
+    let recentStruggles = 0;
+    for (const event of recentEvents ?? []) {
+      if (event.handoff || event.decision === "draft") recentStruggles += 1;
+      else break;
+    }
 
     const clinic = clinicContactFromSettings(settingsRow);
     const apiKey = process.env.GROQ_API_KEY?.trim() ?? "";
@@ -244,7 +268,14 @@ export async function processAutoReplyJob(
           time_windows: string[];
           timezone: string | null;
         } | null,
-        services: (serviceRows ?? []).map((s) => ({ title: s.title as string })),
+        // A placeholder row is worse than a shorter list: the model will try to
+        // offer "Untitled" as a service.
+        services: (serviceRows ?? [])
+          .filter((s) => !/^(untitled|بدون عنوان)$/i.test(String(s.title).trim()))
+          .map((s) => ({
+            title: s.title as string,
+            title_ar: (s.title_ar as string) || null,
+          })),
         knowledge,
         patient: {
           name: conversation.contact_name,
@@ -264,15 +295,35 @@ export async function processAutoReplyJob(
         history: buildHistoryTurns(history ?? [], HISTORY_TURNS),
       },
       async chat(messages) {
-        return groqChat({
+        const request = {
           apiKey,
           temperature: 0.2,
-          responseFormat: "json_object",
           maxTokens: 700,
           timeoutMs: GROQ_TIMEOUT_MS,
           attempts: 1,
-          messages: messages as { role: "system" | "user" | "assistant"; content: string }[],
-        });
+          messages: messages as {
+            role: "system" | "user" | "assistant";
+            content: string;
+          }[],
+        };
+        try {
+          return await groqChat({ ...request, responseFormat: "json_object" });
+        } catch (err) {
+          // Groq rejects the entire completion when the model answers in prose
+          // instead of JSON, which left the patient with silence. Retry once
+          // without JSON mode — the extractor copes with fenced or wrapped
+          // JSON — and fall back to what the model actually wrote, which at
+          // worst becomes a draft a human can use.
+          if (!(err instanceof GroqError) || err.code !== "json_validate_failed") {
+            throw err;
+          }
+          try {
+            return await groqChat(request);
+          } catch {
+            if (err.failedGeneration) return err.failedGeneration;
+            throw err;
+          }
+        }
       },
       async send(text) {
         // Mark the send as started first: a crash after this point must never
@@ -317,6 +368,20 @@ export async function processAutoReplyJob(
       async runActions(actions: BotAction[]) {
         return runBotActions(db, conversation.phone_number, actions);
       },
+      isFirstAiReply: (priorAiReplies ?? 0) === 0,
+      recentStruggles,
+      async requestHuman(reason) {
+        await markHumanHandoff(db, conversation.id, settings.human_handoff_minutes);
+        await db.from("whatsapp_notes").insert({
+          conversation_id: conversation.id,
+          body:
+            reason === "keyword"
+              ? "Patient asked to speak to a person. The assistant has stepped back."
+              : `Assistant handed over (${reason}).`,
+          pinned: false,
+          author: "Assistant",
+        });
+      },
       async rememberOfferedSlots(slotIds) {
         await saveOfferedSlots(db, conversation.id, slotIds);
       },
@@ -339,7 +404,14 @@ export async function processAutoReplyJob(
           injectionFlags: event.injectionFlags,
           model: process.env.GROQ_MODEL ?? "openai/gpt-oss-120b",
           latencyMs: event.latencyMs,
-          envelope: event.envelope ?? {},
+          // Keep the model's own output when it could not be parsed: without it
+          // a schema failure is undiagnosable after the fact.
+          envelope: {
+            ...((event.envelope ?? {}) as Record<string, unknown>),
+            ...(event.rawOutput
+              ? { raw_output: event.rawOutput, fallback_reason: event.fallbackReason }
+              : {}),
+          },
         });
       },
     });

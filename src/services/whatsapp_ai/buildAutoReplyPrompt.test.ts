@@ -194,3 +194,19 @@ describe("buildAutoReplyPrompt — collected booking state", () => {
     assert.ok(s.includes('"patientName":"Ali"'));
   });
 });
+
+describe("buildAutoReplyPrompt — services", () => {
+  it("names each service in both languages", () => {
+    const s = build({
+      services: [{ title: "Teeth whitening", title_ar: "تبييض الأسنان" }],
+    }).system;
+    assert.ok(s.includes("- Teeth whitening / تبييض الأسنان"));
+  });
+
+  /** A header promising prices invites the model to invent one. */
+  it("does not imply prices exist when none are on file", () => {
+    const s = build({ services: [{ title: "Teeth whitening" }] }).system;
+    assert.match(s, /prices are not on file/i);
+    assert.ok(!/Services and prices/.test(s));
+  });
+});

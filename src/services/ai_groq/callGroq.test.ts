@@ -136,3 +136,51 @@ describe("groqChat", () => {
     );
   });
 });
+
+describe("groqChat — rejected JSON", () => {
+  /**
+   * Production saw `400 json_validate_failed` with the model's output cut to 200
+   * characters, so neither the cause nor any usable answer survived.
+   */
+  it("exposes Groq's code and the model's full output when JSON validation fails", async () => {
+    const generation = "العيادة مفتوحة من الأحد إلى الخميس من ١٠ الصبح لحد ٦ المسا";
+    const body = JSON.stringify({
+      error: {
+        message: "Failed to generate JSON. Please adjust your prompt.",
+        type: "invalid_request_error",
+        code: "json_validate_failed",
+        failed_generation: generation,
+      },
+    });
+    await assert.rejects(
+      () =>
+        groqChat({
+          apiKey: "k",
+          messages: [{ role: "user", content: "hi" }],
+          attempts: 1,
+          retryDelayMs: 0,
+          fetchImpl: async () => new Response(body, { status: 400 }),
+        }),
+      (err: unknown) =>
+        err instanceof GroqError &&
+        err.status === 400 &&
+        err.code === "json_validate_failed" &&
+        err.failedGeneration === generation,
+    );
+  });
+
+  it("leaves code and output null for an unstructured error body", async () => {
+    await assert.rejects(
+      () =>
+        groqChat({
+          apiKey: "k",
+          messages: [{ role: "user", content: "hi" }],
+          attempts: 1,
+          retryDelayMs: 0,
+          fetchImpl: async () => new Response("boom", { status: 500 }),
+        }),
+      (err: unknown) =>
+        err instanceof GroqError && err.code === null && err.failedGeneration === null,
+    );
+  });
+});

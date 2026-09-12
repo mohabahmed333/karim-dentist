@@ -27,10 +27,45 @@ export type GroqChatInput = {
 
 export class GroqError extends Error {
   readonly status: number | null;
-  constructor(message: string, status: number | null = null) {
+  /** Groq's own error code, e.g. "json_validate_failed". */
+  readonly code: string | null;
+  /**
+   * What the model actually produced when Groq rejected it as invalid JSON.
+   * Kept whole: it is the only evidence of why a reply failed, and it may still
+   * contain a usable answer.
+   */
+  readonly failedGeneration: string | null;
+  constructor(
+    message: string,
+    status: number | null = null,
+    details: { code?: string | null; failedGeneration?: string | null } = {},
+  ) {
     super(message);
     this.name = "GroqError";
     this.status = status;
+    this.code = details.code ?? null;
+    this.failedGeneration = details.failedGeneration ?? null;
+  }
+}
+
+/** Groq's structured error fields, when the body carries them. */
+function parseGroqErrorDetail(detail: string): {
+  code: string | null;
+  failedGeneration: string | null;
+} {
+  try {
+    const parsed = JSON.parse(detail) as {
+      error?: { code?: unknown; failed_generation?: unknown };
+    };
+    return {
+      code: typeof parsed.error?.code === "string" ? parsed.error.code : null,
+      failedGeneration:
+        typeof parsed.error?.failed_generation === "string"
+          ? parsed.error.failed_generation
+          : null,
+    };
+  } catch {
+    return { code: null, failedGeneration: null };
   }
 }
 
@@ -91,6 +126,7 @@ export async function groqChat(input: GroqChatInput): Promise<string> {
         lastError = new GroqError(
           `Groq error ${response.status}: ${detail.slice(0, 200)}`,
           response.status,
+          parseGroqErrorDetail(detail),
         );
         // A 4xx other than 429 is our bug; retrying only burns budget.
         if (!isRetryable(response.status)) throw lastError;

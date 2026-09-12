@@ -458,3 +458,92 @@ describe("runAutoReply — booking memory", () => {
     assert.equal(h.saved.length, 0);
   });
 });
+
+describe("runAutoReply — asking for a person", () => {
+  function harnessWithHuman(over: Record<string, unknown> = {}) {
+    const asked: string[] = [];
+    const events: { decision: string; reason: string }[] = [];
+    let chatCalled = false;
+    const h = harness({
+      inboundText: "عايز موظف",
+      async requestHuman(reason: string) {
+        asked.push(reason);
+      },
+      async chat() {
+        chatCalled = true;
+        return JSON.stringify({ intent: "other", confidence: 0.5, reply: "hi" });
+      },
+      async record(e: { decision: string; reason: string }) {
+        events.push(e);
+      },
+      ...over,
+    });
+    return { ...h, asked, events, chatCalled: () => chatCalled };
+  }
+
+  it("hands off without spending a model call", async () => {
+    const h = harnessWithHuman();
+    const out = await runAutoReply(h.deps);
+    assert.equal(out.reason, "human_requested");
+    assert.equal(h.chatCalled(), false, "the model must not be asked");
+    assert.deepEqual(h.asked, ["keyword"]);
+  });
+
+  it("answers in the patient's language", async () => {
+    const h = harnessWithHuman();
+    await runAutoReply(h.deps);
+    assert.match(h.sent[0], /حوّلتك/);
+  });
+
+  it("drafts the handoff instead of sending when staff approve every reply", async () => {
+    const h = harnessWithHuman();
+    h.deps.policy.settings = { ...DEFAULT_AI_SETTINGS, mode: "draft_only" };
+    const out = await runAutoReply(h.deps);
+    assert.equal(out.status, "drafted");
+    assert.equal(h.sent.length, 0);
+    assert.deepEqual(h.asked, ["keyword"], "staff are told either way");
+  });
+});
+
+describe("runAutoReply — disclosure and offering a person", () => {
+  it("says it is an assistant on the first reply only", async () => {
+    const first = harness({ isFirstAiReply: true });
+    await runAutoReply(first.deps);
+    assert.match(first.sent[0], /automated assistant/);
+
+    const later = harness({ isFirstAiReply: false });
+    await runAutoReply(later.deps);
+    assert.ok(!/automated assistant/.test(later.sent[0]));
+  });
+
+  it("offers a person once the conversation keeps going badly", async () => {
+    const h = harness({ recentStruggles: 2 });
+    await runAutoReply(h.deps);
+    assert.match(h.sent[0], /connect you with a colleague/);
+  });
+
+  /** The real transcript had a patient send "؟؟" after being ignored. */
+  it("counts the patient's own frustration toward that offer", async () => {
+    const h = harness({ recentStruggles: 1, inboundText: "??" });
+    await runAutoReply(h.deps);
+    assert.match(h.sent[0], /connect you with a colleague/);
+  });
+});
+
+describe("runAutoReply — unparseable output", () => {
+  it("keeps the model's own words so the failure can be diagnosed", async () => {
+    const events: { reason: string; rawOutput?: string; fallbackReason?: string }[] = [];
+    const h = harness({
+      async chat() {
+        return "العيادة مفتوحة من الأحد إلى الخميس";
+      },
+      async record(e: { reason: string; rawOutput?: string; fallbackReason?: string }) {
+        events.push(e);
+      },
+    });
+    await runAutoReply(h.deps);
+    const last = events.at(-1);
+    assert.equal(last?.fallbackReason, "unparseable");
+    assert.match(String(last?.rawOutput), /العيادة مفتوحة/);
+  });
+});

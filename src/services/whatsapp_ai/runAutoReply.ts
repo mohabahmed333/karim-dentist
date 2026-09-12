@@ -2,6 +2,8 @@ import { nextBookingState, type BookingState } from "./bookingState";
 import { buildAutoReplyPrompt, type BuildPromptInput } from "./buildAutoReplyPrompt";
 import { decideAutoReply } from "./decideAutoReply";
 import { extractAutoReplyEnvelope } from "./extractAutoReplyEnvelope";
+import { withDisclosure, withHumanOffer, handoffAck } from "./disclosure";
+import { showsFrustration, wantsHuman } from "./humanRequest";
 import { injectionHeuristics } from "./injectionHeuristics";
 import { evaluateAutoReplyPolicy, type PolicyInput } from "./policy";
 import {
@@ -33,6 +35,12 @@ export type RunDeps = {
   draft: (text: string, reason: string) => Promise<{ id: string }>;
   runActions: (actions: BotAction[]) => Promise<{ ok: boolean; message: string }>;
   rememberOfferedSlots: (slotIds: string[]) => Promise<void>;
+  /** Hand the thread to a colleague, and tell them why. */
+  requestHuman?: (reason: string) => Promise<void>;
+  /** True when the assistant has never spoken in this conversation. */
+  isFirstAiReply?: boolean;
+  /** Consecutive turns that went badly, used to offer a person unprompted. */
+  recentStruggles?: number;
   /** Booking progress carried between turns. Absent means a fresh start. */
   bookingState?: BookingState | null;
   saveBookingState?: (state: BookingState) => Promise<void>;
@@ -42,6 +50,9 @@ export type RunDeps = {
     envelope?: AutoReplyEnvelope;
     injectionFlags: string[];
     latencyMs: number;
+    /** The model's own output, kept only when it could not be parsed. */
+    rawOutput?: string;
+    fallbackReason?: string;
   }) => Promise<void>;
   now?: () => Date;
 };
@@ -72,6 +83,28 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     return { status: "skipped", reason: gate.reason };
   }
 
+  // A patient asking for a person gets one, before any model call. Answering
+  // them with a bot is the one response that cannot be right.
+  if (wantsHuman(deps.inboundText)) {
+    await deps.requestHuman?.("keyword");
+    const ack = handoffAck(inboundLanguage(deps.inboundText));
+    const { id } =
+      gate.allow === "auto"
+        ? await deps.send(ack)
+        : await deps.draft(ack, "human_requested");
+    await deps.record({
+      decision: gate.allow === "auto" ? "auto_send" : "draft",
+      reason: "human_requested",
+      injectionFlags: flags,
+      latencyMs: Date.now() - startedAt,
+    });
+    return {
+      status: gate.allow === "auto" ? "sent" : "drafted",
+      reason: "human_requested",
+      messageId: id,
+    };
+  }
+
   const built = buildAutoReplyPrompt({
     ...deps.prompt,
     collected: deps.bookingState?.pending ?? deps.prompt.collected,
@@ -93,7 +126,7 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     return { status: "failed", reason: message };
   }
 
-  const { envelope: rawEnvelope } = extractAutoReplyEnvelope(raw);
+  const { envelope: rawEnvelope, fallbackReason } = extractAutoReplyEnvelope(raw);
 
   // Internal identifiers must never reach a patient. The model is shown slots
   // as `slotId=<uuid>` and told to copy the id exactly — meaning into the
@@ -140,6 +173,7 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
       envelope,
       injectionFlags: flags,
       latencyMs: Date.now() - startedAt,
+      ...(fallbackReason ? { rawOutput: raw, fallbackReason } : {}),
     });
     return { status: "drafted", reason: "reply_was_all_ids", messageId: id, envelope };
   }
@@ -165,14 +199,25 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
   const finalAction = gate.allow === "draft" ? "draft" : decision.action;
   const reason = gate.allow === "draft" ? gate.reason : decision.reason;
 
+  // Say who is speaking on the first reply, and offer a person when the
+  // conversation has been going badly.
+  const struggles =
+    (deps.recentStruggles ?? 0) + (showsFrustration(deps.inboundText) ? 1 : 0);
+  const outgoing = withHumanOffer(
+    withDisclosure(envelope.reply, envelope.language, deps.isFirstAiReply ?? false),
+    envelope.language,
+    struggles,
+  );
+
   if (finalAction === "draft") {
-    const { id } = await deps.draft(envelope.reply, reason);
+    const { id } = await deps.draft(outgoing, reason);
     await deps.record({
       decision: "draft",
       reason,
       envelope,
       injectionFlags: flags,
       latencyMs: Date.now() - startedAt,
+      ...(fallbackReason ? { rawOutput: raw, fallbackReason } : {}),
     });
     return { status: "drafted", reason, messageId: id, envelope };
   }
@@ -214,6 +259,7 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
       envelope,
       injectionFlags: flags,
       latencyMs: Date.now() - startedAt,
+      ...(fallbackReason ? { rawOutput: raw, fallbackReason } : {}),
     });
     return {
       status: "drafted",
@@ -223,7 +269,7 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     };
   }
 
-  const { id } = await deps.send(envelope.reply);
+  const { id } = await deps.send(outgoing);
   await deps.record({
     decision: "auto_send",
     reason,
@@ -242,4 +288,11 @@ function sameBooking(
     (before?.step ?? "idle") === after.step &&
     JSON.stringify(before?.pending ?? {}) === JSON.stringify(after.pending)
   );
+}
+
+const ARABIC_SCRIPT = /[\u0600-\u06FF]/;
+
+/** Enough to answer a handoff in the right language without a model call. */
+function inboundLanguage(text: string): "ar" | "en" {
+  return ARABIC_SCRIPT.test(text) ? "ar" : "en";
 }
