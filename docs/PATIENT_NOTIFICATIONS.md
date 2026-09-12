@@ -168,13 +168,82 @@ because a patient replying it to a reminder is cancelling an appointment.
 `/admin/outbox` also lists the last 100 queued messages with their outcome and
 `skip_reason`, and lets staff add or remove an opt-out by hand.
 
-### Templates still missing
+### Templates to submit
 
-Every kind below queues correctly and records `no_approved_template` until its
-template is approved and added to `PATIENT_TEMPLATES` / `buildTemplateForKind`:
+Six message types are built and queue correctly, but nothing has been submitted
+to Meta for them, so each one is recorded as `no_approved_template` and never
+sent. Meta only allows an approved template to *start* a conversation.
 
-`cancellation` · `reschedule` · `waitlist_offer` · `followup` ·
-`recall_6m` (MARKETING) · `review_request` (MARKETING)
+To turn one on: submit it in Meta Business Manager under the name below, wait
+for approval, then add that name to `PATIENT_TEMPLATES` and render its params in
+`buildTemplateForKind`. Register every template under language **en_US**, as the
+four approved ones are, and keep the body **positional** — `{{1}}`, `{{2}}` — not
+named. The two MARKETING ones need patient consent and are rate-limited by Meta;
+the rest are UTILITY.
+
+Settings → Patient notifications shows the same text, with a copy button, behind
+each "No template submitted for this message" row. Both come from
+`TEMPLATE_PROPOSALS` in `src/services/patient_notifications/templateProposals.ts`
+— edit there and run
+`node --experimental-strip-types --import ./scripts/test-loader.mjs scripts/write-template-proposals.mjs`.
+
+<!-- generated:template-proposals -->
+
+**Cancellation notices** — `cancellation_en` and `cancellation_ar` · UTILITY
+
+`{{1}}` patient name · `{{2}}` appointment date
+
+```
+Hi {{1}}, your appointment on {{2}} has been cancelled. Reply here to book a new time.
+أهلاً {{1}}، تم إلغاء ميعادك يوم {{2}}. ابعتلنا هنا لو حابب تحجز ميعاد جديد.
+```
+
+**Reschedule notices** — `reschedule_en` and `reschedule_ar` · UTILITY
+
+`{{1}}` patient name · `{{2}}` clinic name · `{{3}}` new date and time
+
+```
+Hi {{1}}, your appointment at {{2}} has moved to {{3}}. Reply here if that does not suit you.
+أهلاً {{1}}، ميعادك في {{2}} اتغير لـ {{3}}. ابعتلنا لو الميعاد مش مناسب.
+```
+
+**Waitlist offers** — `waitlist_offer_en` and `waitlist_offer_ar` · UTILITY
+
+`{{1}}` patient name · `{{2}}` clinic name · `{{3}}` date and time of the free slot
+
+```
+Hi {{1}}, a spot opened at {{2}} on {{3}}. Reply yes within 30 minutes to take it.
+أهلاً {{1}}، في ميعاد فاضي في {{2}} يوم {{3}}. رد بأيوه خلال ٣٠ دقيقة لو عايزه.
+```
+
+**Follow-ups after a visit** — `followup_en` and `followup_ar` · UTILITY
+
+`{{1}}` patient name
+
+```
+Hi {{1}}, how are you feeling after your visit? Reply here if anything is bothering you.
+أهلاً {{1}}، عامل إيه بعد الزيارة؟ ابعتلنا لو في أي حاجة مضايقاك.
+```
+
+**Six-month recalls** — `recall_6m_en` and `recall_6m_ar` · MARKETING
+
+`{{1}}` patient name · `{{2}}` clinic name
+
+```
+Hi {{1}}, it has been 6 months since your last visit to {{2}}. Would you like to book a check-up?
+أهلاً {{1}}، عدى ٦ شهور على آخر زيارة لـ {{2}}. تحب نحجزلك ميعاد كشف؟
+```
+
+**Review requests** — `review_request_en` and `review_request_ar` · MARKETING
+
+`{{1}}` patient name · `{{2}}` review link
+
+```
+Thank you, {{1}}! If you have a moment, a review helps other patients find us: {{2}}
+شكراً يا {{1}}! لو عندك دقيقة، رأيك بيساعد ناس تانية تلاقينا: {{2}}
+```
+
+<!-- /generated -->
 
 ## If nothing is being sent
 

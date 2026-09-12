@@ -29,7 +29,7 @@ export type RootCause = {
 const MISSING_TEMPLATES: Pick<RootCause, "key" | "label" | "why" | "fix"> = {
   key: "templates_missing",
   label: "No WhatsApp template yet",
-  why: "These messages are queued but never sent until a template is approved in Meta and added to the app.",
+  why: "These messages are queued but never sent. Nothing has been submitted to Meta for them yet — open each feature for the exact text to submit.",
   fix: FIX.noTemplate,
 };
 

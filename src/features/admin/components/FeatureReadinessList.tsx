@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { HelpTip } from "./HelpTip";
+import { TemplateProposalCard, type TemplateProposal } from "./TemplateProposalCard";
 
 export type FeatureCondition = {
   key: string;
@@ -12,6 +13,8 @@ export type FeatureCondition = {
   why: string;
   /** What to do to make it true. */
   fix: string;
+  /** For a message with no template yet: the text to submit to Meta. */
+  proposal?: TemplateProposal;
 };
 
 export type FeatureStatus = {
@@ -110,6 +113,7 @@ export function FeatureReadinessList({ features }: { features: FeatureStatus[] }
                             {condition.met !== true ? (
                               <p className="text-xs leading-relaxed text-[var(--admin-muted)]">{condition.why}</p>
                             ) : null}
+                            {condition.proposal ? <TemplateProposalCard proposal={condition.proposal} /> : null}
                           </div>
                         </li>
                       );

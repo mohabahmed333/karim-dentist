@@ -8,6 +8,7 @@
  */
 
 import { PATIENT_TEMPLATES } from "./templates";
+import { proposalForKind, type TemplateProposal } from "./templateProposals";
 
 export type Condition = {
   key: string;
@@ -17,6 +18,8 @@ export type Condition = {
   why: string;
   /** What someone has to do to make it true — shown behind the "?" in Settings. */
   fix: string;
+  /** For a message with no template yet: the text to submit to Meta. */
+  proposal?: TemplateProposal;
 };
 
 export type AiMode = "off" | "draft_only" | "auto";
@@ -59,7 +62,7 @@ export const FIX = {
   scheduler: "In the Supabase SQL editor, create the two Vault secrets, then run supabase/scripts/schedule_notifications_dispatch.sql once.",
   whatsapp: "Add KAPSO_API_KEY and KAPSO_PHONE_NUMBER_ID in Vercel (Production), then redeploy.",
   serviceRole: "Add SUPABASE_SERVICE_ROLE_KEY in Vercel (Production), then redeploy.",
-  noTemplate: "Submit a template for this message in Meta Business Manager. Once approved, add it to PATIENT_TEMPLATES in templates.ts.",
+  noTemplate: "Open this row for the exact text to submit, paste it into Meta Business Manager, then add the approved name to PATIENT_TEMPLATES in templates.ts.",
   businessAccount: "Set KAPSO_BUSINESS_ACCOUNT_ID to the clinic's own WhatsApp Business Account ID.",
   aiOn: "Settings → WhatsApp AI: set the assistant to Drafts or Replies.",
   groq: "Add GEMINI_API_KEY in Vercel (Production) — or MISTRAL_API_KEY, GROQ_API_KEY — then redeploy.",
@@ -94,13 +97,21 @@ export function sendPipeline(f: FeatureFacts): Condition[] {
  * "unknown".
  */
 /** The label of a template condition for a message type with no template at all. */
-export const NO_TEMPLATE_LABEL = "WhatsApp template approved and added to the app";
+/**
+ * Deliberately not "approved": nothing has been submitted for these, and the
+ * old wording sent staff to Meta to look for an approval that was never pending.
+ */
+export const NO_TEMPLATE_LABEL = "No template submitted for this message";
 
 export function templateCondition(kind: string, f: FeatureFacts): Condition {
   const names = PATIENT_TEMPLATES.filter((t) => t.kind === kind).map((t) => t.name);
   if (names.length === 0) {
-    return c(`template_${kind}`, NO_TEMPLATE_LABEL, false,
-      "No template exists for this message yet. Until then the message is queued and recorded as no_approved_template.", FIX.noTemplate);
+    return {
+      ...c(`template_${kind}`, NO_TEMPLATE_LABEL, false,
+        "Meta only lets the clinic start a conversation with an approved template, and none has been submitted for this message. Until then it is queued and recorded as no_approved_template.",
+        FIX.noTemplate),
+      proposal: proposalForKind(kind) ?? undefined,
+    };
   }
   if (f.approvedTemplateNames === null) {
     return c(`template_${kind}`, `Templates approved in Meta: ${names.join(", ")}`, null,
