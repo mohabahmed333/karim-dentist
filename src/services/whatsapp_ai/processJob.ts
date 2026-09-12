@@ -3,7 +3,7 @@ import path from "node:path";
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import { clinicContactFromSettings } from "@/lib/clinic/whatsappClinicContact";
 import type { createServiceClient } from "@/lib/supabase/service";
-import { groqChat } from "@/services/ai_groq/callGroq";
+import { aiChat, hasAnyAiKey } from "@/services/ai_chat";
 import { addOptOut, isOptOutMessage } from "@/services/patient_notifications/optouts";
 import { searchClinicKnowledge } from "@/services/clinic_knowledge/search";
 import { loadUpcomingReservations } from "@/services/reservations/upcomingReservations";
@@ -27,7 +27,9 @@ type ServiceClient = ReturnType<typeof createServiceClient>;
 const HISTORY_TURNS = 10;
 const SLOT_OFFER_LIMIT = 5;
 /** Below the webhook route's maxDuration, so the reply is never cut off mid-send. */
-const GROQ_TIMEOUT_MS = 8000;
+const AI_TIMEOUT_MS = 8000;
+/** The whole fallback chain, still well inside the route's 60s ceiling. */
+const AI_DEADLINE_MS = 40_000;
 
 const FALLBACK_PROMPT = `You are the front desk of The Dental Lounge on WhatsApp.
 Never diagnose or advise on medication. Never invent hours, prices or times.
@@ -100,7 +102,8 @@ export async function processAutoReplyJob(
         language: null,
         handoff: false,
         injectionFlags: [],
-        model: process.env.GROQ_MODEL ?? "openai/gpt-oss-120b",
+        // No model ran: this is decided before any of them is called.
+        model: null,
         latencyMs: 0,
         envelope: {},
       });
@@ -187,7 +190,9 @@ export async function processAutoReplyJob(
     ]);
 
     const clinic = clinicContactFromSettings(settingsRow);
-    const apiKey = process.env.GROQ_API_KEY?.trim() ?? "";
+    // Which model answered is decided at call time by the fallback chain, so
+    // the event row has to record what actually ran, not what we hoped would.
+    let usedModel = "";
 
     const outcome = await runAutoReply({
       conversationId: conversation.id,
@@ -205,7 +210,7 @@ export async function processAutoReplyJob(
         },
         counts,
         lastHumanOutboundAt: lastHuman?.wa_timestamp ?? null,
-        hasAiKey: Boolean(apiKey),
+        hasAiKey: hasAnyAiKey(),
       },
       prompt: {
         basePrompt: await loadPrompt(),
@@ -254,15 +259,16 @@ export async function processAutoReplyJob(
           .filter((m) => m.content.trim()),
       },
       async chat(messages) {
-        return groqChat({
-          apiKey,
+        const result = await aiChat({
           temperature: 0.2,
           responseFormat: "json_object",
           maxTokens: 700,
-          timeoutMs: GROQ_TIMEOUT_MS,
-          attempts: 1,
+          timeoutMs: AI_TIMEOUT_MS,
+          deadlineMs: AI_DEADLINE_MS,
           messages: messages as { role: "system" | "user" | "assistant"; content: string }[],
         });
+        usedModel = `${result.provider}:${result.model}`;
+        return result.content;
       },
       async send(text) {
         // Mark the send as started first: a crash after this point must never
@@ -321,7 +327,7 @@ export async function processAutoReplyJob(
           language: event.envelope?.language ?? null,
           handoff: event.envelope?.handoff ?? false,
           injectionFlags: event.injectionFlags,
-          model: process.env.GROQ_MODEL ?? "openai/gpt-oss-120b",
+          model: usedModel || null,
           latencyMs: event.latencyMs,
           envelope: event.envelope ?? {},
         });
