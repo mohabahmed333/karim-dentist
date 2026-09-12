@@ -240,3 +240,20 @@ describe("buildAutoReplyPrompt — times the model can repeat safely", () => {
     assert.match(system, /reservationId=res-1 Cleaning at Monday, 14 September 2026 at /);
   });
 });
+
+describe("buildAutoReplyPrompt — age and medical info in Already collected", () => {
+  it("shows age and medical info once the patient has given them", () => {
+    const system = build({
+      collected: { service: "Cleaning", age: "34", medicalInfo: "none" },
+    }).system;
+    assert.match(system, /Already collected/);
+    assert.match(system, /"age":"34"/);
+    assert.match(system, /"medicalInfo":"none"/);
+  });
+
+  it("omits age and medical info while they are still unknown", () => {
+    const system = build({ collected: { service: "Cleaning" } }).system;
+    assert.doesNotMatch(system, /"age"/);
+    assert.doesNotMatch(system, /"medicalInfo"/);
+  });
+});

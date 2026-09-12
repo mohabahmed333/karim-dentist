@@ -40,6 +40,15 @@ export const botActionSchema = z.object({
   reservationId: omitEmpty(z.string().uuid().optional()),
   patientName: omitEmpty(z.string().trim().min(1).max(120).optional()),
   serviceLabel: omitEmpty(z.string().trim().min(1).max(120).optional()),
+  /** Free text, e.g. "34" or "بالغ". Recorded for the clinic; never validated. */
+  age: omitEmpty(z.string().trim().min(1).max(20).optional()),
+  /**
+   * What the patient said about existing conditions or medication, in their
+   * own words, or a sentinel like "none" once they have answered or declined.
+   * For the dentist to read before the visit. The assistant must never
+   * diagnose from it, comment on it, or act on it beyond recording it.
+   */
+  medicalInfo: omitEmpty(z.string().trim().min(1).max(300).optional()),
 });
 
 export type BotAction = z.infer<typeof botActionSchema>;
@@ -125,6 +134,8 @@ export const autoReplyEnvelopeSchema = z.object({
       service: z.string().nullish(),
       patientName: z.string().nullish(),
       slotId: z.string().nullish(),
+      age: z.string().nullish(),
+      medicalInfo: z.string().nullish(),
     })
     .default({})
     .catch({}),

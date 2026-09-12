@@ -38,7 +38,13 @@ export type BuildPromptInput = {
    * What this booking has already established. The model is told these are
    * settled — the fix for asking a patient the same question twice.
    */
-  collected?: { service?: string; patientName?: string; slotStartsAt?: string };
+  collected?: {
+    service?: string;
+    patientName?: string;
+    age?: string;
+    medicalInfo?: string;
+    slotStartsAt?: string;
+  };
   patient: { name?: string | null; known: boolean };
   reservations: PatientReservation[];
   /** Oldest first. Patient turns are sanitized and JSON-wrapped. */
@@ -146,6 +152,8 @@ function collectedBlock(collected: BuildPromptInput["collected"]): string {
     Object.entries({
       service: collected?.service,
       patientName: collected?.patientName,
+      age: collected?.age,
+      medicalInfo: collected?.medicalInfo,
       chosenTime: collected?.slotStartsAt,
     }).filter(([, value]) => typeof value === "string" && value.trim()),
   );

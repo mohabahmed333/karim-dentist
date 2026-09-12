@@ -88,3 +88,52 @@ describe("autoReplyEnvelopeSchema — fields the model left blank", () => {
     assert.throws(() => autoReplyEnvelopeSchema.parse({ ...REAL_FAILURE, reply: "" }));
   });
 });
+
+describe("autoReplyEnvelopeSchema — age and medical info", () => {
+  const REAL_AGE_MEDICAL_ACTION = {
+    ...REAL_FAILURE,
+    actions: [
+      {
+        kind: "booking.book_slot",
+        slotId: SLOT,
+        patientName: "علي",
+        serviceLabel: "General consultation",
+        age: "34",
+        medicalInfo: "بيتناول أدوية ضغط",
+      },
+    ],
+    collected: {
+      service: "General consultation",
+      patientName: "علي",
+      slotId: SLOT,
+      age: "34",
+      medicalInfo: "بيتناول أدوية ضغط",
+    },
+  };
+
+  it("accepts a real age and a real medical note", () => {
+    const parsed = autoReplyEnvelopeSchema.parse(REAL_AGE_MEDICAL_ACTION);
+    assert.equal(parsed.actions[0].age, "34");
+    assert.equal(parsed.actions[0].medicalInfo, "بيتناول أدوية ضغط");
+    assert.equal(parsed.collected.age, "34");
+    assert.equal(parsed.collected.medicalInfo, "بيتناول أدوية ضغط");
+  });
+
+  it("treats a blank age or medicalInfo as absent, not invalid", () => {
+    const parsed = autoReplyEnvelopeSchema.parse({
+      ...REAL_AGE_MEDICAL_ACTION,
+      actions: [{ ...REAL_AGE_MEDICAL_ACTION.actions[0], age: "", medicalInfo: "   " }],
+    });
+    assert.equal(parsed.actions[0].age, undefined);
+    assert.equal(parsed.actions[0].medicalInfo, undefined);
+  });
+
+  it("accepts the sentinel used when the patient declined or was not asked again", () => {
+    const parsed = autoReplyEnvelopeSchema.parse({
+      ...REAL_AGE_MEDICAL_ACTION,
+      collected: { ...REAL_AGE_MEDICAL_ACTION.collected, age: "not provided", medicalInfo: "none" },
+    });
+    assert.equal(parsed.collected.age, "not provided");
+    assert.equal(parsed.collected.medicalInfo, "none");
+  });
+});

@@ -14,6 +14,14 @@ export type BookingStep =
 export type PendingBooking = {
   service?: string;
   patientName?: string;
+  /** Free text, patient-reported. Never validated against anything. */
+  age?: string;
+  /**
+   * What the patient said about existing conditions or medication, or a
+   * settled "none"/"not provided" once asked. Recorded for the dentist to
+   * read before the visit — never something the assistant reacts to.
+   */
+  medicalInfo?: string;
   slotId?: string;
   /** Kept beside the id so the prompt can name the time without a lookup. */
   slotStartsAt?: string;
@@ -29,6 +37,8 @@ export type BookingState = {
 export type CollectedFields = {
   service?: string | null;
   patientName?: string | null;
+  age?: string | null;
+  medicalInfo?: string | null;
   slotId?: string | null;
 };
 
@@ -47,12 +57,15 @@ function emptyState(): BookingState {
  * injection check runs on the raw value: collapsing whitespace first would hide
  * a "system:" role marker that only matches at the start of a line.
  */
-function cleanField(value: unknown): string | undefined {
+function cleanField(value: unknown, maxLength: number = MAX_FIELD_LENGTH): string | undefined {
   if (typeof value !== "string") return undefined;
   if (injectionHeuristics(value).length > 0) return undefined;
-  const text = value.replace(/\s+/g, " ").trim().slice(0, MAX_FIELD_LENGTH);
+  const text = value.replace(/\s+/g, " ").trim().slice(0, maxLength);
   return text || undefined;
 }
+
+/** Longer cap: a medical note is a sentence, not a name. */
+const MAX_MEDICAL_LENGTH = 300;
 
 function deriveStep(pending: PendingBooking): BookingStep {
   if (pending.service && pending.slotId) return "awaiting_confirm";
@@ -94,6 +107,18 @@ export function nextBookingState(
   const patientName = cleanField(input.collected.patientName);
   if (patientName) {
     pending.patientName = patientName;
+    changed = true;
+  }
+
+  const age = cleanField(input.collected.age);
+  if (age) {
+    pending.age = age;
+    changed = true;
+  }
+
+  const medicalInfo = cleanField(input.collected.medicalInfo, MAX_MEDICAL_LENGTH);
+  if (medicalInfo) {
+    pending.medicalInfo = medicalInfo;
     changed = true;
   }
 
@@ -208,6 +233,10 @@ export function readBookingState(
   if (service) pending.service = service;
   const patientName = cleanField(stored.patientName);
   if (patientName) pending.patientName = patientName;
+  const age = cleanField(stored.age);
+  if (age) pending.age = age;
+  const medicalInfo = cleanField(stored.medicalInfo, MAX_MEDICAL_LENGTH);
+  if (medicalInfo) pending.medicalInfo = medicalInfo;
   if (typeof stored.slotId === "string" && stored.slotId) {
     pending.slotId = stored.slotId;
     if (typeof stored.slotStartsAt === "string") {

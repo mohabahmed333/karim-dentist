@@ -468,8 +468,24 @@ export async function processAutoReplyJob(
   }
 }
 
+/**
+ * The reservation's free-text notes for a new booking.
+ *
+ * There is no age or medical-history column on reservations -- this is
+ * intentionally free text the dentist reads before the visit, not a
+ * structured field the rest of the app queries or exports. Age and medical
+ * info are patient-reported and appended only when given; the assistant never
+ * comments on or reacts to what is recorded here.
+ */
+function bookingNotes(action: BotAction): string {
+  const parts = ["Booked via WhatsApp assistant"];
+  if (action.age) parts.push(`Age: ${action.age}`);
+  if (action.medicalInfo) parts.push(`Medical history: ${action.medicalInfo}`);
+  return parts.join(" | ");
+}
+
 /** Execute the bot's booking actions through the same atomic RPCs staff use. */
-async function runBotActions(
+export async function runBotActions(
   db: ServiceClient,
   phone: string,
   actions: BotAction[],
@@ -482,7 +498,7 @@ async function runBotActions(
           p_patient_name: action.patientName ?? "WhatsApp patient",
           p_phone: phone,
           p_service_label: action.serviceLabel ?? "General consultation",
-          p_notes: "Booked via WhatsApp assistant",
+          p_notes: bookingNotes(action),
         });
         if (error) throw new Error(error.message);
       } else if (action.kind === "booking.reschedule") {

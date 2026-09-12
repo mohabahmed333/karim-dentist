@@ -176,6 +176,8 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
         (action.kind === "booking.cancel" ? undefined : booking.pending.slotId),
       serviceLabel: action.serviceLabel ?? booking.pending.service,
       patientName: action.patientName ?? booking.pending.patientName,
+      age: action.age ?? booking.pending.age,
+      medicalInfo: action.medicalInfo ?? booking.pending.medicalInfo,
     })),
   };
   if (guarded.violations.length > 0 && !isSendableReply(envelope.reply)) {
