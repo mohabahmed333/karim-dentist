@@ -11,7 +11,12 @@ type TreeRowProps = {
   children: ReactNode;
 };
 
-function TreeRow({ depth, children }: TreeRowProps) {
+/** Where the vertical trunk sits within the row's own indent, in px. */
+const TRUNK_INSET = 10;
+/** Vertical midpoint of a row (py-1 + 13px text) — where the elbow meets the label. */
+const ROW_MIDPOINT = "0.875rem";
+
+function TreeRow({ depth, isLast, children }: TreeRowProps) {
   const rail = depth * 16;
 
   return (
@@ -19,6 +24,31 @@ function TreeRow({ depth, children }: TreeRowProps) {
       className="relative list-none"
       style={{ paddingInlineStart: rail + 8 }}
     >
+      {depth > 0 ? (
+        <>
+          {/* Vertical trunk: full height to reach the next sibling's elbow,
+              or half height on the last child so the line stops there
+              instead of trailing past the group. */}
+          <span
+            aria-hidden
+            className="absolute top-0 border-s border-[var(--admin-border)]"
+            style={{
+              insetInlineStart: rail - (16 - TRUNK_INSET),
+              height: isLast ? ROW_MIDPOINT : "100%",
+            }}
+          />
+          {/* Elbow: trunk to this row's label. */}
+          <span
+            aria-hidden
+            className="absolute border-t border-[var(--admin-border)]"
+            style={{
+              insetInlineStart: rail - (16 - TRUNK_INSET),
+              top: ROW_MIDPOINT,
+              width: 16 - TRUNK_INSET + 6,
+            }}
+          />
+        </>
+      ) : null}
       {children}
     </li>
   );
