@@ -75,6 +75,10 @@ export type SupportMessage = {
     longitude?: number;
     address?: string;
     phone?: string;
+    /** The tapped button or list item's id, for a "button_reply" flow. */
+    buttonId?: string;
+    /** Whether a "button_reply" flow was a reply button or a list item. */
+    replyKind?: "button" | "list";
   } | null;
   waTimestamp?: string;
   kapsoWamid?: string | null;
