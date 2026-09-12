@@ -72,6 +72,7 @@ import {
 import { listReservations } from "@/services/reservations";
 import { findOpenReservationForPatient } from "./receptionHelpers";
 import { useChatScroll } from "../../support/chat/useChatScroll";
+import { starterPrompts } from "./starterPrompts";
 
 type Props = {
   className?: string;
@@ -586,6 +587,13 @@ export function ReceptionChat({
     }
   }
 
+  /** A tapped starter prompt goes straight to the model, like tapping any other chip. */
+  async function sendStarterPrompt(text: string) {
+    if (pending || busy) return;
+    await persist("user", text);
+    await askAi([...messages, { role: "user", content: text }]);
+  }
+
   async function send() {
     if (pending || busy) return;
     if (slashMatches.length === 1) {
@@ -811,6 +819,21 @@ export function ReceptionChat({
                           ? t("admin.chat.welcome")
                           : msg.content}
                       </p>
+                      {msg.content === WELCOME_CONTENT && messages.length === 1 ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {starterPrompts(pathname, t).map((prompt) => (
+                            <button
+                              key={prompt}
+                              type="button"
+                              disabled={pending || busy}
+                              onClick={() => void sendStarterPrompt(prompt)}
+                              className="rounded-full border border-[var(--admin-border)] px-2.5 py-1 text-[11px] text-[var(--admin-muted)] transition-colors hover:border-[var(--admin-primary)] hover:text-[var(--admin-primary)] disabled:opacity-40"
+                            >
+                              {prompt}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
                       {!isUser && i === lastAssistantIdx && bookPanel ? (
                         <BookBookingPanel
                           name={bookPanel.name}
