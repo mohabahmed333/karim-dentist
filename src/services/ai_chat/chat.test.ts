@@ -40,8 +40,31 @@ describe("aiChat — walking the chain", () => {
   it("answers from the first model, naming what answered", async () => {
     const r = router({ one: () => ok("hello") });
     const out = await aiChat({ ...base, env: THREE, fetchImpl: r.fetchImpl });
-    assert.deepEqual(out, { content: "hello", provider: "groq", model: "one" });
+    assert.equal(out.content, "hello");
+    assert.equal(out.provider, "groq");
+    assert.equal(out.model, "one");
     assert.deepEqual(r.asked, ["one"]);
+  });
+
+  /** The usage page can only report what the chain hands back. */
+  it("reports what the answer cost, when the provider says", async () => {
+    const out = await aiChat({
+      ...base,
+      env: THREE,
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "hi" } }],
+            usage: { prompt_tokens: 80, completion_tokens: 20, total_tokens: 100 },
+          }),
+          { status: 200 },
+        ),
+    });
+    assert.deepEqual(out.usage, {
+      promptTokens: 80,
+      completionTokens: 20,
+      totalTokens: 100,
+    });
   });
 
   it("moves to the next model when one is out of quota", async () => {
@@ -235,6 +258,84 @@ describe("aiChat — end-to-end fake", () => {
     } finally {
       delete process.env.E2E_FAKE_GROQ;
     }
+  });
+});
+
+type Write = {
+  provider: string;
+  model: string;
+  usage?: { totalTokens: number } | null;
+  rateLimited?: boolean;
+};
+
+describe("aiChat — recording what it spent", () => {
+  beforeEach(() => resetCooldowns());
+
+  it("records the model that answered and what it cost", async () => {
+    const writes: Write[] = [];
+    await aiChat({
+      ...base,
+      env: THREE,
+      recordUsage: (write: Write) => writes.push(write),
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "hi" } }],
+            usage: { prompt_tokens: 70, completion_tokens: 30, total_tokens: 100 },
+          }),
+          { status: 200 },
+        ),
+    });
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0].provider, "groq");
+    assert.equal(writes[0].model, "one");
+    assert.equal(writes[0].usage?.totalTokens, 100);
+  });
+
+  /** Seeing which model ran out, and when, is the point of the usage page. */
+  it("records the model that ran out as well as the one that answered", async () => {
+    const writes: Write[] = [];
+    const r = router({ one: () => rateLimited("tokens per day (TPD)"), two: () => ok("2") });
+    await aiChat({
+      ...base,
+      env: THREE,
+      recordUsage: (write: Write) => writes.push(write),
+      fetchImpl: r.fetchImpl,
+    });
+    assert.deepEqual(
+      writes.map((w) => `${w.model}:${w.rateLimited ? "limited" : "answered"}`),
+      ["one:limited", "two:answered"],
+    );
+  });
+
+  /**
+   * A 5xx spends no quota and produces nothing. Recording it would overstate
+   * the day and make a provider outage look like heavy use.
+   */
+  it("records nothing for a model that merely broke", async () => {
+    const writes: Write[] = [];
+    const r = router({ one: () => serverError(), two: () => ok("2") });
+    await aiChat({
+      ...base,
+      env: THREE,
+      recordUsage: (write: Write) => writes.push(write),
+      fetchImpl: r.fetchImpl,
+    });
+    assert.deepEqual(writes.map((w) => w.model), ["two"]);
+  });
+
+  /** Bookkeeping must never cost a patient their reply. */
+  it("still answers when recording throws", async () => {
+    const r = router({ one: () => ok("hello") });
+    const out = await aiChat({
+      ...base,
+      env: THREE,
+      recordUsage: () => {
+        throw new Error("usage table is gone");
+      },
+      fetchImpl: r.fetchImpl,
+    });
+    assert.equal(out.content, "hello");
   });
 });
 

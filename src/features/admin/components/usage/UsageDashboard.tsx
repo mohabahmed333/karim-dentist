@@ -4,6 +4,7 @@ import type { AdminMessageKey } from "@/lib/i18n";
 import { useTranslations } from "@/lib/i18n";
 import type { PlatformUsageData } from "@/services/platform_usage/load";
 import type { UsageMetricId } from "@/services/platform_usage/metric";
+import { UsageAiModels } from "./UsageAiModels";
 import { UsageApiCounts } from "./UsageApiCounts";
 import { UsageMetricCard } from "./UsageMetricCard";
 
@@ -51,6 +52,25 @@ export function UsageDashboard({ data }: Props) {
           />
         ))}
       </div>
+      {data.aiUsage ? (
+        <UsageAiModels
+          usage={data.aiUsage}
+          title={t("admin.usage.aiTitle")}
+          subtitle={t("admin.usage.aiSubtitle")}
+          requestsLabel={t("admin.usage.aiRequests")}
+          tokensLabel={t("admin.usage.aiTokens")}
+          idleLabel={t("admin.usage.aiIdle")}
+          activeLabel={t("admin.usage.aiActive")}
+          limitedLabel={t("admin.usage.aiLimited")}
+          ofLabel={t("admin.usage.aiOf")}
+          totalLabel={t("admin.usage.aiTotal")}
+          retiredLabel={t("admin.usage.aiRetired")}
+        />
+      ) : (
+        <p className="rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel)] px-3 py-2 text-sm text-[var(--admin-muted)]">
+          {t("admin.usage.aiUnavailable")}
+        </p>
+      )}
       {data.apiCounts ? (
         <UsageApiCounts
           counts={data.apiCounts}

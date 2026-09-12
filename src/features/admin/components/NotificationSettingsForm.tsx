@@ -1,20 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { PatientNotificationSettings } from "@/services/patient_notifications/types";
-import { FeatureReadinessList } from "./FeatureReadinessList";
 import { NotificationModeSwitch, type NotificationMode } from "./NotificationModeSwitch";
-import { NotificationRootCauses } from "./NotificationRootCauses";
 import { NotificationScheduleFields } from "./NotificationScheduleFields";
-import {
-  FeaturesSkeleton,
-  NotificationSettingsSkeleton,
-  RootCausesSkeleton,
-} from "./NotificationStatusSkeleton";
+import { NotificationStatusColumn } from "./NotificationStatusColumn";
+import { NotificationSettingsSkeleton } from "./NotificationStatusSkeleton";
 import type { Readiness } from "./notificationReadinessTypes";
 
 const MODE_BADGE: Record<NotificationMode, { label: string; className: string }> = {
@@ -38,22 +32,14 @@ async function fetchReadiness(): Promise<Readiness | null> {
   return res.ok ? ((await res.json()) as Readiness) : null;
 }
 
-/** "pending 3 · sent 12 · skipped 4", from the readiness queue counts. */
-function queueSummary(queue: Record<string, number>): string {
-  const totals = new Map<string, number>();
-  for (const [key, count] of Object.entries(queue)) {
-    const status = key.split(":")[0];
-    totals.set(status, (totals.get(status) ?? 0) + count);
-  }
-  return [...totals.entries()].map(([status, n]) => `${status} ${n}`).join(" · ");
-}
-
 export function NotificationSettingsForm() {
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [settings, setSettings] = useState<PatientNotificationSettings | null>(null);
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [checking, setChecking] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [checkedAt, setCheckedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -69,7 +55,9 @@ export function NotificationSettingsForm() {
       });
     void fetchReadiness()
       .then((next) => {
-        if (alive) setReadiness(next);
+        if (!alive) return;
+        setReadiness(next);
+        if (next) setCheckedAt(new Date());
       })
       .catch(() => undefined)
       .finally(() => {
@@ -79,6 +67,27 @@ export function NotificationSettingsForm() {
       alive = false;
     };
   }, []);
+
+  /**
+   * Re-run the status check on demand: conditions get fixed outside this screen
+   * — a migration applied, a template approved — and the check only ran when the
+   * tab opened. Results stay on screen while it re-checks, so fixing one thing
+   * does not blank the list.
+   */
+  async function refresh() {
+    setRefreshing(true);
+    try {
+      const next = await fetchReadiness();
+      if (next) {
+        setReadiness(next);
+        setCheckedAt(new Date());
+      } else {
+        toast.error("Could not check the status");
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function onSave() {
     if (!settings) return;
@@ -106,8 +115,7 @@ export function NotificationSettingsForm() {
       setSettings(body.settings ?? settings);
       // Keep the current status on screen while it refreshes, instead of
       // flashing back to skeletons after every save.
-      const next = await fetchReadiness();
-      if (next) setReadiness(next);
+      await refresh();
     } finally {
       setPending(false);
     }
@@ -125,8 +133,6 @@ export function NotificationSettingsForm() {
   const mode = settings.mode as NotificationMode;
   const badge = MODE_BADGE[mode] ?? MODE_BADGE.off;
   const set = (patch: Partial<PatientNotificationSettings>) => setSettings({ ...settings, ...patch });
-  const features = readiness?.features ?? [];
-  const queue = readiness ? queueSummary(readiness.queue) : "";
 
   return (
     <div className="space-y-5">
@@ -155,35 +161,13 @@ export function NotificationSettingsForm() {
         </aside>
 
         <TooltipProvider delay={150}>
-        <div className="min-w-0 space-y-5">
-          {checking ? (
-            <>
-              <RootCausesSkeleton />
-              <FeaturesSkeleton />
-            </>
-          ) : features.length ? (
-            <>
-              <NotificationRootCauses features={features} />
-              <FeatureReadinessList features={features} />
-            </>
-          ) : (
-            <p className="text-sm text-[var(--admin-muted)]">
-              Could not check the status. Reload the page to try again.
-            </p>
-          )}
-
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--admin-muted)]">
-            {readiness?.requiredTemplates?.length ? (
-              <span>
-                Templates: <span className="font-mono">{readiness.requiredTemplates.join(" · ")}</span>
-              </span>
-            ) : null}
-            {queue ? <span>Queue: {queue}</span> : null}
-            <Link href="/admin/outbox" className="underline underline-offset-2 hover:text-[var(--admin-text,#1a1a1a)]">
-              Patient messages →
-            </Link>
-          </p>
-        </div>
+          <NotificationStatusColumn
+            readiness={readiness}
+            checking={checking}
+            refreshing={refreshing}
+            checkedAt={checkedAt}
+            onRefresh={() => void refresh()}
+          />
         </TooltipProvider>
       </div>
     </div>

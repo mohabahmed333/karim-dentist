@@ -55,6 +55,15 @@ const FALLBACK_REPLY = {
   },
 } as const;
 
+/** Shown while a tool call is running — friendlier than its raw name. */
+const TOOL_STATUS: Record<string, { en: string; ar: string }> = {
+  search_patients: { en: "Looking up the patient…", ar: "جارٍ البحث عن المريض…" },
+  get_patient_summary: { en: "Pulling up their visit history…", ar: "جارٍ فتح سجل الزيارات…" },
+  list_reservations: { en: "Checking the schedule…", ar: "جارٍ مراجعة الجدول…" },
+  find_open_slots: { en: "Checking open slots…", ar: "جارٍ التحقق من المواعيد المتاحة…" },
+  search_clinic_knowledge: { en: "Checking clinic policies…", ar: "جارٍ مراجعة سياسات العيادة…" },
+};
+
 async function loadPrompt(): Promise<string> {
   try {
     const file = path.join(process.cwd(), "prompts/clinic-receptionist.md");
@@ -87,6 +96,11 @@ async function complete(messages: AiMessage[]): Promise<string> {
   }
 }
 
+const encoder = new TextEncoder();
+function sseEvent(event: string, data: unknown): Uint8Array {
+  return encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+}
+
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (auth.error) return auth.error;
@@ -107,43 +121,70 @@ export async function POST(request: Request) {
   }
   const { locale, page, activePatient, messages } = parsed.data;
 
-  const [prompt, context] = await Promise.all([
-    loadPrompt(),
-    loadClinicAssistContext(auth.supabase, {
-      locale,
-      page,
-      activePatient: activePatient ?? null,
-    }).catch(
-      () =>
-        "## Clinic context\n(unavailable — the schedule could not be loaded; say so and do not guess times or ids)",
-    ),
-  ]);
+  // A tool round-trip can take several seconds; streamed status events (one
+  // per tool call) are why this returns a stream instead of one JSON body —
+  // early failures above still return a plain error response with a real
+  // status code, before any of this starts.
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (event: string, data: unknown) => controller.enqueue(sseEvent(event, data));
+      try {
+        const [prompt, context] = await Promise.all([
+          loadPrompt(),
+          loadClinicAssistContext(auth.supabase, {
+            locale,
+            page,
+            activePatient: activePatient ?? null,
+          }).catch(
+            () =>
+              "## Clinic context\n(unavailable — the schedule could not be loaded; say so and do not guess times or ids)",
+          ),
+        ]);
 
-  const system = [prompt, "", ADMIN_AI_ACTION_CATALOG, "", CLINIC_ASSIST_TOOL_CATALOG, "", context].join(
-    "\n",
-  );
+        const system = [
+          prompt,
+          "",
+          ADMIN_AI_ACTION_CATALOG,
+          "",
+          CLINIC_ASSIST_TOOL_CATALOG,
+          "",
+          context,
+        ].join("\n");
 
-  try {
-    const turn = await runClinicAssistTurn({
-      db: auth.supabase,
-      system,
-      messages: messages.slice(-MAX_TURNS).map((m) => ({
-        role: m.role,
-        content: clip(m.content),
-      })),
-      complete,
-      maxSteps: MAX_TOOL_STEPS,
-    });
-    const reply =
-      turn.reply ||
-      (turn.proposedActions.length
-        ? FALLBACK_REPLY[locale].review
-        : FALLBACK_REPLY[locale].unreadable);
-    return NextResponse.json({ ...turn, reply });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "AI request failed" },
-      { status: 502 },
-    );
-  }
+        const turn = await runClinicAssistTurn({
+          db: auth.supabase,
+          system,
+          messages: messages.slice(-MAX_TURNS).map((m) => ({
+            role: m.role,
+            content: clip(m.content),
+          })),
+          complete,
+          maxSteps: MAX_TOOL_STEPS,
+          onToolCall: (name) => {
+            const label = TOOL_STATUS[name]?.[locale] ?? TOOL_STATUS[name]?.en ?? `${name}…`;
+            send("status", { text: label });
+          },
+        });
+        const reply =
+          turn.reply ||
+          (turn.proposedActions.length
+            ? FALLBACK_REPLY[locale].review
+            : FALLBACK_REPLY[locale].unreadable);
+        send("done", { ...turn, reply });
+      } catch (err) {
+        send("error", { error: err instanceof Error ? err.message : "AI request failed" });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }

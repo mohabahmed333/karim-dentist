@@ -6,10 +6,12 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { modelTranscript } from "./clinicAssistTranscript";
+import { readClinicAssistStream } from "./clinicAssistStream";
 import {
   appendMessage,
   clearThread,
   createSessionThread,
+  findResumableThread,
   listMessages,
   listThreadSummaries,
   renameThread,
@@ -69,6 +71,7 @@ import {
 } from "../chatMotion";
 import { listReservations } from "@/services/reservations";
 import { findOpenReservationForPatient } from "./receptionHelpers";
+import { useChatScroll } from "../../support/chat/useChatScroll";
 
 type Props = {
   className?: string;
@@ -81,6 +84,14 @@ type Props = {
 };
 
 type View = "chat" | "history";
+
+/** The clinic-chat route's final `done` event — same shape it used to return as one JSON body. */
+type ClinicChatDonePayload = {
+  reply?: string;
+  suggestedActions?: ClinicChatAction[];
+  proposedActions?: ProposedAction[];
+  dropped?: number;
+};
 
 function slashToStartId(cmd: ChatSlashCommand): string | null {
   const map: Record<string, string> = {
@@ -169,7 +180,7 @@ export function ReceptionChat({
   const [uploads, setUploads] = useState<PendingChatUpload[]>([]);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryUrls, setLibraryUrls] = useState<string[]>([]);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const clinicSlash = getClinicSlashCommands(t);
   const slashMatches = matchSlashCommands(input, clinicSlash);
 
@@ -318,7 +329,10 @@ export function ReceptionChat({
     void (async () => {
       try {
         let threadIdBoot = bootThreadId;
+        let resumed: ClinicChatThreadContext | null = null;
         if (initialPatient) {
+          // A specific-patient hand-off (e.g. "Ask AI" from a WhatsApp chat)
+          // always starts its own focused conversation, never resumes one.
           const thread = await createSessionThread(
             `Clinic · ${initialPatient.name.slice(0, 40)}`,
           );
@@ -326,24 +340,36 @@ export function ReceptionChat({
           bootThreadId = thread.id;
           await seedWelcome(thread.id, welcomeSeed());
         } else if (!threadIdBoot) {
-          const thread = await createSessionThread(
-            `Clinic · ${new Date().toLocaleString([], {
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}`,
-          );
-          threadIdBoot = thread.id;
-          bootThreadId = thread.id;
-          await seedWelcome(thread.id, welcomeSeed());
+          // threadIdBoot is only null after a real page load (it survives a
+          // remount otherwise) — which used to mean a brand new thread, and
+          // its welcome message, every single time the panel mounted.
+          const resumable = await findResumableThread();
+          if (resumable) {
+            threadIdBoot = resumable.id;
+            bootThreadId = resumable.id;
+            resumed = (resumable.context ?? {}) as ClinicChatThreadContext;
+          } else {
+            const thread = await createSessionThread(
+              `Clinic · ${new Date().toLocaleString([], {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}`,
+            );
+            threadIdBoot = thread.id;
+            bootThreadId = thread.id;
+            await seedWelcome(thread.id, welcomeSeed());
+          }
         }
         if (!alive) return;
         const rows = await listMessages(threadIdBoot);
         if (!alive) return;
         setThreadId(threadIdBoot);
         setMessages(rowsToUi(rows));
-        setTitled(false);
+        // A resumed thread already has a real title from before this load —
+        // don't let the next message silently overwrite it (see `persist`).
+        setTitled(resumed !== null);
         if (initialPatient) {
           let focused = initialPatient;
           try {
@@ -383,7 +409,7 @@ export function ReceptionChat({
             /* non-fatal — still show patient banner */
           }
         } else {
-          setActivePatient(null);
+          setActivePatient(parseActivePatient(resumed?.activePatient));
         }
         await refreshHistory();
       } catch (err) {
@@ -406,9 +432,37 @@ export function ReceptionChat({
     };
   }, [refreshHistory]);
 
+  // No onNearTop paging here — a thread loads once, unlike the WhatsApp inbox
+  // this hook was built for — but "only autoscroll if already near the
+  // bottom" is the same thing staff want in either chat.
+  const { listRef, scrollToBottom, isNearBottom } = useChatScroll(
+    messages.length + (pending || busy ? 1 : 0),
+    { onNearTop: () => {} },
+  );
+
+  const prevMessageCountRef = useRef(messages.length);
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, pending, busy]);
+    if (messages.length > prevMessageCountRef.current && !isNearBottom()) {
+      setShowJumpToBottom(true);
+    }
+    prevMessageCountRef.current = messages.length;
+    // isNearBottom reads a ref and is recreated every render — including it
+    // would run this on every render instead of only when messages arrive.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length]);
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    function onScroll() {
+      if (!el) return;
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+        setShowJumpToBottom(false);
+      }
+    }
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [listRef]);
 
   useEffect(() => {
     if (tab === "history") void refreshHistory();
@@ -440,11 +494,14 @@ export function ReceptionChat({
     message: string;
     transcript: AdminAiChatMessage[];
   } | null>(null);
+  /** Live progress from the stream (e.g. "Looking up the patient…") while pending. */
+  const [statusText, setStatusText] = useState<string | null>(null);
 
   async function askAi(transcript: AdminAiChatMessage[]) {
     setPending(true);
     setProposalReview(null);
     setAiError(null);
+    setStatusText(null);
     try {
       const res = await fetch("/api/v1/ai/clinic-chat", {
         method: "POST",
@@ -465,14 +522,22 @@ export function ReceptionChat({
             : null,
         }),
       });
-      const body = (await res.json().catch(() => ({}))) as {
-        reply?: string;
-        suggestedActions?: ClinicChatAction[];
-        proposedActions?: ProposedAction[];
-        dropped?: number;
-        error?: string;
-      };
-      if (!res.ok) throw new Error(body.error ?? t("admin.chat.chatFailed"));
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? t("admin.chat.chatFailed"));
+      }
+
+      let donePayload: ClinicChatDonePayload | null = null;
+      let streamError: string | null = null;
+      await readClinicAssistStream(res, (event) => {
+        if (event.type === "status") setStatusText(event.text);
+        else if (event.type === "done") donePayload = event.payload as ClinicChatDonePayload;
+        else if (event.type === "error") streamError = event.error;
+      });
+      if (streamError) throw new Error(streamError);
+      if (!donePayload) throw new Error(t("admin.chat.chatFailed"));
+      const body: ClinicChatDonePayload = donePayload;
+
       await persist(
         "assistant",
         body.reply || "…",
@@ -505,6 +570,7 @@ export function ReceptionChat({
       });
     } finally {
       setPending(false);
+      setStatusText(null);
     }
   }
 
@@ -693,7 +759,14 @@ export function ReceptionChat({
               </motion.div>
             ) : null}
           </AnimatePresence>
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-3 py-3 sm:space-y-4 sm:px-4">
+          <div className="relative min-h-0 flex-1">
+          <div
+            ref={listRef}
+            role="log"
+            aria-live="polite"
+            aria-atomic="false"
+            className="h-full space-y-3 overflow-y-auto overflow-x-hidden px-3 py-3 sm:space-y-4 sm:px-4"
+          >
             <AnimatePresence initial={false}>
               {messages.map((msg, i) => {
                 const isUser = msg.role === "user";
@@ -779,14 +852,20 @@ export function ReceptionChat({
             <AnimatePresence>
               {pending || busy ? (
                 <motion.p
-                  key="working"
-                  className={`text-[12px] ${CHAT_META}`}
+                  key={pending && statusText ? `working-${statusText}` : "working"}
+                  role="status"
+                  className={`flex items-center gap-1.5 text-[12px] ${CHAT_META}`}
                   variants={workingVariants}
                   initial="hidden"
                   animate="show"
                   exit="exit"
                 >
-                  {t("admin.chat.working")}
+                  <span className="inline-flex gap-0.5" aria-hidden="true">
+                    <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
+                    <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
+                    <span className="size-1 animate-bounce rounded-full bg-current" />
+                  </span>
+                  {pending && statusText ? statusText : t("admin.chat.working")}
                 </motion.p>
               ) : null}
             </AnimatePresence>
@@ -805,7 +884,24 @@ export function ReceptionChat({
                 </button>
               </div>
             ) : null}
-            <div ref={bottomRef} />
+          </div>
+          <AnimatePresence>
+            {showJumpToBottom ? (
+              <motion.button
+                type="button"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                className="absolute inset-x-0 bottom-2 mx-auto w-fit rounded-full border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-1 text-[11px] font-medium text-[var(--admin-primary)] shadow-md"
+                onClick={() => {
+                  scrollToBottom(true);
+                  setShowJumpToBottom(false);
+                }}
+              >
+                {t("admin.chat.newMessages")}
+              </motion.button>
+            ) : null}
+          </AnimatePresence>
           </div>
 
           <ChatComposerBar

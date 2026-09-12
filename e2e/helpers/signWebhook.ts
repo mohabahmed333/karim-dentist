@@ -28,3 +28,31 @@ export function inboundTextEvent(input: {
     },
   };
 }
+
+/** A patient tapping a reply button we sent (not a template quick-reply button). */
+export function inboundButtonReplyEvent(input: {
+  phone: string;
+  buttonId: string;
+  title: string;
+  wamid?: string;
+  conversationId?: string;
+}) {
+  return {
+    message: {
+      id: input.wamid ?? `wamid.e2e.${Date.now()}.${Math.random().toString(16).slice(2)}`,
+      from: input.phone,
+      type: "interactive",
+      interactive: {
+        type: "button_reply",
+        button_reply: { id: input.buttonId, title: input.title },
+      },
+      timestamp: String(Math.floor(Date.now() / 1000)),
+      kapso: { direction: "inbound", status: "received" },
+    },
+    conversation: {
+      id: input.conversationId,
+      phone_number: input.phone,
+      contact_name: "E2E Patient",
+    },
+  };
+}

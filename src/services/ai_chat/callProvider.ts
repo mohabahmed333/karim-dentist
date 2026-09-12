@@ -5,6 +5,23 @@ export type AiMessage = {
   content: string;
 };
 
+/**
+ * What one call cost, as the response reported it.
+ *
+ * Null when the provider said nothing about tokens — which is not the same as
+ * zero, and must not be recorded as if it were.
+ */
+export type TokenUsage = {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+};
+
+export type ProviderReply = {
+  content: string;
+  usage: TokenUsage | null;
+};
+
 export type ProviderCallInput = {
   provider: ProviderId;
   model: string;
@@ -117,7 +134,7 @@ function parseRetryAfter(header: string | null, now: number): number | null {
  * Deliberately no retry loop: a model that just failed is the worst candidate
  * for the next attempt, and the chain above has eight others to reach for.
  */
-export async function callProvider(input: ProviderCallInput): Promise<string> {
+export async function callProvider(input: ProviderCallInput): Promise<ProviderReply> {
   const { provider, model } = input;
   const fail = (reason: string, extra: Partial<ConstructorParameters<typeof ProviderError>[1]> = {}) =>
     new ProviderError(reason, { provider, model, ...extra });
@@ -174,8 +191,29 @@ export async function callProvider(input: ProviderCallInput): Promise<string> {
 
   const payload = (await response.json().catch(() => null)) as {
     choices?: { message?: { content?: string } }[];
+    usage?: Record<string, unknown>;
   } | null;
   const content = payload?.choices?.[0]?.message?.content?.trim();
   if (!content) throw fail("returned an empty completion");
-  return content;
+  return { content, usage: readUsage(payload?.usage) };
+}
+
+const count = (value: unknown): number =>
+  typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
+
+/**
+ * Read the usage block every OpenAI-compatible response carries.
+ *
+ * Not every provider sends `total_tokens`, so it is derived when missing —
+ * this is the only measure we get of what a day actually cost.
+ */
+function readUsage(usage: Record<string, unknown> | undefined): TokenUsage | null {
+  if (!usage) return null;
+  const promptTokens = count(usage.prompt_tokens);
+  const completionTokens = count(usage.completion_tokens);
+  return {
+    promptTokens,
+    completionTokens,
+    totalTokens: count(usage.total_tokens) || promptTokens + completionTokens,
+  };
 }

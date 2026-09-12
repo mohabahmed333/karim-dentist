@@ -39,6 +39,8 @@ export async function runClinicAssistTurn(input: {
   maxSteps?: number;
   /** Injectable for tests; defaults to the real tool registry. */
   runTool?: (db: ToolDb, name: string, args: unknown) => Promise<ToolResult>;
+  /** Fired as soon as a tool call is recognised, before it runs — for a caller to show progress. */
+  onToolCall?: (name: string, args: unknown) => void;
 }): Promise<ClinicAssistTurnResult> {
   const maxSteps = input.maxSteps ?? MAX_TOOL_STEPS;
   const runTool = input.runTool ?? runToolDefault;
@@ -50,6 +52,7 @@ export async function runClinicAssistTurn(input: {
     const call = asToolCall(raw);
     if (!call) return { ...extractClinicChatPayload(raw), toolCalls };
 
+    input.onToolCall?.(call.name, call.args);
     const result = await runTool(input.db, call.name, call.args);
     toolCalls.push({ name: call.name, args: call.args, ok: result.ok });
     convo = [

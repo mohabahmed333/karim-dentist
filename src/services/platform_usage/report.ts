@@ -9,6 +9,7 @@ import {
   getStorageUsedBytes,
 } from "./sources";
 import { countKapsoMessages } from "./kapso";
+import { fetchAiUsageToday } from "./ai";
 import { fetchVercelUsage, vercelConfig } from "./vercel";
 
 export async function getPlatformUsageReport(): Promise<PlatformUsageData> {
@@ -23,5 +24,6 @@ export async function getPlatformUsageReport(): Promise<PlatformUsageData> {
     countAuthUsers,
     countKapsoMessages,
     fetchVercelUsage,
+    fetchAiUsageToday,
   });
 }

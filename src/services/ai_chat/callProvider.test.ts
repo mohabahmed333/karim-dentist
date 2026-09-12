@@ -35,7 +35,7 @@ describe("callProvider — the request", () => {
   it("posts to the provider's own endpoint with a bearer key", async () => {
     const s = spy("hello");
     const out = await callProvider({ ...base, fetchImpl: s.fetchImpl });
-    assert.equal(out, "hello");
+    assert.equal(out.content, "hello");
     assert.equal(s.seen[0].url, "https://api.groq.com/openai/v1/chat/completions");
     assert.equal(s.headersOf().Authorization, "Bearer k");
     assert.equal(s.body().model, "openai/gpt-oss-120b");
@@ -225,8 +225,55 @@ describe("callProvider — Arabic", () => {
       messages: [{ role: "user", content: "عايز احجز موعد تنظيف" }],
       fetchImpl: s.fetchImpl,
     });
-    assert.equal(out, reply);
+    assert.equal(out.content, reply);
     assert.deepEqual(s.body().messages, [{ role: "user", content: "عايز احجز موعد تنظيف" }]);
+  });
+});
+
+describe("callProvider — token usage", () => {
+  /**
+   * No provider offers a usage API we can query, so what a response reports
+   * about itself is the only measure of what a day cost us.
+   */
+  it("returns the token counts the response reports", async () => {
+    const out = await callProvider({
+      ...base,
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "hi" } }],
+            usage: { prompt_tokens: 120, completion_tokens: 30, total_tokens: 150 },
+          }),
+          { status: 200 },
+        ),
+    });
+    assert.deepEqual(out.usage, {
+      promptTokens: 120,
+      completionTokens: 30,
+      totalTokens: 150,
+    });
+  });
+
+  it("adds the parts up itself when a provider omits the total", async () => {
+    const out = await callProvider({
+      ...base,
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "hi" } }],
+            usage: { prompt_tokens: 100, completion_tokens: 20 },
+          }),
+          { status: 200 },
+        ),
+    });
+    assert.equal(out.usage?.totalTokens, 120);
+  });
+
+  /** Silence about tokens is not zero tokens — say we do not know. */
+  it("reports no usage when the provider sends none", async () => {
+    const s = spy("hi");
+    const out = await callProvider({ ...base, fetchImpl: s.fetchImpl });
+    assert.equal(out.usage, null);
   });
 });
 
