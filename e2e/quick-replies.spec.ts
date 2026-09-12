@@ -10,6 +10,8 @@ import {
 
 const SLASH_KEY = "e2e-visit";
 const ATTACH_KEY = "e2e-attach";
+const BUTTONS_KEY = "e2e-buttons";
+const PIN_BUTTONS_KEY = "e2e-pin-buttons";
 const PNG_1PX_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
@@ -158,5 +160,133 @@ test.describe("quick replies", () => {
     await expect(chip).toBeVisible();
     await composer.fill("");
     await expect(chip).toBeHidden();
+  });
+
+  test("saves reply buttons in the editor and sends them with the text", async ({ page, request }) => {
+    const { error } = await serviceClient()
+      .from("whatsapp_canned_replies")
+      .upsert(
+        {
+          slash_key: BUTTONS_KEY,
+          title: "E2E buttons",
+          body: "Would you like to book?",
+          active: true,
+          attachment: null,
+          buttons: null,
+          category: "E2E",
+          sort_order: 3,
+        },
+        { onConflict: "slash_key" },
+      );
+    if (error) throw error;
+
+    await page.goto("/admin/quick-replies");
+    await page.getByText(`/${BUTTONS_KEY}`, { exact: true }).click();
+    await page.getByRole("button", { name: "Add button" }).click();
+    await page.getByLabel("Button label (EN) 1").fill("Book now");
+    await page.getByLabel("Button label (AR) 1").fill("احجز الآن");
+    await page.getByRole("button", { name: "Add button" }).click();
+    await page.getByLabel("Button label (EN) 2").fill("Call me");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+
+    const { data: saved, error: readError } = await serviceClient()
+      .from("whatsapp_canned_replies")
+      .select("buttons")
+      .eq("slash_key", BUTTONS_KEY)
+      .single();
+    if (readError) throw readError;
+    expect(saved.buttons).toEqual([
+      { title: "Book now", title_ar: "احجز الآن" },
+      { title: "Call me", title_ar: null },
+    ]);
+
+    const phone = uniquePhone();
+    expect((await deliverInbound(request, phone, "hello")).ok()).toBeTruthy();
+    const conversation = await conversationByPhone(phone);
+    expect(conversation).not.toBeNull();
+
+    const captured: Record<string, unknown>[] = [];
+    await page.route("**/api/v1/whatsapp/send", async (route) => {
+      captured.push(route.request().postDataJSON() as Record<string, unknown>);
+      await route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+    });
+
+    await page.goto("/admin/support");
+    await page.locator(`[data-conversation-id="${conversation!.id}"]`).first().click();
+
+    const composer = page.getByLabel("Message", { exact: true });
+    await composer.fill(`/${BUTTONS_KEY}`);
+    await page.getByRole("option", { name: new RegExp(BUTTONS_KEY) }).click();
+    await expect(composer).toHaveValue("Would you like to book?");
+    await expect(page.getByPlaceholder("Button 1")).toHaveValue("Book now");
+    await expect(page.getByPlaceholder("Button 2")).toHaveValue("Call me");
+
+    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await expect.poll(() => captured.length).toBe(1);
+    expect(captured[0]).toMatchObject({
+      kind: "interactive_buttons",
+      text: "Would you like to book?",
+      buttons: [
+        { id: `qr_${BUTTONS_KEY}_1`, title: "Book now" },
+        { id: `qr_${BUTTONS_KEY}_2`, title: "Call me" },
+      ],
+    });
+    await expect(composer).toHaveValue("");
+    await expect(page.getByPlaceholder("Button 1")).toBeHidden();
+
+    // Clearing the message box removes buttons that came from a quick reply.
+    await composer.fill(`/${BUTTONS_KEY}`);
+    await page.getByRole("option", { name: new RegExp(BUTTONS_KEY) }).click();
+    await expect(page.getByPlaceholder("Button 1")).toHaveValue("Book now");
+    await composer.fill("");
+    await expect(page.getByPlaceholder("Button 1")).toBeHidden();
+  });
+
+  test("sends a reply's location pin first, then its text with buttons", async ({ page, request }) => {
+    const { error } = await serviceClient()
+      .from("whatsapp_canned_replies")
+      .upsert(
+        {
+          slash_key: PIN_BUTTONS_KEY,
+          title: "E2E pin buttons",
+          body: "Here is how to find us.",
+          active: true,
+          attachment: { kind: "location" },
+          buttons: [{ title: "Got it", title_ar: null }],
+          category: "E2E",
+          sort_order: 4,
+        },
+        { onConflict: "slash_key" },
+      );
+    if (error) throw error;
+
+    const phone = uniquePhone();
+    expect((await deliverInbound(request, phone, "hello")).ok()).toBeTruthy();
+    const conversation = await conversationByPhone(phone);
+    expect(conversation).not.toBeNull();
+
+    const captured: Record<string, unknown>[] = [];
+    await page.route("**/api/v1/whatsapp/send", async (route) => {
+      captured.push(route.request().postDataJSON() as Record<string, unknown>);
+      await route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+    });
+
+    await page.goto("/admin/support");
+    await page.locator(`[data-conversation-id="${conversation!.id}"]`).first().click();
+
+    const composer = page.getByLabel("Message", { exact: true });
+    await composer.fill(`/${PIN_BUTTONS_KEY}`);
+    await page.getByRole("option", { name: new RegExp(PIN_BUTTONS_KEY) }).click();
+    await expect(composer).toHaveValue("Here is how to find us.");
+    await expect(page.getByPlaceholder("Button 1")).toHaveValue("Got it");
+
+    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await expect.poll(() => captured.length).toBe(2);
+    expect(captured.map((body) => body.kind)).toEqual(["location", "interactive_buttons"]);
+    expect(captured[1]).toMatchObject({
+      text: "Here is how to find us.",
+      buttons: [{ id: `qr_${PIN_BUTTONS_KEY}_1`, title: "Got it" }],
+    });
   });
 });
