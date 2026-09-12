@@ -37,5 +37,6 @@ export const DEFAULT_AI_SETTINGS: WhatsappAiSettings = {
   human_handoff_minutes: 30,
   allow_booking_writes: false,
   ack_media_enabled: false,
+  full_conversation: true,
   updated_at: new Date(0).toISOString(),
 };

@@ -192,6 +192,37 @@ A service is **optional**. A time alone is enough to book; when nobody names a
 service the reservation is a General consultation and the reply says so, so no
 one arrives expecting a treatment that was never agreed.
 
+## Carrying the whole conversation
+
+`whatsapp_ai_settings.full_conversation` (on by default; the checkbox sits with
+the Off / Draft / Replies switch) means the assistant answers every turn until a
+person switches it off, rather than bowing out by itself.
+
+With it on:
+
+- **Everything is answered** — an unknown question, a complaint, a turn it is
+  barely confident about. None of those draft any more.
+- **The per-conversation hourly cap is ignored.** A booking done by tapping runs
+  to a dozen short turns and would otherwise stop halfway. The global cap still
+  applies; it guards the bill, not the conversation.
+- **It stops volunteering to leave.** No unprompted "shall I get you a
+  colleague" after a couple of confusing turns.
+
+What it does **not** change, none of which is a conversational choice:
+
+| Still happens | Why |
+|---|---|
+| Pain, swelling, bleeding → a person | A wrong answer about someone's body cannot be taken back |
+| Prompt injection → a draft | Security, not conversation flow |
+| Unparseable model output → a draft | Our machinery failed; the fallback text says nothing worth sending |
+| Staff reply → 30-minute pause | Typing a reply *is* taking over |
+| Outside Meta's 24h window → a draft | A policy violation, not ours to waive |
+| A patient asking for a human → handoff | They asked; that has never been the assistant's call |
+| False booking claims → a draft | Nothing may say an appointment exists unless one does |
+
+Turning it **off** restores the cautious behaviour: complaints, unknown intents
+and low-confidence turns wait for review.
+
 ## Things that will bite you
 
 - **Business-initiated messages need approved Meta templates.** Free text only

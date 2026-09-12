@@ -518,6 +518,9 @@ describe("runAutoReply — disclosure and offering a person", () => {
 
   it("offers a person once the conversation keeps going badly", async () => {
     const h = harness({ recentStruggles: 2 });
+    // The unprompted offer belongs to the cautious mode: an assistant asked to
+    // carry the whole thread does not volunteer to leave it.
+    h.deps.policy.settings.full_conversation = false;
     await runAutoReply(h.deps);
     assert.match(h.sent[0], /connect you with a colleague/);
   });
@@ -525,6 +528,7 @@ describe("runAutoReply — disclosure and offering a person", () => {
   /** The real transcript had a patient send "؟؟" after being ignored. */
   it("counts the patient's own frustration toward that offer", async () => {
     const h = harness({ recentStruggles: 1, inboundText: "??" });
+    h.deps.policy.settings.full_conversation = false;
     await runAutoReply(h.deps);
     assert.match(h.sent[0], /connect you with a colleague/);
   });

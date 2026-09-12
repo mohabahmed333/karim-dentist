@@ -246,6 +246,7 @@ export type Database = {
           human_handoff_minutes: number;
           allow_booking_writes: boolean;
           ack_media_enabled: boolean;
+          full_conversation: boolean;
           updated_at: string;
         };
         Insert: {
@@ -256,6 +257,7 @@ export type Database = {
           human_handoff_minutes?: number;
           allow_booking_writes?: boolean;
           ack_media_enabled?: boolean;
+          full_conversation?: boolean;
           updated_at?: string;
         };
         Update: {
@@ -265,6 +267,7 @@ export type Database = {
           human_handoff_minutes?: number;
           allow_booking_writes?: boolean;
           ack_media_enabled?: boolean;
+          full_conversation?: boolean;
           updated_at?: string;
         };
         Relationships: [];

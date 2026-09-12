@@ -102,9 +102,13 @@ export function evaluateAutoReplyPolicy(input: PolicyInput): PolicyDecision {
     return { allow: "draft", reason: "session_closed" };
   }
 
+  // A booking done by tapping runs to a dozen short turns, so this cap ends
+  // real conversations halfway through. When the assistant is carrying the
+  // whole thread it is skipped — the global cap below still guards the bill.
   if (
+    !settings.full_conversation &&
     input.counts.conversationLastHour >=
-    settings.max_replies_per_conversation_per_hour
+      settings.max_replies_per_conversation_per_hour
   ) {
     return { allow: "draft", reason: "rate_limited_conversation" };
   }

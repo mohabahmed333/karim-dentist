@@ -13,6 +13,7 @@ const patchSchema = z.object({
   human_handoff_minutes: z.number().int().min(0).max(1440).optional(),
   allow_booking_writes: z.boolean().optional(),
   ack_media_enabled: z.boolean().optional(),
+  full_conversation: z.boolean().optional(),
 });
 
 export async function GET() {

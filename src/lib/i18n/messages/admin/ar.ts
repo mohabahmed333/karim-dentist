@@ -978,6 +978,8 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.frontDesk.aiModeAutoHint": "يجيب عن المواعيد والعنوان والأسعار. الأسئلة الطبية تنتظرك.",
   "admin.frontDesk.aiAllowBooking": "السماح له بالحجز",
   "admin.frontDesk.aiAllowBookingHint": "متوقف افتراضيًا. يمكنه عرض المواعيد في الحالتين.",
+  "admin.frontDesk.aiFullConversation": "يكمل المحادثة كلها",
+  "admin.frontDesk.aiFullConversationHint": "يرد على كل رسالة لحد ما توقفه بنفسك. الألم والتورم والنزيف يفضلوا مستنيينك.",
   "admin.frontDesk.aiModeSaved": "تم تحديث المساعد",
   "admin.frontDesk.aiModeFailed": "تعذر تحديث المساعد",
   "admin.frontDesk.aiModeClose": "إغلاق",

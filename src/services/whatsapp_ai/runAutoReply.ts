@@ -194,6 +194,10 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     offeredSlotIds: built.offeredSlotIds,
     ownReservationIds: deps.prompt.reservations.map((r) => r.id),
     allowBookingWrites: deps.policy.settings.allow_booking_writes,
+    // Carrying the thread is about not bowing out of a conversation. It is not
+    // a reason to send a reply we could not even parse: that is a failure in
+    // our own machinery, and the fallback text says nothing worth sending.
+    fullConversation: deps.policy.settings.full_conversation && !fallbackReason,
   });
 
   // The context gate can veto the content gate, never the other way round.
@@ -204,11 +208,16 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
   // conversation has been going badly.
   const struggles =
     (deps.recentStruggles ?? 0) + (showsFrustration(deps.inboundText) ? 1 : 0);
-  const outgoing = withHumanOffer(
-    withDisclosure(envelope.reply, envelope.language, deps.isFirstAiReply ?? false),
+  const introduced = withDisclosure(
+    envelope.reply,
     envelope.language,
-    struggles,
+    deps.isFirstAiReply ?? false,
   );
+  // Carrying the thread means not volunteering to leave it. The patient can
+  // still ask for a person at any time, and that is handled before the model.
+  const outgoing = deps.policy.settings.full_conversation
+    ? introduced
+    : withHumanOffer(introduced, envelope.language, struggles);
 
   // Tappable times, a confirm pair, or the service list — all built from what
   // the server knows, never from what the model wrote. A tappable thing is an

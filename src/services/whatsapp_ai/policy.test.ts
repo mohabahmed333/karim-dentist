@@ -150,9 +150,14 @@ describe("evaluateAutoReplyPolicy — humans and windows", () => {
 });
 
 describe("evaluateAutoReplyPolicy — rate limits", () => {
+  // The cap only applies when the assistant is not carrying the whole thread;
+  // see fullConversation.test.ts for the other half of this rule.
   it("drafts once a conversation hits its hourly cap", () => {
     const out = evaluateAutoReplyPolicy(
-      input({ counts: { conversationLastHour: 6, globalLastHour: 0 } }),
+      input({
+        settings: { ...DEFAULT_AI_SETTINGS, mode: "auto", full_conversation: false },
+        counts: { conversationLastHour: 6, globalLastHour: 0 },
+      }),
     );
     assert.deepEqual(out, { allow: "draft", reason: "rate_limited_conversation" });
   });
@@ -171,6 +176,7 @@ describe("evaluateAutoReplyPolicy — rate limits", () => {
         settings: {
           ...DEFAULT_AI_SETTINGS,
           mode: "auto",
+          full_conversation: false,
           max_replies_per_conversation_per_hour: 0,
         },
       }),

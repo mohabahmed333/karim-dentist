@@ -976,6 +976,8 @@ export const adminEn = {
   "admin.frontDesk.aiModeAutoHint": "Answers hours, location and prices itself. Clinical questions still wait for you.",
   "admin.frontDesk.aiAllowBooking": "Let it book appointments",
   "admin.frontDesk.aiAllowBookingHint": "Off by default. It can offer times either way.",
+  "admin.frontDesk.aiFullConversation": "Handle the whole conversation",
+  "admin.frontDesk.aiFullConversationHint": "Answers every message until you switch it off. Pain, swelling and bleeding still wait for you.",
   "admin.frontDesk.aiModeSaved": "Assistant updated",
   "admin.frontDesk.aiModeFailed": "Could not update the assistant",
   "admin.frontDesk.aiModeClose": "Close",

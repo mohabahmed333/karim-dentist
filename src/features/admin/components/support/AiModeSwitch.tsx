@@ -11,6 +11,7 @@ type Mode = "off" | "draft_only" | "auto";
 type Settings = {
   mode: Mode;
   allow_booking_writes: boolean;
+  full_conversation: boolean;
 };
 
 const MODES: { value: Mode; labelKey: string; hintKey: string }[] = [
@@ -150,6 +151,26 @@ export function AiModeSwitch({ compact = false }: { compact?: boolean }) {
                   </span>
                   <span className="text-[11px] leading-snug text-[#6B7280]">
                     {t("admin.frontDesk.aiAllowBookingHint")}
+                  </span>
+                </span>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-2 rounded-md px-2.5 py-2 hover:bg-[#F9FAFB]">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={settings.full_conversation}
+                  disabled={busy || settings.mode === "off"}
+                  onChange={(e) =>
+                    void patch({ full_conversation: e.target.checked })
+                  }
+                />
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-[12px] font-medium text-[#111827]">
+                    {t("admin.frontDesk.aiFullConversation")}
+                  </span>
+                  <span className="text-[11px] leading-snug text-[#6B7280]">
+                    {t("admin.frontDesk.aiFullConversationHint")}
                   </span>
                 </span>
               </label>

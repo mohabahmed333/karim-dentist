@@ -52,7 +52,22 @@ export type DecideInput = {
   /** Reservation ids belonging to this phone number. */
   ownReservationIds: string[];
   allowBookingWrites: boolean;
+  /**
+   * Carry the whole conversation: answer every turn except the clinical ones,
+   * whatever the model's confidence. A person switches the assistant off; it
+   * does not bow out of a thread by itself.
+   */
+  fullConversation?: boolean;
 };
+
+/**
+ * The two the assistant never answers alone, however it is configured.
+ *
+ * Not a policy choice the clinic can switch off: a wrong answer about someone's
+ * body is the one mistake that cannot be taken back, and the prompt forbidding
+ * diagnosis is a request, not a guarantee.
+ */
+const NEVER_ALONE = new Set<AutoReplyIntent>(["clinical_question", "emergency"]);
 
 /**
  * Decide whether the model's reply may be sent, given everything the server
@@ -71,12 +86,22 @@ export function decideAutoReply(input: DecideInput): ReplyDecision {
 
   // The model asked for a human, or the message was addressed to the model
   // rather than the clinic.
-  if (envelope.handoff) return draft(envelope.handoffReason || "model_handoff");
+  // Injection is a security stop, not a conversational one: it survives every
+  // setting, because the alternative is acting on a stranger's instructions.
   if (input.injectionFlags.length > 0) return draft("injection");
+  // Carrying the thread means not stopping just because the model would rather
+  // someone else answered — unless what it wants handed over is clinical.
+  if (envelope.handoff && !(input.fullConversation && !NEVER_ALONE.has(envelope.intent))) {
+    return draft(envelope.handoffReason || "model_handoff");
+  }
 
-  const threshold = AUTO_SEND_THRESHOLDS[envelope.intent];
-  if (threshold === undefined) return draft(`intent_${envelope.intent}`);
-  if (envelope.confidence < threshold) return draft("low_confidence");
+  if (input.fullConversation) {
+    if (NEVER_ALONE.has(envelope.intent)) return draft(`intent_${envelope.intent}`);
+  } else {
+    const threshold = AUTO_SEND_THRESHOLDS[envelope.intent];
+    if (threshold === undefined) return draft(`intent_${envelope.intent}`);
+    if (envelope.confidence < threshold) return draft("low_confidence");
+  }
 
   // A reply that still needs information cannot be a final answer.
   if (envelope.needs.length > 0 && !WRITE_INTENTS.has(envelope.intent)) {
