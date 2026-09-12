@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { Copy, RotateCcw, ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { modelTranscript } from "./clinicAssistTranscript";
@@ -17,6 +18,8 @@ import {
   renameThread,
   seedWelcome,
   updateThreadContext,
+  updateMessageMeta,
+  deleteMessage,
   WELCOME_CONTENT,
   type ClinicChatAction,
   type ClinicChatActivePatient,
@@ -116,6 +119,12 @@ function metaActions(meta: unknown): ClinicChatAction[] | undefined {
   return Array.isArray(actions) ? actions : undefined;
 }
 
+function metaFeedback(meta: unknown): "up" | "down" | undefined {
+  if (!meta || typeof meta !== "object") return undefined;
+  const value = (meta as ClinicChatMessageMeta).feedback;
+  return value === "up" || value === "down" ? value : undefined;
+}
+
 function parseActivePatient(raw: unknown): ActivePatient | null {
   if (!raw || typeof raw !== "object") return null;
   const p = raw as ClinicChatActivePatient;
@@ -131,17 +140,19 @@ function parseActivePatient(raw: unknown): ActivePatient | null {
 }
 
 function rowsToUi(
-  rows: { role: string; content: string; created_at: string; meta: unknown }[],
+  rows: { id: string; role: string; content: string; created_at: string; meta: unknown }[],
 ): AdminAiChatMessage[] {
   return rows
     .filter((m) => m.role === "user" || m.role === "assistant")
     .map((m) => ({
+      id: m.id,
       role: m.role as "user" | "assistant",
       content: m.content,
       at: new Date(m.created_at).toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       }),
+      feedback: metaFeedback(m.meta),
       meta: (() => {
         const actions = metaActions(m.meta);
         return actions ? { actions } : undefined;
@@ -251,6 +262,7 @@ export function ReceptionChat({
       setMessages((prev) => [
         ...prev,
         {
+          id: row.id,
           role,
           content,
           at,
@@ -594,6 +606,46 @@ export function ReceptionChat({
     await askAi([...messages, { role: "user", content: text }]);
   }
 
+  async function copyMessage(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(t("admin.chat.copied"));
+    } catch {
+      toast.error(t("admin.chat.copyFailed"));
+    }
+  }
+
+  async function toggleFeedback(msg: AdminAiChatMessage, value: "up" | "down") {
+    if (!msg.id) return;
+    const next = msg.feedback === value ? undefined : value;
+    setMessages((prev) =>
+      prev.map((m) => (m.id === msg.id ? { ...m, feedback: next } : m)),
+    );
+    try {
+      await updateMessageMeta(msg.id, { feedback: next });
+    } catch {
+      // Best-effort: the tap already reflects locally; a failed write just
+      // means it won't survive a reload, not worth interrupting staff for.
+    }
+  }
+
+  /** Drops the stale reply and asks again from the same preceding turn. */
+  async function regenerateLast() {
+    if (pending || busy || lastAssistantIdx < 0) return;
+    const stale = messages[lastAssistantIdx];
+    const before = messages.slice(0, lastAssistantIdx);
+    setMessages(before);
+    setProposalReview(null);
+    if (stale?.id) {
+      try {
+        await deleteMessage(stale.id);
+      } catch {
+        /* best-effort — a duplicate old reply on reload beats blocking regenerate */
+      }
+    }
+    await askAi(before);
+  }
+
   async function send() {
     if (pending || busy) return;
     if (slashMatches.length === 1) {
@@ -832,6 +884,57 @@ export function ReceptionChat({
                               {prompt}
                             </button>
                           ))}
+                        </div>
+                      ) : null}
+                      {!isUser && msg.content !== WELCOME_CONTENT ? (
+                        <div className="mt-1.5 flex items-center gap-0.5">
+                          <button
+                            type="button"
+                            aria-label={t("admin.chat.copy")}
+                            onClick={() => void copyMessage(msg.content)}
+                            className="rounded p-1 text-[var(--admin-muted)] hover:bg-black/5 hover:text-[var(--admin-text)]"
+                          >
+                            <Copy className="size-3.5" strokeWidth={1.75} />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={t("admin.chat.goodReply")}
+                            aria-pressed={msg.feedback === "up"}
+                            disabled={!msg.id}
+                            onClick={() => void toggleFeedback(msg, "up")}
+                            className={`rounded p-1 hover:bg-black/5 disabled:opacity-30 ${
+                              msg.feedback === "up"
+                                ? "text-[var(--admin-primary)]"
+                                : "text-[var(--admin-muted)] hover:text-[var(--admin-text)]"
+                            }`}
+                          >
+                            <ThumbsUp className="size-3.5" strokeWidth={1.75} />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={t("admin.chat.badReply")}
+                            aria-pressed={msg.feedback === "down"}
+                            disabled={!msg.id}
+                            onClick={() => void toggleFeedback(msg, "down")}
+                            className={`rounded p-1 hover:bg-black/5 disabled:opacity-30 ${
+                              msg.feedback === "down"
+                                ? "text-[var(--admin-primary)]"
+                                : "text-[var(--admin-muted)] hover:text-[var(--admin-text)]"
+                            }`}
+                          >
+                            <ThumbsDown className="size-3.5" strokeWidth={1.75} />
+                          </button>
+                          {i === lastAssistantIdx ? (
+                            <button
+                              type="button"
+                              aria-label={t("admin.chat.regenerate")}
+                              disabled={pending || busy}
+                              onClick={() => void regenerateLast()}
+                              className="rounded p-1 text-[var(--admin-muted)] hover:bg-black/5 hover:text-[var(--admin-text)] disabled:opacity-30"
+                            >
+                              <RotateCcw className="size-3.5" strokeWidth={1.75} />
+                            </button>
+                          ) : null}
                         </div>
                       ) : null}
                       {!isUser && i === lastAssistantIdx && bookPanel ? (

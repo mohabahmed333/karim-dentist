@@ -35,6 +35,8 @@ export type ClinicChatMessageMeta = {
   proposalSummary?: string;
   proposalDiffs?: Json;
   proposedActions?: Json;
+  /** Staff feedback on an assistant reply — thumbs up/down. */
+  feedback?: "up" | "down";
   [key: string]: Json | undefined;
 };
 

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Json } from "@/lib/supabase/database.types";
+import { mergeMeta } from "./mergeMeta";
 import { touchThread } from "./queries";
 import type {
   ClinicChatMessage,
@@ -40,6 +41,36 @@ export async function appendMessage(input: {
   if (error) throw error;
   await touchThread(input.threadId);
   return data;
+}
+
+/** Merge fields into a message's meta (e.g. staff feedback) without touching its content. */
+export async function updateMessageMeta(
+  messageId: string,
+  patch: Partial<ClinicChatMessageMeta>,
+): Promise<void> {
+  const supabase = createClient();
+  const { data: existing, error: readError } = await supabase
+    .from("clinic_chat_messages")
+    .select("meta")
+    .eq("id", messageId)
+    .maybeSingle();
+  if (readError) throw readError;
+  const merged = mergeMeta(existing?.meta as ClinicChatMessageMeta | null, patch);
+  const { error } = await supabase
+    .from("clinic_chat_messages")
+    .update({ meta: merged as Json })
+    .eq("id", messageId);
+  if (error) throw error;
+}
+
+/** Remove one message — used by "regenerate" to drop the stale reply before re-asking. */
+export async function deleteMessage(messageId: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("clinic_chat_messages")
+    .delete()
+    .eq("id", messageId);
+  if (error) throw error;
 }
 
 export async function seedWelcome(

@@ -29,4 +29,6 @@ export {
   appendMessage,
   clearThread,
   seedWelcome,
+  updateMessageMeta,
+  deleteMessage,
 } from "./mutations";
