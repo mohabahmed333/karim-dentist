@@ -21,15 +21,33 @@ export type AdminNavItem = {
 export type AdminNavGroup = {
   id: string;
   labelKey: AdminMessageKey;
+  /** When set, the group's own label is also a link (e.g. Reservations), not just a toggle. */
+  href?: string;
   items: AdminNavItem[];
   defaultOpen?: boolean;
 };
+
+/** A plain item never has `items` — that's what tells the two apart in `entries`. */
+export type AdminNavSectionEntry = AdminNavItem | AdminNavGroup;
+
+export function isAdminNavGroup(
+  entry: AdminNavSectionEntry,
+): entry is AdminNavGroup {
+  return "items" in entry;
+}
 
 export type AdminNavSection = {
   id: string;
   titleKey: AdminMessageKey;
   items?: AdminNavItem[];
   groups?: AdminNavGroup[];
+  /**
+   * Plain items and groups in the order they should render — unlike
+   * items/groups (always all items, then all groups below), this lets a
+   * group sit between two plain items instead of being pushed to the bottom.
+   * Takes priority over items/groups when set.
+   */
+  entries?: AdminNavSectionEntry[];
 };
 
 export type AdminRailItem = {
@@ -90,14 +108,17 @@ export const adminNavSections: AdminNavSection[] = [
   {
     id: "clinic",
     titleKey: "admin.nav.clinic",
-    items: [
+    entries: [
       { href: "/admin", labelKey: "admin.nav.overview", exact: true },
-      { href: "/admin/reservations", labelKey: "admin.nav.reservations" },
-      { href: "/admin/waitlist", labelKey: "admin.nav.waitlist" },
+      {
+        id: "reservations",
+        labelKey: "admin.nav.reservations",
+        href: "/admin/reservations",
+        defaultOpen: true,
+        items: [{ href: "/admin/waitlist", labelKey: "admin.nav.waitlist" }],
+      },
       { href: "/admin/patients", labelKey: "admin.nav.patients" },
       { href: "/admin/support", labelKey: "admin.nav.support" },
-    ],
-    groups: [
       {
         id: "messaging",
         labelKey: "admin.nav.messagingGroup",
@@ -159,8 +180,17 @@ export const adminPageLabels: Record<string, string> = Object.fromEntries(
 );
 
 export function flattenAdminNavItems(): AdminNavItem[] {
-  return adminNavSections.flatMap((section) => [
-    ...(section.items ?? []),
-    ...(section.groups?.flatMap((group) => group.items) ?? []),
-  ]);
+  return adminNavSections.flatMap((section) => {
+    if (section.entries) {
+      return section.entries.flatMap((entry) =>
+        isAdminNavGroup(entry)
+          ? [...(entry.href ? [{ href: entry.href, labelKey: entry.labelKey }] : []), ...entry.items]
+          : [entry],
+      );
+    }
+    return [
+      ...(section.items ?? []),
+      ...(section.groups?.flatMap((group) => group.items) ?? []),
+    ];
+  });
 }
