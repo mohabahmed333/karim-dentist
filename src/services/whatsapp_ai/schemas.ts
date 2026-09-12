@@ -17,13 +17,29 @@ export const botActionKindSchema = z.enum([
 
 export type BotActionKind = z.infer<typeof botActionKindSchema>;
 
+/**
+ * Treat "" as "not provided".
+ *
+ * Models fill in every key of a template they are shown, so a booking action
+ * arrives carrying `"reservationId": ""`. Validated strictly, one empty string
+ * fails the whole envelope — the reply, the action and all — and the patient
+ * who just tapped "Confirm booking" gets nothing. Observed against the real
+ * model on the real prompt.
+ */
+function omitEmpty<T extends z.ZodTypeAny>(schema: T) {
+  return z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    schema,
+  );
+}
+
 export const botActionSchema = z.object({
   kind: botActionKindSchema,
   /** Must be one the server offered this turn; validated against state. */
-  slotId: z.string().uuid().optional(),
-  reservationId: z.string().uuid().optional(),
-  patientName: z.string().trim().min(1).max(120).optional(),
-  serviceLabel: z.string().trim().min(1).max(120).optional(),
+  slotId: omitEmpty(z.string().uuid().optional()),
+  reservationId: omitEmpty(z.string().uuid().optional()),
+  patientName: omitEmpty(z.string().trim().min(1).max(120).optional()),
+  serviceLabel: omitEmpty(z.string().trim().min(1).max(120).optional()),
 });
 
 export type BotAction = z.infer<typeof botActionSchema>;
@@ -69,11 +85,26 @@ export const autoReplyEnvelopeSchema = z.object({
   reply: z.string().trim().min(1).max(900),
   ack: z.string().max(160).default(""),
   actions: z.array(botActionSchema).max(2).default([]),
-  offeredSlotIds: z.array(z.string().uuid()).max(5).default([]),
+  /**
+   * Ids the model says it offered. Junk is dropped rather than failing the
+   * envelope: these are cross-checked against the server's own list anyway, so
+   * a bad entry can cost nothing, while a rejected envelope costs the reply.
+   */
+  offeredSlotIds: z
+    .array(z.string())
+    .max(20)
+    .default([])
+    .catch([])
+    .transform((ids) =>
+      ids.filter((id) =>
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+      ),
+    ),
   needs: z
     .array(z.enum(["patient_name", "service", "slot", "reservation_id"]))
     .max(4)
-    .default([]),
+    .default([])
+    .catch([]),
   /**
    * What the patient has told the assistant so far in this booking. The server
    * keeps it between turns, so a field reported once is never asked for again.
