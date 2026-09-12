@@ -83,6 +83,7 @@ export const adminEn = {
   "admin.nav.assistantReview": "Assistant review",
   "admin.nav.waitlist": "Waitlist",
   "admin.nav.outbox": "Patient messages",
+  "admin.nav.messagingGroup": "Messaging",
   "admin.pages.outbox.title": "Patient messages",
   "admin.pages.outbox.description": "Every WhatsApp message the clinic queued for a patient, what happened to it, and who asked not to be messaged.",
   "admin.pages.waitlist.title": "Waitlist",

@@ -85,6 +85,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.nav.assistantReview": "مراجعة المساعد",
   "admin.nav.waitlist": "قائمة الانتظار",
   "admin.nav.outbox": "رسائل المرضى",
+  "admin.nav.messagingGroup": "المراسلة",
   "admin.pages.outbox.title": "رسائل المرضى",
   "admin.pages.outbox.description": "كل رسالة واتساب جدولتها العيادة لمريض، وما حدث لها، ومن طلب عدم مراسلته.",
   "admin.pages.waitlist.title": "قائمة الانتظار",
