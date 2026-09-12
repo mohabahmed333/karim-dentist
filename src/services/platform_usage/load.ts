@@ -1,3 +1,9 @@
+import { resolveChain, type ChainEntry } from "@/services/ai_chat/modelChain";
+import {
+  rollUpAiUsage,
+  type AiUsageRollup,
+  type AiUsageRow,
+} from "@/services/ai_usage/rollup";
 import { assemblePlatformUsageReport, type PlatformUsageReport } from "./assemble";
 import type { ApiCountTotals } from "./parse";
 import type { VercelUsageTotals } from "./vercel";
@@ -15,6 +21,9 @@ export type PlatformUsageDeps = {
   countAuthUsers: () => Promise<number | null>;
   countKapsoMessages: () => Promise<number | null>;
   fetchVercelUsage: () => Promise<VercelUsageTotals | null>;
+  /** Optional so the older callers and their tests keep working untouched. */
+  fetchAiUsageToday?: () => Promise<AiUsageRow[] | null>;
+  getAiChain?: () => ChainEntry[];
 };
 
 export type PlatformUsageData = PlatformUsageReport & {
@@ -22,6 +31,7 @@ export type PlatformUsageData = PlatformUsageReport & {
   hasVercelToken: boolean;
   authSource: AuthUsageSource;
   apiCounts: ApiCountTotals | null;
+  aiUsage: AiUsageRollup | null;
 };
 
 export async function loadPlatformUsage(
@@ -40,6 +50,15 @@ export async function loadPlatformUsage(
   const apiCounts = deps.hasAccessToken ? await deps.fetchApiCounts() : null;
   const kapsoMessagesUsed = await deps.countKapsoMessages();
   const vercel = deps.hasVercelToken ? await deps.fetchVercelUsage() : null;
+
+  // Null means the rows could not be read at all — which the page says
+  // differently from "no model has been asked anything today".
+  const aiRows = (await deps.fetchAiUsageToday?.()) ?? null;
+  const aiUsage =
+    aiRows === null
+      ? null
+      : rollUpAiUsage({ chain: (deps.getAiChain ?? resolveChain)(), rows: aiRows });
+
   return {
     ...assemblePlatformUsageReport({
       storageUsedBytes,
@@ -55,5 +74,6 @@ export async function loadPlatformUsage(
     hasVercelToken: deps.hasVercelToken,
     authSource,
     apiCounts,
+    aiUsage,
   };
 }

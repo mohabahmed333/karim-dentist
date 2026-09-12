@@ -403,6 +403,18 @@ export const adminEn = {
   "admin.usage.apiRest": "REST",
   "admin.usage.apiRealtime": "Realtime",
   "admin.usage.apiTotal": "Last 30 days",
+  "admin.usage.aiTitle": "AI models",
+  "admin.usage.aiSubtitle": "Today (UTC), in the order the assistant asks them",
+  "admin.usage.aiRequests": "Requests",
+  "admin.usage.aiTokens": "Tokens",
+  "admin.usage.aiIdle": "Not needed yet",
+  "admin.usage.aiActive": "Answering",
+  "admin.usage.aiLimited": "Hit its limit",
+  "admin.usage.aiOf": "of",
+  "admin.usage.aiTotal": "Today's total",
+  "admin.usage.aiRetired": "no longer in the chain",
+  "admin.usage.aiUnavailable":
+    "Model usage appears once the ai_usage_daily migration has been applied.",
 
   "admin.chat.title": "Clinic Assist",
   "admin.chat.open": "Open Clinic Assist",

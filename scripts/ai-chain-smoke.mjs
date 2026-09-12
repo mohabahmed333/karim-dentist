@@ -71,7 +71,7 @@ for (const entry of chain) {
   for (const testCase of CASES) {
     const startedAt = Date.now();
     try {
-      const reply = await callProvider({
+      const { content: reply } = await callProvider({
         provider: entry.provider,
         model: entry.model,
         apiKey: process.env[`${entry.provider.toUpperCase()}_API_KEY`] ?? "",

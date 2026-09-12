@@ -1,5 +1,13 @@
 import { fakeGroqEnabled, fakeGroqReply } from "@/lib/testing/e2eFakes";
-import { ProviderError, callProvider, type AiMessage } from "./callProvider";
+// Imported by file rather than through the folder's index: the test resolver
+// maps "@/x" straight onto src/x.ts and does not look for a directory index.
+import { recordAiUsage, type AiUsageWrite } from "@/services/ai_usage/record";
+import {
+  ProviderError,
+  callProvider,
+  type AiMessage,
+  type TokenUsage,
+} from "./callProvider";
 import { isCoolingDown, noteFailure } from "./cooldown";
 import { resolveChain } from "./modelChain";
 import { providerApiKey, type ProviderId } from "./providers";
@@ -18,6 +26,7 @@ export type AiChatInput = {
   env?: Record<string, string | undefined>;
   fetchImpl?: typeof fetch;
   now?: () => number;
+  recordUsage?: (write: AiUsageWrite) => void;
 };
 
 export type AiChatResult = {
@@ -25,6 +34,8 @@ export type AiChatResult = {
   /** Which model actually answered — worth recording, it varies by the hour. */
   provider: ProviderId | "fake";
   model: string;
+  /** What the answer cost, when the provider said. */
+  usage: TokenUsage | null;
 };
 
 export type AiChatAttempt = { provider: ProviderId; model: string; reason: string };
@@ -58,7 +69,12 @@ const NO_KEY =
 export async function aiChat(input: AiChatInput): Promise<AiChatResult> {
   // E2E only; see e2eFakes for why this is not gated on NODE_ENV.
   if (fakeGroqEnabled()) {
-    return { content: fakeGroqReply(input.messages), provider: "fake", model: "e2e" };
+    return {
+      content: fakeGroqReply(input.messages),
+      provider: "fake",
+      model: "e2e",
+      usage: null,
+    };
   }
 
   const env = input.env ?? process.env;
@@ -76,6 +92,17 @@ export async function aiChat(input: AiChatInput): Promise<AiChatResult> {
   const ready = chain.filter((entry) => !isCoolingDown(entry, now()));
   const order = ready.length > 0 ? ready : chain;
 
+  // Nobody is waiting on the bookkeeping, and a failure in it must never cost
+  // the caller their answer — so it is fire-and-forget, and it cannot throw.
+  const record = input.recordUsage ?? ((write: AiUsageWrite) => void recordAiUsage(write));
+  const note = (write: AiUsageWrite) => {
+    try {
+      record(write);
+    } catch {
+      // Deliberately swallowed.
+    }
+  };
+
   const attempts: AiChatAttempt[] = [];
   let deadlineHit = false;
 
@@ -87,7 +114,7 @@ export async function aiChat(input: AiChatInput): Promise<AiChatResult> {
     }
 
     try {
-      const content = await callProvider({
+      const reply = await callProvider({
         provider: entry.provider,
         model: entry.model,
         apiKey: providerApiKey(entry.provider, env),
@@ -99,7 +126,13 @@ export async function aiChat(input: AiChatInput): Promise<AiChatResult> {
         signal: input.signal,
         fetchImpl: input.fetchImpl,
       });
-      return { content, provider: entry.provider, model: entry.model };
+      note({ provider: entry.provider, model: entry.model, usage: reply.usage });
+      return {
+        content: reply.content,
+        provider: entry.provider,
+        model: entry.model,
+        usage: reply.usage,
+      };
     } catch (err) {
       const error =
         err instanceof ProviderError
@@ -109,6 +142,13 @@ export async function aiChat(input: AiChatInput): Promise<AiChatResult> {
       // The caller gave up: stop, rather than spending their budget on models
       // whose answer nobody is waiting for any more.
       if (error.cancelled) throw new AiChatError(error.message, attempts);
+
+      // Only quota is worth recording. A 5xx or a timeout spends nothing and
+      // produces nothing; logging it as usage would make an outage look like
+      // heavy traffic on the page.
+      if (error.status === 429) {
+        note({ provider: entry.provider, model: entry.model, rateLimited: true });
+      }
 
       noteFailure(entry, error, now());
       attempts.push({ provider: entry.provider, model: entry.model, reason: error.message });

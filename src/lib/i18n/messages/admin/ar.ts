@@ -405,6 +405,18 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.usage.apiRest": "REST",
   "admin.usage.apiRealtime": "الوقت الفعلي",
   "admin.usage.apiTotal": "آخر 30 يومًا",
+  "admin.usage.aiTitle": "نماذج الذكاء الاصطناعي",
+  "admin.usage.aiSubtitle": "اليوم (بتوقيت UTC)، بالترتيب الذي يسألها به المساعد",
+  "admin.usage.aiRequests": "الطلبات",
+  "admin.usage.aiTokens": "التوكنات",
+  "admin.usage.aiIdle": "لم يُستخدم بعد",
+  "admin.usage.aiActive": "يجيب",
+  "admin.usage.aiLimited": "بلغ حده",
+  "admin.usage.aiOf": "من",
+  "admin.usage.aiTotal": "إجمالي اليوم",
+  "admin.usage.aiRetired": "لم يعد ضمن السلسلة",
+  "admin.usage.aiUnavailable":
+    "يظهر استخدام النماذج بعد تطبيق ترحيل ai_usage_daily.",
 
   "admin.chat.title": "مساعد العيادة",
   "admin.chat.open": "فتح مساعد العيادة",

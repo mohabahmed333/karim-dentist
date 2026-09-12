@@ -63,3 +63,52 @@ test("prefers analytics MAU over stored auth user count", async () => {
     "unavailable",
   );
 });
+
+const BASE_DEPS = {
+  hasAccessToken: false,
+  getStorageUsedBytes: async () => 0,
+  fetchDatabaseSize: async () => null,
+  fetchEgress: async () => null,
+  fetchMau: async () => null,
+  fetchApiCounts: async () => null,
+  countAuthUsers: async () => null,
+  countKapsoMessages: async () => null,
+  hasVercelToken: false,
+  fetchVercelUsage: async () => null,
+};
+
+test("rolls today's AI spend up in chain order", async () => {
+  const data = await loadPlatformUsage({
+    ...BASE_DEPS,
+    getAiChain: () => [
+      { provider: "gemini", model: "gemini-3.8-flash" },
+      { provider: "groq", model: "openai/gpt-oss-120b" },
+    ],
+    fetchAiUsageToday: async () => [
+      {
+        provider: "groq",
+        model: "openai/gpt-oss-120b",
+        requests: 4,
+        promptTokens: 1_000,
+        completionTokens: 200,
+        rateLimitedCount: 0,
+        lastRateLimitedAt: null,
+      },
+    ],
+  });
+  assert.deepEqual(
+    data.aiUsage?.lines.map((line: { id: string }) => line.id),
+    ["gemini:gemini-3.8-flash", "groq:openai/gpt-oss-120b"],
+  );
+  assert.equal(data.aiUsage?.totals.requests, 4);
+  assert.equal(data.aiUsage?.totals.tokens, 1_200);
+});
+
+/** "The table is not there yet" must not read as "nothing used the models". */
+test("reports AI usage as unavailable when the rows cannot be read", async () => {
+  const data = await loadPlatformUsage({
+    ...BASE_DEPS,
+    fetchAiUsageToday: async () => null,
+  });
+  assert.equal(data.aiUsage, null);
+});
