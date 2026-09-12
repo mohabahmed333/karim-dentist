@@ -11,6 +11,7 @@ import {
   appendMessage,
   clearThread,
   createSessionThread,
+  findResumableThread,
   listMessages,
   listThreadSummaries,
   renameThread,
@@ -328,7 +329,10 @@ export function ReceptionChat({
     void (async () => {
       try {
         let threadIdBoot = bootThreadId;
+        let resumed: ClinicChatThreadContext | null = null;
         if (initialPatient) {
+          // A specific-patient hand-off (e.g. "Ask AI" from a WhatsApp chat)
+          // always starts its own focused conversation, never resumes one.
           const thread = await createSessionThread(
             `Clinic · ${initialPatient.name.slice(0, 40)}`,
           );
@@ -336,24 +340,36 @@ export function ReceptionChat({
           bootThreadId = thread.id;
           await seedWelcome(thread.id, welcomeSeed());
         } else if (!threadIdBoot) {
-          const thread = await createSessionThread(
-            `Clinic · ${new Date().toLocaleString([], {
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}`,
-          );
-          threadIdBoot = thread.id;
-          bootThreadId = thread.id;
-          await seedWelcome(thread.id, welcomeSeed());
+          // threadIdBoot is only null after a real page load (it survives a
+          // remount otherwise) — which used to mean a brand new thread, and
+          // its welcome message, every single time the panel mounted.
+          const resumable = await findResumableThread();
+          if (resumable) {
+            threadIdBoot = resumable.id;
+            bootThreadId = resumable.id;
+            resumed = (resumable.context ?? {}) as ClinicChatThreadContext;
+          } else {
+            const thread = await createSessionThread(
+              `Clinic · ${new Date().toLocaleString([], {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}`,
+            );
+            threadIdBoot = thread.id;
+            bootThreadId = thread.id;
+            await seedWelcome(thread.id, welcomeSeed());
+          }
         }
         if (!alive) return;
         const rows = await listMessages(threadIdBoot);
         if (!alive) return;
         setThreadId(threadIdBoot);
         setMessages(rowsToUi(rows));
-        setTitled(false);
+        // A resumed thread already has a real title from before this load —
+        // don't let the next message silently overwrite it (see `persist`).
+        setTitled(resumed !== null);
         if (initialPatient) {
           let focused = initialPatient;
           try {
@@ -393,7 +409,7 @@ export function ReceptionChat({
             /* non-fatal — still show patient banner */
           }
         } else {
-          setActivePatient(null);
+          setActivePatient(parseActivePatient(resumed?.activePatient));
         }
         await refreshHistory();
       } catch (err) {

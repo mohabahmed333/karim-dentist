@@ -16,6 +16,7 @@ export {
 export {
   listThreads,
   listThreadSummaries,
+  findResumableThread,
   createSessionThread,
   getOrCreateHomeThread,
   touchThread,
