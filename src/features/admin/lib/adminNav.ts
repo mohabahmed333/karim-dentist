@@ -93,8 +93,13 @@ export const adminNavSections: AdminNavSection[] = [
     items: [
       { href: "/admin", labelKey: "admin.nav.overview", exact: true },
       { href: "/admin/reservations", labelKey: "admin.nav.reservations" },
+      { href: "/admin/waitlist", labelKey: "admin.nav.waitlist" },
       { href: "/admin/patients", labelKey: "admin.nav.patients" },
       { href: "/admin/support", labelKey: "admin.nav.support" },
+      { href: "/admin/quick-replies", labelKey: "admin.nav.quickReplies" },
+      { href: "/admin/knowledge", labelKey: "admin.nav.knowledge" },
+      { href: "/admin/assistant-review", labelKey: "admin.nav.assistantReview" },
+      { href: "/admin/outbox", labelKey: "admin.nav.outbox" },
     ],
   },
   {
