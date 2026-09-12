@@ -5,14 +5,15 @@ import { toast } from "sonner";
 import type { ClinicChatAction } from "@/services/clinic_chat";
 import {
   listOpenAppointmentSlots,
-  bookAppointmentSlot,
+  bookOpenSlotForNewReservation,
+  rescheduleReservationToSlot,
+  cancelReservationAndReleaseSlot,
 } from "@/services/clinic_schedule";
 import {
   getPatientProfile,
   upsertPatientProfile,
 } from "@/services/patient_profiles";
 import {
-  createReservation,
   listReservations,
   updateReservation,
   buildStartsAt,
@@ -739,26 +740,36 @@ export function useReceptionFlows(push: PushFn, options: Options = {}) {
             );
             return;
           }
-          const row = await createReservation({
-            patient_name: book.name,
-            phone: book.phone,
-            service_id: book.serviceId || null,
-            service_label: book.serviceLabel,
-            starts_at: buildStartsAt(book.date, book.time),
-            notes: "",
-            status: "pending",
-          });
-          await bookAppointmentSlot({
-            slotId: book.slotId,
-            reservationId: row.id,
-          });
+          const startsAt = buildStartsAt(book.date, book.time);
+          let reservationId: string;
+          try {
+            // One atomic RPC, not create-then-book: if the slot was taken in
+            // the meantime, this fails clean instead of leaving a "pending"
+            // reservation with no slot behind it.
+            reservationId = await bookOpenSlotForNewReservation({
+              slotId: book.slotId,
+              patientName: book.name,
+              phone: book.phone,
+              serviceId: book.serviceId || null,
+              serviceLabel: book.serviceLabel,
+            });
+          } catch (err) {
+            await push(
+              "assistant",
+              err instanceof Error && err.message
+                ? err.message
+                : t("admin.chat.msg.bookingFailed"),
+              await nextActions(),
+            );
+            return;
+          }
           const key = book.patientKey ?? phoneToPatientKey(book.phone);
           const patient: ActivePatient = {
             patientKey: key,
             name: book.name,
             phone: book.phone,
             href: `/admin/patients/${encodeURIComponent(key)}`,
-            lastReservationId: row.id,
+            lastReservationId: reservationId,
             noteCount: draftRef.current.activePatient?.noteCount,
           };
           remember(patient);
@@ -776,8 +787,8 @@ export function useReceptionFlows(push: PushFn, options: Options = {}) {
           await push(
             "assistant",
             t("admin.chat.msg.bookedDetail")
-              .replace("{name}", row.patient_name)
-              .replace("{when}", formatWhen(row.starts_at))
+              .replace("{name}", book.name)
+              .replace("{when}", formatWhen(startsAt))
               .replace("{patient}", patient.name),
             patientScopedActions(patient, t),
           );
@@ -822,7 +833,20 @@ export function useReceptionFlows(push: PushFn, options: Options = {}) {
         }
 
         if (id === "pending:cancel") {
-          await updateReservation(p.id!, { status: "cancelled" });
+          try {
+            // Releases the slot too — a bare status update leaves it stuck
+            // "booked" with no reservation attached, forever.
+            await cancelReservationAndReleaseSlot({ reservationId: p.id! });
+          } catch (err) {
+            await push(
+              "assistant",
+              err instanceof Error && err.message
+                ? err.message
+                : t("admin.chat.msg.cancelFailed"),
+              await nextActions(),
+            );
+            return;
+          }
           toast.success(t("admin.chat.toast.cancelled"));
           await push("assistant", t("admin.chat.msg.bookingCancelled"), await nextActions());
           return;
@@ -888,15 +912,31 @@ export function useReceptionFlows(push: PushFn, options: Options = {}) {
         }
 
         if (id === "reschedule:slot") {
-          await updateReservation(p.id!, {
-            starts_at: p.startsAt!,
-            status: "pending",
-          });
-          if (p.slotId) {
-            await bookAppointmentSlot({
-              slotId: p.slotId,
+          if (!p.slotId) {
+            await push(
+              "assistant",
+              t("admin.chat.msg.rescheduleFailed"),
+              await nextActions(),
+            );
+            return;
+          }
+          try {
+            // Releases the old slot and books the new one in one transaction
+            // — done as two separate writes, the old slot never comes free.
+            await rescheduleReservationToSlot({
               reservationId: p.id!,
+              slotId: p.slotId,
+              phone: draftRef.current.activePatient?.phone,
             });
+          } catch (err) {
+            await push(
+              "assistant",
+              err instanceof Error && err.message
+                ? err.message
+                : t("admin.chat.msg.rescheduleFailed"),
+              await nextActions(),
+            );
+            return;
           }
           const active = draftRef.current.activePatient;
           if (active) {

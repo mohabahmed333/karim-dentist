@@ -74,6 +74,78 @@ export async function releaseAppointmentSlot(
   if (error) throw error;
 }
 
+/**
+ * Atomically create a reservation and book it into an open slot.
+ *
+ * Unlike `createReservation` + `bookAppointmentSlot` run back to back, this
+ * cannot leave an orphaned "pending" reservation with no slot behind it if
+ * the slot was taken between being offered and being confirmed — the RPC
+ * does both writes as one transaction and fails the whole thing instead.
+ */
+export async function bookOpenSlotForNewReservation(input: {
+  slotId: string;
+  patientName: string;
+  phone: string;
+  serviceLabel: string;
+  serviceId?: string | null;
+  email?: string | null;
+  notes?: string;
+}): Promise<string> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("book_open_appointment_slot", {
+    p_slot_id: input.slotId,
+    p_patient_name: input.patientName,
+    p_phone: input.phone,
+    p_email: input.email ?? null,
+    p_service_id: input.serviceId ?? null,
+    p_service_label: input.serviceLabel,
+    p_notes: input.notes ?? "",
+  });
+  if (error) throw error;
+  if (!data) throw new Error("Booking did not return a reservation");
+  return data as string;
+}
+
+/**
+ * Atomically move a reservation onto a different open slot.
+ *
+ * Releases the reservation's current slot and books the new one in the same
+ * transaction — `updateReservation` + `bookAppointmentSlot` run separately
+ * books the new slot but never frees the old one, leaking it as permanently
+ * "booked" with no reservation attached.
+ */
+export async function rescheduleReservationToSlot(input: {
+  reservationId: string;
+  slotId: string;
+  phone?: string | null;
+}): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("reschedule_reservation_to_slot", {
+    p_reservation_id: input.reservationId,
+    p_slot_id: input.slotId,
+    p_phone: input.phone ?? null,
+  });
+  if (error) throw error;
+}
+
+/**
+ * Atomically cancel a reservation and free the slot it held, if any.
+ *
+ * A bare status update to "cancelled" leaves that slot stuck as "booked"
+ * forever, quietly shrinking future availability.
+ */
+export async function cancelReservationAndReleaseSlot(input: {
+  reservationId: string;
+  phone?: string | null;
+}): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("cancel_reservation_and_release_slot", {
+    p_reservation_id: input.reservationId,
+    p_phone: input.phone ?? null,
+  });
+  if (error) throw error;
+}
+
 /** Book the open slot whose starts_at matches (admin schedule sync). */
 export async function bookOpenSlotMatchingStartsAt(input: {
   startsAtIso: string;
