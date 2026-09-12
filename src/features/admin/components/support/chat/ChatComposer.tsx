@@ -60,6 +60,9 @@ type Props = {
   /** The quick reply attachment that goes out with this chat's draft. */
   quickAttachment?: CannedReplyAttachment | null;
   onQuickAttachmentChange?: (attachment: CannedReplyAttachment | null) => void;
+  /** This chat's reply-button draft, built by hand or inserted from a quick reply. */
+  interactive?: InteractiveDraft | null;
+  onInteractiveChange?: (draft: InteractiveDraft | null) => void;
 };
 
 function insertAtCaret(
@@ -83,6 +86,8 @@ export function ChatComposer({
   onSendTemplate,
   quickAttachment = null,
   onQuickAttachmentChange,
+  interactive = null,
+  onInteractiveChange,
 }: Props) {
   const t = useTranslations();
   const { locale } = useLocale();
@@ -97,9 +102,6 @@ export function ChatComposer({
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [recording, setRecording] = useState(false);
-  const [interactive, setInteractive] = useState<InteractiveDraft | null>(
-    null,
-  );
   const [slashIndex, setSlashIndex] = useState(0);
   // The ref flips synchronously, so a second click or Enter during the file
   // download is ignored; the state disables the Send button.
@@ -119,7 +121,7 @@ export function ChatComposer({
       const detail = (event as CustomEvent<ShowreelWhatsappDetail>).detail;
       if (!detail) return;
       if (detail.type === "quick-replies") {
-        setInteractive({
+        onInteractiveChange?.({
           mode: "buttons",
           labels: ["Tue 10:30", "Wed 14:00", "Call me back"],
         });
@@ -131,7 +133,7 @@ export function ChatComposer({
       }
       if (detail.type === "voice-start") {
         onDraftChange("");
-        setInteractive(null);
+        onInteractiveChange?.(null);
         setAttachOpen(false);
         setEmojiOpen(false);
         setRecording(true);
@@ -142,14 +144,14 @@ export function ChatComposer({
         if (!text) return;
         onSend({ kind: "text", text });
         onDraftChange("");
-        setInteractive(null);
+        onInteractiveChange?.(null);
         onClearReply?.();
       }
     }
     window.addEventListener(SHOWREEL_WHATSAPP_EVENT, onShowreel);
     return () =>
       window.removeEventListener(SHOWREEL_WHATSAPP_EVENT, onShowreel);
-  }, [onClearReply, onDraftChange, onSend]);
+  }, [onClearReply, onDraftChange, onInteractiveChange, onSend]);
 
   /** Sticky keyboard language — chrome stays on app locale, text follows this. */
   const [inputLocale, setInputLocale] = useState<Locale>(() =>
@@ -167,8 +169,12 @@ export function ChatComposer({
     const detected = lastStrongLocale(value);
     if (detected) setInputLocale(detected);
     onDraftChange(value);
-    // Clearing the message box also drops the quick reply's attachment.
-    if (!value.trim() && quickAttachment) onQuickAttachmentChange?.(null);
+    // Clearing the message box also drops what a quick reply brought with it:
+    // its attachment, and buttons it inserted (never buttons built by hand).
+    if (!value.trim()) {
+      if (quickAttachment) onQuickAttachmentChange?.(null);
+      if (interactive?.mode === "buttons" && interactive.fromQuickReply) onInteractiveChange?.(null);
+    }
   }
 
   function clearSlashCommand() {
@@ -214,32 +220,65 @@ export function ChatComposer({
     const values = await loadQuickReplyValues(reply.locale);
     updateDraft(`${before}${renderQuickReply(reply.body, values).text}${after}`);
     onQuickAttachmentChange?.(reply.attachment ?? null);
+    if (reply.buttons.length) {
+      onInteractiveChange?.({
+        mode: "buttons",
+        labels: reply.buttons.map((button) => button.title),
+        ids: reply.buttons.map((button) => button.id),
+        fromQuickReply: true,
+      });
+    } else if (interactive?.mode === "buttons" && interactive.fromQuickReply) {
+      // A reply without buttons removes buttons an earlier reply inserted, but
+      // never a draft staff built by hand.
+      onInteractiveChange?.(null);
+    }
   }
 
-  async function sendWithAttachment(
+  function buttonsPayload(
     text: string,
-    attachment: CannedReplyAttachment,
+    buttons: { id: string; title: string }[],
+  ): ComposerSendPayload {
+    return {
+      kind: "interactive_buttons",
+      text: text || t("admin.frontDesk.pleaseChoose"),
+      buttons,
+      flow: { kind: "buttons", title: "Quick replies", subtitle: text, buttons },
+    };
+  }
+
+  /** Labels by position; buttons from a saved reply keep their ids, hand-added ones get btn_<n>. */
+  function draftButtons(draft: Extract<InteractiveDraft, { mode: "buttons" }>) {
+    return draft.labels
+      .map((label, index) => ({ id: draft.ids?.[index] ?? `btn_${index + 1}`, title: label.trim() }))
+      .filter((button) => button.title);
+  }
+
+  async function sendQuickReply(
+    text: string,
+    attachment: CannedReplyAttachment | null,
+    buttons: { id: string; title: string }[],
   ) {
     if (quickSendingRef.current) return;
     quickSendingRef.current = true;
     setQuickSending(true);
     try {
       let file: File | null = null;
-      if (attachment.kind !== "location") {
+      if (attachment && attachment.kind !== "location") {
         const { data, error } = await createClient()
           .storage.from(QUICK_REPLY_BUCKET)
           .download(attachment.path);
         if (error || !data) {
-          // Keep the draft and the chip: staff can retry or remove the attachment.
+          // Keep the draft, the chip and the buttons: staff can retry or remove the attachment.
           toast.error(t("admin.frontDesk.quickReplyAttachmentFail"));
           return;
         }
         file = new File([data], attachment.name, { type: attachment.mime });
       }
 
-      const steps = planQuickReplySend(text, attachment);
+      const steps = planQuickReplySend(text, attachment, buttons);
       onDraftChange("");
       onQuickAttachmentChange?.(null);
+      if (buttons.length) onInteractiveChange?.(null);
       // Every step reuses the onSend captured at click time. Don't refactor this
       // to read a "latest onSend" ref: the parent's `sending` guard would drop
       // the later steps.
@@ -249,6 +288,8 @@ export function ChatComposer({
           index === 0 ? withReply(payload) : payload;
         if (step.kind === "text") {
           await onSend(prepare({ kind: "text", text: step.text }));
+        } else if (step.kind === "buttons") {
+          await onSend(prepare(buttonsPayload(step.text, step.buttons)));
         } else if (step.kind === "location") {
           const pin = clinicLocationPin();
           await onSend(
@@ -265,7 +306,7 @@ export function ChatComposer({
               },
             }),
           );
-        } else if (step.kind === "file" && file) {
+        } else if (step.kind === "file" && file && attachment && attachment.kind !== "location") {
           const url = URL.createObjectURL(file);
           await onSend(
             prepare({
@@ -301,30 +342,10 @@ export function ChatComposer({
     if (blocked) return;
     const text = draft.trim();
     if (interactive?.mode === "buttons") {
-      const labels = interactive.labels.map((l) => l.trim()).filter(Boolean);
-      if (!labels.length) return;
-      onSend(
-        withReply({
-          kind: "interactive_buttons",
-          text: text || t("admin.frontDesk.pleaseChoose"),
-          buttons: labels.map((title, i) => ({
-            id: `btn_${i + 1}`,
-            title,
-          })),
-          flow: {
-            kind: "buttons",
-            title: "Quick replies",
-            subtitle: text,
-            buttons: labels.map((title, i) => ({
-              id: `btn_${i + 1}`,
-              title,
-            })),
-          },
-        }),
-      );
-      setInteractive(null);
-      onDraftChange("");
-      onClearReply?.();
+      const buttons = draftButtons(interactive);
+      if (!buttons.length) return;
+      // Attachment (if any) first, then the text with its buttons.
+      await sendQuickReply(text, quickAttachment, buttons);
       return;
     }
     if (interactive?.mode === "cta") {
@@ -347,13 +368,13 @@ export function ChatComposer({
           },
         }),
       );
-      setInteractive(null);
+      onInteractiveChange?.(null);
       onDraftChange("");
       onClearReply?.();
       return;
     }
     if (quickAttachment) {
-      await sendWithAttachment(text, quickAttachment);
+      await sendQuickReply(text, quickAttachment, []);
       return;
     }
     if (!text) return;
@@ -441,7 +462,7 @@ export function ChatComposer({
                 onCancel={() => onClearReply?.()}
               />
             ) : null}
-            <InteractiveBuilder value={interactive} onChange={setInteractive} />
+            <InteractiveBuilder value={interactive} onChange={(draft) => onInteractiveChange?.(draft)} />
             <QuickReplyComposerBar
               unfilled={unfilled}
               attachment={quickAttachment}

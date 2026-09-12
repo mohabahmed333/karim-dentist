@@ -6,7 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export type InteractiveDraft =
-  | { mode: "buttons"; labels: string[] }
+  | {
+      mode: "buttons";
+      labels: string[];
+      /** Stable ids of buttons inserted from a saved quick reply, by position. */
+      ids?: string[];
+      /** Set when the draft came from a quick reply rather than being built by hand. */
+      fromQuickReply?: boolean;
+    }
   | { mode: "cta"; label: string; url: string };
 
 type Props = {
@@ -94,7 +101,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
               onChange={(e) => {
                 const labels = [...value.labels];
                 labels[i] = e.target.value;
-                onChange({ mode: "buttons", labels });
+                onChange({ ...value, labels });
               }}
               placeholder={`Button ${i + 1}`}
             />
@@ -105,10 +112,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
               variant="ghost"
               size="sm"
               onClick={() =>
-                onChange({
-                  mode: "buttons",
-                  labels: [...value.labels, ""],
-                })
+                onChange({ ...value, labels: [...value.labels, ""] })
               }
             >
               Add button

@@ -18,6 +18,7 @@ import {
 } from "./SupportInboxColumn";
 import type { ComposerSendPayload } from "./chat/composerTypes";
 import type { CannedReplyAttachment } from "@/services/whatsapp/cannedReplyInput";
+import type { InteractiveDraft } from "./chat/InteractiveBuilder";
 import {
   useWhatsappInboxLive,
   type InboxAlertView,
@@ -203,6 +204,10 @@ export function SupportInboxView({
   /** A quick reply's attachment stays with its chat's draft across switches. */
   const [attachmentsById, setAttachmentsById] = useState<
     Record<string, CannedReplyAttachment | null>
+  >({});
+  /** The reply-button draft (built by hand or from a quick reply) stays with its chat too. */
+  const [interactiveById, setInteractiveById] = useState<
+    Record<string, InteractiveDraft | null>
   >({});
   const [sending, setSending] = useState(false);
   /** Demo mode has no send API to report delivery back — see handleSend. */
@@ -523,6 +528,7 @@ export function SupportInboxView({
     setDraftsById((prev) => ({ ...prev, [id]: "" }));
     setReplyById((prev) => ({ ...prev, [id]: null }));
     setAttachmentsById((prev) => ({ ...prev, [id]: null }));
+    setInteractiveById((prev) => ({ ...prev, [id]: null }));
     touchConversation(id, {
       preview,
       lastMessageType: messageType,
@@ -922,7 +928,6 @@ export function SupportInboxView({
                       : "assist-default"
                   }
                   className="h-full min-h-0"
-                  statsSummary={t("admin.chat.title")}
                   initialPatient={assistPatient}
                   chatLayout={chatLayout}
                   onToggleChatLayout={onToggleChatLayout}
@@ -975,6 +980,13 @@ export function SupportInboxView({
                   setAttachmentsById((prev) => ({
                     ...prev,
                     [conversation.id]: attachment,
+                  }))
+                }
+                interactive={interactiveById[conversation.id] ?? null}
+                onInteractiveChange={(draft) =>
+                  setInteractiveById((prev) => ({
+                    ...prev,
+                    [conversation.id]: draft,
                   }))
                 }
                 detailsOpen={false}
@@ -1056,7 +1068,6 @@ export function SupportInboxView({
                     : "assist-default"
                 }
                 className="h-full min-h-0"
-                statsSummary={t("admin.chat.title")}
                 initialPatient={assistPatient}
               />
             </div>
@@ -1090,6 +1101,13 @@ export function SupportInboxView({
                   setAttachmentsById((prev) => ({
                     ...prev,
                     [conversation.id]: attachment,
+                  }))
+                }
+                interactive={interactiveById[conversation.id] ?? null}
+                onInteractiveChange={(draft) =>
+                  setInteractiveById((prev) => ({
+                    ...prev,
+                    [conversation.id]: draft,
                   }))
                 }
                 detailsOpen={detailsOpen}
