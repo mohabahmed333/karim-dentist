@@ -97,6 +97,9 @@ export function confirmButtons(language: BodyLanguage): ReplyButton[] {
 /** The row that lets someone book without naming a service at all. */
 export const NOT_SURE_ID = "service:not_sure";
 
+/** What "I am not sure" books. The same label the booking RPC defaults to. */
+export const GENERAL_CONSULTATION = "General consultation";
+
 const UNTITLED = /^(untitled|بدون عنوان)$/i;
 
 /**

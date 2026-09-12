@@ -1,4 +1,9 @@
-import { nextBookingState, type BookingState } from "./bookingState";
+import {
+  applyTap,
+  nextBookingState,
+  type BookingState,
+  type TapChoice,
+} from "./bookingState";
 import { replyUi, type ReplyUi } from "./bookingButtons";
 import { buildAutoReplyPrompt, type BuildPromptInput } from "./buildAutoReplyPrompt";
 import { decideAutoReply } from "./decideAutoReply";
@@ -44,6 +49,8 @@ export type RunDeps = {
   recentStruggles?: number;
   /** Booking progress carried between turns. Absent means a fresh start. */
   bookingState?: BookingState | null;
+  /** The button this message came from, if the patient tapped rather than typed. */
+  tap?: TapChoice | null;
   saveBookingState?: (state: BookingState) => Promise<void>;
   record: (event: {
     decision: "auto_send" | "draft" | "skip" | "error";
@@ -106,9 +113,16 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     };
   }
 
+  const now = deps.now?.() ?? new Date();
+
+  // A tap is recorded before the model is asked anything. We put the id on the
+  // button, so what it meant is not a question — and the model is then told the
+  // choice is settled rather than left to infer it from the words.
+  const tapped = applyTap(deps.bookingState ?? null, deps.tap, deps.prompt.slots, now);
+
   const built = buildAutoReplyPrompt({
     ...deps.prompt,
-    collected: deps.bookingState?.pending ?? deps.prompt.collected,
+    collected: tapped.pending,
   });
 
   let raw: string;
@@ -139,8 +153,7 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
   // Record what the patient told us before deciding anything about the reply.
   // It is true whether or not the reply goes out, and losing it is how the
   // assistant asked for a service one turn after being told it.
-  const now = deps.now?.() ?? new Date();
-  let booking = nextBookingState(deps.bookingState ?? null, {
+  let booking = nextBookingState(tapped, {
     intent: envelope.intent,
     collected: envelope.collected,
     offeredSlots: deps.prompt.slots,

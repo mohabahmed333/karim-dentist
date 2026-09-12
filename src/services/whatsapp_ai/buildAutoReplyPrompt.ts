@@ -95,7 +95,12 @@ function reservationBlock(reservations: PatientReservation[]): string {
         `- reservationId=${r.id} ${r.service_label} at ${formatAppointmentDateTime(r.starts_at, "en")} (${r.status})`,
     )
     .join("\n");
-  return `This patient's upcoming appointments (the only ones they may change):\n${lines}`;
+  return [
+    "This patient ALREADY HAS an appointment booked, and these are the only ones they may change.",
+    "If they ask to book, do not silently add a second one: say when this appointment is and ask",
+    "whether they want to move it or book an additional one. Only then offer times.",
+    lines,
+  ].join("\n");
 }
 
 /**

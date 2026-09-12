@@ -15,6 +15,7 @@ import { sendWhatsappMessage } from "@/services/whatsapp/sendMessage";
 import { runAutoReply } from "./runAutoReply";
 import {
   claimJob,
+  countAiRepliesEver,
   countRecentAiReplies,
   finishJob,
   loadAiSettings,
@@ -77,7 +78,7 @@ export async function processAutoReplyJob(
           .maybeSingle(),
         db
           .from("whatsapp_messages")
-          .select("id,body,message_type")
+          .select("id,body,message_type,flow")
           .eq("id", job.inbound_message_id)
           .maybeSingle(),
         loadAiSettings(db),
@@ -137,7 +138,7 @@ export async function processAutoReplyJob(
       { data: history },
       reservations,
       { data: clinicHours },
-      { count: priorAiReplies },
+      aiRepliesEver,
       { data: recentEvents },
       knowledge,
       { data: heldSlotRows },
@@ -186,12 +187,10 @@ export async function processAutoReplyJob(
         .limit(1)
         .maybeSingle(),
       // Has the assistant ever spoken here? Decides the one-time disclosure.
-      db
-        .from("whatsapp_messages")
-        .select("id", { count: "exact", head: true })
-        .eq("conversation_id", conversation.id)
-        .eq("sender_kind", "ai")
-        .eq("status", "sent"),
+      // Counted through a helper because `status = 'sent'` was wrong: a message
+      // moves on to 'delivered' and 'read', so this counted nothing and the
+      // assistant introduced itself on every single reply.
+      countAiRepliesEver(db, conversation.id),
       db
         .from("whatsapp_ai_events")
         .select("decision,handoff")
@@ -302,7 +301,11 @@ export async function processAutoReplyJob(
       async chat(messages) {
         const request = {
           temperature: 0.2,
-          maxTokens: 700,
+          // The chain's first models reason before answering, and that
+          // reasoning is spent from the same budget. At 700 the JSON was being
+          // cut off mid-object — "confidence": and nothing after it — which
+          // reaches the patient as a parse failure and a silent draft.
+          maxTokens: 1600,
           timeoutMs: AI_TIMEOUT_MS,
           deadlineMs: AI_DEADLINE_MS,
           messages: messages as { role: "system" | "user" | "assistant"; content: string }[],
@@ -387,7 +390,14 @@ export async function processAutoReplyJob(
       async runActions(actions: BotAction[]) {
         return runBotActions(db, conversation.phone_number, actions);
       },
-      isFirstAiReply: (priorAiReplies ?? 0) === 0,
+      isFirstAiReply: aiRepliesEver === 0,
+      // What the patient tapped, if they tapped. The id is ours; the title is
+      // what they saw. Both go to the server's own reading of the choice.
+      tap: {
+        buttonId:
+          (inbound.flow as { buttonId?: string } | null)?.buttonId ?? null,
+        title: inbound.body ?? "",
+      },
       recentStruggles,
       async requestHuman(reason) {
         await markHumanHandoff(db, conversation.id, settings.human_handoff_minutes);

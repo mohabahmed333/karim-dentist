@@ -1,3 +1,8 @@
+import {
+  CHANGE_ID,
+  GENERAL_CONSULTATION,
+  NOT_SURE_ID,
+} from "./bookingButtons";
 import { injectionHeuristics } from "./injectionHeuristics";
 
 export type BookingStep =
@@ -108,6 +113,68 @@ export function nextBookingState(
     expiresAt: changed
       ? new Date(input.now.getTime() + STATE_TTL_MS).toISOString()
       : base.expiresAt,
+  };
+}
+
+/** A button the patient pressed: the id we put on it, and what it read. */
+export type TapChoice = { buttonId?: string | null; title?: string | null };
+
+/**
+ * Record what a tapped button means, before the model is asked anything.
+ *
+ * The server put the id on the button, so the server knows what it meant —
+ * there is nothing to infer. Left to the model, a patient who tapped
+ * "مش متأكد" was asked which service they wanted all over again, because the
+ * model saw only the words and did not connect them to the rule. A tap is a
+ * fact; only its interpretation was ever in doubt.
+ *
+ * Pure, and applied before the prompt is built, so the model is told the choice
+ * is settled rather than asked to work it out.
+ */
+export function applyTap(
+  current: BookingState | null,
+  tap: TapChoice | null | undefined,
+  offeredSlots: { id: string; starts_at: string }[],
+  now: Date,
+): BookingState {
+  const base = current ?? emptyState();
+  const buttonId = typeof tap?.buttonId === "string" ? tap.buttonId : "";
+  if (!buttonId) return base;
+
+  const pending: PendingBooking = { ...base.pending };
+  let changed = false;
+
+  if (buttonId.startsWith("slot:")) {
+    // Still checked against what the server offered: the id came back from the
+    // patient's phone, and nothing from there is taken on trust.
+    const slot = offeredSlots.find((s) => s.id === buttonId.slice("slot:".length));
+    if (slot) {
+      pending.slotId = slot.id;
+      pending.slotStartsAt = slot.starts_at;
+      changed = true;
+    }
+  } else if (buttonId === NOT_SURE_ID) {
+    pending.service = GENERAL_CONSULTATION;
+    changed = true;
+  } else if (buttonId.startsWith("service:")) {
+    // The row's own title is the service name, and we wrote it.
+    const service = cleanField(tap?.title);
+    if (service) {
+      pending.service = service;
+      changed = true;
+    }
+  } else if (buttonId === CHANGE_ID) {
+    // "Another time" — let go of the slot, keep everything else.
+    delete pending.slotId;
+    delete pending.slotStartsAt;
+    changed = true;
+  }
+
+  if (!changed) return base;
+  return {
+    step: deriveStep(pending),
+    pending,
+    expiresAt: new Date(now.getTime() + STATE_TTL_MS).toISOString(),
   };
 }
 

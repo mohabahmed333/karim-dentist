@@ -198,6 +198,29 @@ export async function recordAiEvent(
 }
 
 /** AI messages sent in the last hour, for the rate caps. */
+/** Statuses an outbound message passes through once it has actually gone out. */
+const DELIVERED_STATUSES = ["sent", "delivered", "read"] as const;
+
+/**
+ * Has the assistant ever spoken in this conversation?
+ *
+ * Deliberately not time-boxed. It decides whether to introduce itself, and a
+ * quiet hour does not make it a stranger again — counting only the last hour
+ * had it introducing itself over and over in one conversation.
+ */
+export async function countAiRepliesEver(
+  db: ServiceClient,
+  conversationId: string,
+): Promise<number> {
+  const { count } = await db
+    .from("whatsapp_messages")
+    .select("id", { count: "exact", head: true })
+    .eq("conversation_id", conversationId)
+    .eq("sender_kind", "ai")
+    .in("status", DELIVERED_STATUSES);
+  return count ?? 0;
+}
+
 export async function countRecentAiReplies(
   db: ServiceClient,
   conversationId: string,
@@ -209,13 +232,16 @@ export async function countRecentAiReplies(
       .select("id", { count: "exact", head: true })
       .eq("conversation_id", conversationId)
       .eq("sender_kind", "ai")
-      .eq("status", "sent")
+      // Not `= 'sent'`: a delivered message moves to 'delivered' and then
+      // 'read', so matching only 'sent' counted almost nothing and the rate
+      // limits never saw the replies they exist to limit.
+      .in("status", DELIVERED_STATUSES)
       .gte("wa_timestamp", since),
     db
       .from("whatsapp_messages")
       .select("id", { count: "exact", head: true })
       .eq("sender_kind", "ai")
-      .eq("status", "sent")
+      .in("status", DELIVERED_STATUSES)
       .gte("wa_timestamp", since),
   ]);
   return {
