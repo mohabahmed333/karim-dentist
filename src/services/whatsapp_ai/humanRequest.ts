@@ -21,6 +21,9 @@ const HUMAN_REQUEST: RegExp[] = [
   /\brepresentative\b/i,
   /\b(talk|speak|chat)\s+(to|with)\s+(someone|somebody|a\s+person|staff|a\s+human)\b/i,
   /\bnot\s+a\s+(bot|robot)\b/i,
+  // "I don't want a bot" is the same request as "get me a human", and the
+  // Arabic list already covers its equivalent.
+  /\b(don'?t|do\s+not|dont)\s+want\s+(to\s+(talk|speak|chat)\s+(to|with)\s+)?an?\s+(bot|robot|machine)\b/i,
 ];
 
 /**

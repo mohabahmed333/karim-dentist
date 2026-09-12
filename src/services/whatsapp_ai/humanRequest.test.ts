@@ -58,3 +58,23 @@ describe("showsFrustration", () => {
     }
   });
 });
+
+describe("wantsHuman — refusing the bot", () => {
+  for (const text of [
+    "I don't want a bot",
+    "i dont want a robot",
+    "I do not want to talk to a bot",
+    "مش عايز بوت",
+  ]) {
+    it(`treats "${text}" as asking for a person`, () => {
+      assert.equal(wantsHuman(text), true);
+    });
+  }
+
+  // "Are you a bot?" is answered by the disclosure line, not by ending the chat.
+  for (const text of ["are you a bot?", "انت بوت؟", "I want a cleaning"]) {
+    it(`does not hand off on "${text}"`, () => {
+      assert.equal(wantsHuman(text), false);
+    });
+  }
+});

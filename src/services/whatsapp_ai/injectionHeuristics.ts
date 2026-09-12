@@ -36,10 +36,23 @@ const PATTERNS: { flag: string; re: RegExp }[] = [
   },
 ];
 
+/**
+ * Characters that are invisible when rendered but break a pattern when matched.
+ *
+ * WhatsApp delivers them intact, so "ignore\u200B all\u200B previous" reads to a
+ * human exactly like the phrase this module exists to catch, while `\s+` never
+ * matches it — U+200B is not whitespace in JS. Zero-width joiners, bidi
+ * overrides and the soft hyphen all do the same job.
+ *
+ * Stripped for matching only: the patient's actual text is untouched.
+ */
+const INVISIBLE = /[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g;
+
 export function injectionHeuristics(text: string): string[] {
   const flags = new Set<string>();
+  const probe = text.replace(INVISIBLE, "");
   for (const { flag, re } of PATTERNS) {
-    if (re.test(text)) flags.add(flag);
+    if (re.test(probe)) flags.add(flag);
   }
   return [...flags];
 }

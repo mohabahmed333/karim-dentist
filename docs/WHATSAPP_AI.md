@@ -125,6 +125,47 @@ The end-to-end suite runs against a real local Supabase, because RLS, the
 atomic booking RPCs and the realtime inbox only exist in the database. Only
 Groq and Kapso are faked, via `E2E_FAKE_GROQ` / `E2E_FAKE_KAPSO`.
 
+## What it remembers
+
+Booking details are kept in `whatsapp_ai_state.pending` between turns, so a
+patient is never asked twice for something they already said.
+
+- The model reports what it learned in `collected`; `nextBookingState()` folds
+  that into the stored booking and the prompt renders an **Already collected**
+  block the model is told not to re-ask.
+- State is written *before* any draft or early return: what the patient said is
+  true whether or not the reply went out.
+- A slot is kept only if the server offered it, and values are screened for
+  injection before storage — they are rendered back into the system prompt next
+  turn, which makes them patient text arriving by a side door.
+- It clears only when a booking actually executes, survives a failed one, and
+  expires after 30 minutes so an abandoned booking is never resumed as live.
+
+Conversation history shows the model **only what the patient actually saw**:
+inbound messages plus outbound ones in `sent`/`delivered`/`read`. Drafts and
+failed sends are excluded, and staff replies are labelled so the model can tell
+itself from a receptionist.
+
+## Reaching a person
+
+- "موظف", "human", "real person", "agent" and similar hand the thread over
+  **before any model call** — answering that with a bot is the one response that
+  cannot be right. Staff get a note; the patient gets an acknowledgement in their
+  own language.
+- The assistant introduces itself on its first reply in a conversation, and
+  offers a person unprompted after repeated trouble. The patient's own "؟؟"
+  counts toward that.
+
+## The knowledge base
+
+Answers come from `clinic_knowledge`, retrieved per message (see
+`searchClinicKnowledge`). `scripts/seed-clinic-knowledge.mjs` loads 99 bilingual
+drafts **unpublished** — `search_clinic_knowledge()` filters on `is_published`,
+so nothing reaches a patient until someone publishes it in Admin → Knowledge.
+The 35 tagged `needs_clinic_input` deliberately route to a colleague rather than
+state a price or policy we do not know; they are safe as written but worth
+replacing with real answers.
+
 ## Things that will bite you
 
 - **Business-initiated messages need approved Meta templates.** Free text only
@@ -138,6 +179,16 @@ Groq and Kapso are faked, via `E2E_FAKE_GROQ` / `E2E_FAKE_KAPSO`.
 - **A job that reached the send call is never retried.** A provider timeout is
   ambiguous, and a duplicate WhatsApp message to a patient is worse than a
   missed one. Those are abandoned for staff instead.
+- **Groq rejects the whole completion when the model answers in prose** rather
+  than JSON (`json_validate_failed`), and that error is not retryable. The chat
+  call retries once *without* JSON mode and falls back to what the model
+  actually wrote, so the patient is not left with silence. Unparseable output is
+  stored on `whatsapp_ai_events.envelope` as `raw_output`.
+- **The clinic lists no consultation and no cleaning service.** When a patient
+  does not know what they need, or names something unlisted, the assistant
+  offers a *General consultation* — the booking RPC's own default label — and
+  records what they actually asked for. Adding those two services would make the
+  answers better.
 
 ## If the responder is silent
 
