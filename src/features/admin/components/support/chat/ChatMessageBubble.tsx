@@ -14,6 +14,7 @@ import {
 import { InteractiveOutboundCard } from "./InteractiveOutboundCard";
 import { MessageStatusTicks } from "./MessageStatusTicks";
 import { ReplyQuote } from "./ReplyQuote";
+import { TapReplyChip } from "./TapReplyChip";
 import { formatWhatsappText } from "./formatWhatsappText";
 import { textDirection } from "./textDirection";
 import type { SupportMessage } from "../supportDummyData";
@@ -88,12 +89,14 @@ export function ChatMessageBubble({
     !isButtonOrListReplyFlow(m.flow);
   const showInteractive =
     m.flow && m.flow.kind && interactiveKinds.has(m.flow.kind);
+  const showTapChip = m.flow && m.flow.kind === "button_reply";
   const hideBody =
     unsupported ||
     /unsupported message|error\s*131051/i.test(m.body ?? "") ||
     m.messageType === "location" ||
     m.flow?.kind === "location" ||
-    m.flow?.kind === "contacts";
+    m.flow?.kind === "contacts" ||
+    m.flow?.kind === "button_reply";
   const body = hideBody ? "" : m.body;
   const bodyDir = textDirection(body || "");
   // Only plain text staff or the assistant sent: that is what a quick reply can hold.
@@ -192,6 +195,7 @@ export function ChatMessageBubble({
           {showInteractive && m.flow ? (
             <InteractiveOutboundCard flow={m.flow} />
           ) : null}
+          {showTapChip && m.flow ? <TapReplyChip flow={m.flow} /> : null}
           {showFlowCard && m.flow ? (
             <FlowMessageCard flow={m.flow} booking={booking} />
           ) : null}

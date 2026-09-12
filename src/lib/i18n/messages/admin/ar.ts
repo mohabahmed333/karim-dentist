@@ -1141,6 +1141,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.frontDesk.removeInteractive": "إزالة التفاعلي",
   "admin.frontDesk.pleaseChoose": "يرجى اختيار خيار:",
   "admin.frontDesk.tapDetails": "اضغط أدناه للمزيد من التفاصيل:",
+  "admin.frontDesk.tappedButton": "تم اختيار",
   "admin.frontDesk.label.channel": "القناة",
   "admin.frontDesk.label.status": "الحالة",
   "admin.frontDesk.label.clinicRecord": "سجل العيادة",

@@ -1141,6 +1141,7 @@ export const adminEn = {
   "admin.frontDesk.removeInteractive": "Remove interactive",
   "admin.frontDesk.pleaseChoose": "Please choose an option:",
   "admin.frontDesk.tapDetails": "Tap below for more details:",
+  "admin.frontDesk.tappedButton": "Tapped",
   "admin.frontDesk.label.channel": "Channel",
   "admin.frontDesk.label.status": "Status",
   "admin.frontDesk.label.clinicRecord": "Clinic record",
