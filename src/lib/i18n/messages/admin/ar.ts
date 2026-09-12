@@ -747,6 +747,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.chat.messageOrSlash": "رسالة أو / للأوامر…",
   "admin.chat.aiAssist": "مساعد الذكاء",
   "admin.chat.retry": "إعادة المحاولة",
+  "admin.chat.newMessages": "↓ رسالة جديدة",
   "admin.chat.droppedActions": "تم استبعاد {count} من التغييرات المقترحة لأنها غير صالحة",
   "admin.chat.historyTitle": "سجل المحادثات",
   "admin.chat.changePatient": "تغيير المريض",

@@ -745,6 +745,7 @@ export const adminEn = {
   "admin.chat.messageOrSlash": "Message or / for commands…",
   "admin.chat.aiAssist": "AI Assist",
   "admin.chat.retry": "Retry",
+  "admin.chat.newMessages": "↓ New message",
   "admin.chat.droppedActions": "{count} suggested change(s) were invalid and left out",
   "admin.chat.historyTitle": "Chat history",
   "admin.chat.changePatient": "Change patient",

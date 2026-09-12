@@ -70,6 +70,7 @@ import {
 } from "../chatMotion";
 import { listReservations } from "@/services/reservations";
 import { findOpenReservationForPatient } from "./receptionHelpers";
+import { useChatScroll } from "../../support/chat/useChatScroll";
 
 type Props = {
   className?: string;
@@ -178,7 +179,7 @@ export function ReceptionChat({
   const [uploads, setUploads] = useState<PendingChatUpload[]>([]);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryUrls, setLibraryUrls] = useState<string[]>([]);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const clinicSlash = getClinicSlashCommands(t);
   const slashMatches = matchSlashCommands(input, clinicSlash);
 
@@ -415,9 +416,37 @@ export function ReceptionChat({
     };
   }, [refreshHistory]);
 
+  // No onNearTop paging here — a thread loads once, unlike the WhatsApp inbox
+  // this hook was built for — but "only autoscroll if already near the
+  // bottom" is the same thing staff want in either chat.
+  const { listRef, scrollToBottom, isNearBottom } = useChatScroll(
+    messages.length + (pending || busy ? 1 : 0),
+    { onNearTop: () => {} },
+  );
+
+  const prevMessageCountRef = useRef(messages.length);
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, pending, busy]);
+    if (messages.length > prevMessageCountRef.current && !isNearBottom()) {
+      setShowJumpToBottom(true);
+    }
+    prevMessageCountRef.current = messages.length;
+    // isNearBottom reads a ref and is recreated every render — including it
+    // would run this on every render instead of only when messages arrive.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length]);
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    function onScroll() {
+      if (!el) return;
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+        setShowJumpToBottom(false);
+      }
+    }
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [listRef]);
 
   useEffect(() => {
     if (tab === "history") void refreshHistory();
@@ -714,7 +743,14 @@ export function ReceptionChat({
               </motion.div>
             ) : null}
           </AnimatePresence>
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-3 py-3 sm:space-y-4 sm:px-4">
+          <div className="relative min-h-0 flex-1">
+          <div
+            ref={listRef}
+            role="log"
+            aria-live="polite"
+            aria-atomic="false"
+            className="h-full space-y-3 overflow-y-auto overflow-x-hidden px-3 py-3 sm:space-y-4 sm:px-4"
+          >
             <AnimatePresence initial={false}>
               {messages.map((msg, i) => {
                 const isUser = msg.role === "user";
@@ -832,7 +868,24 @@ export function ReceptionChat({
                 </button>
               </div>
             ) : null}
-            <div ref={bottomRef} />
+          </div>
+          <AnimatePresence>
+            {showJumpToBottom ? (
+              <motion.button
+                type="button"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                className="absolute inset-x-0 bottom-2 mx-auto w-fit rounded-full border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-1 text-[11px] font-medium text-[var(--admin-primary)] shadow-md"
+                onClick={() => {
+                  scrollToBottom(true);
+                  setShowJumpToBottom(false);
+                }}
+              >
+                {t("admin.chat.newMessages")}
+              </motion.button>
+            ) : null}
+          </AnimatePresence>
           </div>
 
           <ChatComposerBar
