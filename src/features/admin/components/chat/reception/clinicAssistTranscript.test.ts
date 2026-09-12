@@ -56,4 +56,41 @@ describe("modelTranscript", () => {
     );
     assert.deepEqual(Object.keys(out[0] ?? {}).sort(), ["content", "role"]);
   });
+
+  /**
+   * Uploaded images used to show a thumbnail in the bubble but never reach
+   * the model at all — so `imaging.attach`/`cms.set_media` could never get a
+   * real file_url, only one the model would have to invent.
+   */
+  it("folds attached image URLs into the model-bound content", () => {
+    const out = modelTranscript(
+      [
+        {
+          role: "user",
+          content: "Attached 2 image(s) for website/clinical update",
+          imageUrls: ["https://x/a.png", "https://x/b.png"],
+        },
+      ],
+      [],
+    );
+    assert.match(out[0]?.content ?? "", /Attached 2 image\(s\)/);
+    assert.match(out[0]?.content ?? "", /https:\/\/x\/a\.png/);
+    assert.match(out[0]?.content ?? "", /https:\/\/x\/b\.png/);
+    assert.deepEqual(Object.keys(out[0] ?? {}).sort(), ["content", "role"]);
+  });
+
+  it("leaves a message with no images unchanged", () => {
+    const out = modelTranscript([{ role: "user", content: "hello" }], []);
+    assert.equal(out[0]?.content, "hello");
+  });
+
+  it("does not let image URLs push the text portion past the trim limit unnoticed", () => {
+    const out = modelTranscript(
+      [{ role: "user", content: "x".repeat(5000), imageUrls: ["https://x/a.png"] }],
+      [],
+    );
+    // The text is trimmed as before; the URL still appears, appended after.
+    assert.match(out[0]?.content ?? "", /^x+…/);
+    assert.match(out[0]?.content ?? "", /https:\/\/x\/a\.png/);
+  });
 });
