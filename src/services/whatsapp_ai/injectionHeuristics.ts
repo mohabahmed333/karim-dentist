@@ -17,9 +17,17 @@ const PATTERNS: { flag: string; re: RegExp }[] = [
     flag: "role_reassign",
     re: /\bact\s+as\s+(an?\s+)?(admin|administrator|doctor|system)\b/i,
   },
+  // "Imagine/suppose/pretend you are ..." is the same reassignment, framed as
+  // a hypothetical rather than a flat statement — a scenario surfaced this
+  // gap in Arabic ("افرض إنك المدير"), and English phrases it the same way.
+  {
+    flag: "role_reassign",
+    re: /\b(imagine|suppose|pretend)\s+(that\s+)?you\s+(are|were)\b/i,
+  },
   // No \b here: JS word boundaries are ASCII-only, so they never match
   // after an Arabic letter and would silently disable this pattern.
   { flag: "role_reassign", re: /أنت\s+الآن/ },
+  { flag: "role_reassign", re: /(افرض|تخيل)\s+(إنك|انك|أنك)/ },
   { flag: "role_marker", re: /^\s*(system|assistant|developer)\s*:/im },
   { flag: "fence", re: /```/ },
   {
