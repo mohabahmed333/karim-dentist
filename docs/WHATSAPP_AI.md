@@ -169,8 +169,14 @@ Work down the chain — each step tells you which link is broken.
    `reason` names the exact gate that stopped it — `mode_off`, `no_ai_key`,
    `session_closed`, `human_active`, `rate_limited_*`.
 
-A missing `GROQ_API_KEY` is the quietest failure: the policy gate skips before
-any network call, so there is no error anywhere — only a `skip` row with reason
-`no_ai_key`. On Vercel, add it to the Production environment and redeploy;
-new environment variables do not apply to an existing build.
+Having no provider key at all is the quietest failure: the policy gate skips
+before any network call, so there is no error anywhere — only a `skip` row with
+reason `no_ai_key`. Any one of `GEMINI_API_KEY`, `MISTRAL_API_KEY`,
+`CEREBRAS_API_KEY` or `GROQ_API_KEY` clears it. On Vercel, add it to the
+Production environment and redeploy; new environment variables do not apply to
+an existing build.
+
+The `model` column on `whatsapp_ai_events` records which model actually
+replied, as `provider:model`. Expect it to vary through the day — that is the
+chain working, not a misconfiguration.
 

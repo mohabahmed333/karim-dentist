@@ -155,7 +155,7 @@ while (Date.now() < deadline) {
 
 if (!event) {
   console.log("  No decision recorded within 30s.");
-  console.log("  Most likely: GROQ_API_KEY unset, or mode='off'.");
+  console.log("  Most likely: no AI provider key set, or mode='off'.");
   console.log("  Check the dev server output for [whatsapp/webhook].\n");
   process.exit(0);
 }
