@@ -55,7 +55,7 @@ const CASES = [
 const chain = resolveChain();
 if (chain.length === 0) {
   console.error(
-    "No provider key set. Add GEMINI_API_KEY, MISTRAL_API_KEY, CEREBRAS_API_KEY or GROQ_API_KEY to .env.local.",
+    "No provider key set. Add GEMINI_API_KEY, MISTRAL_API_KEY or GROQ_API_KEY to .env.local.",
   );
   process.exit(1);
 }

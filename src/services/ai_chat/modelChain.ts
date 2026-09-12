@@ -15,14 +15,15 @@ type Env = Record<string, string | undefined>;
  *
  * Consecutive entries deliberately alternate providers where they can, so a
  * provider-wide outage moves us on rather than down a list of its siblings.
+ *
+ * Only providers whose free tier renews by itself are here. Anything running
+ * on trial credits would quietly stop answering once they ran out.
  */
 export const DEFAULT_CHAIN: ChainEntry[] = [
   { provider: "gemini", model: "gemini-3.8-flash" },
   { provider: "mistral", model: "mistral-large-latest" },
   { provider: "gemini", model: "gemini-2.5-flash" },
   { provider: "mistral", model: "mistral-saba-latest" },
-  { provider: "cerebras", model: "gpt-oss-120b" },
-  { provider: "cerebras", model: "qwen-3.8-27b" },
   { provider: "groq", model: "openai/gpt-oss-120b" },
   { provider: "groq", model: "qwen/qwen3.8-27b" },
   { provider: "groq", model: "openai/gpt-oss-20b" },

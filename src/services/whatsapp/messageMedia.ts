@@ -11,7 +11,7 @@ export type MessageMediaItem = {
 };
 
 export type MessageFlowPayload = {
-  kind?: "flow" | "buttons" | "cta" | "location" | "contacts" | "template";
+  kind?: "flow" | "buttons" | "cta" | "location" | "contacts" | "template" | "button_reply";
   title?: string;
   subtitle?: string;
   cta?: string;
@@ -23,6 +23,10 @@ export type MessageFlowPayload = {
   longitude?: number;
   address?: string;
   phone?: string;
+  /** The tapped button or list item's id, for a `kind: "button_reply"` row. */
+  buttonId?: string;
+  /** Whether the tap was a reply button or a list item, for a `kind: "button_reply"` row. */
+  replyKind?: "button" | "list";
 };
 
 export type StatusTimestamps = {
@@ -97,12 +101,16 @@ export function extractFlowFromKapso(
     };
   }
 
-  // Button / list taps are plain replies — not Flow cards.
-  if (
-    interactiveType === "button_reply" ||
-    interactiveType === "list_reply"
-  ) {
-    return null;
+  // A patient tapping one of our reply buttons or list items. Kept distinct
+  // from a real WhatsApp Flow response (nfm_reply, below) — this is what they
+  // chose, not a form they filled in.
+  if (interactiveType === "button_reply" || interactiveType === "list_reply") {
+    const replyKind = interactiveType === "button_reply" ? "button" : "list";
+    const tapped = asRecord(interactive?.[`${replyKind}_reply`]);
+    const title = typeof tapped?.title === "string" ? tapped.title.trim() : "";
+    const buttonId = typeof tapped?.id === "string" ? tapped.id.trim() : "";
+    if (!title || !buttonId) return null;
+    return { kind: "button_reply", title, buttonId, replyKind };
   }
 
   // Real WhatsApp Flows (nfm_reply) or explicit flow type only.

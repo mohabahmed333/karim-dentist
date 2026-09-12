@@ -5,13 +5,22 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/api/requireAdmin";
 import { AiChatError, aiChat, hasAnyAiKey, type AiMessage } from "@/services/ai_chat";
 import { ADMIN_AI_ACTION_CATALOG } from "@/services/admin_ai/actionCatalog";
-import { extractClinicChatPayload } from "@/services/admin_ai/extractClinicChat";
+import { runClinicAssistTurn } from "@/services/admin_ai/clinicAssistTurn";
+import { CLINIC_ASSIST_TOOL_CATALOG } from "@/services/admin_ai/tools/toolCatalog";
 import { loadClinicAssistContext } from "@/services/admin_ai/loadClinicAssistContext";
 
 /** Turns and characters the model sees. Longer input is trimmed, not rejected. */
 const MAX_TURNS = 16;
 const MAX_TURN_CHARS = 2000;
 const MAX_TOKENS = 1500;
+/** Tool round-trips before the model must answer from what it already has. */
+const MAX_TOOL_STEPS = 2;
+/** Per model call, tight enough that MAX_TOOL_STEPS+1 calls fit under maxDuration. */
+const CHAIN_DEADLINE_MS = 10_000;
+
+// Up to MAX_TOOL_STEPS+1 sequential model calls, each walking the provider
+// chain — the Next.js default would cut this off mid-turn.
+export const maxDuration = 60;
 
 const bodySchema = z.object({
   locale: z.enum(["en", "ar"]).optional().default("en"),
@@ -60,7 +69,12 @@ function clip(text: string): string {
 }
 
 async function complete(messages: AiMessage[]): Promise<string> {
-  const request = { temperature: 0.3, maxTokens: MAX_TOKENS, messages };
+  const request = {
+    temperature: 0.3,
+    maxTokens: MAX_TOKENS,
+    messages,
+    deadlineMs: CHAIN_DEADLINE_MS,
+  };
   try {
     const { content } = await aiChat({ ...request, responseFormat: "json_object" });
     return content;
@@ -81,7 +95,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Add an AI provider key to .env.local — GEMINI_API_KEY, MISTRAL_API_KEY, CEREBRAS_API_KEY or GROQ_API_KEY",
+          "Add an AI provider key to .env.local — GEMINI_API_KEY, MISTRAL_API_KEY or GROQ_API_KEY",
       },
       { status: 503 },
     );
@@ -105,23 +119,27 @@ export async function POST(request: Request) {
     ),
   ]);
 
-  const system = [prompt, "", ADMIN_AI_ACTION_CATALOG, "", context].join("\n");
+  const system = [prompt, "", ADMIN_AI_ACTION_CATALOG, "", CLINIC_ASSIST_TOOL_CATALOG, "", context].join(
+    "\n",
+  );
 
   try {
-    const raw = await complete([
-      { role: "system", content: system },
-      ...messages.slice(-MAX_TURNS).map((m) => ({
+    const turn = await runClinicAssistTurn({
+      db: auth.supabase,
+      system,
+      messages: messages.slice(-MAX_TURNS).map((m) => ({
         role: m.role,
         content: clip(m.content),
       })),
-    ]);
-    const payload = extractClinicChatPayload(raw);
+      complete,
+      maxSteps: MAX_TOOL_STEPS,
+    });
     const reply =
-      payload.reply ||
-      (payload.proposedActions.length
+      turn.reply ||
+      (turn.proposedActions.length
         ? FALLBACK_REPLY[locale].review
         : FALLBACK_REPLY[locale].unreadable);
-    return NextResponse.json({ ...payload, reply });
+    return NextResponse.json({ ...turn, reply });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "AI request failed" },

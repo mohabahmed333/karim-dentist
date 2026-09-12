@@ -135,8 +135,8 @@ export async function callProvider(input: ProviderCallInput): Promise<string> {
   const body: Record<string, unknown> = { model, messages: input.messages };
   if (input.temperature !== undefined) body.temperature = input.temperature;
   if (input.responseFormat) body.response_format = { type: input.responseFormat };
-  // Only ever max_tokens: Cerebras rejects a request carrying both token caps,
-  // and every provider here accepts this one.
+  // Only ever max_tokens, never max_completion_tokens alongside it: some
+  // providers reject a request carrying both, and all of ours accept this one.
   if (input.maxTokens !== undefined) body.max_tokens = input.maxTokens;
 
   const timeout = AbortSignal.timeout(timeoutMs);

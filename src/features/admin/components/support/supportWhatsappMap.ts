@@ -100,7 +100,7 @@ function parseMedia(media: unknown): SupportMessage["media"] {
     .filter(Boolean) as NonNullable<SupportMessage["media"]>;
 }
 
-function parseFlow(flow: unknown): SupportMessage["flow"] {
+export function parseFlow(flow: unknown): SupportMessage["flow"] {
   if (!flow || typeof flow !== "object" || Array.isArray(flow)) return null;
   const f = flow as Record<string, unknown>;
   const buttonsRaw = Array.isArray(f.buttons) ? f.buttons : [];
@@ -114,6 +114,7 @@ function parseFlow(flow: unknown): SupportMessage["flow"] {
       return { id: row.id, title: row.title };
     })
     .filter(Boolean) as { id: string; title: string }[];
+  const replyKind = f.replyKind === "button" || f.replyKind === "list" ? f.replyKind : undefined;
   return {
     kind: typeof f.kind === "string" ? f.kind : undefined,
     title: typeof f.title === "string" ? f.title : undefined,
@@ -129,6 +130,8 @@ function parseFlow(flow: unknown): SupportMessage["flow"] {
     longitude: typeof f.longitude === "number" ? f.longitude : undefined,
     address: typeof f.address === "string" ? f.address : undefined,
     phone: typeof f.phone === "string" ? f.phone : undefined,
+    buttonId: typeof f.buttonId === "string" ? f.buttonId : undefined,
+    replyKind,
   };
 }
 

@@ -108,7 +108,7 @@ drafts staff sent against what the model wrote → `auto` → and only then
 
 | Variable | Purpose |
 |---|---|
-| `GEMINI_API_KEY`, `MISTRAL_API_KEY`, `CEREBRAS_API_KEY`, `GROQ_API_KEY` | At least one required. With none of them the policy gate skips before any I/O. Models are tried in that order and the first with quota left answers |
+| `GEMINI_API_KEY`, `MISTRAL_API_KEY`, `GROQ_API_KEY` | At least one required. With none of them the policy gate skips before any I/O. Models are tried in that order and the first with quota left answers. All three free tiers renew on their own; trial-credit providers are deliberately excluded |
 | `AI_MODEL_CHAIN` | Optional override of the whole order, `provider:model` comma-separated |
 | `GROQ_MODEL` | Optional override of the preferred Groq model, defaults to `openai/gpt-oss-120b` |
 | `KAPSO_*` | WhatsApp transport, unchanged |
@@ -254,10 +254,9 @@ Work down the chain — each step tells you which link is broken.
 
 Having no provider key at all is the quietest failure: the policy gate skips
 before any network call, so there is no error anywhere — only a `skip` row with
-reason `no_ai_key`. Any one of `GEMINI_API_KEY`, `MISTRAL_API_KEY`,
-`CEREBRAS_API_KEY` or `GROQ_API_KEY` clears it. On Vercel, add it to the
-Production environment and redeploy; new environment variables do not apply to
-an existing build.
+reason `no_ai_key`. Any one of `GEMINI_API_KEY`, `MISTRAL_API_KEY` or
+`GROQ_API_KEY` clears it. On Vercel, add it to the Production environment and
+redeploy; new environment variables do not apply to an existing build.
 
 The `model` column on `whatsapp_ai_events` records which model actually
 replied, as `provider:model`. Expect it to vary through the day — that is the

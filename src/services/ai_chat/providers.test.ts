@@ -10,7 +10,6 @@ describe("providers", () => {
       "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     );
     assert.equal(PROVIDERS.mistral.url, "https://api.mistral.ai/v1/chat/completions");
-    assert.equal(PROVIDERS.cerebras.url, "https://api.cerebras.ai/v1/chat/completions");
     assert.equal(PROVIDERS.groq.url, "https://api.groq.com/openai/v1/chat/completions");
   });
 
@@ -33,7 +32,7 @@ describe("providers", () => {
 
   it("reports whether any provider at all can be called", () => {
     assert.equal(hasAnyAiKey({}), false);
-    assert.equal(hasAnyAiKey({ CEREBRAS_API_KEY: "c" }), true);
+    assert.equal(hasAnyAiKey({ MISTRAL_API_KEY: "m" }), true);
     assert.equal(hasAnyAiKey({ GROQ_API_KEY: "k" }), true);
   });
 });
