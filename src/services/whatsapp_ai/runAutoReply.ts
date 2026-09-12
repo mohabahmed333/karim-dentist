@@ -250,6 +250,7 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
       // If it is going to ask which service, it asks in taps — including a way
       // to say "I do not know", which is the whole point of it being optional.
       askingService: envelope.needs.includes("service"),
+      choices: envelope.choices,
       canBook: deps.policy.settings.allow_booking_writes,
       willExecuteAction: decision.actions.length > 0,
     }) ?? undefined;

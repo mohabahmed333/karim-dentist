@@ -8,6 +8,7 @@ import {
   LIST_ROW_TITLE_LIMIT,
 } from "@/services/whatsapp/interactiveButtons";
 import type { BodyLanguage } from "@/services/patient_notifications/templates";
+import { stripInternalIds } from "./replyGuards";
 
 /** WhatsApp shows at most three reply buttons on one message. */
 export const MAX_BUTTONS = 3;
@@ -154,6 +155,33 @@ export function serviceRows(
 }
 
 /**
+ * The model's own suggested answers, made safe to show.
+ *
+ * These are the only button titles the model chooses, so they are treated as
+ * untrusted text: identifiers are stripped, over-long titles are dropped rather
+ * than cut (a truncated answer can mean something else entirely), duplicates go
+ * — WhatsApp rejects the message over two matching titles — and at most three
+ * survive.
+ */
+export function choiceButtons(choices: string[]): ReplyButton[] {
+  const buttons: ReplyButton[] = [];
+  const taken = new Set<string>();
+
+  for (const raw of choices) {
+    if (buttons.length >= MAX_BUTTONS) break;
+    if (typeof raw !== "string") continue;
+    const title = stripInternalIds(raw).reply.replace(/\s+/g, " ").trim();
+    if (!title || title.length > BUTTON_TITLE_LIMIT) continue;
+    const key = title.toLowerCase();
+    if (taken.has(key)) continue;
+    taken.add(key);
+    buttons.push({ id: `choice:${buttons.length}`, title });
+  }
+
+  return buttons;
+}
+
+/**
  * What the patient can tap on this reply, if anything.
  *
  * Kept pure and in one place so the order of preference can be read at a
@@ -173,6 +201,8 @@ export function replyUi(input: {
   pendingService?: string;
   /** The model is asking which service they want. */
   askingService: boolean;
+  /** Short answers the model proposed for the question it just asked. */
+  choices?: string[];
   canBook: boolean;
   /** True when this turn is already performing the booking. */
   willExecuteAction: boolean;
@@ -198,6 +228,11 @@ export function replyUi(input: {
       rows,
     };
   }
+
+  // Nothing structural to offer, but the reply may still be a question with a
+  // few short answers — "move it or add another?", "morning or evening?".
+  const choices = choiceButtons(input.choices ?? []);
+  if (choices.length > 0) return { kind: "buttons", buttons: choices };
 
   return null;
 }

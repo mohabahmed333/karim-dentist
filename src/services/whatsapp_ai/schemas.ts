@@ -90,6 +90,15 @@ export const autoReplyEnvelopeSchema = z.object({
    * envelope: these are cross-checked against the server's own list anyway, so
    * a bad entry can cost nothing, while a rejected envelope costs the reply.
    */
+  /**
+   * Short answers to the question this reply asks, offered as buttons.
+   *
+   * Unlike slots and services, these carry no identifier: a tap sends the words
+   * back as an ordinary message, so the patient can do nothing by tapping that
+   * they could not do by typing. That is what makes it safe for the model to
+   * choose them.
+   */
+  choices: z.array(z.string()).max(3).default([]).catch([]),
   offeredSlotIds: z
     .array(z.string())
     .max(20)

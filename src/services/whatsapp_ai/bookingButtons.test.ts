@@ -7,6 +7,7 @@ import {
   CONFIRM_ID,
   MAX_BUTTONS,
   NOT_SURE_ID,
+  choiceButtons,
   confirmButtons,
   replyUi,
   serviceRows,
@@ -191,5 +192,73 @@ describe("replyUi", () => {
       pendingService: "Dental implants",
     });
     assert.equal(ui, null);
+  });
+});
+
+describe("choiceButtons — the model's own suggested answers", () => {
+  it("offers them in the order given", () => {
+    const buttons = choiceButtons(["تغيير الموعد", "حجز جديد"]);
+    assert.deepEqual(buttons.map((b) => b.title), ["تغيير الموعد", "حجز جديد"]);
+    assert.deepEqual(buttons.map((b) => b.id), ["choice:0", "choice:1"]);
+  });
+
+  it("never offers more than WhatsApp shows", () => {
+    assert.equal(choiceButtons(["أ", "ب", "ج", "د", "هـ"]).length, 3);
+  });
+
+  /** Truncating an answer can turn it into a different answer. */
+  it("drops a choice too long for a button rather than cutting it", () => {
+    const buttons = choiceButtons(["نعم", "x".repeat(21)]);
+    assert.deepEqual(buttons.map((b) => b.title), ["نعم"]);
+  });
+
+  it("drops duplicates, which WhatsApp would reject the message over", () => {
+    assert.equal(choiceButtons(["نعم", "نعم ", "NEE"]).length, 2);
+  });
+
+  it("strips an identifier the model slipped into a choice", () => {
+    const buttons = choiceButtons(["slotId=11111111-1111-4111-8111-111111111111"]);
+    assert.deepEqual(buttons, []);
+  });
+
+  it("offers nothing for blanks or a missing list", () => {
+    assert.deepEqual(choiceButtons([]), []);
+    assert.deepEqual(choiceButtons(["", "   "]), []);
+  });
+});
+
+describe("replyUi — where choices sit in the order of preference", () => {
+  const services = [{ title: "Dental implants", title_ar: "زراعة الأسنان" }];
+  const base = {
+    language: "ar" as const,
+    offeredSlots: [],
+    services,
+    askingService: false,
+    canBook: true,
+    willExecuteAction: false,
+  };
+
+  it("offers the model's answers when there is nothing structural to show", () => {
+    const ui = replyUi({ ...base, choices: ["تغيير الموعد", "حجز جديد"] });
+    assert.equal(ui?.kind, "buttons");
+    assert.deepEqual(
+      ui!.kind === "buttons" ? ui!.buttons.map((b) => b.title) : [],
+      ["تغيير الموعد", "حجز جديد"],
+    );
+  });
+
+  /** A real appointment time is worth more than a yes/no. */
+  it("prefers offered times over the model's answers", () => {
+    const ui = replyUi({
+      ...base,
+      offeredSlots: [slot("11111111-1111-4111-8111-111111111111", "2026-09-14T07:30:00.000Z")],
+      choices: ["نعم", "لا"],
+    });
+    assert.equal(ui?.kind, "buttons");
+    assert.match(ui!.kind === "buttons" ? ui!.buttons[0].id : "", /^slot:/);
+  });
+
+  it("offers nothing when the model proposed nothing", () => {
+    assert.equal(replyUi({ ...base, choices: [] }), null);
   });
 });

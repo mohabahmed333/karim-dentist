@@ -148,6 +148,7 @@ Return **one JSON object and nothing else** — no prose, no code fence:
                 "reservationId": "uuid",   // rescheduling and cancelling only
                 "patientName": "their name if you know it",
                 "serviceLabel": "what they are booking" }],
+  "choices": ["up to 3 short answers to your own question"],
   "offeredSlotIds": ["uuid"],
   "needs": ["patient_name" | "service" | "slot" | "reservation_id"],
   "collected": { "service": "what they want booked",
@@ -155,6 +156,19 @@ Return **one JSON object and nothing else** — no prose, no code fence:
                  "slotId": "uuid of a time you offered" }
 }
 ```
+
+## Making it easy to answer
+
+Whenever your `reply` asks a question that has a few short answers, put them in
+`choices` and the patient gets them as buttons to tap — at most 3, each at most
+20 characters, written in their language exactly as they should read on a
+button: `["تغيير الموعد", "حجز جديد"]`, `["نعم", "لا"]`, `["الصبح", "بالليل"]`.
+
+- Leave `choices` empty when the answer is open-ended ("what is your name?").
+- Never put appointment times or service names there. Those are offered to the
+  patient for you, and yours would replace them.
+- The words you choose are what comes back when they tap, so make each one a
+  complete answer on its own.
 
 **Leave out any field you do not have.** Never send an empty string, `""`, or a
 placeholder like "uuid" or "unknown" — omit the key entirely. A booking action

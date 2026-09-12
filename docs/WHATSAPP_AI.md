@@ -188,6 +188,19 @@ Offered times go out as tappable reply buttons, and a chosen time gets a
 - If WhatsApp would reject the set, `sendWhatsappMessage` sends the text alone.
   Buttons improve a message; they are never a precondition for it.
 
+Beyond those fixed moments, the assistant can propose its own answers. When its
+reply asks a question with a few short answers it fills `choices` — *"تغيير
+الموعد" / "إضافة حجز جديد"*, *"نعم" / "لا"* — and the server renders them as
+buttons. These carry no identifier: a tap sends the words back as an ordinary
+message, so tapping can do nothing typing could not, which is what makes it safe
+for the model to pick them. They are still treated as untrusted text —
+identifiers stripped, over-long titles dropped rather than cut, duplicates
+removed, three at most.
+
+The order of preference, all in `replyUi`: a booking under way shows nothing ·
+a chosen time gets Confirm / Another time · offered times beat everything else ·
+then the service list · and only then the model's own choices.
+
 A service is **optional**. A time alone is enough to book; when nobody names a
 service the reservation is a General consultation and the reply says so, so no
 one arrives expecting a treatment that was never agreed.
