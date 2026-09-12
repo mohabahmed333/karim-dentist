@@ -103,6 +103,7 @@ export const adminNavSections: AdminNavSection[] = [
     items: [
       { href: "/admin/customize", labelKey: "admin.nav.customize" },
       { href: "/admin/usage", labelKey: "admin.nav.usage" },
+      { href: "/admin/assist-analytics", labelKey: "admin.nav.assistAnalytics" },
       { href: "/admin/settings", labelKey: "admin.nav.settings" },
     ],
   },
@@ -134,6 +135,7 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin/callout": "admin.nav.callout",
   "/admin/customize": "admin.nav.customize",
   "/admin/usage": "admin.nav.usage",
+  "/admin/assist-analytics": "admin.nav.assistAnalytics",
   "/admin/settings": "admin.nav.settings",
 };
 
