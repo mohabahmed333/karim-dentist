@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { modelTranscript } from "./clinicAssistTranscript";
+import { readClinicAssistStream } from "./clinicAssistStream";
 import {
   appendMessage,
   clearThread,
@@ -81,6 +82,14 @@ type Props = {
 };
 
 type View = "chat" | "history";
+
+/** The clinic-chat route's final `done` event — same shape it used to return as one JSON body. */
+type ClinicChatDonePayload = {
+  reply?: string;
+  suggestedActions?: ClinicChatAction[];
+  proposedActions?: ProposedAction[];
+  dropped?: number;
+};
 
 function slashToStartId(cmd: ChatSlashCommand): string | null {
   const map: Record<string, string> = {
@@ -440,11 +449,14 @@ export function ReceptionChat({
     message: string;
     transcript: AdminAiChatMessage[];
   } | null>(null);
+  /** Live progress from the stream (e.g. "Looking up the patient…") while pending. */
+  const [statusText, setStatusText] = useState<string | null>(null);
 
   async function askAi(transcript: AdminAiChatMessage[]) {
     setPending(true);
     setProposalReview(null);
     setAiError(null);
+    setStatusText(null);
     try {
       const res = await fetch("/api/v1/ai/clinic-chat", {
         method: "POST",
@@ -465,14 +477,22 @@ export function ReceptionChat({
             : null,
         }),
       });
-      const body = (await res.json().catch(() => ({}))) as {
-        reply?: string;
-        suggestedActions?: ClinicChatAction[];
-        proposedActions?: ProposedAction[];
-        dropped?: number;
-        error?: string;
-      };
-      if (!res.ok) throw new Error(body.error ?? t("admin.chat.chatFailed"));
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? t("admin.chat.chatFailed"));
+      }
+
+      let donePayload: ClinicChatDonePayload | null = null;
+      let streamError: string | null = null;
+      await readClinicAssistStream(res, (event) => {
+        if (event.type === "status") setStatusText(event.text);
+        else if (event.type === "done") donePayload = event.payload as ClinicChatDonePayload;
+        else if (event.type === "error") streamError = event.error;
+      });
+      if (streamError) throw new Error(streamError);
+      if (!donePayload) throw new Error(t("admin.chat.chatFailed"));
+      const body: ClinicChatDonePayload = donePayload;
+
       await persist(
         "assistant",
         body.reply || "…",
@@ -505,6 +525,7 @@ export function ReceptionChat({
       });
     } finally {
       setPending(false);
+      setStatusText(null);
     }
   }
 
@@ -779,14 +800,20 @@ export function ReceptionChat({
             <AnimatePresence>
               {pending || busy ? (
                 <motion.p
-                  key="working"
-                  className={`text-[12px] ${CHAT_META}`}
+                  key={pending && statusText ? `working-${statusText}` : "working"}
+                  role="status"
+                  className={`flex items-center gap-1.5 text-[12px] ${CHAT_META}`}
                   variants={workingVariants}
                   initial="hidden"
                   animate="show"
                   exit="exit"
                 >
-                  {t("admin.chat.working")}
+                  <span className="inline-flex gap-0.5" aria-hidden="true">
+                    <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
+                    <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
+                    <span className="size-1 animate-bounce rounded-full bg-current" />
+                  </span>
+                  {pending && statusText ? statusText : t("admin.chat.working")}
                 </motion.p>
               ) : null}
             </AnimatePresence>

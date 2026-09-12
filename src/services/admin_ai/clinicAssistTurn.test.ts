@@ -126,6 +126,24 @@ describe("runClinicAssistTurn", () => {
     assert.deepEqual(out.proposedActions, []);
   });
 
+  it("reports each tool call as it starts, for a caller to show progress", async () => {
+    const { complete } = scripted(
+      TOOL_CALL("search_patients", { query: "Ali" }),
+      REPLY("Found Ali."),
+    );
+    const runTool = async () => ({ ok: true as const, data: [] });
+    const seen: { name: string; args: unknown }[] = [];
+    await runClinicAssistTurn({
+      db: {} as never,
+      system: "sys",
+      messages: [{ role: "user", content: "find Ali" }],
+      complete,
+      runTool,
+      onToolCall: (name, args) => seen.push({ name, args }),
+    });
+    assert.deepEqual(seen, [{ name: "search_patients", args: { query: "Ali" } }]);
+  });
+
   it("treats a malformed toolCall shape as a normal (if odd) reply, not a crash", async () => {
     const { complete } = scripted(JSON.stringify({ toolCall: { args: { query: "x" } } }));
     const out = await runClinicAssistTurn({
