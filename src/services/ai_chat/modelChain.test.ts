@@ -22,7 +22,7 @@ describe("DEFAULT_CHAIN", () => {
     assert.deepEqual(ids(DEFAULT_CHAIN), [
       "gemini:gemini-3.8-flash",
       "mistral:mistral-large-latest",
-      "gemini:gemini-2.5-flash",
+      "gemini:gemini-3.6-flash",
       "mistral:mistral-saba-latest",
       "groq:openai/gpt-oss-120b",
       "groq:qwen/qwen3.8-27b",
@@ -60,8 +60,8 @@ describe("parseModelChain", () => {
   });
 
   it("drops entries naming an unknown provider or no model", () => {
-    assert.deepEqual(parseModelChain("openai:gpt-4,groq:,:x,gemini:gemini-2.5-flash"), [
-      { provider: "gemini", model: "gemini-2.5-flash" },
+    assert.deepEqual(parseModelChain("openai:gpt-4,groq:,:x,gemini:gemini-3.6-flash"), [
+      { provider: "gemini", model: "gemini-3.6-flash" },
     ]);
   });
 

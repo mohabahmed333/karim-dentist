@@ -22,7 +22,10 @@ type Env = Record<string, string | undefined>;
 export const DEFAULT_CHAIN: ChainEntry[] = [
   { provider: "gemini", model: "gemini-3.8-flash" },
   { provider: "mistral", model: "mistral-large-latest" },
-  { provider: "gemini", model: "gemini-2.5-flash" },
+  // gemini-2.5-flash was retired by Google (a live 404, "no longer available
+  // to new users") — 3.6 is a genuinely different model from the 3.8 entry
+  // above, so this slot still buys real redundancy rather than repeating it.
+  { provider: "gemini", model: "gemini-3.6-flash" },
   { provider: "mistral", model: "mistral-saba-latest" },
   { provider: "groq", model: "openai/gpt-oss-120b" },
   { provider: "groq", model: "qwen/qwen3.8-27b" },
