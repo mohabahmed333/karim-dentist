@@ -35,6 +35,14 @@ export class ProviderError extends Error {
   readonly retryAfterMs: number | null;
   readonly detail: string;
   readonly cancelled: boolean;
+  /** The provider's own error code, e.g. Groq's "json_validate_failed". */
+  readonly code: string | null;
+  /**
+   * What the model actually produced when the provider rejected it as invalid
+   * JSON. Kept whole: it is the only evidence of why a reply failed, and it may
+   * still contain a usable answer.
+   */
+  readonly failedGeneration: string | null;
 
   constructor(
     reason: string,
@@ -45,6 +53,8 @@ export class ProviderError extends Error {
       retryAfterMs?: number | null;
       detail?: string;
       cancelled?: boolean;
+      code?: string | null;
+      failedGeneration?: string | null;
     },
   ) {
     super(`${init.provider}:${init.model} — ${reason}`);
@@ -55,12 +65,41 @@ export class ProviderError extends Error {
     this.retryAfterMs = init.retryAfterMs ?? null;
     this.detail = init.detail ?? "";
     this.cancelled = init.cancelled ?? false;
+    this.code = init.code ?? null;
+    this.failedGeneration = init.failedGeneration ?? null;
   }
 }
 
 const DEFAULT_TIMEOUT_MS = 20_000;
 /** Enough of the body to read the limit that was hit, not enough to spam logs. */
 const DETAIL_LIMIT = 300;
+
+/**
+ * The structured fields a provider puts in an error body.
+ *
+ * Parsed from the whole body, before `detail` is truncated for logs: a failed
+ * generation is routinely longer than that excerpt, and truncating first would
+ * leave a fragment nobody can use.
+ */
+function parseErrorBody(body: string): {
+  code: string | null;
+  failedGeneration: string | null;
+} {
+  try {
+    const parsed = JSON.parse(body) as {
+      error?: { code?: unknown; failed_generation?: unknown };
+    };
+    return {
+      code: typeof parsed.error?.code === "string" ? parsed.error.code : null,
+      failedGeneration:
+        typeof parsed.error?.failed_generation === "string"
+          ? parsed.error.failed_generation
+          : null,
+    };
+  } catch {
+    return { code: null, failedGeneration: null };
+  }
+}
 
 /** `retry-after` is seconds or an HTTP date; anything else is not worth trusting. */
 function parseRetryAfter(header: string | null, now: number): number | null {
@@ -123,11 +162,13 @@ export async function callProvider(input: ProviderCallInput): Promise<string> {
   }
 
   if (!response.ok) {
-    const detail = (await response.text().catch(() => "")).slice(0, DETAIL_LIMIT);
+    const raw = await response.text().catch(() => "");
+    const detail = raw.slice(0, DETAIL_LIMIT);
     throw fail(`HTTP ${response.status}: ${detail}`, {
       status: response.status,
       retryAfterMs: parseRetryAfter(response.headers.get("retry-after"), Date.now()),
       detail,
+      ...parseErrorBody(raw),
     });
   }
 

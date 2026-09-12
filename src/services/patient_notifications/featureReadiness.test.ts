@@ -10,7 +10,7 @@ import { buildTemplateForKind } from "./templateParams.ts";
 const ALL_APPROVED = ["appoinment_en", "appoinment_ar", "reminder_en", "reminder_ar"];
 
 const ready = (over: Record<string, unknown> = {}) => ({
-  env: { cronSecret: true, kapso: true, kapsoWebhookSecret: true, serviceRole: true, groqKey: true },
+  env: { cronSecret: true, kapso: true, kapsoWebhookSecret: true, serviceRole: true, aiKey: true },
   notificationTablesPresent: true,
   notifications: { mode: "send", recallEnabled: true, reminderLeadMinutes: 1440 },
   cronScheduled: true,
@@ -117,7 +117,7 @@ describe("evaluateFeatures", () => {
     // The "?" in Settings shows this text. An empty one would be a tooltip with
     // nothing in it, on exactly the item someone is stuck on.
     for (const facts of [ready(), ready({
-      env: { cronSecret: false, kapso: false, kapsoWebhookSecret: false, serviceRole: false, groqKey: false },
+      env: { cronSecret: false, kapso: false, kapsoWebhookSecret: false, serviceRole: false, aiKey: false },
       notificationTablesPresent: false, notifications: null, cronScheduled: null,
       approvedTemplateNames: null, ai: null, publishedKnowledge: 0, clinicMapUrl: false,
     })]) {

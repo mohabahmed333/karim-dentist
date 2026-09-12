@@ -5,7 +5,8 @@ import {
   type TreatmentAiResponse,
 } from "./schemas";
 import { ADMIN_AI_ACTION_CATALOG } from "@/services/admin_ai/actionCatalog";
-import { groqChat } from "./callGroq";
+import { firstJsonObject } from "@/lib/json/firstJsonObject";
+import { aiChat } from "@/services/ai_chat";
 import { parseProposedActions } from "@/services/admin_ai/parseProposedActions";
 
 
@@ -40,7 +41,6 @@ export async function loadTreatmentAssistantPrompt(): Promise<string> {
 }
 
 export async function runTreatmentChat(input: {
-  apiKey: string;
   messages: ChatTurn[];
   context: TreatmentChatContext;
 }): Promise<TreatmentAiResponse> {
@@ -85,8 +85,7 @@ export async function runTreatmentChat(input: {
     .filter(Boolean)
     .join("\n");
 
-  const raw = await groqChat({
-    apiKey: input.apiKey,
+  const { content } = await aiChat({
     temperature: 0.2,
     responseFormat: "json_object",
     messages: [
@@ -100,7 +99,11 @@ export async function runTreatmentChat(input: {
       })),
     ],
   });
-  const parsed = JSON.parse(raw) as unknown;
+  // Not every provider honours JSON mode, so read the object out of whatever
+  // came back rather than trusting the whole string to parse.
+  const json = firstJsonObject(content);
+  if (!json) throw new Error("The assistant returned no readable JSON");
+  const parsed = JSON.parse(json) as unknown;
   const result = treatmentAiResponseSchema.parse(parsed);
   const proposed = parseProposedActions(result.proposedActions);
   return {

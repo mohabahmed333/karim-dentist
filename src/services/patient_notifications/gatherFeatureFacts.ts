@@ -7,6 +7,7 @@
  */
 
 import type { createServiceClient } from "@/lib/supabase/service";
+import { hasAnyAiKey } from "@/services/ai_chat";
 import { loadAiSettings } from "@/services/whatsapp_ai/store";
 import type { AiMode, FeatureFacts } from "./featureConditions";
 import { approvedTemplateNames, cronScheduled, hasKapsoConfig } from "./gatherReadiness";
@@ -46,7 +47,8 @@ export async function gatherFeatureFacts(
       kapso: hasKapsoConfig(),
       kapsoWebhookSecret: present(process.env.KAPSO_WEBHOOK_SECRET),
       serviceRole: present(process.env.SUPABASE_SERVICE_ROLE_KEY),
-      groqKey: present(process.env.GROQ_API_KEY),
+      // Any provider in the chain will do — the assistant only needs one.
+      aiKey: hasAnyAiKey(),
     },
     // Any error reading the settings table is treated as "not migrated": a
     // conservative false beats telling staff a feature works when it cannot.

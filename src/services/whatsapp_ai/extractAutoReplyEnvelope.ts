@@ -1,3 +1,4 @@
+import { firstJsonObject } from "@/lib/json/firstJsonObject";
 import { autoReplyEnvelopeSchema, type AutoReplyEnvelope } from "./schemas";
 
 export type ExtractResult = {
@@ -16,31 +17,6 @@ function handoffEnvelope(reason: string): AutoReplyEnvelope {
     handoffReason: reason,
     reply: "A team member will reply shortly.",
   });
-}
-
-/** Pull the first balanced {...} out of prose, if the model wrapped its JSON. */
-function firstJsonObject(raw: string): string | null {
-  const start = raw.indexOf("{");
-  if (start === -1) return null;
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-  for (let i = start; i < raw.length; i += 1) {
-    const ch = raw[i];
-    if (inString) {
-      if (escaped) escaped = false;
-      else if (ch === "\\") escaped = true;
-      else if (ch === '"') inString = false;
-      continue;
-    }
-    if (ch === '"') inString = true;
-    else if (ch === "{") depth += 1;
-    else if (ch === "}") {
-      depth -= 1;
-      if (depth === 0) return raw.slice(start, i + 1);
-    }
-  }
-  return null;
 }
 
 function candidates(raw: string): string[] {

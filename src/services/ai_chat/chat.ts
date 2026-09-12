@@ -32,11 +32,21 @@ export type AiChatAttempt = { provider: ProviderId; model: string; reason: strin
 /** Every model refused. Carries each failure, because "the AI broke" is useless. */
 export class AiChatError extends Error {
   readonly attempts: AiChatAttempt[];
+  /** A model did answer, but not in JSON the provider would accept. */
+  readonly jsonValidateFailed: boolean;
+  /** What such a model wrote instead — often still a usable reply. */
+  readonly failedGeneration: string | null;
 
-  constructor(message: string, attempts: AiChatAttempt[] = []) {
+  constructor(
+    message: string,
+    attempts: AiChatAttempt[] = [],
+    detail: { jsonValidateFailed?: boolean; failedGeneration?: string | null } = {},
+  ) {
     super(message);
     this.name = "AiChatError";
     this.attempts = attempts;
+    this.jsonValidateFailed = detail.jsonValidateFailed ?? false;
+    this.failedGeneration = detail.failedGeneration ?? null;
   }
 }
 
@@ -78,6 +88,10 @@ export async function aiChat(input: AiChatInput): Promise<AiChatResult> {
 
   const attempts: AiChatAttempt[] = [];
   let deadlineHit = false;
+  // Kept across the whole chain: the caller decides what to do about a model
+  // that answered in prose, and it cannot do that from the message alone.
+  let jsonValidateFailed = false;
+  let failedGeneration: string | null = null;
 
   for (const entry of order) {
     const remaining = deadlineAt - now();
@@ -108,7 +122,17 @@ export async function aiChat(input: AiChatInput): Promise<AiChatResult> {
 
       // The caller gave up: stop, rather than spending their budget on models
       // whose answer nobody is waiting for any more.
-      if (error.cancelled) throw new AiChatError(error.message, attempts);
+      if (error.code === "json_validate_failed") jsonValidateFailed = true;
+      if (!failedGeneration && error.failedGeneration) {
+        failedGeneration = error.failedGeneration;
+      }
+
+      if (error.cancelled) {
+        throw new AiChatError(error.message, attempts, {
+          jsonValidateFailed,
+          failedGeneration,
+        });
+      }
 
       noteFailure(entry, error, now());
       attempts.push({ provider: entry.provider, model: entry.model, reason: error.message });
@@ -121,5 +145,6 @@ export async function aiChat(input: AiChatInput): Promise<AiChatResult> {
       ? `AI deadline reached after ${attempts.length} model(s): ${summary}`
       : `Every model in the chain failed: ${summary}`,
     attempts,
+    { jsonValidateFailed, failedGeneration },
   );
 }

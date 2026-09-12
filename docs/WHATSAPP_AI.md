@@ -18,7 +18,8 @@ inbound webhook
   -> enqueueAutoReplyJob            (one job per message, unique index)
   -> after() -> processAutoReplyJob (webhook has already returned 200)
        -> evaluateAutoReplyPolicy   gate 1: context. runs before any model call
-       -> groqChat                  patient text is JSON-wrapped as data
+       -> aiChat                    patient text is JSON-wrapped as data
+                                    (walks the model chain until one answers)
        -> extractAutoReplyEnvelope  any failure becomes a handoff
        -> decideAutoReply           gate 2: content. the autonomy matrix
        -> send | draft
@@ -107,8 +108,9 @@ drafts staff sent against what the model wrote → `auto` → and only then
 
 | Variable | Purpose |
 |---|---|
-| `GROQ_API_KEY` | Required. Without it the policy gate skips before any I/O |
-| `GROQ_MODEL` | Optional override, defaults to `openai/gpt-oss-120b` |
+| `GEMINI_API_KEY`, `MISTRAL_API_KEY`, `CEREBRAS_API_KEY`, `GROQ_API_KEY` | At least one required. With none of them the policy gate skips before any I/O. Models are tried in that order and the first with quota left answers |
+| `AI_MODEL_CHAIN` | Optional override of the whole order, `provider:model` comma-separated |
+| `GROQ_MODEL` | Optional override of the preferred Groq model, defaults to `openai/gpt-oss-120b` |
 | `KAPSO_*` | WhatsApp transport, unchanged |
 | `CRON_SECRET` | Shared secret for the sweep endpoint |
 
@@ -218,8 +220,14 @@ Work down the chain — each step tells you which link is broken.
    `reason` names the exact gate that stopped it — `mode_off`, `no_ai_key`,
    `session_closed`, `human_active`, `rate_limited_*`.
 
-A missing `GROQ_API_KEY` is the quietest failure: the policy gate skips before
-any network call, so there is no error anywhere — only a `skip` row with reason
-`no_ai_key`. On Vercel, add it to the Production environment and redeploy;
-new environment variables do not apply to an existing build.
+Having no provider key at all is the quietest failure: the policy gate skips
+before any network call, so there is no error anywhere — only a `skip` row with
+reason `no_ai_key`. Any one of `GEMINI_API_KEY`, `MISTRAL_API_KEY`,
+`CEREBRAS_API_KEY` or `GROQ_API_KEY` clears it. On Vercel, add it to the
+Production environment and redeploy; new environment variables do not apply to
+an existing build.
+
+The `model` column on `whatsapp_ai_events` records which model actually
+replied, as `provider:model`. Expect it to vary through the day — that is the
+chain working, not a misconfiguration.
 

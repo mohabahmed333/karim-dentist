@@ -237,3 +237,51 @@ describe("aiChat — end-to-end fake", () => {
     }
   });
 });
+
+describe("aiChat — a chain that would not answer in JSON", () => {
+  beforeEach(() => resetCooldowns());
+
+  const jsonRefused = (generation: string) => () =>
+    new Response(
+      JSON.stringify({
+        error: { code: "json_validate_failed", failed_generation: generation },
+      }),
+      { status: 400 },
+    );
+
+  it("reports it, with what the first such model wrote instead", async () => {
+    const r = router({
+      one: jsonRefused("Sure, Sunday 10:30 works"),
+      two: jsonRefused("second"),
+      three: jsonRefused("third"),
+    });
+    await assert.rejects(
+      () =>
+        aiChat({
+          ...base,
+          env: THREE,
+          responseFormat: "json_object",
+          fetchImpl: r.fetchImpl,
+        }),
+      (err: unknown) =>
+        err instanceof AiChatError &&
+        err.jsonValidateFailed &&
+        err.failedGeneration === "Sure, Sunday 10:30 works",
+    );
+  });
+
+  it("stays false when the models failed for ordinary reasons", async () => {
+    const r = router({
+      one: () => rateLimited(),
+      two: () => serverError(),
+      three: () => serverError(),
+    });
+    await assert.rejects(
+      () => aiChat({ ...base, env: THREE, fetchImpl: r.fetchImpl }),
+      (err: unknown) =>
+        err instanceof AiChatError &&
+        err.jsonValidateFailed === false &&
+        err.failedGeneration === null,
+    );
+  });
+});

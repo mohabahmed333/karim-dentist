@@ -3,7 +3,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/api/requireAdmin";
-import { groqChat, GroqError, type GroqMessage } from "@/services/ai_groq/callGroq";
+import { AiChatError, aiChat, hasAnyAiKey, type AiMessage } from "@/services/ai_chat";
 import { ADMIN_AI_ACTION_CATALOG } from "@/services/admin_ai/actionCatalog";
 import { extractClinicChatPayload } from "@/services/admin_ai/extractClinicChat";
 import { loadClinicAssistContext } from "@/services/admin_ai/loadClinicAssistContext";
@@ -59,14 +59,16 @@ function clip(text: string): string {
   return text.length > MAX_TURN_CHARS ? `${text.slice(0, MAX_TURN_CHARS)}…` : text;
 }
 
-async function complete(apiKey: string, messages: GroqMessage[]): Promise<string> {
-  const request = { apiKey, temperature: 0.3, maxTokens: MAX_TOKENS, messages };
+async function complete(messages: AiMessage[]): Promise<string> {
+  const request = { temperature: 0.3, maxTokens: MAX_TOKENS, messages };
   try {
-    return await groqChat({ ...request, responseFormat: "json_object" });
+    const { content } = await aiChat({ ...request, responseFormat: "json_object" });
+    return content;
   } catch (err) {
-    // JSON mode answers output that fails validation with a 400. The parser
-    // copes with prose, so one plain retry beats an error bubble.
-    if (err instanceof GroqError && err.status === 400) return groqChat(request);
+    // JSON mode answers output that fails validation with a 400, and not every
+    // provider honours it at all. The parser copes with prose, so one plain
+    // retry across the chain beats an error bubble.
+    if (err instanceof AiChatError) return (await aiChat(request)).content;
     throw err;
   }
 }
@@ -75,10 +77,12 @@ export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (auth.error) return auth.error;
 
-  const apiKey = process.env.GROQ_API_KEY?.trim();
-  if (!apiKey) {
+  if (!hasAnyAiKey()) {
     return NextResponse.json(
-      { error: "Add GROQ_API_KEY to .env.local" },
+      {
+        error:
+          "Add an AI provider key to .env.local — GEMINI_API_KEY, MISTRAL_API_KEY, CEREBRAS_API_KEY or GROQ_API_KEY",
+      },
       { status: 503 },
     );
   }
@@ -104,7 +108,7 @@ export async function POST(request: Request) {
   const system = [prompt, "", ADMIN_AI_ACTION_CATALOG, "", context].join("\n");
 
   try {
-    const raw = await complete(apiKey, [
+    const raw = await complete([
       { role: "system", content: system },
       ...messages.slice(-MAX_TURNS).map((m) => ({
         role: m.role,

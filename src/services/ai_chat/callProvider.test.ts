@@ -230,3 +230,40 @@ describe("callProvider — Arabic", () => {
     assert.deepEqual(s.body().messages, [{ role: "user", content: "عايز احجز موعد تنظيف" }]);
   });
 });
+
+describe("callProvider — a completion the provider rejected", () => {
+  /**
+   * The reason this is kept whole: `detail` is truncated for logs, and the
+   * failed generation is routinely longer than that. It is both the evidence
+   * of why a reply failed and, often, a usable answer.
+   */
+  it("carries the error code and the entire failed generation", async () => {
+    const generation = `{"reply":"${"a long answer ".repeat(40)}"}`;
+    const fetchImpl = async () =>
+      new Response(
+        JSON.stringify({
+          error: { code: "json_validate_failed", failed_generation: generation },
+        }),
+        { status: 400 },
+      );
+    await assert.rejects(
+      () => callProvider({ ...base, responseFormat: "json_object", fetchImpl }),
+      (err: unknown) =>
+        err instanceof ProviderError &&
+        err.code === "json_validate_failed" &&
+        err.failedGeneration === generation &&
+        err.detail.length < generation.length,
+    );
+  });
+
+  it("leaves both null when the body is not JSON we recognise", async () => {
+    const fetchImpl = async () => new Response("upstream exploded", { status: 502 });
+    await assert.rejects(
+      () => callProvider({ ...base, fetchImpl }),
+      (err: unknown) =>
+        err instanceof ProviderError &&
+        err.code === null &&
+        err.failedGeneration === null,
+    );
+  });
+});

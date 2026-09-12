@@ -12,6 +12,7 @@ import {
   type ClinicCdtFee,
   type ClinicTreatmentPreset,
 } from "@/services/clinic_fees";
+import { hasAnyAiKey } from "@/services/ai_chat";
 import { runTreatmentChat } from "@/services/ai_groq";
 
 const bodySchema = z.object({
@@ -49,12 +50,11 @@ export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (auth.error) return auth.error;
 
-  const apiKey = process.env.GROQ_API_KEY?.trim();
-  if (!apiKey) {
+  if (!hasAnyAiKey()) {
     return NextResponse.json(
       {
         error:
-          "Add GROQ_API_KEY to .env.local (free key from console.groq.com)",
+          "Add an AI provider key to .env.local — GEMINI_API_KEY, MISTRAL_API_KEY, CEREBRAS_API_KEY or GROQ_API_KEY",
       },
       { status: 503 },
     );
@@ -108,7 +108,6 @@ export async function POST(request: Request) {
     const takenSlots = (takenSlotRows ?? []).map((row) => row.starts_at);
 
     const result = await runTreatmentChat({
-      apiKey,
       messages: parsed.data.messages,
       context: {
         toothFdi: parsed.data.toothFdi,
