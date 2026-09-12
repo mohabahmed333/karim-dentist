@@ -1,3 +1,7 @@
+import {
+  CLINIC_TIME_ZONE,
+  formatAppointmentDateTime,
+} from "@/services/patient_notifications/formatWhen";
 import { formatClinicHours, type ClinicHoursInput } from "./formatClinicHours";
 import { wrapPatientTurn } from "./sanitize";
 
@@ -52,10 +56,21 @@ function slotBlock(slots: OfferedSlot[]): string {
   if (slots.length === 0) {
     return "Open clinic appointment slots: (none — do not invent times; say we are fully booked and a colleague will follow up)";
   }
+  // Clinic local time, not the stored UTC. Shown the raw timestamp, the model
+  // reads "2026-09-13T07:30:00.000Z" and writes "Thursday 7:30" to the patient
+  // — wrong hour and wrong day — while the tappable button beside it says
+  // Sunday 10:30. One message, two different times.
   const lines = slots
-    .map((s, i) => `${i + 1}. slotId=${s.id} starts_at=${s.starts_at}`)
+    .map(
+      (s, i) =>
+        `${i + 1}. slotId=${s.id} when="${formatAppointmentDateTime(s.starts_at, "en")}"`,
+    )
     .join("\n");
-  return `Open clinic appointment slots (ONLY offer these; copy slotId exactly):\n${lines}`;
+  return [
+    "Open clinic appointment slots (ONLY offer these; copy slotId exactly).",
+    `Times are the clinic's own local time (${CLINIC_TIME_ZONE}) — say them exactly as written, translated into the patient's language:`,
+    lines,
+  ].join("\n");
 }
 
 function clinicBlock(clinic: ClinicFacts): string {
@@ -77,7 +92,7 @@ function reservationBlock(reservations: PatientReservation[]): string {
   const lines = reservations
     .map(
       (r) =>
-        `- reservationId=${r.id} ${r.service_label} at ${r.starts_at} (${r.status})`,
+        `- reservationId=${r.id} ${r.service_label} at ${formatAppointmentDateTime(r.starts_at, "en")} (${r.status})`,
     )
     .join("\n");
   return `This patient's upcoming appointments (the only ones they may change):\n${lines}`;
@@ -177,7 +192,7 @@ export function buildAutoReplyPrompt(input: BuildPromptInput): BuiltPrompt {
     "",
     collectedBlock(input.collected),
     "",
-    `Current time: ${new Date().toISOString()}`,
+    `Current time: ${formatAppointmentDateTime(new Date(), "en")} (${CLINIC_TIME_ZONE})`,
   ].join("\n");
 
   const messages = [

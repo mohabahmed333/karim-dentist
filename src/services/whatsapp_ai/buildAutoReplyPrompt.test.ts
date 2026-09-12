@@ -120,7 +120,7 @@ describe("buildAutoReplyPrompt", () => {
   });
 
   it("includes the current time so 'tomorrow' can be resolved", () => {
-    assert.match(build().system, /Current time: \d{4}-\d{2}-\d{2}T/);
+    assert.match(build().system, /Current time: \w+, \d{1,2} \w+ \d{4} at /);
   });
 });
 
@@ -208,5 +208,35 @@ describe("buildAutoReplyPrompt — services", () => {
     const s = build({ services: [{ title: "Teeth whitening" }] }).system;
     assert.match(s, /prices are not on file/i);
     assert.ok(!/Services and prices/.test(s));
+  });
+});
+
+describe("buildAutoReplyPrompt — times the model can repeat safely", () => {
+  /**
+   * Shown a raw UTC timestamp the model wrote "Thursday 7:30" for a slot that
+   * is Sunday 10:30 in Cairo — while the button beside it said Sunday 10:30.
+   * One message, two different times.
+   */
+  it("shows slots in the clinic's local time, never the stored UTC", () => {
+    const system = build().system;
+    assert.doesNotMatch(system, /starts_at=/);
+    assert.doesNotMatch(system, /2026-09-13T14:00:00\.000Z/);
+    assert.match(system, /when="Sunday, 13 September 2026 at 5:00 pm"/);
+    assert.match(system, /Africa\/Cairo/);
+  });
+
+  it("shows the patient's own appointments the same way", () => {
+    const system = build({
+      reservations: [
+        {
+          id: "res-1",
+          service_label: "Cleaning",
+          starts_at: "2026-09-14T10:00:00.000Z",
+          status: "confirmed",
+        },
+      ],
+    }).system;
+    assert.doesNotMatch(system, /2026-09-14T10:00:00\.000Z/);
+    assert.match(system, /reservationId=res-1 Cleaning at Monday, 14 September 2026 at /);
   });
 });
