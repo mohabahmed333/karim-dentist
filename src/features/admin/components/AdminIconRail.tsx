@@ -47,6 +47,9 @@ function RailDropdownItem({
     <AdminDropdownMenu>
       <AdminDropdownMenuTrigger
         aria-label={label}
+        openOnHover
+        delay={200}
+        closeDelay={150}
         className={railButtonClass(active)}
       >
         <Icon className="size-3.5" aria-hidden />
