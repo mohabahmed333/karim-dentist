@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Copy, RotateCcw, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Copy, RotateCcw, Send, ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { modelTranscript } from "./clinicAssistTranscript";
@@ -86,6 +86,8 @@ type Props = {
   chatLayout?: import("@/features/admin/hooks/useAdminChatLayout").AdminChatLayout;
   onToggleChatLayout?: () => void;
   onCollapseDock?: () => void;
+  /** Drop a reply's text into that WhatsApp conversation's draft, unsent — only offered from "Ask AI". */
+  onUseInWhatsapp?: (text: string) => void;
 };
 
 type View = "chat" | "history";
@@ -171,6 +173,7 @@ export function ReceptionChat({
   chatLayout,
   onToggleChatLayout,
   onCollapseDock,
+  onUseInWhatsapp,
 }: Props) {
   const t = useTranslations();
   const { locale } = useLocale();
@@ -985,6 +988,16 @@ export function ReceptionChat({
                               className="rounded p-1 text-[var(--admin-muted)] hover:bg-black/5 hover:text-[var(--admin-text)] disabled:opacity-30"
                             >
                               <RotateCcw className="size-3.5" strokeWidth={1.75} />
+                            </button>
+                          ) : null}
+                          {onUseInWhatsapp ? (
+                            <button
+                              type="button"
+                              onClick={() => onUseInWhatsapp(msg.content)}
+                              className="ms-1 flex items-center gap-1 rounded-full border border-[var(--admin-border)] px-2 py-0.5 text-[11px] text-[var(--admin-muted)] hover:border-[var(--admin-primary)] hover:text-[var(--admin-primary)]"
+                            >
+                              <Send className="size-3" strokeWidth={1.75} />
+                              {t("admin.chat.useInWhatsapp")}
                             </button>
                           ) : null}
                         </div>

@@ -279,6 +279,16 @@ export function SupportInboxView({
     setCompactPane("list");
   }
 
+  /** "Use in WhatsApp" from Clinic Assist — drops the text into that conversation's draft, unsent. */
+  function handleUseInWhatsapp(text: string) {
+    if (!assistReturnId) return;
+    setDraftsById((prev) => ({ ...prev, [assistReturnId]: text }));
+    setAssistPatient(null);
+    setSelectedId(assistReturnId);
+    if (compact) goToList();
+    toast.success(t("admin.frontDesk.draftInserted"));
+  }
+
   useEffect(() => {
     if (!selectedId && conversations[0]?.id) {
       setSelectedId(conversations[0].id);
@@ -932,6 +942,7 @@ export function SupportInboxView({
                   chatLayout={chatLayout}
                   onToggleChatLayout={onToggleChatLayout}
                   onCollapseDock={onCollapseDock}
+                  onUseInWhatsapp={assistPatient ? handleUseInWhatsapp : undefined}
                   onClose={() => {
                     setAssistPatient(null);
                     setAssistReturnId("");
@@ -1069,6 +1080,7 @@ export function SupportInboxView({
                 }
                 className="h-full min-h-0"
                 initialPatient={assistPatient}
+                onUseInWhatsapp={assistPatient ? handleUseInWhatsapp : undefined}
               />
             </div>
           ) : conversation ? (
