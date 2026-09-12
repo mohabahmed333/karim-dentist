@@ -16,6 +16,11 @@ import {
   type QuickReplyValues,
 } from "@/services/whatsapp/quickReplyFields";
 import { QuickReplyAttachmentField } from "./QuickReplyAttachmentField";
+import {
+  QuickReplyButtonsField,
+  buttonsFieldErrors,
+  type EditableButton,
+} from "./QuickReplyButtonsField";
 
 export const QUICK_REPLY_FORM_ID = "quick-reply-form";
 
@@ -44,6 +49,12 @@ export function QuickReplyForm({ item, categories, onSubmit, pending, message }:
   const [attachment, setAttachment] = useState<CannedReplyAttachment | null>(
     (item.attachment as CannedReplyAttachment | null) ?? null,
   );
+  const [buttons, setButtons] = useState<EditableButton[]>(() =>
+    ((item.buttons as { title: string; title_ar: string | null }[] | null) ?? []).map((button) => ({
+      title: button.title,
+      title_ar: button.title_ar ?? "",
+    })),
+  );
   const [focused, setFocused] = useState<"body" | "body_ar">("body");
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const bodyArRef = useRef<HTMLTextAreaElement>(null);
@@ -68,7 +79,7 @@ export function QuickReplyForm({ item, categories, onSubmit, pending, message }:
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (unknown.length) return;
+    if (unknown.length || buttonsFieldErrors(buttons).length) return;
     const form = new FormData(event.currentTarget);
     await onSubmit({
       slash_key: String(form.get("slash_key") ?? ""),
@@ -78,6 +89,8 @@ export function QuickReplyForm({ item, categories, onSubmit, pending, message }:
       body,
       body_ar: bodyAr,
       attachment,
+      // The server trims labels, stores blank Arabic labels as null, and an empty list as no buttons.
+      buttons: buttons.map((button) => ({ title: button.title, title_ar: button.title_ar })),
       active: form.get("active") === "on",
     });
   }
@@ -160,8 +173,23 @@ export function QuickReplyForm({ item, categories, onSubmit, pending, message }:
             {renderQuickReply(bodyAr, SAMPLE_VALUES).text}
           </p>
         ) : null}
+        {buttons.some((button) => button.title.trim()) ? (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {buttons
+              .filter((button) => button.title.trim())
+              .map((button, index) => (
+                <span
+                  key={index}
+                  className="rounded-full border border-[#D1D5DB] bg-white px-2.5 py-0.5 text-xs text-[#374151]"
+                >
+                  {button.title.trim()}
+                </span>
+              ))}
+          </div>
+        ) : null}
       </div>
       <QuickReplyAttachmentField value={attachment} onChange={setAttachment} />
+      <QuickReplyButtonsField value={buttons} onChange={setButtons} />
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" name="active" defaultChecked={item.active} />
         {t("admin.pages.quickReplies.active")}
