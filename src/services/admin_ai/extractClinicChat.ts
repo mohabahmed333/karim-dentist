@@ -8,36 +8,79 @@ const chipSchema = z.object({
   payload: z.record(z.string(), z.string()).optional(),
 });
 
+type Chip = z.infer<typeof chipSchema>;
+
+export type ClinicChatPayload = {
+  /** Empty when nothing readable came back — the caller supplies wording. */
+  reply: string;
+  suggestedActions: Chip[];
+  proposedActions: ProposedAction[];
+  /** Proposed actions rejected by the schema (unknown kind, bad payload). */
+  dropped: number;
+};
+
+type Envelope = {
+  reply?: unknown;
+  suggestedActions?: unknown;
+  proposedActions?: unknown;
+};
+
+function parseObject(text: string | undefined): Envelope | null {
+  if (!text) return null;
+  try {
+    const value: unknown = JSON.parse(text);
+    return value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Envelope)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Read the model's answer.
+ *
+ * JSON mode returns a bare object; older prompts wrapped it in a ```json fence
+ * after some prose. Both are accepted. When nothing parses, prose is still
+ * shown, but anything JSON-shaped is cut off — staff should never read a
+ * half-written `{"reply": …` in a chat bubble.
+ */
 export function extractClinicChatPayload(
   raw: string,
-  defaults: z.infer<typeof chipSchema>[],
-): {
-  reply: string;
-  suggestedActions: z.infer<typeof chipSchema>[];
-  proposedActions: ProposedAction[];
-} {
-  const fence = raw.match(/```json\s*([\s\S]*?)```/i);
-  if (fence?.[1]) {
-    try {
-      const parsed = JSON.parse(fence[1]) as {
-        reply?: string;
-        suggestedActions?: unknown;
-        proposedActions?: unknown;
-      };
-      const chips = z.array(chipSchema).safeParse(parsed.suggestedActions);
-      const proposed = parseProposedActions(parsed.proposedActions);
-      return {
-        reply: (parsed.reply ?? raw.replace(fence[0], "").trim()) || raw,
-        suggestedActions: chips.success ? chips.data : defaults,
-        proposedActions: proposed.actions,
-      };
-    } catch {
-      /* fall through */
-    }
+  defaults: Chip[] = [],
+): ClinicChatPayload {
+  const trimmed = raw.trim();
+  const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const firstBrace = trimmed.indexOf("{");
+  const envelope =
+    parseObject(trimmed) ??
+    parseObject(fence?.[1]?.trim()) ??
+    (firstBrace >= 0
+      ? parseObject(trimmed.slice(firstBrace, trimmed.lastIndexOf("}") + 1))
+      : null);
+
+  if (envelope) {
+    const chips = z.array(chipSchema).safeParse(envelope.suggestedActions);
+    const proposed = parseProposedActions(envelope.proposedActions);
+    const prose = fence ? trimmed.replace(fence[0], "").trim() : "";
+    const reply =
+      typeof envelope.reply === "string" && envelope.reply.trim()
+        ? envelope.reply.trim()
+        : prose;
+    return {
+      reply,
+      suggestedActions: chips.success ? chips.data : defaults,
+      proposedActions: proposed.actions,
+      dropped: proposed.dropped,
+    };
   }
+
+  const withoutFences = trimmed.replace(/```[\s\S]*?(?:```|$)/g, "").trim();
+  const jsonStart = withoutFences.search(/[[{]\s*"/);
   return {
-    reply: raw.trim(),
+    reply: (jsonStart >= 0 ? withoutFences.slice(0, jsonStart) : withoutFences).trim(),
     suggestedActions: defaults,
     proposedActions: [],
+    dropped: 0,
   };
 }

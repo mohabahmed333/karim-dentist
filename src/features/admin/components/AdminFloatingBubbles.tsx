@@ -224,7 +224,6 @@ export function AdminFloatingBubbles({
       return (
         <ReceptionChat
           className="h-full min-h-0"
-          statsSummary={t("admin.chat.title")}
           onClose={onClose}
           {...layoutProps}
         />

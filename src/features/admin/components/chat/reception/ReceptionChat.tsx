@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
-import { useTranslations } from "@/lib/i18n";
+import { useLocale, useTranslations } from "@/lib/i18n";
+import { modelTranscript } from "./clinicAssistTranscript";
 import {
   appendMessage,
   clearThread,
@@ -69,7 +71,6 @@ import { listReservations } from "@/services/reservations";
 import { findOpenReservationForPatient } from "./receptionHelpers";
 
 type Props = {
-  statsSummary: string;
   className?: string;
   onClose?: () => void;
   /** Prefill Clinic Assist with this contact (e.g. from Front desk Ask AI). */
@@ -140,7 +141,6 @@ function rowsToUi(
 let bootThreadId: string | null = null;
 
 export function ReceptionChat({
-  statsSummary,
   className,
   onClose,
   initialPatient = null,
@@ -149,6 +149,9 @@ export function ReceptionChat({
   onCollapseDock,
 }: Props) {
   const t = useTranslations();
+  const { locale } = useLocale();
+  const pathname = usePathname();
+  const router = useRouter();
   const reduced = useReducedMotion();
   const [ready, setReady] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
@@ -432,19 +435,27 @@ export function ReceptionChat({
     }
   }
 
+  /** A failed request, kept out of the thread so it can be retried as-is. */
+  const [aiError, setAiError] = useState<{
+    message: string;
+    transcript: AdminAiChatMessage[];
+  } | null>(null);
+
   async function askAi(transcript: AdminAiChatMessage[]) {
     setPending(true);
     setProposalReview(null);
+    setAiError(null);
     try {
       const res = await fetch("/api/v1/ai/clinic-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: transcript
-            .filter((m) => m.content.length > 0)
-            .slice(-12)
-            .map((m) => ({ role: m.role, content: m.content })),
-          statsSummary,
+          messages: modelTranscript(transcript, [
+            WELCOME_CONTENT,
+            t("admin.chat.welcome"),
+          ]),
+          locale,
+          page: pathname,
           activePatient: activePatient
             ? {
                 patientKey: activePatient.patientKey,
@@ -454,35 +465,44 @@ export function ReceptionChat({
             : null,
         }),
       });
-      const body = (await res.json()) as {
+      const body = (await res.json().catch(() => ({}))) as {
         reply?: string;
         suggestedActions?: ClinicChatAction[];
         proposedActions?: ProposedAction[];
+        dropped?: number;
         error?: string;
       };
       if (!res.ok) throw new Error(body.error ?? t("admin.chat.chatFailed"));
       await persist(
         "assistant",
-        body.reply ?? "…",
+        body.reply || "…",
         body.suggestedActions?.length
           ? body.suggestedActions
           : await fallbackActions(),
       );
+      if (body.dropped) {
+        toast.warning(
+          t("admin.chat.droppedActions").replace("{count}", String(body.dropped)),
+        );
+      }
       if (body.proposedActions?.length) {
         const review = await proposeFromChat({
           source: "clinic-chat",
           patientKey: activePatient?.patientKey,
           summary: body.reply ?? "Proposed changes",
           actions: body.proposedActions,
+          // Client-side, so the panel and its thread survive the navigation.
+          navigate: (href) => router.push(href),
         });
         if (review) setProposalReview(review);
       }
     } catch (err) {
-      await persist(
-        "assistant",
-        err instanceof Error ? err.message : t("admin.chat.reachError"),
-        await fallbackActions(),
-      );
+      // Not persisted: an error is not something Clinic Assist said, and a
+      // saved one was also fed back to the model as its own earlier reply.
+      setAiError({
+        message: err instanceof Error ? err.message : t("admin.chat.reachError"),
+        transcript,
+      });
     } finally {
       setPending(false);
     }
@@ -770,6 +790,21 @@ export function ReceptionChat({
                 </motion.p>
               ) : null}
             </AnimatePresence>
+            {aiError && !pending ? (
+              <div
+                role="alert"
+                className="flex items-start justify-between gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-800"
+              >
+                <span className="min-w-0 wrap-break-word">{aiError.message}</span>
+                <button
+                  type="button"
+                  className="shrink-0 font-semibold underline-offset-2 hover:underline"
+                  onClick={() => void askAi(aiError.transcript)}
+                >
+                  {t("admin.chat.retry")}
+                </button>
+              </div>
+            ) : null}
             <div ref={bottomRef} />
           </div>
 

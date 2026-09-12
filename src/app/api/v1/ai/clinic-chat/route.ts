@@ -3,13 +3,19 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/api/requireAdmin";
-import { formatClinicSlotAvailability } from "@/services/ai_groq/formatClinicSlotAvailability";
-import { groqChat } from "@/services/ai_groq/callGroq";
+import { groqChat, GroqError, type GroqMessage } from "@/services/ai_groq/callGroq";
 import { ADMIN_AI_ACTION_CATALOG } from "@/services/admin_ai/actionCatalog";
 import { extractClinicChatPayload } from "@/services/admin_ai/extractClinicChat";
+import { loadClinicAssistContext } from "@/services/admin_ai/loadClinicAssistContext";
+
+/** Turns and characters the model sees. Longer input is trimmed, not rejected. */
+const MAX_TURNS = 16;
+const MAX_TURN_CHARS = 2000;
+const MAX_TOKENS = 1500;
 
 const bodySchema = z.object({
-  statsSummary: z.string().max(4000).optional().default(""),
+  locale: z.enum(["en", "ar"]).optional().default("en"),
+  page: z.string().max(300).nullable().optional().default(null),
   activePatient: z
     .object({
       patientKey: z.string().min(1).max(120),
@@ -22,31 +28,46 @@ const bodySchema = z.object({
     .array(
       z.object({
         role: z.enum(["user", "assistant"]),
-        content: z.string().min(1).max(2000),
+        content: z.string().min(1).max(50_000),
       }),
     )
     .min(1)
-    .max(16),
+    .max(200),
 });
 
-const DEFAULT_ACTIONS = [
-  { id: "start:website", label: "Website" },
-  { id: "start:chart", label: "Chart" },
-  { id: "start:clinical", label: "Clinical" },
-  { id: "start:book", label: "Book" },
-  { id: "start:today", label: "Today" },
-  { id: "start:pending", label: "Pending" },
-  { id: "start:patient", label: "Find patient" },
-  { id: "start:noshow", label: "No-show" },
-  { id: "start:note", label: "Note" },
-];
+const FALLBACK_REPLY = {
+  en: {
+    review: "Review the changes below before saving.",
+    unreadable: "I couldn't put that answer together. Please try again.",
+  },
+  ar: {
+    review: "راجع التغييرات أدناه قبل الحفظ.",
+    unreadable: "تعذر تكوين الرد. حاول مرة أخرى.",
+  },
+} as const;
 
 async function loadPrompt(): Promise<string> {
   try {
     const file = path.join(process.cwd(), "prompts/clinic-receptionist.md");
     return await readFile(file, "utf8");
   } catch {
-    return "You are Reception for The Dental Lounge. Be brief. Never invent bookings.";
+    return "You are Reception for The Dental Lounge. Be brief. Never invent bookings. Respond with one JSON object: {\"reply\": string}.";
+  }
+}
+
+function clip(text: string): string {
+  return text.length > MAX_TURN_CHARS ? `${text.slice(0, MAX_TURN_CHARS)}…` : text;
+}
+
+async function complete(apiKey: string, messages: GroqMessage[]): Promise<string> {
+  const request = { apiKey, temperature: 0.3, maxTokens: MAX_TOKENS, messages };
+  try {
+    return await groqChat({ ...request, responseFormat: "json_object" });
+  } catch (err) {
+    // JSON mode answers output that fails validation with a 400. The parser
+    // copes with prose, so one plain retry beats an error bubble.
+    if (err instanceof GroqError && err.status === 400) return groqChat(request);
+    throw err;
   }
 }
 
@@ -66,64 +87,37 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid chat payload" }, { status: 400 });
   }
+  const { locale, page, activePatient, messages } = parsed.data;
 
-  const prompt = await loadPrompt();
-  const active = parsed.data.activePatient;
-
-  const nowIso = new Date().toISOString();
-  const [{ data: openRows }, { data: takenRows }] = await Promise.all([
-    auth.supabase
-      .from("appointment_slots")
-      .select("starts_at")
-      .eq("status", "open")
-      .gte("starts_at", nowIso)
-      .order("starts_at", { ascending: true })
-      .limit(24),
-    auth.supabase
-      .from("appointment_slots")
-      .select("starts_at")
-      .eq("status", "booked")
-      .gte("starts_at", nowIso)
-      .order("starts_at", { ascending: true })
-      .limit(24),
+  const [prompt, context] = await Promise.all([
+    loadPrompt(),
+    loadClinicAssistContext(auth.supabase, {
+      locale,
+      page,
+      activePatient: activePatient ?? null,
+    }).catch(
+      () =>
+        "## Clinic context\n(unavailable — the schedule could not be loaded; say so and do not guess times or ids)",
+    ),
   ]);
-  const openSlots = (openRows ?? []).map((r) => r.starts_at as string);
-  const takenSlots = (takenRows ?? []).map((r) => r.starts_at as string);
-  const availabilityBlock = formatClinicSlotAvailability({
-    openStartsAt: openSlots,
-    takenStartsAt: takenSlots,
-  });
 
-  const system = [
-    prompt,
-    "",
-    ADMIN_AI_ACTION_CATALOG,
-    "",
-    active
-      ? `Active patient (already selected — do NOT ask who again):\n- name: ${active.name}\n- phone: ${active.phone || "(none)"}\n- patientKey: ${active.patientKey}`
-      : "Active patient: (none — ask only if needed for clinical/CMS patient writes)",
-    "",
-    "Clinic stats context:",
-    parsed.data.statsSummary || "(no stats provided)",
-    "",
-    availabilityBlock,
-  ].join("\n");
+  const system = [prompt, "", ADMIN_AI_ACTION_CATALOG, "", context].join("\n");
 
   try {
-    const raw = await groqChat({
-      apiKey,
-      temperature: 0.3,
-      messages: [
-        { role: "system", content: system },
-        ...parsed.data.messages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        })),
-      ],
-    });
-    const { reply, suggestedActions, proposedActions } =
-      extractClinicChatPayload(raw, DEFAULT_ACTIONS);
-    return NextResponse.json({ reply, suggestedActions, proposedActions });
+    const raw = await complete(apiKey, [
+      { role: "system", content: system },
+      ...messages.slice(-MAX_TURNS).map((m) => ({
+        role: m.role,
+        content: clip(m.content),
+      })),
+    ]);
+    const payload = extractClinicChatPayload(raw);
+    const reply =
+      payload.reply ||
+      (payload.proposedActions.length
+        ? FALLBACK_REPLY[locale].review
+        : FALLBACK_REPLY[locale].unreadable);
+    return NextResponse.json({ ...payload, reply });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "AI request failed" },
