@@ -168,6 +168,30 @@ The 35 tagged `needs_clinic_input` deliberately route to a colleague rather than
 state a price or policy we do not know; they are safe as written but worth
 replacing with real answers.
 
+## Booking buttons
+
+Offered times go out as tappable reply buttons, and a chosen time gets a
+**Confirm booking / Another time** pair.
+
+- The **server** builds them, from the slots it actually offered that turn. The
+  model only says which slots it offered (`offeredSlotIds`, validated against
+  the server's own list); it never emits a button. A button is an action, and
+  the model has already been caught putting slot ids where patients could read
+  them.
+- The slot id rides in the button's `id`. The **title** is what the patient
+  reads — and a tap comes back as exactly that title in the message body, which
+  is why titles are real times ("الأحد 10:30 ص"), not codes.
+- A confirm button appears **only when `allow_booking_writes` is on**. One that
+  cannot book is a lie the patient taps.
+- Buttons survive Draft mode: they are stored on the draft's `flow` and sent
+  when staff approve it, so approving does not quietly deliver a worse message.
+- If WhatsApp would reject the set, `sendWhatsappMessage` sends the text alone.
+  Buttons improve a message; they are never a precondition for it.
+
+A service is **optional**. A time alone is enough to book; when nobody names a
+service the reservation is a General consultation and the reply says so, so no
+one arrives expecting a treatment that was never agreed.
+
 ## Things that will bite you
 
 - **Business-initiated messages need approved Meta templates.** Free text only
@@ -186,6 +210,14 @@ replacing with real answers.
   call retries once *without* JSON mode and falls back to what the model
   actually wrote, so the patient is not left with silence. Unparseable output is
   stored on `whatsapp_ai_events.envelope` as `raw_output`.
+- **WhatsApp allows three reply buttons, each title at most 20 characters**,
+  and rejects the whole message — text included — if two titles match or one
+  overruns. Two slots on the same weekday and time are separated by date;
+  `checkInteractiveButtons` enforces the rest.
+- **A button tap arrives as the title's text, not the button's id.** Nothing
+  maps the id back, so a patient tapping and a patient typing the same words are
+  indistinguishable by design — which is why the slot allowlist, not the text,
+  decides what may be booked.
 - **The clinic lists no consultation and no cleaning service.** When a patient
   does not know what they need, or names something unlisted, the assistant
   offers a *General consultation* — the booking RPC's own default label — and

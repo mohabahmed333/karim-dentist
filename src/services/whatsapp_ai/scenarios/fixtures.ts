@@ -320,6 +320,30 @@ export const DECISION_SCENARIOS: DecisionScenario[] = [
   { id: "human-not-a-bot", group: "adversarial", patient: "I don't want a bot",
     model: env({ intent: "other", confidence: 0.9, reply: reply("...") }),
     expect: { action: "human" } },
+
+  // ─────────── tapped buttons arrive as the button's own title text
+  { id: "tap-time-ar", group: "booking", patient: "الأحد 10:30 ص",
+    model: env({ language: "ar", intent: "booking_request", confidence: 0.95, reply: reply("تمام، أأكد الأحد 10:30؟"), collected: { slotId: SLOT_OFFERED } }),
+    expect: { action: "auto_send" } },
+  { id: "tap-time-en", group: "booking", patient: "Sun 10:30 am",
+    model: env({ intent: "booking_request", confidence: 0.95, reply: reply("Shall I confirm Sunday 10:30?"), collected: { slotId: SLOT_OFFERED } }),
+    expect: { action: "auto_send" } },
+  { id: "tap-confirm-ar", group: "booking", patient: "أكد الحجز",
+    model: env({ language: "ar", intent: "booking_request", confidence: 0.96, reply: reply("بأحجزلك دلوقتي."), actions: [{ kind: "booking.book_slot", slotId: SLOT_OFFERED }] }),
+    expect: { action: "auto_send" }, allowBookingWrites: true },
+  { id: "tap-confirm-en", group: "booking", patient: "Confirm booking",
+    model: env({ intent: "booking_request", confidence: 0.96, reply: reply("Booking that now."), actions: [{ kind: "booking.book_slot", slotId: SLOT_OFFERED }] }),
+    expect: { action: "auto_send" }, allowBookingWrites: true },
+  { id: "tap-change-ar", group: "booking", patient: "ميعاد تاني",
+    model: env({ language: "ar", intent: "booking_availability", confidence: 0.93, reply: reply("تمام، متاح كمان الاثنين 2:00."), offeredSlotIds: [SLOT_OFFERED] }),
+    expect: { action: "auto_send" } },
+  // A service was never named, and that must not stop the booking.
+  { id: "tap-confirm-without-service", group: "booking", patient: "أكد الحجز",
+    model: env({ language: "ar", intent: "booking_request", confidence: 0.95, reply: reply("هحجزلك كشف واستشارة، والدكتور هيحدد العلاج المناسب."), actions: [{ kind: "booking.book_slot", slotId: SLOT_OFFERED }] }),
+    expect: { action: "auto_send" }, allowBookingWrites: true },
+  { id: "tap-confirm-writes-off", group: "booking", patient: "أكد الحجز",
+    model: env({ language: "ar", intent: "booking_request", confidence: 0.95, reply: reply("بأحجزلك دلوقتي."), actions: [{ kind: "booking.book_slot", slotId: SLOT_OFFERED }] }),
+    expect: { action: "draft", reason: "booking_writes_disabled" }, allowBookingWrites: false },
 ];
 
 export type MemoryScenario = {

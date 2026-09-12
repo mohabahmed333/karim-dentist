@@ -4,6 +4,7 @@ import type { createServiceClient } from "@/lib/supabase/service";
 import { getConversation } from "./queries";
 import { insertOutboundMessage } from "./mutations";
 import { isWhatsappSessionOpen, latestInboundAt } from "./sessionWindow";
+import { checkInteractiveButtons } from "./interactiveButtons";
 import { sendKapsoPayload, type TemplateSendInput } from "./sendKapso";
 import type { WhatsappMessage } from "./types";
 
@@ -29,6 +30,8 @@ export type SendTextInput = {
   senderKind?: "human" | "ai" | "system";
   text?: string;
   template?: TemplateSendInput;
+  /** Reply buttons to send beneath the text. Ignored for templates. */
+  buttons?: { id: string; title: string }[];
   contextMessageId?: string;
 };
 
@@ -70,12 +73,23 @@ export async function sendWhatsappMessage(
     .limit(1)
     .maybeSingle();
 
+  // Buttons are an improvement on the message, never a precondition for it.
+  // If WhatsApp would refuse this set, send the words alone: a patient reading
+  // the times is a worse outcome than a patient reading nothing.
+  const buttons =
+    !isTemplate && input.buttons?.length
+      ? checkInteractiveButtons(input.text ?? "", input.buttons)
+        ? undefined
+        : input.buttons
+      : undefined;
+
   const sent = await sendKapsoPayload({
     client: input.client,
     phoneNumberId: input.phoneNumberId,
     to: conversation.phone_number.replace(/\D/g, ""),
-    kind: isTemplate ? "template" : "text",
+    kind: isTemplate ? "template" : buttons ? "interactive_buttons" : "text",
     text: input.text ?? "",
+    buttons,
     template: input.template,
     clinic: clinicContactFromSettings(settings),
     contextMessageId: input.contextMessageId,

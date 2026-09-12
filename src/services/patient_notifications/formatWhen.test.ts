@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
 import {
+  BUTTON_TITLE_LIMIT,
   formatAppointmentDateTime,
   formatAppointmentTime,
+  formatSlotButtonLabel,
   isTomorrowIn,
 } from "./formatWhen.ts";
 
@@ -77,5 +79,43 @@ describe("isTomorrowIn — the reminder's truthfulness guard", () => {
     // 2026-07-14T22:30Z is already 15 July 01:30 in Cairo, so a 16 July
     // appointment is "tomorrow" there while UTC would still call it two days out.
     assert.equal(isTomorrowIn("2026-07-16T07:00:00Z", new Date("2026-07-14T22:30:00Z"), CAIRO), true);
+  });
+});
+
+describe("formatSlotButtonLabel", () => {
+  // Cairo is UTC+3 in summer and UTC+2 in winter; both of these are 10:30 local.
+  const summer = "2026-07-15T07:30:00.000Z";
+  const winter = "2026-01-15T08:30:00.000Z";
+
+  it("names a day and a time, in English", () => {
+    const label = formatSlotButtonLabel(summer, "en");
+    assert.match(label, /[A-Za-z]{3}/);
+    assert.match(label, /10:30/);
+  });
+
+  it("names a day and a time, in Arabic", () => {
+    const label = formatSlotButtonLabel(summer, "ar");
+    assert.match(label, /\p{Script=Arabic}/u);
+    assert.match(label, /10:30/);
+  });
+
+  it("reads the clinic's own clock on both sides of daylight saving", () => {
+    for (const at of [summer, winter]) {
+      assert.match(formatSlotButtonLabel(at, "en"), /10:30/);
+      assert.match(formatSlotButtonLabel(at, "ar"), /10:30/);
+    }
+  });
+
+  /** Over this, WhatsApp rejects the message outright rather than the label. */
+  it("never exceeds what WhatsApp accepts for a button title", () => {
+    for (let day = 1; day <= 28; day += 1) {
+      const at = `2026-09-${String(day).padStart(2, "0")}T07:30:00.000Z`;
+      for (const language of ["ar", "en"] as const) {
+        assert.ok(
+          formatSlotButtonLabel(at, language).length <= BUTTON_TITLE_LIMIT,
+          `${language} ${at}: ${formatSlotButtonLabel(at, language)}`,
+        );
+      }
+    }
   });
 });

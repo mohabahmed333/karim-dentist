@@ -1,4 +1,5 @@
 import { nextBookingState, type BookingState } from "./bookingState";
+import { replyButtons, type ReplyButton } from "./bookingButtons";
 import { buildAutoReplyPrompt, type BuildPromptInput } from "./buildAutoReplyPrompt";
 import { decideAutoReply } from "./decideAutoReply";
 import { extractAutoReplyEnvelope } from "./extractAutoReplyEnvelope";
@@ -31,8 +32,12 @@ export type RunDeps = {
   conversationId: string;
 
   chat: (messages: { role: string; content: string }[]) => Promise<string>;
-  send: (text: string) => Promise<{ id: string }>;
-  draft: (text: string, reason: string) => Promise<{ id: string }>;
+  send: (text: string, buttons?: ReplyButton[]) => Promise<{ id: string }>;
+  draft: (
+    text: string,
+    reason: string,
+    buttons?: ReplyButton[],
+  ) => Promise<{ id: string }>;
   runActions: (actions: BotAction[]) => Promise<{ ok: boolean; message: string }>;
   rememberOfferedSlots: (slotIds: string[]) => Promise<void>;
   /** Hand the thread to a colleague, and tell them why. */
@@ -209,8 +214,21 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     struggles,
   );
 
+  // Tappable times, or a confirm pair — built from what the server offered, not
+  // from anything the model wrote. A button is an action, and the model has
+  // already been caught putting slot ids where patients could read them.
+  const buttons = replyButtons({
+    language: envelope.language,
+    offeredSlots: deps.prompt.slots.filter((slot) =>
+      envelope.offeredSlotIds.includes(slot.id) && built.offeredSlotIds.includes(slot.id),
+    ),
+    pendingSlotId: booking.pending.slotId,
+    canBook: deps.policy.settings.allow_booking_writes,
+    willExecuteAction: decision.actions.length > 0,
+  });
+
   if (finalAction === "draft") {
-    const { id } = await deps.draft(outgoing, reason);
+    const { id } = await deps.draft(outgoing, reason, buttons);
     await deps.record({
       decision: "draft",
       reason,
@@ -269,7 +287,7 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     };
   }
 
-  const { id } = await deps.send(outgoing);
+  const { id } = await deps.send(outgoing, buttons);
   await deps.record({
     decision: "auto_send",
     reason,

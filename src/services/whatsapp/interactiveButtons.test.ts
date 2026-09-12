@@ -24,3 +24,27 @@ describe("checkInteractiveButtons", () => {
     assert.equal(checkInteractiveButtons("Hi", [{ title: "Yes" }, { title: " yes" }]), "duplicate_titles");
   });
 });
+
+describe("checkInteractiveButtons — title length", () => {
+  /** Meta rejects the message, not the button, so this protects the words too. */
+  it("refuses a title longer than WhatsApp allows", () => {
+    assert.equal(
+      checkInteractiveButtons("Pick a time", [{ title: "x".repeat(21) }]),
+      "title_too_long",
+    );
+  });
+
+  it("accepts one exactly at the limit", () => {
+    assert.equal(checkInteractiveButtons("Pick a time", [{ title: "x".repeat(20) }]), null);
+  });
+
+  it("still accepts ordinary slot labels in both languages", () => {
+    assert.equal(
+      checkInteractiveButtons("اختار الميعاد", [
+        { title: "الأحد 10:30 ص" },
+        { title: "الاثنين 2:00 م" },
+      ]),
+      null,
+    );
+  });
+});

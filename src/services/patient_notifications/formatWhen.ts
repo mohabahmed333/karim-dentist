@@ -58,6 +58,38 @@ export function formatAppointmentTime(
   }).format(new Date(startsAt));
 }
 
+/**
+ * WhatsApp refuses a reply button whose title runs past this, so a label that
+ * overruns costs the whole message, not just the wording.
+ */
+export const BUTTON_TITLE_LIMIT = 20;
+
+/**
+ * A slot as a reply-button title: "Sun 10:30 am" / "الأحد 10:30 ص".
+ *
+ * Deliberately the shortest label that still names a day and a time — someone
+ * choosing between three buttons needs both, and has no other context.
+ */
+export function formatSlotButtonLabel(
+  startsAt: string | Date,
+  language: BodyLanguage,
+  timeZone: string = CLINIC_TIME_ZONE,
+): string {
+  const label = new Intl.DateTimeFormat(localeFor(language), {
+    timeZone,
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  })
+    .format(new Date(startsAt))
+    .replace(/\s+/g, " ")
+    .trim();
+  // A safety net, not the plan: every locale here fits comfortably, but an ICU
+  // change that lengthened a weekday would otherwise fail the send outright.
+  return label.length <= BUTTON_TITLE_LIMIT ? label : label.slice(0, BUTTON_TITLE_LIMIT).trim();
+}
+
 /** The calendar date in `timeZone`, as `YYYY-MM-DD`. */
 function localDay(at: Date, timeZone: string): string {
   // `en-CA` is ISO-ordered, which makes the parts directly comparable.

@@ -19,11 +19,31 @@ const patchSchema = z.object({
 async function loadDraft(service: ReturnType<typeof createServiceClient>, id: string) {
   const { data } = await service
     .from("whatsapp_messages")
-    .select("id,conversation_id,body,status")
+    .select("id,conversation_id,body,status,flow")
     .eq("id", id)
     .eq("status", "draft")
     .maybeSingle();
   return data;
+}
+
+/**
+ * The reply buttons the assistant composed with this draft.
+ *
+ * Read back defensively: the column is free-form JSON written by several code
+ * paths, and a malformed value must cost the buttons, never the send.
+ */
+function draftButtons(flow: unknown): { id: string; title: string }[] | undefined {
+  if (!flow || typeof flow !== "object") return undefined;
+  const raw = (flow as { buttons?: unknown }).buttons;
+  if (!Array.isArray(raw)) return undefined;
+  const buttons = raw.filter(
+    (button): button is { id: string; title: string } =>
+      Boolean(button) &&
+      typeof button === "object" &&
+      typeof (button as { id?: unknown }).id === "string" &&
+      typeof (button as { title?: unknown }).title === "string",
+  );
+  return buttons.length > 0 ? buttons : undefined;
 }
 
 /** Edit a draft, or approve and send it. */
@@ -65,6 +85,8 @@ export async function PATCH(request: Request, context: Params) {
       // toward the AI rate limit, which is correct.
       senderKind: "ai",
       text,
+      // Approving endorses the whole message, buttons included.
+      buttons: draftButtons(draft.flow),
     });
     // Capture what the assistant proposed against what staff actually sent,
     // before the draft disappears. This is the only moment both exist.
