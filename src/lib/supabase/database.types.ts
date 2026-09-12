@@ -498,6 +498,7 @@ export type Database = {
           use_count: number;
           last_used_at: string | null;
           attachment: Json | null;
+          buttons: Json | null;
           created_at: string;
           updated_at: string;
         };
@@ -514,6 +515,7 @@ export type Database = {
           use_count?: number;
           last_used_at?: string | null;
           attachment?: Json | null;
+          buttons?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -530,6 +532,7 @@ export type Database = {
           use_count?: number;
           last_used_at?: string | null;
           attachment?: Json | null;
+          buttons?: Json | null;
           created_at?: string;
           updated_at?: string;
         };

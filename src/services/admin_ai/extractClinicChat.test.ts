@@ -35,5 +35,42 @@ describe("extractClinicChatPayload", () => {
 \`\`\``;
     const out = extractClinicChatPayload(raw, defaults);
     assert.equal(out.proposedActions.length, 0);
+    assert.equal(out.dropped, 1);
+  });
+
+  it("parses a bare JSON object, which is what JSON mode returns", () => {
+    const raw = JSON.stringify({
+      reply: "Tomorrow at 10:00 is open.",
+      suggestedActions: [{ id: "patient:book", label: "Book for Ali" }],
+    });
+    const out = extractClinicChatPayload(raw);
+    assert.equal(out.reply, "Tomorrow at 10:00 is open.");
+    assert.equal(out.suggestedActions[0]?.id, "patient:book");
+  });
+
+  it("returns no chips when the model offers none and no defaults are given", () => {
+    const out = extractClinicChatPayload(JSON.stringify({ reply: "Done." }));
+    assert.deepEqual(out.suggestedActions, []);
+  });
+
+  it("never shows staff a truncated JSON object as the reply", () => {
+    const out = extractClinicChatPayload('{"reply": "Booked Ali for", "proposedActions": [');
+    assert.equal(out.reply, "");
+    assert.deepEqual(out.proposedActions, []);
+  });
+
+  it("keeps prose but drops a broken JSON tail after it", () => {
+    const out = extractClinicChatPayload('Sure — here it is. {"reply": "x", "suggested');
+    assert.equal(out.reply, "Sure — here it is.");
+  });
+
+  it("drops an unclosed fence instead of echoing it", () => {
+    const out = extractClinicChatPayload('Checking.\n```json\n{"reply": "cut off');
+    assert.equal(out.reply, "Checking.");
+  });
+
+  it("still shows plain prose when the model ignores the JSON format", () => {
+    const out = extractClinicChatPayload("There are no open slots tomorrow.");
+    assert.equal(out.reply, "There are no open slots tomorrow.");
   });
 });

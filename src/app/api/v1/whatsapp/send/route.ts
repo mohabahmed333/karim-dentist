@@ -19,6 +19,7 @@ import {
   type SendKind,
 } from "@/services/whatsapp/sendKapso";
 import { uploadWhatsappMediaFile } from "@/services/whatsapp/mediaStorage";
+import { checkInteractiveButtons } from "@/services/whatsapp/interactiveButtons";
 
 export const runtime = "nodejs";
 
@@ -219,6 +220,11 @@ export async function POST(request: Request) {
         };
       } else if (kind === "text" && !text) {
         return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+      } else if (kind === "interactive_buttons") {
+        const problem = checkInteractiveButtons(text, buttons);
+        if (problem) {
+          return NextResponse.json({ error: "Invalid buttons", code: problem }, { status: 400 });
+        }
       }
     }
 

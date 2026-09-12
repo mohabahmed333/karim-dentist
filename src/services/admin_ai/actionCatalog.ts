@@ -36,8 +36,6 @@ Allowed action kinds:
 - schedule.set_hours { open_weekdays?: int[0-6], time_windows?: ["10:00-13:00"], slot_minutes?: 15|30|45|60|90|120, horizon_days?: 7-60 } (regenerates open slots)
 - schedule.regenerate_slots { } (rebuild open slots from current hours; booked slots are kept)
 
-When useful, end with a JSON fence:
-\`\`\`json
-{ "reply": "...", "suggestedActions": [...chips...], "proposedActions": [{ "id": "a1", "kind": "...", "label": "...", "dependsOn": [], "payload": {} }] }
-\`\`\`
+Put proposed writes in the "proposedActions" array of your JSON response — never describe them only in prose. Each entry:
+{ "id": "a1", "kind": "...", "label": "...", "dependsOn": [], "payload": {} }
 `.trim();

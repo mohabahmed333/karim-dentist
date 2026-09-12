@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useQueryState } from "nuqs";
 import type { SiteSettings } from "@/services/site_settings";
 import { useTranslations } from "@/lib/i18n";
+import { settingsTabParser } from "@/features/admin/lib/settingsTabs";
 import { AdminPageHeader } from "./AdminPageHeader";
 import { AdminPageMotion } from "./AdminPageMotion";
 import { Button } from "@/components/ui/button";
@@ -15,11 +16,11 @@ import { SettingsSiteForm } from "./SettingsSiteForm";
 import { WhatsappAiSettingsForm } from "./WhatsappAiSettingsForm";
 
 type Props = { settings: SiteSettings | null };
-type Tab = "site" | "hours" | "fees" | "dashboard" | "whatsappAi" | "notifications";
 
 export function SettingsEditor({ settings }: Props) {
   const t = useTranslations();
-  const [tab, setTab] = useState<Tab>("dashboard");
+  // The selected tab lives in ?tab=, so a refresh or a shared link reopens it.
+  const [tab, setTab] = useQueryState("tab", settingsTabParser);
 
   return (
     <AdminPageMotion>
@@ -32,15 +33,15 @@ export function SettingsEditor({ settings }: Props) {
           type="button"
           size="sm"
           variant={tab === "dashboard" ? "default" : "outline"}
-          onClick={() => setTab("dashboard")}
+          onClick={() => void setTab("dashboard")}
         >
           {t("admin.dashboard")}
         </Button>
         <Button
           type="button"
           size="sm"
-          variant={tab === "hours" ? "default" : "outline"}
-          onClick={() => setTab("hours")}
+          variant={tab === "clinic-hours" ? "default" : "outline"}
+          onClick={() => void setTab("clinic-hours")}
         >
           {t("admin.settings.hours")}
         </Button>
@@ -48,31 +49,31 @@ export function SettingsEditor({ settings }: Props) {
           type="button"
           size="sm"
           variant={tab === "site" ? "default" : "outline"}
-          onClick={() => setTab("site")}
+          onClick={() => void setTab("site")}
         >
           {t("admin.settings.brand")}
         </Button>
         <Button
           type="button"
           size="sm"
-          variant={tab === "fees" ? "default" : "outline"}
-          onClick={() => setTab("fees")}
+          variant={tab === "clinic-prices" ? "default" : "outline"}
+          onClick={() => void setTab("clinic-prices")}
         >
           {t("admin.settings.clinic")}
         </Button>
         <Button
           type="button"
           size="sm"
-          variant={tab === "whatsappAi" ? "default" : "outline"}
-          onClick={() => setTab("whatsappAi")}
+          variant={tab === "whatsapp-ai" ? "default" : "outline"}
+          onClick={() => void setTab("whatsapp-ai")}
         >
           {t("admin.settings.whatsappAi")}
         </Button>
         <Button
           type="button"
           size="sm"
-          variant={tab === "notifications" ? "default" : "outline"}
-          onClick={() => setTab("notifications")}
+          variant={tab === "patient-notifications" ? "default" : "outline"}
+          onClick={() => void setTab("patient-notifications")}
         >
           {t("admin.settings.notifications")}
         </Button>
@@ -81,19 +82,19 @@ export function SettingsEditor({ settings }: Props) {
         <Card className="max-w-4xl gap-0 p-6">
           <SettingsDashboardForm settings={settings} />
         </Card>
-      ) : tab === "hours" ? (
+      ) : tab === "clinic-hours" ? (
         <Card className="max-w-3xl gap-0 p-6">
           <ClinicHoursEditor />
         </Card>
-      ) : tab === "fees" ? (
+      ) : tab === "clinic-prices" ? (
         <Card className="max-w-3xl gap-0 p-6">
           <ChartingFeesEditor />
         </Card>
-      ) : tab === "whatsappAi" ? (
+      ) : tab === "whatsapp-ai" ? (
         <Card className="max-w-3xl gap-0 p-6">
           <WhatsappAiSettingsForm />
         </Card>
-      ) : tab === "notifications" ? (
+      ) : tab === "patient-notifications" ? (
         <Card className="max-w-6xl gap-0 p-6">
           <NotificationSettingsForm />
         </Card>

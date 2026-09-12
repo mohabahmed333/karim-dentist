@@ -1,4 +1,5 @@
 import type { ActionAdapter } from "./adapterTypes";
+import { hrefForNavAction } from "./navHref";
 import { fdiSchema } from "./schemas";
 
 export const navigateOpenPatientAdapter: ActionAdapter = {
@@ -6,9 +7,7 @@ export const navigateOpenPatientAdapter: ActionAdapter = {
   write: false,
   async preview(action) {
     const patientKey = String(action.payload.patientKey ?? "");
-    const href =
-      String(action.payload.href ?? "") ||
-      `/admin/patients/${encodeURIComponent(patientKey)}`;
+    const href = hrefForNavAction(action) ?? "/admin/patients";
     return {
       target: `patient:${patientKey}`,
       before: {},
@@ -18,9 +17,7 @@ export const navigateOpenPatientAdapter: ActionAdapter = {
   },
   async execute(action) {
     const patientKey = String(action.payload.patientKey ?? "");
-    const href =
-      String(action.payload.href ?? "") ||
-      `/admin/patients/${encodeURIComponent(patientKey)}`;
+    const href = hrefForNavAction(action) ?? "/admin/patients";
     return {
       actionId: action.id,
       kind: action.kind,
@@ -36,10 +33,7 @@ export const navigateFocusToothAdapter: ActionAdapter = {
   write: false,
   async preview(action) {
     const fdi = fdiSchema.parse(action.payload.fdi ?? action.payload.tooth_fdi);
-    const patientKey = String(action.payload.patientKey ?? "");
-    const href = patientKey
-      ? `/admin/patients/${encodeURIComponent(patientKey)}/workspace?tooth=${fdi}`
-      : `?tooth=${fdi}`;
+    const href = hrefForNavAction(action) ?? `?tooth=${fdi}`;
     return {
       target: `tooth:${fdi}`,
       before: {},
@@ -49,10 +43,7 @@ export const navigateFocusToothAdapter: ActionAdapter = {
   },
   async execute(action) {
     const fdi = fdiSchema.parse(action.payload.fdi ?? action.payload.tooth_fdi);
-    const patientKey = String(action.payload.patientKey ?? "");
-    const href = patientKey
-      ? `/admin/patients/${encodeURIComponent(patientKey)}/workspace?tooth=${fdi}`
-      : `?tooth=${fdi}`;
+    const href = hrefForNavAction(action) ?? `?tooth=${fdi}`;
     return {
       actionId: action.id,
       kind: action.kind,

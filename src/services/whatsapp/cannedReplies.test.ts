@@ -46,3 +46,18 @@ describe("isDuplicateSlashKey", () => {
     assert.equal(isDuplicateSlashKey(new Error("x")), false);
   });
 });
+
+describe("toCannedReplyPatch buttons", () => {
+  it("passes saved buttons through", () => {
+    const buttons = [{ title: "Book now", title_ar: "احجز" }];
+    assert.deepEqual(toCannedReplyPatch({ buttons }, now).buttons, buttons);
+  });
+
+  it("clears buttons when null is sent", () => {
+    assert.equal(toCannedReplyPatch({ buttons: null }, now).buttons, null);
+  });
+
+  it("leaves buttons out when the caller didn't send them", () => {
+    assert.equal("buttons" in toCannedReplyPatch({ active: false }, now), false);
+  });
+});

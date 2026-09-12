@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, MapPin, Paperclip, Search } from "lucide-react";
+import { ChevronDown, MapPin, MessageSquarePlus, Paperclip, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n/LocaleProvider";
@@ -11,6 +11,7 @@ import type { CannedReplyAttachment } from "@/services/whatsapp/cannedReplyInput
 import {
   localizeQuickReply,
   matchesQuickReply,
+  quickReplyButtonIds,
   sortQuickReplies,
   type QuickReplyMenuItem,
 } from "./quickReplyMenu";
@@ -24,6 +25,8 @@ export type CannedReply = {
   locale: "ar" | "en";
   category: string | null;
   attachment: CannedReplyAttachment | null;
+  /** Reply buttons in the language of `body`, with stable ids. */
+  buttons: { id: string; title: string }[];
 };
 
 type Props = {
@@ -38,6 +41,7 @@ type Props = {
 
 function localizeReply(r: QuickReplyMenuItem, locale: Locale): CannedReply {
   const localized = localizeQuickReply(r, locale === "ar" ? "ar" : "en");
+  const ids = quickReplyButtonIds(r.slash_key, localized.buttons.length);
   return {
     id: r.id,
     slash_key: r.slash_key,
@@ -46,6 +50,7 @@ function localizeReply(r: QuickReplyMenuItem, locale: Locale): CannedReply {
     locale: localized.locale,
     category: r.category ?? null,
     attachment: r.attachment ?? null,
+    buttons: localized.buttons.map((title, index) => ({ id: ids[index], title })),
   };
 }
 
@@ -198,6 +203,9 @@ export function SlashCommandMenu({
                     ) : (
                       <Paperclip className="size-3 shrink-0 text-[#6B7280]" aria-hidden />
                     )
+                  ) : null}
+                  {r.buttons.length ? (
+                    <MessageSquarePlus className="size-3 shrink-0 text-[#6B7280]" aria-hidden />
                   ) : null}
                   {r.category ? (
                     <span className="shrink-0 rounded bg-[#EEF2FF] px-1.5 py-px text-[10px] font-medium text-[#4338CA]">

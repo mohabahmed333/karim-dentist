@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
-import { localizeQuickReply, matchesQuickReply, sortQuickReplies } from "./quickReplyMenu.ts";
+import { localizeQuickReply, matchesQuickReply, quickReplyButtonIds, sortQuickReplies } from "./quickReplyMenu.ts";
 
 const reply = (id: string, use_count: number, sort_order: number, extra = {}) => ({
   id,
@@ -64,6 +64,7 @@ describe("localizeQuickReply", () => {
       title: "تذكير",
       body: "نراكم قريباً",
       locale: "ar",
+      buttons: [],
     });
   });
 
@@ -115,7 +116,46 @@ describe("localizeQuickReply", () => {
       title: "Hi",
       body: "10:30",
       locale: "en",
+      buttons: [],
     });
     assert.equal(localizeQuickReply({ ...bilingual, body: "10:30", body_ar: null }, "ar").locale, "en");
+  });
+});
+
+describe("localizeQuickReply buttons", () => {
+  const withButtons = {
+    id: "v",
+    slash_key: "visit",
+    title: "Reminder",
+    title_ar: "تذكير",
+    body: "See you soon",
+    body_ar: "نراكم قريباً",
+    buttons: [
+      { title: "Confirm", title_ar: "تأكيد" },
+      { title: "Call me", title_ar: "  " },
+    ],
+  };
+
+  it("uses Arabic labels with Arabic text, falling back to English when a label is blank", () => {
+    assert.deepEqual(localizeQuickReply(withButtons, "ar").buttons, ["تأكيد", "Call me"]);
+  });
+
+  it("uses English labels with English text", () => {
+    assert.deepEqual(localizeQuickReply(withButtons, "en").buttons, ["Confirm", "Call me"]);
+  });
+
+  it("uses Arabic labels when Arabic text was saved in the English column", () => {
+    const result = localizeQuickReply({ ...withButtons, body: "أهلاً بكم", body_ar: null }, "en");
+    assert.deepEqual(result.buttons, ["تأكيد", "Call me"]);
+  });
+
+  it("returns no labels for a reply without buttons", () => {
+    assert.deepEqual(localizeQuickReply({ ...withButtons, buttons: null }, "en").buttons, []);
+  });
+});
+
+describe("quickReplyButtonIds", () => {
+  it("numbers ids from the slash key", () => {
+    assert.deepEqual(quickReplyButtonIds("visit", 2), ["qr_visit_1", "qr_visit_2"]);
   });
 });

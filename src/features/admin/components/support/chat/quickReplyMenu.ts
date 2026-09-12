@@ -13,6 +13,7 @@ export type QuickReplyMenuItem = {
   use_count?: number;
   sort_order?: number;
   attachment?: CannedReplyAttachment | null;
+  buttons?: { title: string; title_ar?: string | null }[] | null;
 };
 
 /** Most used first; ties keep the order staff set on the management page. */
@@ -23,7 +24,13 @@ export function sortQuickReplies<T extends QuickReplyMenuItem>(replies: T[]): T[
   );
 }
 
-export type LocalizedQuickReply = { title: string; body: string; locale: "ar" | "en" };
+export type LocalizedQuickReply = {
+  title: string;
+  body: string;
+  locale: "ar" | "en";
+  /** Button labels in the language of `body`. */
+  buttons: string[];
+};
 
 /** Fill-in tokens are Latin; ignore them so an Arabic body ending in {{field}} is still Arabic. */
 const FIELD_TOKEN = /\{\{\s*[a-zA-Z_]+\s*\}\}/g;
@@ -40,10 +47,22 @@ export function localizeQuickReply(reply: QuickReplyMenuItem, locale: "ar" | "en
     return locale === "ar" && arabic ? arabic : (en ?? "").trim();
   };
   const title = pick(reply.title, reply.title_ar);
+  // Button labels follow the language the body is actually written in.
+  const labels = (bodyLocale: "ar" | "en") =>
+    (reply.buttons ?? []).map((button) => {
+      const arabic = (button.title_ar ?? "").trim();
+      return bodyLocale === "ar" && arabic ? arabic : button.title.trim();
+    });
   const arabicBody = locale === "ar" ? (reply.body_ar ?? "").trim() : "";
-  if (arabicBody) return { title, body: arabicBody, locale: "ar" };
+  if (arabicBody) return { title, body: arabicBody, locale: "ar", buttons: labels("ar") };
   const body = (reply.body ?? "").trim();
-  return { title, body, locale: lastStrongLocale(body.replace(FIELD_TOKEN, " ")) ?? "en" };
+  const bodyLocale = lastStrongLocale(body.replace(FIELD_TOKEN, " ")) ?? "en";
+  return { title, body, locale: bodyLocale, buttons: labels(bodyLocale) };
+}
+
+/** Stable ids for a saved reply's buttons, so a tap can later be traced to its reply. */
+export function quickReplyButtonIds(slashKey: string, count: number): string[] {
+  return Array.from({ length: count }, (_, index) => `qr_${slashKey}_${index + 1}`);
 }
 
 export function matchesQuickReply(reply: QuickReplyMenuItem, query: string): boolean {

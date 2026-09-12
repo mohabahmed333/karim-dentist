@@ -3,6 +3,7 @@
 import { toast } from "sonner";
 import type { ActionDiff, ProposedAction } from "@/services/admin_ai";
 import type { ProposalReviewState } from "./ActionReviewCard";
+import { hrefForNavAction } from "@/services/admin_ai/navHref";
 import { isWriteActionKind } from "@/services/admin_ai/writeKinds";
 
 export async function proposeFromChat(input: {
@@ -10,13 +11,19 @@ export async function proposeFromChat(input: {
   patientKey?: string | null;
   summary: string;
   actions: ProposedAction[];
+  /** Client-side navigation (e.g. `router.push`). Defaults to a full page load. */
+  navigate?: (href: string) => void;
 }): Promise<ProposalReviewState | null> {
   const writes = input.actions.filter((a) => isWriteActionKind(a.kind));
   const nav = input.actions.filter((a) => !isWriteActionKind(a.kind));
 
-  for (const action of nav) {
-    const href = String(action.payload.href ?? "");
-    if (href) window.location.href = href;
+  // Several navigations in one reply can only end on one page: take the last.
+  const target = nav
+    .map((action) => hrefForNavAction(action, input.patientKey))
+    .filter((href): href is string => Boolean(href))
+    .at(-1);
+  if (target) {
+    (input.navigate ?? ((href: string) => window.location.assign(href)))(target);
   }
 
   if (writes.length === 0) return null;

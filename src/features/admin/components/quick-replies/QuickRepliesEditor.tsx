@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { MapPin, Paperclip } from "lucide-react";
+import { MapPin, MessageSquarePlus, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n";
 import type { WhatsappCannedReply } from "@/services/whatsapp/cannedReplies";
@@ -112,6 +112,9 @@ export function QuickRepliesEditor({ items: initial }: Props) {
                         ) : (
                           <Paperclip className="size-3.5 text-muted-foreground" aria-hidden />
                         )
+                      ) : null}
+                      {Array.isArray(r.buttons) && r.buttons.length ? (
+                        <MessageSquarePlus className="size-3.5 text-muted-foreground" aria-hidden />
                       ) : null}
                     </span>
                   ),

@@ -43,6 +43,7 @@ import type {
 } from "./supportDummyData";
 import type { TemplateField } from "@/services/whatsapp/templateFields";
 import type { CannedReplyAttachment } from "@/services/whatsapp/cannedReplyInput";
+import type { InteractiveDraft } from "./chat/InteractiveBuilder";
 
 type Props = {
   conversation: SupportConversation;
@@ -67,6 +68,8 @@ type Props = {
   onClearReply?: () => void;
   quickAttachment?: CannedReplyAttachment | null;
   onQuickAttachmentChange?: (attachment: CannedReplyAttachment | null) => void;
+  interactive?: InteractiveDraft | null;
+  onInteractiveChange?: (draft: InteractiveDraft | null) => void;
   onArchiveToggle?: () => void;
   archiving?: boolean;
   onAskAi?: () => void;
@@ -95,6 +98,8 @@ export function SupportChatColumn({
   onClearReply,
   quickAttachment,
   onQuickAttachmentChange,
+  interactive,
+  onInteractiveChange,
   onArchiveToggle,
   archiving,
   onAskAi,
@@ -451,6 +456,8 @@ export function SupportChatColumn({
             onClearReply={onClearReply}
             quickAttachment={quickAttachment}
             onQuickAttachmentChange={onQuickAttachmentChange}
+            interactive={interactive}
+            onInteractiveChange={onInteractiveChange}
             conversationId={conversation.id}
             onSendTemplate={onSendTemplate}
           />
