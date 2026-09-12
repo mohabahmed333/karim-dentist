@@ -16,11 +16,14 @@ and the first with quota left answers — so any one of these works, and more of
 them means the assistant keeps answering after a busy day:
 
 ```bash
-GEMINI_API_KEY=...     # https://aistudio.google.com/apikey
-MISTRAL_API_KEY=...    # https://console.mistral.ai
-CEREBRAS_API_KEY=...   # https://cloud.cerebras.ai
-GROQ_API_KEY=...       # https://console.groq.com
+GEMINI_API_KEY=...     # https://aistudio.google.com/apikey — free, resets daily
+MISTRAL_API_KEY=...    # https://console.mistral.ai — free Experiment tier, monthly
+GROQ_API_KEY=...       # https://console.groq.com — free, resets daily
 ```
+
+All three free tiers renew on their own. Providers that only hand out trial
+credits are deliberately not in the chain — a link that dies a month after
+signup fails silently, which is what the chain exists to prevent.
 
 Check the keys you added actually answer, in Arabic as well as English:
 

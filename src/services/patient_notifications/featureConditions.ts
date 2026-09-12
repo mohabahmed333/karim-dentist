@@ -62,7 +62,7 @@ export const FIX = {
   noTemplate: "Submit a template for this message in Meta Business Manager. Once approved, add it to PATIENT_TEMPLATES in templates.ts.",
   businessAccount: "Set KAPSO_BUSINESS_ACCOUNT_ID to the clinic's own WhatsApp Business Account ID.",
   aiOn: "Settings → WhatsApp AI: set the assistant to Drafts or Replies.",
-  groq: "Add GEMINI_API_KEY in Vercel (Production) — or MISTRAL_API_KEY, CEREBRAS_API_KEY, GROQ_API_KEY — then redeploy.",
+  groq: "Add GEMINI_API_KEY in Vercel (Production) — or MISTRAL_API_KEY, GROQ_API_KEY — then redeploy.",
   webhook: "Add KAPSO_WEBHOOK_SECRET in Vercel, and point the Kapso webhook at /api/v1/whatsapp/webhook.",
   aiAuto: "Settings → WhatsApp AI: set the assistant to Replies.",
   bookingWrites: "Settings → WhatsApp AI: allow the assistant to book and cancel appointments.",
@@ -128,7 +128,7 @@ export function assistantOn(f: FeatureFacts): Condition[] {
   return [
     c("ai_on", "WhatsApp assistant switched on (Drafts or Replies)", Boolean(f.ai && f.ai.mode !== "off"),
       "The assistant ignores every incoming message while off.", FIX.aiOn),
-    c("groq", "AI model key set (Gemini, Mistral, Cerebras or Groq)", f.env.aiKey,
+    c("groq", "AI model key set (Gemini, Mistral or Groq)", f.env.aiKey,
       "The assistant skips every message before calling the model, with no visible error.", FIX.groq),
     c("webhook", "WhatsApp webhook secret set", f.env.kapsoWebhookSecret,
       "Incoming patient messages are rejected, so nothing reaches the assistant.", FIX.webhook),

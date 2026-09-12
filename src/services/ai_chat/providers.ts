@@ -1,12 +1,17 @@
 /**
  * The model providers we can call.
  *
- * All four speak the OpenAI chat-completions shape with a bearer token, which
+ * All three speak the OpenAI chat-completions shape with a bearer token, which
  * is the only reason one caller can walk a chain across them. Each has its own
  * key and its own free-tier quota — that independence is the point: when one
  * provider's quota is gone the next one's is untouched.
+ *
+ * Every provider here has a free tier that renews on its own (daily or
+ * monthly). Trial credits are deliberately not in this list: a chain link that
+ * dies thirty days after someone signed up is worse than no link at all,
+ * because it fails silently once the trial lapses.
  */
-export type ProviderId = "gemini" | "mistral" | "cerebras" | "groq";
+export type ProviderId = "gemini" | "mistral" | "groq";
 
 export type Provider = {
   id: ProviderId;
@@ -30,12 +35,6 @@ export const PROVIDERS: Record<ProviderId, Provider> = {
     label: "Mistral",
     envKey: "MISTRAL_API_KEY",
     url: "https://api.mistral.ai/v1/chat/completions",
-  },
-  cerebras: {
-    id: "cerebras",
-    label: "Cerebras",
-    envKey: "CEREBRAS_API_KEY",
-    url: "https://api.cerebras.ai/v1/chat/completions",
   },
   groq: {
     id: "groq",

@@ -46,7 +46,7 @@ const DEFAULT_DEADLINE_MS = 45_000;
 const MIN_SLICE_MS = 1_000;
 
 const NO_KEY =
-  "No AI provider key set — add GEMINI_API_KEY, MISTRAL_API_KEY, CEREBRAS_API_KEY or GROQ_API_KEY";
+  "No AI provider key set — add GEMINI_API_KEY, MISTRAL_API_KEY or GROQ_API_KEY";
 
 /**
  * Ask the chain for an answer, top to bottom, and return the first one given.

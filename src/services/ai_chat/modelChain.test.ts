@@ -6,7 +6,6 @@ import { DEFAULT_CHAIN, parseModelChain, resolveChain } from "./modelChain.ts";
 const ALL_KEYS = {
   GEMINI_API_KEY: "g",
   MISTRAL_API_KEY: "m",
-  CEREBRAS_API_KEY: "c",
   GROQ_API_KEY: "k",
 };
 
@@ -25,8 +24,6 @@ describe("DEFAULT_CHAIN", () => {
       "mistral:mistral-large-latest",
       "gemini:gemini-2.5-flash",
       "mistral:mistral-saba-latest",
-      "cerebras:gpt-oss-120b",
-      "cerebras:qwen-3.8-27b",
       "groq:openai/gpt-oss-120b",
       "groq:qwen/qwen3.8-27b",
       "groq:openai/gpt-oss-20b",
@@ -82,9 +79,9 @@ describe("resolveChain", () => {
   it("lets AI_MODEL_CHAIN replace the order outright", () => {
     const chain = resolveChain({
       ...ALL_KEYS,
-      AI_MODEL_CHAIN: "cerebras:gpt-oss-120b,gemini:gemini-3.8-flash",
+      AI_MODEL_CHAIN: "groq:openai/gpt-oss-20b,gemini:gemini-3.8-flash",
     });
-    assert.deepEqual(ids(chain), ["cerebras:gpt-oss-120b", "gemini:gemini-3.8-flash"]);
+    assert.deepEqual(ids(chain), ["groq:openai/gpt-oss-20b", "gemini:gemini-3.8-flash"]);
   });
 
   /**

@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Add an AI provider key to .env.local — GEMINI_API_KEY, MISTRAL_API_KEY, CEREBRAS_API_KEY or GROQ_API_KEY",
+          "Add an AI provider key to .env.local — GEMINI_API_KEY, MISTRAL_API_KEY or GROQ_API_KEY",
       },
       { status: 503 },
     );

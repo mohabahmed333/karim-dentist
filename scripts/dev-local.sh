@@ -36,7 +36,7 @@ SERVICE=$(echo "${LOCAL_SERVICE_ROLE_KEY}" | tr -d '"')
 # Forward whichever provider keys you have: the assistant asks them in order
 # and the first with quota left answers.
 AI_KEYS=""
-for VAR in GEMINI_API_KEY MISTRAL_API_KEY CEREBRAS_API_KEY GROQ_API_KEY GROQ_MODEL AI_MODEL_CHAIN; do
+for VAR in GEMINI_API_KEY MISTRAL_API_KEY GROQ_API_KEY GROQ_MODEL AI_MODEL_CHAIN; do
   VALUE=$(grep -E "^${VAR}=" .env.local | cut -d= -f2- || true)
   if [ -n "${VALUE}" ]; then
     AI_KEYS="${AI_KEYS}${VAR}=${VALUE}

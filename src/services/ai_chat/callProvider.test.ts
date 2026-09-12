@@ -46,7 +46,6 @@ describe("callProvider — the request", () => {
     for (const [provider, url] of [
       ["gemini", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"],
       ["mistral", "https://api.mistral.ai/v1/chat/completions"],
-      ["cerebras", "https://api.cerebras.ai/v1/chat/completions"],
     ] as const) {
       const s = spy();
       await callProvider({ ...base, provider, model: "m", fetchImpl: s.fetchImpl });
@@ -68,13 +67,13 @@ describe("callProvider — the request", () => {
     assert.equal(s.body().max_tokens, 512);
   });
 
-  /** Cerebras rejects a request carrying both token caps. */
-  it("never sends Cerebras both max_tokens and max_completion_tokens", async () => {
+  /** Some providers reject a request carrying both token caps. */
+  it("never sends both max_tokens and max_completion_tokens", async () => {
     const s = spy();
     await callProvider({
       ...base,
-      provider: "cerebras",
-      model: "gpt-oss-120b",
+      provider: "mistral",
+      model: "mistral-large-latest",
       maxTokens: 700,
       fetchImpl: s.fetchImpl,
     });
