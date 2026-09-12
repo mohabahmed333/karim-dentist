@@ -72,7 +72,8 @@ import {
   panelVariants,
   workingVariants,
 } from "../chatMotion";
-import { listReservations } from "@/services/reservations";
+import { buildReservationStats, listReservations } from "@/services/reservations";
+import { briefingDateKey, formatBriefingText, shouldShowBriefing } from "./dailyBriefing";
 import { findOpenReservationForPatient } from "./receptionHelpers";
 import { useChatScroll } from "../../support/chat/useChatScroll";
 import { starterPrompts } from "./starterPrompts";
@@ -193,6 +194,7 @@ export function ReceptionChat({
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryUrls, setLibraryUrls] = useState<string[]>([]);
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
+  const [briefing, setBriefing] = useState<string | null>(null);
   const clinicSlash = getClinicSlashCommands(t);
   const slashMatches = matchSlashCommands(input, clinicSlash);
 
@@ -444,6 +446,36 @@ export function ReceptionChat({
       alive = false;
     };
   }, [refreshHistory]);
+
+  const BRIEFING_STORAGE_KEY = "admin-clinic-assist-briefing-date";
+  useEffect(() => {
+    if (!ready || initialPatient) return;
+    let stored: string | null = null;
+    try {
+      stored = window.localStorage.getItem(BRIEFING_STORAGE_KEY);
+    } catch {
+      return; // private mode / storage blocked — skip rather than show every time
+    }
+    const now = new Date();
+    if (!shouldShowBriefing(stored, now)) return;
+    void (async () => {
+      try {
+        const rows = await listReservations();
+        const stats = buildReservationStats(rows, now);
+        setBriefing(
+          formatBriefingText(
+            { todayCount: stats.todayCount, pendingCount: stats.pendingCount },
+            t,
+          ),
+        );
+        window.localStorage.setItem(BRIEFING_STORAGE_KEY, briefingDateKey(now));
+      } catch {
+        /* the schedule failing to load once is not worth surfacing here */
+      }
+    })();
+    // Runs once when the panel is ready — not on every `t`/`initialPatient` change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
 
   // No onNearTop paging here — a thread loads once, unlike the WhatsApp inbox
   // this hook was built for — but "only autoscroll if already near the
@@ -815,6 +847,26 @@ export function ReceptionChat({
                   }
                 >
                   {t("admin.chat.change")}
+                </button>
+              </motion.div>
+            ) : null}
+            {briefing ? (
+              <motion.div
+                key="daily-briefing"
+                variants={bannerVariants}
+                initial="hidden"
+                animate="show"
+                exit="exit"
+                transition={chatTransition(reduced, 0.22)}
+                className="flex items-center justify-between gap-2 overflow-hidden border-b border-[var(--admin-border)] bg-[var(--admin-active)] px-3 py-1.5 text-[11px] text-[var(--admin-muted)]"
+              >
+                <span className="truncate">{briefing}</span>
+                <button
+                  type="button"
+                  className="shrink-0 hover:text-[var(--admin-text)]"
+                  onClick={() => setBriefing(null)}
+                >
+                  {t("admin.chat.briefing.dismiss")}
                 </button>
               </motion.div>
             ) : null}
