@@ -2,7 +2,7 @@
 #
 # Run the app against a LOCAL Supabase with the WhatsApp transport faked.
 #
-#   Real Groq    — you see the model's actual replies and decisions
+#   Real models  — you see the model's actual replies and decisions
 #   Fake Kapso   — nothing can reach an actual patient
 #   Local DB     — production data is untouched
 #
@@ -33,9 +33,18 @@ eval "$(supabase status -o env | sed 's/^/LOCAL_/')"
 ANON=$(echo "${LOCAL_ANON_KEY}" | tr -d '"')
 SERVICE=$(echo "${LOCAL_SERVICE_ROLE_KEY}" | tr -d '"')
 
-GROQ_KEY=$(grep -E '^GROQ_API_KEY=' .env.local | cut -d= -f2- || true)
-if [ -z "${GROQ_KEY}" ]; then
-  echo "!  GROQ_API_KEY missing from .env.local — the responder will stay silent."
+# Forward whichever provider keys you have: the assistant asks them in order
+# and the first with quota left answers.
+AI_KEYS=""
+for VAR in GEMINI_API_KEY MISTRAL_API_KEY CEREBRAS_API_KEY GROQ_API_KEY GROQ_MODEL AI_MODEL_CHAIN; do
+  VALUE=$(grep -E "^${VAR}=" .env.local | cut -d= -f2- || true)
+  if [ -n "${VALUE}" ]; then
+    AI_KEYS="${AI_KEYS}${VAR}=${VALUE}
+"
+  fi
+done
+if [ -z "${AI_KEYS}" ]; then
+  echo "!  No AI provider key in .env.local — the responder will stay silent."
 fi
 
 cat > "$OVERRIDE" <<EOF
@@ -47,7 +56,7 @@ KAPSO_API_KEY=local-fake
 KAPSO_PHONE_NUMBER_ID=local-fake
 KAPSO_WEBHOOK_SECRET=local-test-secret
 E2E_FAKE_KAPSO=1
-GROQ_API_KEY=${GROQ_KEY}
+${AI_KEYS}
 EOF
 
 DB_CONTAINER=$(docker ps --format '{{.Names}}' | grep '^supabase_db_' | head -1)
@@ -60,7 +69,7 @@ cat <<'BANNER'
    Local test environment
      database    local Supabase — production safe
      WhatsApp    FAKED — nothing reaches a patient
-     Groq        REAL — genuine model replies
+     AI models   REAL — genuine replies, first model with quota answers
      mode        draft_only
   ─────────────────────────────────────────────────
 

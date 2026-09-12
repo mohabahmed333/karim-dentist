@@ -11,10 +11,22 @@ cp .env.example .env.local
 Fill Supabase keys from  
 https://supabase.com/dashboard/project/puibdsyokgjdvkkousil/settings/api
 
-Optional AI assist:
+Optional AI assist. Every AI feature asks one chain of models, top to bottom,
+and the first with quota left answers — so any one of these works, and more of
+them means the assistant keeps answering after a busy day:
 
 ```bash
-GROQ_API_KEY=...
+GEMINI_API_KEY=...     # https://aistudio.google.com/apikey
+MISTRAL_API_KEY=...    # https://console.mistral.ai
+CEREBRAS_API_KEY=...   # https://cloud.cerebras.ai
+GROQ_API_KEY=...       # https://console.groq.com
+```
+
+Check the keys you added actually answer, in Arabic as well as English:
+
+```bash
+node --experimental-strip-types --import ./scripts/test-loader.mjs \
+  --env-file=.env.local scripts/ai-chain-smoke.mjs
 ```
 
 ## 2. Install & run
