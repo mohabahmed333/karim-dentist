@@ -137,6 +137,13 @@ export async function claimJob(db: ServiceClient, jobId: string) {
   return data;
 }
 
+/**
+ * Attempts a job gets before it is abandoned as genuinely unanswerable,
+ * shared between the retry decision here and the sweeper's own recovery pass
+ * for jobs interrupted mid-flight — one number, not two that can drift apart.
+ */
+export const MAX_LLM_ATTEMPTS = 3;
+
 export async function finishJob(
   db: ServiceClient,
   jobId: string,
@@ -146,6 +153,8 @@ export async function finishJob(
     lastError?: string | null;
     outboundMessageId?: string | null;
     sendStartedAt?: string | null;
+    /** Only ever set when re-queuing a failed AI call for another attempt. */
+    attempts?: number;
   },
 ): Promise<void> {
   await db
@@ -156,6 +165,7 @@ export async function finishJob(
       last_error: patch.lastError ?? null,
       outbound_message_id: patch.outboundMessageId ?? null,
       ...(patch.sendStartedAt ? { send_started_at: patch.sendStartedAt } : {}),
+      ...(patch.attempts !== undefined ? { attempts: patch.attempts } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", jobId);

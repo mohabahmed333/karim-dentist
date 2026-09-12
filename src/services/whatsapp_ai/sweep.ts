@@ -1,10 +1,10 @@
 import type { createServiceClient } from "@/lib/supabase/service";
 import { processAutoReplyJob } from "./processJob";
+import { MAX_LLM_ATTEMPTS } from "./store";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
 const LEASE_GRACE_MS = 2 * 60_000;
-const MAX_LLM_ATTEMPTS = 3;
 
 export type SweepResult = { id: string; outcome: string };
 

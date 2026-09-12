@@ -20,6 +20,7 @@ import {
   finishJob,
   loadAiSettings,
   loadConversationState,
+  MAX_LLM_ATTEMPTS,
   recordAiEvent,
   markHumanHandoff,
   saveBookingState,
@@ -445,20 +446,15 @@ export async function processAutoReplyJob(
       },
     });
 
+    const decided = decideJobFinish(outcome.status, job.attempts ?? 0);
     await finishJob(db, jobId, {
-      status:
-        outcome.status === "sent"
-          ? "sent"
-          : outcome.status === "drafted"
-            ? "drafted"
-            : outcome.status === "failed"
-              ? "failed"
-              : "skipped",
+      status: decided.status,
       skipReason: outcome.status === "skipped" ? outcome.reason : null,
       lastError: outcome.status === "failed" ? outcome.reason : null,
       outboundMessageId: outcome.messageId ?? null,
+      attempts: decided.attempts,
     });
-    return outcome.status;
+    return decided.status === "queued" ? "requeued" : outcome.status;
   } catch (err) {
     await finishJob(db, jobId, {
       status: "failed",
@@ -477,6 +473,32 @@ export async function processAutoReplyJob(
  * info are patient-reported and appended only when given; the assistant never
  * comments on or reacts to what is recorded here.
  */
+/**
+ * What a finished run does to the job row.
+ *
+ * A "failed" outcome from runAutoReply means the whole model chain refused to
+ * answer — every provider was out of quota or down at once. That is usually
+ * transient (quotas renew by the minute or the day), so it is re-queued for
+ * the sweeper to pick up rather than left terminal: a job finished as "failed"
+ * is invisible to the sweeper forever — it only ever looks for "queued" or
+ * "running" — so a saturated chain used to leave the patient with permanent,
+ * silent nothing: no reply, no draft, and nothing that would ever retry it.
+ * Found by testing hard enough to actually exhaust the chain, which a handful
+ * of patients messaging in the same short window can do for real.
+ *
+ * Pure, so the retry/give-up boundary is table-tested without faking the rest
+ * of a job's database reads.
+ */
+export function decideJobFinish(
+  outcome: "sent" | "drafted" | "skipped" | "failed",
+  currentAttempts: number,
+): { status: "sent" | "drafted" | "skipped" | "failed" | "queued"; attempts?: number } {
+  if (outcome !== "failed") return { status: outcome };
+  const attempts = currentAttempts + 1;
+  if (attempts < MAX_LLM_ATTEMPTS) return { status: "queued", attempts };
+  return { status: "failed", attempts };
+}
+
 function bookingNotes(action: BotAction): string {
   const parts = ["Booked via WhatsApp assistant"];
   if (action.age) parts.push(`Age: ${action.age}`);

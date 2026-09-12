@@ -71,3 +71,38 @@ describe("runBotActions — booking notes", () => {
     assert.equal("p_notes" in db.rpcCalls[0].args, false);
   });
 });
+
+describe("decideJobFinish — recovering from a saturated model chain", () => {
+  it("passes sent/drafted/skipped straight through, untouched", async () => {
+    // @ts-expect-error -- Node strip-types needs the extension.
+    const { decideJobFinish } = await import("./processJob.ts");
+    for (const outcome of ["sent", "drafted", "skipped"] as const) {
+      assert.deepEqual(decideJobFinish(outcome, 0), { status: outcome });
+    }
+  });
+
+  /**
+   * The actual bug: a job finished as "failed" is invisible to the sweeper
+   * forever, so a saturated chain used to leave the patient with permanent
+   * silence — no reply, no draft, no retry.
+   */
+  it("re-queues a failed AI call instead of leaving it terminal", async () => {
+    // @ts-expect-error -- Node strip-types needs the extension.
+    const { decideJobFinish } = await import("./processJob.ts");
+    assert.deepEqual(decideJobFinish("failed", 0), { status: "queued", attempts: 1 });
+    assert.deepEqual(decideJobFinish("failed", 1), { status: "queued", attempts: 2 });
+  });
+
+  it("gives up only once the shared attempt cap is reached", async () => {
+    // @ts-expect-error -- Node strip-types needs the extension.
+    const { decideJobFinish } = await import("./processJob.ts");
+    // Same cap the sweeper already respects for jobs stuck mid-flight — one
+    // number, imported from where it lives, not restated here.
+    // @ts-expect-error -- Node strip-types needs the extension.
+    const { MAX_LLM_ATTEMPTS } = await import("./store.ts");
+    assert.deepEqual(decideJobFinish("failed", MAX_LLM_ATTEMPTS - 1), {
+      status: "failed",
+      attempts: MAX_LLM_ATTEMPTS,
+    });
+  });
+});
