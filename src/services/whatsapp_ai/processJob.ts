@@ -329,7 +329,7 @@ export async function processAutoReplyJob(
           }
         }
       },
-      async send(text, buttons) {
+      async send(text, ui) {
         // Mark the send as started first: a crash after this point must never
         // be retried, because Meta may already have accepted the message.
         await finishJob(db, jobId, {
@@ -344,7 +344,8 @@ export async function processAutoReplyJob(
           conversationId: conversation.id,
           sentBy: null,
           text,
-          buttons,
+          buttons: ui?.kind === "buttons" ? ui.buttons : undefined,
+          list: ui?.kind === "list" ? { button: ui.button, rows: ui.rows } : undefined,
         });
         await db
           .from("whatsapp_messages")
@@ -352,7 +353,7 @@ export async function processAutoReplyJob(
           .eq("id", message.id);
         return { id: message.id };
       },
-      async draft(text, _reason, buttons) {
+      async draft(text, _reason, ui) {
         // One live draft per conversation (enforced by a unique index), so
         // clear any earlier suggestion before writing this one.
         await db
@@ -368,11 +369,18 @@ export async function processAutoReplyJob(
           senderKind: "ai",
           preview: text,
           // Kept with the draft so approving it sends what the assistant
-          // actually composed. Without this the buttons vanish at approval and
+          // actually composed. Without this the choices vanish at approval and
           // Draft mode quietly delivers a worse message than Auto mode.
-          flow: buttons?.length
-            ? { kind: "buttons" as const, title: "Quick replies", buttons }
-            : null,
+          flow: !ui
+            ? null
+            : ui.kind === "buttons"
+              ? { kind: "buttons" as const, title: "Quick replies", buttons: ui.buttons }
+              : {
+                  kind: "list" as const,
+                  title: ui.button,
+                  buttons: ui.rows.map(({ id, title }) => ({ id, title })),
+                  rows: ui.rows,
+                },
         });
         return { id: message.id };
       },

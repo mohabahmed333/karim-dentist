@@ -2,12 +2,29 @@ import {
   BUTTON_TITLE_LIMIT,
   formatSlotButtonLabel,
 } from "@/services/patient_notifications/formatWhen";
+import {
+  LIST_ROW_DESCRIPTION_LIMIT,
+  LIST_ROW_LIMIT,
+  LIST_ROW_TITLE_LIMIT,
+} from "@/services/whatsapp/interactiveButtons";
 import type { BodyLanguage } from "@/services/patient_notifications/templates";
 
 /** WhatsApp shows at most three reply buttons on one message. */
 export const MAX_BUTTONS = 3;
 
 export type ReplyButton = { id: string; title: string };
+
+export type ReplyRow = { id: string; title: string; description?: string };
+
+/**
+ * The interactive attachment on a reply, if any.
+ *
+ * A WhatsApp message carries buttons or a list, never both — so this is a
+ * union rather than two optional fields, and the choice is made in one place.
+ */
+export type ReplyUi =
+  | { kind: "buttons"; buttons: ReplyButton[] }
+  | { kind: "list"; button: string; rows: ReplyRow[] };
 
 export type ButtonSlot = { id: string; starts_at: string };
 
@@ -77,29 +94,107 @@ export function confirmButtons(language: BodyLanguage): ReplyButton[] {
       ];
 }
 
+/** The row that lets someone book without naming a service at all. */
+export const NOT_SURE_ID = "service:not_sure";
+
+const UNTITLED = /^(untitled|بدون عنوان)$/i;
+
 /**
- * Which buttons, if any, belong on this reply.
+ * The clinic's services as list rows, ending with a way out.
  *
- * Kept pure and separate from the sending so the rules can be read in one
- * place: a booking that is about to execute needs no buttons, a chosen time
- * needs confirming, and an offer of times needs tapping.
+ * A list, not buttons: a button title stops at 20 characters and the clinic's
+ * names run to 44 ("Surgical extractions and surgical treatments"), so buttons
+ * could only ever show a truncated few. The full name goes in the description
+ * when the title has to be cut, so nothing is lost to the patient.
+ *
+ * The last row matters most. Someone who does not know what they need can say
+ * so in one tap and still get an appointment, which is the whole point of the
+ * service being optional.
  */
-export function replyButtons(input: {
+export function serviceRows(
+  services: { title: string; title_ar?: string | null }[],
+  language: BodyLanguage,
+): ReplyRow[] {
+  const rows: ReplyRow[] = [];
+  const taken = new Set<string>();
+
+  for (const service of services) {
+    if (rows.length >= LIST_ROW_LIMIT - 1) break;
+    const name = (language === "ar" ? service.title_ar || service.title : service.title).trim();
+    if (!name || UNTITLED.test(name)) continue;
+    const title = name.length <= LIST_ROW_TITLE_LIMIT ? name : name.slice(0, LIST_ROW_TITLE_LIMIT).trim();
+    if (taken.has(title)) continue;
+    taken.add(title);
+    rows.push({
+      id: `service:${rows.length}`,
+      title,
+      ...(title === name ? {} : { description: name.slice(0, LIST_ROW_DESCRIPTION_LIMIT) }),
+    });
+  }
+
+  if (rows.length === 0) return [];
+
+  rows.push(
+    language === "ar"
+      ? {
+          id: NOT_SURE_ID,
+          title: "مش متأكد",
+          description: "كشف واستشارة — الدكتور يحدد العلاج المناسب",
+        }
+      : {
+          id: NOT_SURE_ID,
+          title: "I am not sure",
+          description: "General consultation — the dentist advises in person",
+        },
+  );
+  return rows;
+}
+
+/**
+ * What the patient can tap on this reply, if anything.
+ *
+ * Kept pure and in one place so the order of preference can be read at a
+ * glance: a booking under way needs nothing, a chosen time needs confirming,
+ * offered times are worth more than anything else, and only then is it worth
+ * asking which service — as taps, never as an open question.
+ */
+export function replyUi(input: {
   language: BodyLanguage;
   /** Times the server offered this turn — already validated, never the model's. */
   offeredSlots: ButtonSlot[];
+  /** The clinic's own catalogue, for the service chooser. */
+  services: { title: string; title_ar?: string | null }[];
   /** A time the patient has already chosen, carried between turns. */
   pendingSlotId?: string;
+  /** A service they already named — settled, so never asked again. */
+  pendingService?: string;
+  /** The model is asking which service they want. */
+  askingService: boolean;
   canBook: boolean;
   /** True when this turn is already performing the booking. */
   willExecuteAction: boolean;
-}): ReplyButton[] {
-  // The booking is happening now; a button would invite a second one.
-  if (input.willExecuteAction) return [];
+}): ReplyUi | null {
+  // The booking is happening now; anything tappable would invite a second one.
+  if (input.willExecuteAction) return null;
+
   if (input.pendingSlotId) {
     // Never offer to confirm what we are not allowed to write. A confirm button
     // that cannot book is a lie the patient taps.
-    return input.canBook ? confirmButtons(input.language) : [];
+    return input.canBook ? { kind: "buttons", buttons: confirmButtons(input.language) } : null;
   }
-  return slotButtons(input.offeredSlots, input.language);
+
+  const slots = slotButtons(input.offeredSlots, input.language);
+  if (slots.length > 0) return { kind: "buttons", buttons: slots };
+
+  if (input.askingService && !input.pendingService) {
+    const rows = serviceRows(input.services, input.language);
+    if (rows.length === 0) return null;
+    return {
+      kind: "list",
+      button: input.language === "ar" ? "اختار الخدمة" : "Choose a service",
+      rows,
+    };
+  }
+
+  return null;
 }

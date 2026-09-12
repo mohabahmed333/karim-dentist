@@ -11,12 +11,22 @@ export type MessageMediaItem = {
 };
 
 export type MessageFlowPayload = {
-  kind?: "flow" | "buttons" | "cta" | "location" | "contacts" | "template" | "button_reply";
+  kind?:
+    | "flow"
+    | "buttons"
+    | "list"
+    | "cta"
+    | "location"
+    | "contacts"
+    | "template"
+    | "button_reply";
   title?: string;
   subtitle?: string;
   cta?: string;
   fields?: string[];
   buttons?: { id: string; title: string }[];
+  /** List rows, when the choices were offered as a list rather than buttons. */
+  rows?: { id: string; title: string; description?: string }[];
   ctaUrl?: string;
   ctaLabel?: string;
   latitude?: number;

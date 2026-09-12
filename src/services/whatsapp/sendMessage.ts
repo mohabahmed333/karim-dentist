@@ -4,7 +4,11 @@ import type { createServiceClient } from "@/lib/supabase/service";
 import { getConversation } from "./queries";
 import { insertOutboundMessage } from "./mutations";
 import { isWhatsappSessionOpen, latestInboundAt } from "./sessionWindow";
-import { checkInteractiveButtons } from "./interactiveButtons";
+import {
+  checkInteractiveButtons,
+  checkInteractiveList,
+  type InteractiveList,
+} from "./interactiveButtons";
 import { sendKapsoPayload, type TemplateSendInput } from "./sendKapso";
 import type { WhatsappMessage } from "./types";
 
@@ -32,6 +36,8 @@ export type SendTextInput = {
   template?: TemplateSendInput;
   /** Reply buttons to send beneath the text. Ignored for templates. */
   buttons?: { id: string; title: string }[];
+  /** A list of choices — for more than three, or names too long for a button. */
+  list?: InteractiveList;
   contextMessageId?: string;
 };
 
@@ -73,11 +79,17 @@ export async function sendWhatsappMessage(
     .limit(1)
     .maybeSingle();
 
-  // Buttons are an improvement on the message, never a precondition for it.
-  // If WhatsApp would refuse this set, send the words alone: a patient reading
-  // the times is a worse outcome than a patient reading nothing.
+  // Something tappable improves a message; it is never a precondition for it.
+  // If WhatsApp would refuse the set, the words go out alone — a patient
+  // reading the times is a far better outcome than a patient reading nothing.
+  const list =
+    !isTemplate && input.list?.rows.length
+      ? checkInteractiveList(input.text ?? "", input.list)
+        ? undefined
+        : input.list
+      : undefined;
   const buttons =
-    !isTemplate && input.buttons?.length
+    !isTemplate && !list && input.buttons?.length
       ? checkInteractiveButtons(input.text ?? "", input.buttons)
         ? undefined
         : input.buttons
@@ -87,9 +99,16 @@ export async function sendWhatsappMessage(
     client: input.client,
     phoneNumberId: input.phoneNumberId,
     to: conversation.phone_number.replace(/\D/g, ""),
-    kind: isTemplate ? "template" : buttons ? "interactive_buttons" : "text",
+    kind: isTemplate
+      ? "template"
+      : list
+        ? "interactive_list"
+        : buttons
+          ? "interactive_buttons"
+          : "text",
     text: input.text ?? "",
     buttons,
+    list,
     template: input.template,
     clinic: clinicContactFromSettings(settings),
     contextMessageId: input.contextMessageId,

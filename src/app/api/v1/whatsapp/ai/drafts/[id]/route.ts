@@ -32,18 +32,37 @@ async function loadDraft(service: ReturnType<typeof createServiceClient>, id: st
  * Read back defensively: the column is free-form JSON written by several code
  * paths, and a malformed value must cost the buttons, never the send.
  */
-function draftButtons(flow: unknown): { id: string; title: string }[] | undefined {
-  if (!flow || typeof flow !== "object") return undefined;
-  const raw = (flow as { buttons?: unknown }).buttons;
-  if (!Array.isArray(raw)) return undefined;
-  const buttons = raw.filter(
-    (button): button is { id: string; title: string } =>
-      Boolean(button) &&
-      typeof button === "object" &&
-      typeof (button as { id?: unknown }).id === "string" &&
-      typeof (button as { title?: unknown }).title === "string",
-  );
-  return buttons.length > 0 ? buttons : undefined;
+function draftChoices(flow: unknown): {
+  buttons?: { id: string; title: string }[];
+  list?: { button: string; rows: { id: string; title: string; description?: string }[] };
+} {
+  if (!flow || typeof flow !== "object") return {};
+  const payload = flow as {
+    kind?: unknown;
+    title?: unknown;
+    buttons?: unknown;
+    rows?: unknown;
+  };
+
+  const choices = (raw: unknown) =>
+    Array.isArray(raw)
+      ? raw.filter(
+          (row): row is { id: string; title: string; description?: string } =>
+            Boolean(row) &&
+            typeof row === "object" &&
+            typeof (row as { id?: unknown }).id === "string" &&
+            typeof (row as { title?: unknown }).title === "string",
+        )
+      : [];
+
+  if (payload.kind === "list") {
+    const rows = choices(payload.rows).length ? choices(payload.rows) : choices(payload.buttons);
+    const button = typeof payload.title === "string" ? payload.title : "";
+    return rows.length > 0 && button ? { list: { button, rows } } : {};
+  }
+
+  const buttons = choices(payload.buttons).map(({ id, title }) => ({ id, title }));
+  return buttons.length > 0 ? { buttons } : {};
 }
 
 /** Edit a draft, or approve and send it. */
@@ -85,8 +104,8 @@ export async function PATCH(request: Request, context: Params) {
       // toward the AI rate limit, which is correct.
       senderKind: "ai",
       text,
-      // Approving endorses the whole message, buttons included.
-      buttons: draftButtons(draft.flow),
+      // Approving endorses the whole message, choices included.
+      ...draftChoices(draft.flow),
     });
     // Capture what the assistant proposed against what staff actually sent,
     // before the draft disappears. This is the only moment both exist.

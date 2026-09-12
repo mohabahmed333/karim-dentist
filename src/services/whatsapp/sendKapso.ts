@@ -1,4 +1,5 @@
 import type { WhatsAppClient } from "@kapso/whatsapp-cloud-api";
+import { LIST_ROW_LIMIT, type InteractiveList } from "./interactiveButtons";
 import { fakeKapsoEnabled } from "@/lib/testing/e2eFakes";
 import { buildTemplateSendPayload } from "@kapso/whatsapp-cloud-api";
 import {
@@ -20,6 +21,7 @@ export type SendKind =
   | "location"
   | "contacts"
   | "interactive_buttons"
+  | "interactive_list"
   | "interactive_cta"
   | "template";
 
@@ -71,6 +73,8 @@ export async function sendKapsoPayload(input: {
   mime?: string;
   fileName?: string;
   buttons?: { id: string; title: string }[];
+  /** Rows for a list message — the only way to offer more than three choices. */
+  list?: InteractiveList;
   ctaLabel?: string;
   ctaUrl?: string;
   clinic?: ClinicContactInfo;
@@ -312,6 +316,32 @@ export async function sendKapsoPayload(input: {
         title: "Quick replies",
         subtitle: text,
         buttons: input.buttons.slice(0, 3),
+      },
+    };
+  }
+
+  if (kind === "interactive_list" && input.list?.rows.length) {
+    const rows = input.list.rows.slice(0, LIST_ROW_LIMIT);
+    const bodyText = text || "Please choose an option:";
+    const result = await client.messages.sendInteractiveList({
+      ...base,
+      bodyText,
+      buttonText: input.list.button,
+      sections: [{ rows }],
+    });
+    return {
+      wamid: extractWamid(result),
+      messageType: "interactive",
+      body: bodyText,
+      preview: text || "Form",
+      media: [],
+      // Recorded as buttons so the inbox renders the choices staff offered;
+      // `kind` still says it was a list, which is what the patient saw.
+      flow: {
+        kind: "list",
+        title: input.list.button,
+        subtitle: text,
+        buttons: rows.map((row) => ({ id: row.id, title: row.title })),
       },
     };
   }

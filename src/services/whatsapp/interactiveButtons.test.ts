@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
-import { checkInteractiveButtons, INTERACTIVE_BODY_LIMIT } from "./interactiveButtons.ts";
+import {
+  INTERACTIVE_BODY_LIMIT,
+  checkInteractiveButtons,
+  checkInteractiveList,
+  // @ts-expect-error -- Node strip-types needs the extension.
+} from "./interactiveButtons.ts";
 
 describe("checkInteractiveButtons", () => {
   const two = [{ title: "Confirm" }, { title: "Call me" }];
@@ -45,6 +50,54 @@ describe("checkInteractiveButtons — title length", () => {
         { title: "الاثنين 2:00 م" },
       ]),
       null,
+    );
+  });
+});
+
+describe("checkInteractiveList", () => {
+  const rows = [
+    { id: "service:0", title: "زراعة الأسنان" },
+    { id: "service:1", title: "تبييض الأسنان" },
+  ];
+  const list = { button: "اختار الخدمة", rows };
+
+  it("accepts a realistic service list", () => {
+    assert.equal(checkInteractiveList("أي خدمة تحب؟", list), null);
+  });
+
+  it("refuses an empty list rather than sending an unusable control", () => {
+    assert.equal(checkInteractiveList("hi", { button: "Pick", rows: [] }), "no_rows");
+  });
+
+  it("refuses more rows than WhatsApp shows", () => {
+    const many = Array.from({ length: 11 }, (_, i) => ({ id: `s:${i}`, title: `Service ${i}` }));
+    assert.equal(checkInteractiveList("hi", { button: "Pick", rows: many }), "too_many_rows");
+  });
+
+  it("refuses a row title or description past the limit", () => {
+    assert.equal(
+      checkInteractiveList("hi", { button: "Pick", rows: [{ id: "a", title: "x".repeat(25) }] }),
+      "row_title_too_long",
+    );
+    assert.equal(
+      checkInteractiveList("hi", {
+        button: "Pick",
+        rows: [{ id: "a", title: "ok", description: "x".repeat(73) }],
+      }),
+      "row_description_too_long",
+    );
+  });
+
+  it("refuses two rows that answer to the same id", () => {
+    assert.equal(
+      checkInteractiveList("hi", {
+        button: "Pick",
+        rows: [
+          { id: "same", title: "One" },
+          { id: "same", title: "Two" },
+        ],
+      }),
+      "duplicate_row_ids",
     );
   });
 });

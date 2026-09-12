@@ -11,6 +11,9 @@ const SLOT_A = "11111111-1111-4111-8111-111111111111";
 const minutesAgo = (n: number) => new Date(Date.now() - n * 60_000).toISOString();
 
 type Button = { id: string; title: string };
+type Ui =
+  | { kind: "buttons"; buttons: Button[] }
+  | { kind: "list"; button: string; rows: { id: string; title: string }[] };
 
 /**
  * Drives the real pipeline and records what reached the send, because the
@@ -24,8 +27,8 @@ function harness(options: {
   inboundText?: string;
   messageType?: string;
 }) {
-  const sent: { text: string; buttons: Button[] }[] = [];
-  const drafts: { text: string; reason: string; buttons: Button[] }[] = [];
+  const sent: { text: string; buttons: Button[]; ui: Ui | null }[] = [];
+  const drafts: { text: string; reason: string; buttons: Button[]; ui: Ui | null }[] = [];
   const inboundText = options.inboundText ?? "المواعيد المتاحة؟";
 
   const deps = {
@@ -48,7 +51,7 @@ function harness(options: {
       basePrompt: "# Front desk",
       slots: [{ id: SLOT_A, starts_at: "2026-09-13T07:30:00.000Z" }],
       clinic: { name: "The Dental Lounge" },
-      services: [],
+      services: [{ title: "Dental implants", title_ar: "زراعة الأسنان" }],
       patient: { name: "Ali", known: true },
       reservations: [],
       history: [{ role: "user" as const, content: inboundText }],
@@ -64,12 +67,17 @@ function harness(options: {
     async chat() {
       return JSON.stringify(options.reply);
     },
-    async send(text: string, buttons?: Button[]) {
-      sent.push({ text, buttons: buttons ?? [] });
+    async send(text: string, ui?: Ui) {
+      sent.push({ text, buttons: ui?.kind === "buttons" ? ui.buttons : [], ui: ui ?? null });
       return { id: "sent-1" };
     },
-    async draft(text: string, reason: string, buttons?: Button[]) {
-      drafts.push({ text, reason, buttons: buttons ?? [] });
+    async draft(text: string, reason: string, ui?: Ui) {
+      drafts.push({
+        text,
+        reason,
+        buttons: ui?.kind === "buttons" ? ui.buttons : [],
+        ui: ui ?? null,
+      });
       return { id: "draft-1" };
     },
     async runActions() {
@@ -150,7 +158,29 @@ describe("runAutoReply — booking buttons", () => {
     );
   });
 
-  it("sends no buttons with an answer that has nothing to offer", async () => {
+  it("turns a service question into a list with a way out", async () => {
+    const h = harness({
+      inboundText: "عايز احجز",
+      reply: {
+        language: "ar",
+        intent: "booking_request",
+        confidence: 0.95,
+        reply: "تحب تحجز إيه؟",
+        needs: ["service"],
+      },
+    });
+    // No times offered this turn, so the service list is what is worth showing.
+    h.deps.prompt.slots = [];
+    await runAutoReply(h.deps);
+    const ui = h.sent[0].ui;
+    assert.equal(ui?.kind, "list");
+    assert.equal(
+      ui?.kind === "list" ? ui.rows[ui.rows.length - 1].id : "",
+      "service:not_sure",
+    );
+  });
+
+  it("sends nothing tappable with an answer that has nothing to offer", async () => {
     const h = harness({
       inboundText: "إمتى بتفتحوا؟",
       reply: {

@@ -6,8 +6,10 @@ import {
   CHANGE_ID,
   CONFIRM_ID,
   MAX_BUTTONS,
+  NOT_SURE_ID,
   confirmButtons,
-  replyButtons,
+  replyUi,
+  serviceRows,
   slotButtons,
   // @ts-expect-error -- Node strip-types needs the extension.
 } from "./bookingButtons.ts";
@@ -82,68 +84,112 @@ describe("confirmButtons", () => {
   });
 });
 
-describe("replyButtons", () => {
+describe("serviceRows", () => {
+  const services = [
+    { title: "Dental implants", title_ar: "زراعة الأسنان" },
+    { title: "Surgical extractions and surgical treatments", title_ar: "القلع الجراحي والعلاجات الجراحية" },
+    { title: "Untitled", title_ar: "بدون عنوان" },
+  ];
+
+  it("keeps every row within what WhatsApp will show", () => {
+    for (const language of ["ar", "en"] as const) {
+      for (const row of serviceRows(services, language)) {
+        assert.ok(row.title.length <= 24, row.title);
+        assert.ok((row.description?.length ?? 0) <= 72, row.description);
+      }
+    }
+  });
+
+  /** A 44-character name cannot fit a row title, but must not be lost either. */
+  it("moves a name too long for the title into the description", () => {
+    const row = serviceRows(services, "en").find((r) => r.title.startsWith("Surgical"));
+    assert.ok(row);
+    assert.equal(row.description, "Surgical extractions and surgical treatments");
+  });
+
+  it("never offers the placeholder row as a treatment", () => {
+    for (const language of ["ar", "en"] as const) {
+      const titles = serviceRows(services, language).map((r) => r.title);
+      assert.equal(titles.some((t) => /untitled|بدون عنوان/i.test(t)), false);
+    }
+  });
+
+  it("always ends with a way to book without choosing", () => {
+    for (const language of ["ar", "en"] as const) {
+      const rows = serviceRows(services, language);
+      assert.equal(rows[rows.length - 1].id, NOT_SURE_ID);
+    }
+  });
+
+  it("offers nothing at all when the clinic lists nothing", () => {
+    assert.deepEqual(serviceRows([], "ar"), []);
+  });
+
+  it("never exceeds WhatsApp's ten rows, counting the way out", () => {
+    const many = Array.from({ length: 30 }, (_, i) => ({
+      title: `Service ${i}`,
+      title_ar: `خدمة ${i}`,
+    }));
+    assert.ok(serviceRows(many, "en").length <= 10);
+  });
+});
+
+describe("replyUi", () => {
   const one = [slot("11111111-1111-4111-8111-111111111111", "2026-09-13T07:30:00.000Z")];
   const chosen = "11111111-1111-4111-8111-111111111111";
+  const services = [{ title: "Dental implants", title_ar: "زراعة الأسنان" }];
+  const base = {
+    language: "en" as const,
+    offeredSlots: one,
+    services,
+    askingService: false,
+    canBook: true,
+    willExecuteAction: false,
+  };
 
   it("offers the times while none is chosen", () => {
-    const buttons = replyButtons({
-      language: "ar",
-      offeredSlots: one,
-      canBook: true,
-      willExecuteAction: false,
-    });
-    assert.equal(buttons.length, 1);
-    assert.match(buttons[0].id, /^slot:/);
+    const ui = replyUi(base);
+    assert.equal(ui?.kind, "buttons");
+    assert.match(ui!.kind === "buttons" ? ui!.buttons[0].id : "", /^slot:/);
   });
 
   it("offers confirming once a time is chosen", () => {
-    const buttons = replyButtons({
-      language: "en",
-      offeredSlots: one,
-      pendingSlotId: chosen,
-      canBook: true,
-      willExecuteAction: false,
-    });
-    assert.deepEqual(buttons.map((b) => b.id), [CONFIRM_ID, CHANGE_ID]);
+    const ui = replyUi({ ...base, pendingSlotId: chosen });
+    assert.equal(ui?.kind, "buttons");
+    assert.deepEqual(
+      ui!.kind === "buttons" ? ui!.buttons.map((b) => b.id) : [],
+      [CONFIRM_ID, CHANGE_ID],
+    );
   });
 
   /** The whole reason canBook is a parameter: the tap has to mean something. */
   it("offers nothing to confirm when it is not allowed to book", () => {
-    assert.deepEqual(
-      replyButtons({
-        language: "en",
-        offeredSlots: one,
-        pendingSlotId: chosen,
-        canBook: false,
-        willExecuteAction: false,
-      }),
-      [],
-    );
+    assert.equal(replyUi({ ...base, pendingSlotId: chosen, canBook: false }), null);
   });
 
   it("offers nothing while the booking is already being made", () => {
-    assert.deepEqual(
-      replyButtons({
-        language: "ar",
-        offeredSlots: one,
-        pendingSlotId: chosen,
-        canBook: true,
-        willExecuteAction: true,
-      }),
-      [],
-    );
+    assert.equal(replyUi({ ...base, pendingSlotId: chosen, willExecuteAction: true }), null);
   });
 
-  it("offers nothing when the clinic has no open times", () => {
-    assert.deepEqual(
-      replyButtons({
-        language: "en",
-        offeredSlots: [],
-        canBook: true,
-        willExecuteAction: false,
-      }),
-      [],
-    );
+  it("offers the service list when it is asking which service", () => {
+    const ui = replyUi({ ...base, offeredSlots: [], askingService: true });
+    assert.equal(ui?.kind, "list");
+    assert.equal(ui!.kind === "list" ? ui!.rows[ui!.rows.length - 1].id : "", NOT_SURE_ID);
+  });
+
+  /** Times are the thing that matters; a service question can wait. */
+  it("prefers offering times over asking which service", () => {
+    const ui = replyUi({ ...base, askingService: true });
+    assert.equal(ui?.kind, "buttons");
+  });
+
+  it("does not ask again for a service already settled", () => {
+    const ui = replyUi({
+      ...base,
+      offeredSlots: [],
+      askingService: true,
+      pendingService: "Dental implants",
+    });
+    assert.equal(ui, null);
   });
 });

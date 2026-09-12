@@ -1,5 +1,5 @@
 import { nextBookingState, type BookingState } from "./bookingState";
-import { replyButtons, type ReplyButton } from "./bookingButtons";
+import { replyUi, type ReplyUi } from "./bookingButtons";
 import { buildAutoReplyPrompt, type BuildPromptInput } from "./buildAutoReplyPrompt";
 import { decideAutoReply } from "./decideAutoReply";
 import { extractAutoReplyEnvelope } from "./extractAutoReplyEnvelope";
@@ -32,12 +32,8 @@ export type RunDeps = {
   conversationId: string;
 
   chat: (messages: { role: string; content: string }[]) => Promise<string>;
-  send: (text: string, buttons?: ReplyButton[]) => Promise<{ id: string }>;
-  draft: (
-    text: string,
-    reason: string,
-    buttons?: ReplyButton[],
-  ) => Promise<{ id: string }>;
+  send: (text: string, ui?: ReplyUi) => Promise<{ id: string }>;
+  draft: (text: string, reason: string, ui?: ReplyUi) => Promise<{ id: string }>;
   runActions: (actions: BotAction[]) => Promise<{ ok: boolean; message: string }>;
   rememberOfferedSlots: (slotIds: string[]) => Promise<void>;
   /** Hand the thread to a colleague, and tell them why. */
@@ -214,21 +210,30 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     struggles,
   );
 
-  // Tappable times, or a confirm pair — built from what the server offered, not
-  // from anything the model wrote. A button is an action, and the model has
-  // already been caught putting slot ids where patients could read them.
-  const buttons = replyButtons({
-    language: envelope.language,
-    offeredSlots: deps.prompt.slots.filter((slot) =>
-      envelope.offeredSlotIds.includes(slot.id) && built.offeredSlotIds.includes(slot.id),
-    ),
-    pendingSlotId: booking.pending.slotId,
-    canBook: deps.policy.settings.allow_booking_writes,
-    willExecuteAction: decision.actions.length > 0,
-  });
+  // Tappable times, a confirm pair, or the service list — all built from what
+  // the server knows, never from what the model wrote. A tappable thing is an
+  // action, and this model has been caught putting slot ids where patients
+  // could read them.
+  const ui =
+    replyUi({
+      language: envelope.language,
+      offeredSlots: deps.prompt.slots.filter(
+        (slot) =>
+          envelope.offeredSlotIds.includes(slot.id) &&
+          built.offeredSlotIds.includes(slot.id),
+      ),
+      services: deps.prompt.services,
+      pendingSlotId: booking.pending.slotId,
+      pendingService: booking.pending.service,
+      // If it is going to ask which service, it asks in taps — including a way
+      // to say "I do not know", which is the whole point of it being optional.
+      askingService: envelope.needs.includes("service"),
+      canBook: deps.policy.settings.allow_booking_writes,
+      willExecuteAction: decision.actions.length > 0,
+    }) ?? undefined;
 
   if (finalAction === "draft") {
-    const { id } = await deps.draft(outgoing, reason, buttons);
+    const { id } = await deps.draft(outgoing, reason, ui);
     await deps.record({
       decision: "draft",
       reason,
@@ -287,7 +292,7 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     };
   }
 
-  const { id } = await deps.send(outgoing, buttons);
+  const { id } = await deps.send(outgoing, ui);
   await deps.record({
     decision: "auto_send",
     reason,
