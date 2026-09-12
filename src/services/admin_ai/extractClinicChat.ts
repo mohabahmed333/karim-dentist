@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ProposedAction } from "@/services/admin_ai/schemas";
 import { parseProposedActions } from "./parseProposedActions";
+import { parseLooseJsonObject } from "./parseLooseJson";
 
 const chipSchema = z.object({
   id: z.string().min(1).max(80),
@@ -25,25 +26,14 @@ type Envelope = {
   proposedActions?: unknown;
 };
 
-function parseObject(text: string | undefined): Envelope | null {
-  if (!text) return null;
-  try {
-    const value: unknown = JSON.parse(text);
-    return value && typeof value === "object" && !Array.isArray(value)
-      ? (value as Envelope)
-      : null;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * Read the model's answer.
  *
  * JSON mode returns a bare object; older prompts wrapped it in a ```json fence
- * after some prose. Both are accepted. When nothing parses, prose is still
- * shown, but anything JSON-shaped is cut off — staff should never read a
- * half-written `{"reply": …` in a chat bubble.
+ * after some prose. Both are accepted (via `parseLooseJsonObject`, shared with
+ * the tool-call recogniser). When nothing parses, prose is still shown, but
+ * anything JSON-shaped is cut off — staff should never read a half-written
+ * `{"reply": …` in a chat bubble.
  */
 export function extractClinicChatPayload(
   raw: string,
@@ -51,13 +41,7 @@ export function extractClinicChatPayload(
 ): ClinicChatPayload {
   const trimmed = raw.trim();
   const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const firstBrace = trimmed.indexOf("{");
-  const envelope =
-    parseObject(trimmed) ??
-    parseObject(fence?.[1]?.trim()) ??
-    (firstBrace >= 0
-      ? parseObject(trimmed.slice(firstBrace, trimmed.lastIndexOf("}") + 1))
-      : null);
+  const envelope = parseLooseJsonObject(trimmed) as Envelope | null;
 
   if (envelope) {
     const chips = z.array(chipSchema).safeParse(envelope.suggestedActions);
