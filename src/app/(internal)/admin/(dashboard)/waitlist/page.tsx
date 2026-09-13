@@ -1,10 +1,12 @@
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
 import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
 import { WaitlistManager } from "@/features/admin/components/WaitlistManager";
+import { requirePagePermission } from "@/lib/auth/pageGuard";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminWaitlistPage() {
+export default async function AdminWaitlistPage() {
+  await requirePagePermission("waitlist.view");
   return (
     <AdminPageMotion className="space-y-4">
       <LocalizedAdminPageHeader

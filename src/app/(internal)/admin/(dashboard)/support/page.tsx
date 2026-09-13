@@ -13,6 +13,8 @@ import {
   type WhatsappMessage,
   type WhatsappNote,
 } from "@/services/whatsapp";
+import { listStaffProfiles } from "@/services/profiles";
+import { requirePagePermission } from "@/lib/auth/pageGuard";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,7 @@ type PageProps = {
 };
 
 export default async function AdminSupportPage({ searchParams }: PageProps) {
+  await requirePagePermission("support.view");
   const inbox = await inboxFiltersCache.parse(searchParams);
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -45,6 +48,14 @@ export default async function AdminSupportPage({ searchParams }: PageProps) {
     patientGroups = groupReservationsByPatient(reservations);
   } catch {
     patientGroups = [];
+  }
+
+  let staffById: Record<string, string | null> = {};
+  try {
+    const staff = await listStaffProfiles(supabase);
+    staffById = Object.fromEntries(staff.map((s) => [s.id, s.display_name]));
+  } catch {
+    staffById = {};
   }
 
   const messagesByConversation: Record<string, WhatsappMessage[]> = {};
@@ -77,6 +88,7 @@ export default async function AdminSupportPage({ searchParams }: PageProps) {
     notesByConversation,
     patientGroups,
     agentName,
+    staffById,
   );
 
   return (

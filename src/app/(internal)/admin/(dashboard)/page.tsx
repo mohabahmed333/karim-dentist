@@ -15,6 +15,7 @@ import {
 import { listReservationsServer } from "@/services/reservations/queries";
 import { buildReservationStats } from "@/services/reservations/stats";
 import { listConversations } from "@/services/whatsapp/queries";
+import { requirePagePermission } from "@/lib/auth/pageGuard";
 import {
   DEFAULT_DASHBOARD_LAYOUT,
   normalizeDashboardLayout,
@@ -27,6 +28,7 @@ type PageProps = {
 };
 
 export default async function AdminOverviewPage({ searchParams }: PageProps) {
+  await requirePagePermission("dashboard.view");
   const raw = await reservationFiltersCache.parse(searchParams);
   const filters = resolveReservationFilters(raw, defaultOverviewFromTo());
   // Even when the date filter is "Today", load through day+2 so Day Schedule

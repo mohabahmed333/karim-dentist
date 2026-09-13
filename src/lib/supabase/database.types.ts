@@ -4,1852 +4,1780 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
+  | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
-      clinic_cdt_fees: {
-        Row: {
-          code: string;
-          fee_egp: number;
-          updated_at: string;
-        };
-        Insert: {
-          code: string;
-          fee_egp?: number;
-          updated_at?: string;
-        };
-        Update: {
-          code?: string;
-          fee_egp?: number;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      clinic_chat_messages: {
-        Row: {
-          id: string;
-          thread_id: string;
-          role: "user" | "assistant" | "system";
-          content: string;
-          meta: Json;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          thread_id: string;
-          role: "user" | "assistant" | "system";
-          content?: string;
-          meta?: Json;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          thread_id?: string;
-          role?: "user" | "assistant" | "system";
-          content?: string;
-          meta?: Json;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "clinic_chat_messages_thread_id_fkey";
-            columns: ["thread_id"];
-            isOneToOne: false;
-            referencedRelation: "clinic_chat_threads";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      clinic_chat_threads: {
-        Row: {
-          id: string;
-          title: string;
-          kind: "home" | "session";
-          created_by: string | null;
-          context: Json;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          title?: string;
-          kind?: "home" | "session";
-          created_by?: string | null;
-          context?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          title?: string;
-          kind?: "home" | "session";
-          created_by?: string | null;
-          context?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      whatsapp_conversations: {
-        Row: {
-          id: string;
-          kapso_conversation_id: string | null;
-          phone_number: string;
-          /** Generated column: last 8 digits of `phone_number`. Never write it. */
-          phone_suffix: string | null;
-          contact_name: string | null;
-          patient_key: string | null;
-          status: "active" | "ended" | "archived";
-          last_message_at: string | null;
-          last_inbound_at: string | null;
-          last_message_preview: string;
-          last_message_type: string;
-          last_message_status: string;
-          unread_count: number;
-          metadata: Json;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          kapso_conversation_id?: string | null;
-          phone_number: string;
-          contact_name?: string | null;
-          patient_key?: string | null;
-          status?: "active" | "ended" | "archived";
-          last_message_at?: string | null;
-          last_inbound_at?: string | null;
-          last_message_preview?: string;
-          last_message_type?: string;
-          last_message_status?: string;
-          unread_count?: number;
-          metadata?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          kapso_conversation_id?: string | null;
-          phone_number?: string;
-          contact_name?: string | null;
-          patient_key?: string | null;
-          status?: "active" | "ended" | "archived";
-          last_message_at?: string | null;
-          last_inbound_at?: string | null;
-          last_message_preview?: string;
-          last_message_type?: string;
-          last_message_status?: string;
-          unread_count?: number;
-          metadata?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      whatsapp_messages: {
-        Row: {
-          sender_kind: string;
-          id: string;
-          conversation_id: string;
-          kapso_wamid: string | null;
-          direction: "inbound" | "outbound";
-          body: string;
-          message_type: string;
-          status:
-            | "draft"
-            | "pending"
-            | "received"
-            | "sent"
-            | "delivered"
-            | "read"
-            | "failed";
-          sent_by: string | null;
-          raw: Json;
-          media: Json;
-          flow: Json | null;
-          reply_to: Json | null;
-          status_timestamps: Json;
-          wa_timestamp: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          sender_kind?: string;
-          id?: string;
-          conversation_id: string;
-          kapso_wamid?: string | null;
-          direction: "inbound" | "outbound";
-          body?: string;
-          message_type?: string;
-          status?:
-            | "draft"
-            | "pending"
-            | "received"
-            | "sent"
-            | "delivered"
-            | "read"
-            | "failed";
-          sent_by?: string | null;
-          raw?: Json;
-          media?: Json;
-          flow?: Json | null;
-          reply_to?: Json | null;
-          status_timestamps?: Json;
-          wa_timestamp?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          sender_kind?: string;
-          id?: string;
-          conversation_id?: string;
-          kapso_wamid?: string | null;
-          direction?: "inbound" | "outbound";
-          body?: string;
-          message_type?: string;
-          status?:
-            | "draft"
-            | "pending"
-            | "received"
-            | "sent"
-            | "delivered"
-            | "read"
-            | "failed";
-          sent_by?: string | null;
-          raw?: Json;
-          media?: Json;
-          flow?: Json | null;
-          reply_to?: Json | null;
-          status_timestamps?: Json;
-          wa_timestamp?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_messages_conversation_id_fkey";
-            columns: ["conversation_id"];
-            isOneToOne: false;
-            referencedRelation: "whatsapp_conversations";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      whatsapp_ai_settings: {
-        Row: {
-          id: string;
-          mode: "off" | "draft_only" | "auto";
-          max_replies_per_conversation_per_hour: number;
-          max_replies_global_per_hour: number;
-          human_handoff_minutes: number;
-          allow_booking_writes: boolean;
-          ack_media_enabled: boolean;
-          full_conversation: boolean;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          mode?: "off" | "draft_only" | "auto";
-          max_replies_per_conversation_per_hour?: number;
-          max_replies_global_per_hour?: number;
-          human_handoff_minutes?: number;
-          allow_booking_writes?: boolean;
-          ack_media_enabled?: boolean;
-          full_conversation?: boolean;
-          updated_at?: string;
-        };
-        Update: {
-          mode?: "off" | "draft_only" | "auto";
-          max_replies_per_conversation_per_hour?: number;
-          max_replies_global_per_hour?: number;
-          human_handoff_minutes?: number;
-          allow_booking_writes?: boolean;
-          ack_media_enabled?: boolean;
-          full_conversation?: boolean;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      whatsapp_ai_state: {
-        Row: {
-          conversation_id: string;
-          autoreply_enabled: boolean;
-          paused_until: string | null;
-          handoff_until: string | null;
-          step: "idle" | "collecting" | "awaiting_slot" | "awaiting_confirm";
-          pending: Json;
-          offered_slot_ids: string[];
-          offered_at: string | null;
-          state_expires_at: string | null;
-          updated_at: string;
-        };
-        Insert: {
-          conversation_id: string;
-          autoreply_enabled?: boolean;
-          paused_until?: string | null;
-          handoff_until?: string | null;
-          step?: "idle" | "collecting" | "awaiting_slot" | "awaiting_confirm";
-          pending?: Json;
-          offered_slot_ids?: string[];
-          offered_at?: string | null;
-          state_expires_at?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          autoreply_enabled?: boolean;
-          paused_until?: string | null;
-          handoff_until?: string | null;
-          step?: "idle" | "collecting" | "awaiting_slot" | "awaiting_confirm";
-          pending?: Json;
-          offered_slot_ids?: string[];
-          offered_at?: string | null;
-          state_expires_at?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      whatsapp_ai_jobs: {
-        Row: {
-          id: string;
-          conversation_id: string;
-          inbound_message_id: string;
-          status: "queued" | "running" | "sent" | "drafted" | "skipped" | "failed" | "abandoned";
-          skip_reason: string | null;
-          attempts: number;
-          send_started_at: string | null;
-          lease_until: string | null;
-          outbound_message_id: string | null;
-          last_error: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          conversation_id: string;
-          inbound_message_id: string;
-          status?: "queued" | "running" | "sent" | "drafted" | "skipped" | "failed" | "abandoned";
-          skip_reason?: string | null;
-          attempts?: number;
-          send_started_at?: string | null;
-          lease_until?: string | null;
-          outbound_message_id?: string | null;
-          last_error?: string | null;
-        };
-        Update: {
-          status?: "queued" | "running" | "sent" | "drafted" | "skipped" | "failed" | "abandoned";
-          skip_reason?: string | null;
-          attempts?: number;
-          send_started_at?: string | null;
-          lease_until?: string | null;
-          outbound_message_id?: string | null;
-          last_error?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      whatsapp_ai_events: {
-        Row: {
-          id: string;
-          conversation_id: string;
-          job_id: string | null;
-          message_id: string | null;
-          decision: "auto_send" | "draft" | "skip" | "error";
-          reason: string;
-          intent: string | null;
-          confidence: number | null;
-          language: string | null;
-          handoff: boolean;
-          injection_flags: string[];
-          model: string | null;
-          latency_ms: number | null;
-          envelope: Json;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          conversation_id: string;
-          job_id?: string | null;
-          message_id?: string | null;
-          decision: "auto_send" | "draft" | "skip" | "error";
-          reason?: string;
-          intent?: string | null;
-          confidence?: number | null;
-          language?: string | null;
-          handoff?: boolean;
-          injection_flags?: string[];
-          model?: string | null;
-          latency_ms?: number | null;
-          envelope?: Json;
-        };
-        Update: Record<string, never>;
-        Relationships: [];
-      };
-      whatsapp_ai_corrections: {
-        Row: {
-          id: string;
-          conversation_id: string | null;
-          ai_text: string;
-          sent_text: string;
-          edited: boolean;
-          intent: string | null;
-          reason: string | null;
-          model: string | null;
-          reviewed: boolean;
-          promoted: boolean;
-          sent_by: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          conversation_id?: string | null;
-          ai_text: string;
-          sent_text: string;
-          edited: boolean;
-          intent?: string | null;
-          reason?: string | null;
-          model?: string | null;
-          reviewed?: boolean;
-          promoted?: boolean;
-          sent_by?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          conversation_id?: string | null;
-          ai_text?: string;
-          sent_text?: string;
-          edited?: boolean;
-          intent?: string | null;
-          reason?: string | null;
-          model?: string | null;
-          reviewed?: boolean;
-          promoted?: boolean;
-          sent_by?: string | null;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-      whatsapp_notes: {
-        Row: {
-          id: string;
-          conversation_id: string;
-          body: string;
-          pinned: boolean;
-          author: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          conversation_id: string;
-          body?: string;
-          pinned?: boolean;
-          author?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          conversation_id?: string;
-          body?: string;
-          pinned?: boolean;
-          author?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_notes_conversation_id_fkey";
-            columns: ["conversation_id"];
-            isOneToOne: false;
-            referencedRelation: "whatsapp_conversations";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      whatsapp_webhook_events: {
-        Row: {
-          idempotency_key: string;
-          event: string;
-          processed_at: string;
-        };
-        Insert: {
-          idempotency_key: string;
-          event: string;
-          processed_at?: string;
-        };
-        Update: {
-          idempotency_key?: string;
-          event?: string;
-          processed_at?: string;
-        };
-        Relationships: [];
-      };
-      whatsapp_canned_replies: {
-        Row: {
-          id: string;
-          slash_key: string;
-          title: string;
-          title_ar: string | null;
-          body: string;
-          body_ar: string | null;
-          sort_order: number;
-          active: boolean;
-          category: string | null;
-          use_count: number;
-          last_used_at: string | null;
-          attachment: Json | null;
-          buttons: Json | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          slash_key: string;
-          title: string;
-          title_ar?: string | null;
-          body: string;
-          body_ar?: string | null;
-          sort_order?: number;
-          active?: boolean;
-          category?: string | null;
-          use_count?: number;
-          last_used_at?: string | null;
-          attachment?: Json | null;
-          buttons?: Json | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          slash_key?: string;
-          title?: string;
-          title_ar?: string | null;
-          body?: string;
-          body_ar?: string | null;
-          sort_order?: number;
-          active?: boolean;
-          category?: string | null;
-          use_count?: number;
-          last_used_at?: string | null;
-          attachment?: Json | null;
-          buttons?: Json | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      clinic_treatment_presets: {
-        Row: {
-          slot: number;
-          code: string;
-          label: string;
-          updated_at: string;
-        };
-        Insert: {
-          slot: number;
-          code: string;
-          label: string;
-          updated_at?: string;
-        };
-        Update: {
-          slot?: number;
-          code?: string;
-          label?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      profiles: {
-        Row: {
-          id: string;
-          role: "admin" | "viewer";
-          display_name: string | null;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
-        Insert: {
-          id: string;
-          role?: "admin" | "viewer";
-          display_name?: string | null;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          role?: "admin" | "viewer";
-          display_name?: string | null;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Relationships: [];
-      };
-      site_settings: {
-        Row: {
-          id: string;
-          brand_name: string;
-          brand_logo_url: string | null;
-          footer_tagline: string;
-          footer_tagline_image_url: string | null;
-          contact_email: string;
-          contact_phone: string;
-          contact_phone_secondary: string;
-          contact_email_secondary: string;
-          contact_address: string;
-          contact_city: string;
-          contact_country: string;
-          contact_hours: string;
-          contact_map_url: string;
-          contact_whatsapp: string;
-          contact_telegram: string;
-          contact_headline: string;
-          contact_blurb: string;
-          contact_mobile: string;
-          contact_behance: string;
-          contact_linkedin: string;
-          contact_instagram: string;
-          contact_facebook: string;
-          contact_x: string;
-          contact_clinic_name: string;
-          contact_clinic_name_ar: string;
-          contact_doctor_name: string;
-          contact_doctor_name_ar: string;
-          contact_credentials: string;
-          contact_credentials_ar: string;
-          contact_card_image_url: string | null;
-          contact_latitude: number | null;
-          contact_longitude: number | null;
-          contact_price_range: string;
-          case_studies_title: string;
-          case_studies_description: string;
-          featured_title: string;
-          featured_description: string;
-          services_title: string;
-          services_description: string;
-          services_heading: string;
-          solutions_title: string;
-          solutions_description: string;
-          about_title: string;
-          gallery_title: string;
-          gallery_heading: string;
-          gallery_description: string;
-          slider_heading: string;
-          contact_title: string;
-          homepage_section_order: string[];
-          homepage_hidden_sections: string[];
-          dashboard_primary_color: string;
-          dashboard_secondary_color: string;
-          dashboard_canvas_color: string;
-          dashboard_panel_color: string;
-          dashboard_layout: Json;
-          footer_tagline_ar: string;
-          contact_headline_ar: string;
-          contact_blurb_ar: string;
-          contact_title_ar: string;
-          about_title_ar: string;
-          solutions_title_ar: string;
-          solutions_description_ar: string;
-          services_title_ar: string;
-          services_heading_ar: string;
-          services_description_ar: string;
-          gallery_title_ar: string;
-          gallery_heading_ar: string;
-          gallery_description_ar: string;
-          featured_title_ar: string;
-          featured_description_ar: string;
-          slider_heading_ar: string;
-          case_studies_title_ar: string;
-          case_studies_description_ar: string;
-          faq_title: string;
-          faq_title_ar: string;
-          faq_heading: string;
-          faq_heading_ar: string;
-          faq_description: string;
-          faq_description_ar: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          brand_name?: string;
-          brand_logo_url?: string | null;
-          footer_tagline?: string;
-          footer_tagline_image_url?: string | null;
-          contact_email?: string;
-          contact_phone?: string;
-          contact_phone_secondary?: string;
-          contact_email_secondary?: string;
-          contact_address?: string;
-          contact_city?: string;
-          contact_country?: string;
-          contact_hours?: string;
-          contact_map_url?: string;
-          contact_whatsapp?: string;
-          contact_telegram?: string;
-          contact_headline?: string;
-          contact_blurb?: string;
-          contact_mobile?: string;
-          contact_behance?: string;
-          contact_linkedin?: string;
-          contact_instagram?: string;
-          contact_facebook?: string;
-          contact_x?: string;
-          contact_clinic_name?: string;
-          contact_clinic_name_ar?: string;
-          contact_doctor_name?: string;
-          contact_doctor_name_ar?: string;
-          contact_credentials?: string;
-          contact_credentials_ar?: string;
-          contact_card_image_url?: string | null;
-          contact_latitude?: number | null;
-          contact_longitude?: number | null;
-          contact_price_range?: string;
-          case_studies_title?: string;
-          case_studies_description?: string;
-          featured_title?: string;
-          featured_description?: string;
-          services_title?: string;
-          services_description?: string;
-          services_heading?: string;
-          solutions_title?: string;
-          solutions_description?: string;
-          about_title?: string;
-          gallery_title?: string;
-          gallery_heading?: string;
-          gallery_description?: string;
-          slider_heading?: string;
-          contact_title?: string;
-          homepage_section_order?: string[];
-          homepage_hidden_sections?: string[];
-          dashboard_primary_color?: string;
-          dashboard_secondary_color?: string;
-          dashboard_canvas_color?: string;
-          dashboard_panel_color?: string;
-          dashboard_layout?: Json;
-          footer_tagline_ar?: string;
-          contact_headline_ar?: string;
-          contact_blurb_ar?: string;
-          contact_title_ar?: string;
-          about_title_ar?: string;
-          solutions_title_ar?: string;
-          solutions_description_ar?: string;
-          services_title_ar?: string;
-          services_heading_ar?: string;
-          services_description_ar?: string;
-          gallery_title_ar?: string;
-          gallery_heading_ar?: string;
-          gallery_description_ar?: string;
-          featured_title_ar?: string;
-          featured_description_ar?: string;
-          slider_heading_ar?: string;
-          case_studies_title_ar?: string;
-          case_studies_description_ar?: string;
-          faq_title?: string;
-          faq_title_ar?: string;
-          faq_heading?: string;
-          faq_heading_ar?: string;
-          faq_description?: string;
-          faq_description_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          brand_name?: string;
-          brand_logo_url?: string | null;
-          footer_tagline?: string;
-          footer_tagline_image_url?: string | null;
-          contact_email?: string;
-          contact_phone?: string;
-          contact_phone_secondary?: string;
-          contact_email_secondary?: string;
-          contact_address?: string;
-          contact_city?: string;
-          contact_country?: string;
-          contact_hours?: string;
-          contact_map_url?: string;
-          contact_whatsapp?: string;
-          contact_telegram?: string;
-          contact_headline?: string;
-          contact_blurb?: string;
-          contact_mobile?: string;
-          contact_behance?: string;
-          contact_linkedin?: string;
-          contact_instagram?: string;
-          contact_facebook?: string;
-          contact_x?: string;
-          contact_clinic_name?: string;
-          contact_clinic_name_ar?: string;
-          contact_doctor_name?: string;
-          contact_doctor_name_ar?: string;
-          contact_credentials?: string;
-          contact_credentials_ar?: string;
-          contact_card_image_url?: string | null;
-          contact_latitude?: number | null;
-          contact_longitude?: number | null;
-          contact_price_range?: string;
-          case_studies_title?: string;
-          case_studies_description?: string;
-          featured_title?: string;
-          featured_description?: string;
-          services_title?: string;
-          services_description?: string;
-          services_heading?: string;
-          solutions_title?: string;
-          solutions_description?: string;
-          about_title?: string;
-          gallery_title?: string;
-          gallery_heading?: string;
-          gallery_description?: string;
-          slider_heading?: string;
-          contact_title?: string;
-          homepage_section_order?: string[];
-          homepage_hidden_sections?: string[];
-          dashboard_primary_color?: string;
-          dashboard_secondary_color?: string;
-          dashboard_canvas_color?: string;
-          dashboard_panel_color?: string;
-          dashboard_layout?: Json;
-          footer_tagline_ar?: string;
-          contact_headline_ar?: string;
-          contact_blurb_ar?: string;
-          contact_title_ar?: string;
-          about_title_ar?: string;
-          solutions_title_ar?: string;
-          solutions_description_ar?: string;
-          services_title_ar?: string;
-          services_heading_ar?: string;
-          services_description_ar?: string;
-          gallery_title_ar?: string;
-          gallery_heading_ar?: string;
-          gallery_description_ar?: string;
-          featured_title_ar?: string;
-          featured_description_ar?: string;
-          slider_heading_ar?: string;
-          case_studies_title_ar?: string;
-          case_studies_description_ar?: string;
-          faq_title?: string;
-          faq_title_ar?: string;
-          faq_heading?: string;
-          faq_heading_ar?: string;
-          faq_description?: string;
-          faq_description_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      hero: {
-        Row: {
-          id: string;
-          kicker: string;
-          headline: string;
-          accent: string;
-          body: string;
-          headline_image_url: string | null;
-          cta_primary_label: string;
-          cta_primary_href: string;
-          cta_secondary_label: string;
-          cta_secondary_href: string;
-          media_type: "image" | "video";
-          media_url: string | null;
-          media_url_desktop: string | null;
-          media_url_mobile: string | null;
-          kicker_ar: string;
-          headline_ar: string;
-          accent_ar: string;
-          body_ar: string;
-          cta_primary_label_ar: string;
-          cta_secondary_label_ar: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          kicker?: string;
-          headline?: string;
-          accent?: string;
-          body?: string;
-          headline_image_url?: string | null;
-          cta_primary_label?: string;
-          cta_primary_href?: string;
-          cta_secondary_label?: string;
-          cta_secondary_href?: string;
-          media_type?: "image" | "video";
-          media_url?: string | null;
-          media_url_desktop?: string | null;
-          media_url_mobile?: string | null;
-          kicker_ar?: string;
-          headline_ar?: string;
-          accent_ar?: string;
-          body_ar?: string;
-          cta_primary_label_ar?: string;
-          cta_secondary_label_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          kicker?: string;
-          headline?: string;
-          accent?: string;
-          body?: string;
-          headline_image_url?: string | null;
-          cta_primary_label?: string;
-          cta_primary_href?: string;
-          cta_secondary_href?: string;
-          cta_secondary_label?: string;
-          media_type?: "image" | "video";
-          media_url?: string | null;
-          media_url_desktop?: string | null;
-          media_url_mobile?: string | null;
-          kicker_ar?: string;
-          headline_ar?: string;
-          accent_ar?: string;
-          body_ar?: string;
-          cta_primary_label_ar?: string;
-          cta_secondary_label_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
       about: {
         Row: {
-          id: string;
-          image_url: string | null;
-          media_type: "image" | "video";
-          copy_image_url: string | null;
-          copy_media_type: "image" | "video";
-          drop_cap: string;
-          drop_cap_logo_url: string | null;
-          body: string;
-          body_ar: string;
-          created_at: string;
-          updated_at: string;
-        };
+          body: string
+          body_ar: string
+          copy_image_url: string | null
+          copy_media_type: string
+          created_at: string
+          drop_cap: string
+          drop_cap_logo_url: string | null
+          id: string
+          image_url: string | null
+          media_type: string
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          image_url?: string | null;
-          media_type?: "image" | "video";
-          copy_image_url?: string | null;
-          copy_media_type?: "image" | "video";
-          drop_cap?: string;
-          drop_cap_logo_url?: string | null;
-          body?: string;
-          body_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
+          body?: string
+          body_ar?: string
+          copy_image_url?: string | null
+          copy_media_type?: string
+          created_at?: string
+          drop_cap?: string
+          drop_cap_logo_url?: string | null
+          id?: string
+          image_url?: string | null
+          media_type?: string
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          image_url?: string | null;
-          media_type?: "image" | "video";
-          copy_image_url?: string | null;
-          copy_media_type?: "image" | "video";
-          drop_cap?: string;
-          drop_cap_logo_url?: string | null;
-          body?: string;
-          body_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      callouts: {
+          body?: string
+          body_ar?: string
+          copy_image_url?: string | null
+          copy_media_type?: string
+          created_at?: string
+          drop_cap?: string
+          drop_cap_logo_url?: string | null
+          id?: string
+          image_url?: string | null
+          media_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      about_trust_items: {
         Row: {
-          id: string;
-          body: string;
-          lead_image_url: string | null;
-          body_ar: string;
-          created_at: string;
-          updated_at: string;
-        };
+          created_at: string
+          id: string
+          label: string
+          label_ar: string
+          sort_order: number
+          updated_at: string
+          value: string
+          value_ar: string
+        }
         Insert: {
-          id?: string;
-          body?: string;
-          lead_image_url?: string | null;
-          body_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
+          created_at?: string
+          id?: string
+          label: string
+          label_ar?: string
+          sort_order?: number
+          updated_at?: string
+          value: string
+          value_ar?: string
+        }
         Update: {
-          id?: string;
-          body?: string;
-          lead_image_url?: string | null;
-          body_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      case_studies: {
+          created_at?: string
+          id?: string
+          label?: string
+          label_ar?: string
+          sort_order?: number
+          updated_at?: string
+          value?: string
+          value_ar?: string
+        }
+        Relationships: []
+      }
+      ai_action_audit_events: {
         Row: {
-          id: string;
-          title: string;
-          title_ar: string;
-          description: string;
-          description_ar: string;
-          media_url: string | null;
-          media_type: "image" | "video";
-          year: string | null;
-          category: string | null;
-          slug: string | null;
-          sort_order: number;
-          is_published: boolean;
-          tags: string[];
-          client: string | null;
-          director: string | null;
-          agency: string | null;
-          production_company: string | null;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
+          action_kind: string
+          actor_id: string | null
+          after_summary: Json | null
+          before_summary: Json | null
+          created_at: string
+          error_message: string | null
+          id: string
+          outcome: string
+          proposal_id: string | null
+          target: string
+        }
         Insert: {
-          id?: string;
-          title: string;
-          title_ar?: string;
-          description?: string;
-          description_ar?: string;
-          media_url?: string | null;
-          media_type?: "image" | "video";
-          year?: string | null;
-          category?: string | null;
-          slug?: string | null;
-          sort_order?: number;
-          is_published?: boolean;
-          tags?: string[];
-          client?: string | null;
-          director?: string | null;
-          agency?: string | null;
-          production_company?: string | null;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
+          action_kind: string
+          actor_id?: string | null
+          after_summary?: Json | null
+          before_summary?: Json | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          outcome: string
+          proposal_id?: string | null
+          target?: string
+        }
         Update: {
-          id?: string;
-          title?: string;
-          title_ar?: string;
-          description?: string;
-          description_ar?: string;
-          media_url?: string | null;
-          media_type?: "image" | "video";
-          year?: string | null;
-          category?: string | null;
-          slug?: string | null;
-          sort_order?: number;
-          is_published?: boolean;
-          tags?: string[];
-          client?: string | null;
-          director?: string | null;
-          agency?: string | null;
-          production_company?: string | null;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Relationships: [];
-      };
-      case_study_sections: {
-        Row: {
-          id: string;
-          case_study_id: string;
-          type:
-            | "text"
-            | "media"
-            | "split"
-            | "grid"
-            | "columns"
-            | "title"
-            | "intro"
-            | "text_grid";
-          layout_variant: string;
-          content: Json;
-          sort_order: number;
-          is_visible: boolean;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          case_study_id: string;
-          type:
-            | "text"
-            | "media"
-            | "split"
-            | "grid"
-            | "columns"
-            | "title"
-            | "intro"
-            | "text_grid";
-          layout_variant?: string;
-          content?: Json;
-          sort_order?: number;
-          is_visible?: boolean;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          case_study_id?: string;
-          type?:
-            | "text"
-            | "media"
-            | "split"
-            | "grid"
-            | "columns"
-            | "title"
-            | "intro"
-            | "text_grid";
-          layout_variant?: string;
-          content?: Json;
-          sort_order?: number;
-          is_visible?: boolean;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
+          action_kind?: string
+          actor_id?: string | null
+          after_summary?: Json | null
+          before_summary?: Json | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          outcome?: string
+          proposal_id?: string | null
+          target?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "case_study_sections_case_study_id_fkey";
-            columns: ["case_study_id"];
-            isOneToOne: false;
-            referencedRelation: "case_studies";
-            referencedColumns: ["id"];
+            foreignKeyName: "ai_action_audit_events_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "ai_action_proposals"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-      featured_projects: {
+        ]
+      }
+      ai_action_proposals: {
         Row: {
-          id: string;
-          title: string;
-          title_ar: string;
-          eyebrow: string;
-          eyebrow_ar: string;
-          slug: string | null;
-          image_url: string | null;
-          media_type: "image" | "video";
-          sort_order: number;
-          is_published: boolean;
-          meta_left: string | null;
-          meta_right: string | null;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
+          actions: Json
+          confirmed_at: string | null
+          created_at: string
+          created_by: string
+          diffs: Json
+          expires_at: string
+          id: string
+          patient_key: string | null
+          result: Json | null
+          snapshot_hash: string
+          source: string
+          status: string
+          summary: string
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          title: string;
-          title_ar?: string;
-          eyebrow?: string;
-          eyebrow_ar?: string;
-          slug?: string | null;
-          image_url?: string | null;
-          media_type?: "image" | "video";
-          sort_order?: number;
-          is_published?: boolean;
-          meta_left?: string | null;
-          meta_right?: string | null;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
+          actions?: Json
+          confirmed_at?: string | null
+          created_at?: string
+          created_by: string
+          diffs?: Json
+          expires_at: string
+          id?: string
+          patient_key?: string | null
+          result?: Json | null
+          snapshot_hash: string
+          source?: string
+          status?: string
+          summary?: string
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          title?: string;
-          title_ar?: string;
-          eyebrow?: string;
-          eyebrow_ar?: string;
-          slug?: string | null;
-          image_url?: string | null;
-          media_type?: "image" | "video";
-          sort_order?: number;
-          is_published?: boolean;
-          meta_left?: string | null;
-          meta_right?: string | null;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Relationships: [];
-      };
-      featured_project_sections: {
+          actions?: Json
+          confirmed_at?: string | null
+          created_at?: string
+          created_by?: string
+          diffs?: Json
+          expires_at?: string
+          id?: string
+          patient_key?: string | null
+          result?: Json | null
+          snapshot_hash?: string
+          source?: string
+          status?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_usage_daily: {
         Row: {
-          id: string;
-          featured_project_id: string;
-          type:
-            | "text"
-            | "media"
-            | "split"
-            | "grid"
-            | "columns"
-            | "title"
-            | "intro"
-            | "text_grid";
-          layout_variant: string;
-          content: Json;
-          sort_order: number;
-          is_visible: boolean;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
+          completion_tokens: number
+          day: string
+          last_rate_limited_at: string | null
+          model: string
+          prompt_tokens: number
+          provider: string
+          rate_limited_count: number
+          requests: number
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          featured_project_id: string;
-          type:
-            | "text"
-            | "media"
-            | "split"
-            | "grid"
-            | "columns"
-            | "title"
-            | "intro"
-            | "text_grid";
-          layout_variant?: string;
-          content?: Json;
-          sort_order?: number;
-          is_visible?: boolean;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
+          completion_tokens?: number
+          day?: string
+          last_rate_limited_at?: string | null
+          model: string
+          prompt_tokens?: number
+          provider: string
+          rate_limited_count?: number
+          requests?: number
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          featured_project_id?: string;
-          type?:
-            | "text"
-            | "media"
-            | "split"
-            | "grid"
-            | "columns"
-            | "title"
-            | "intro"
-            | "text_grid";
-          layout_variant?: string;
-          content?: Json;
-          sort_order?: number;
-          is_visible?: boolean;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "featured_project_sections_featured_project_id_fkey";
-            columns: ["featured_project_id"];
-            isOneToOne: false;
-            referencedRelation: "featured_projects";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      experience_entries: {
-        Row: {
-          id: string;
-          title: string;
-          org: string | null;
-          date_label: string | null;
-          description: string | null;
-          sort_order: number;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          title: string;
-          org?: string | null;
-          date_label?: string | null;
-          description?: string | null;
-          sort_order?: number;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          title?: string;
-          org?: string | null;
-          date_label?: string | null;
-          description?: string | null;
-          sort_order?: number;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Relationships: [];
-      };
-      clients: {
-        Row: {
-          id: string;
-          name: string;
-          logo_url: string | null;
-          media_type: "image" | "video";
-          sort_order: number;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          name: string;
-          logo_url?: string | null;
-          media_type?: "image" | "video";
-          sort_order?: number;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          logo_url?: string | null;
-          media_type?: "image" | "video";
-          sort_order?: number;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Relationships: [];
-      };
-      reservations: {
-        Row: {
-          id: string;
-          patient_name: string;
-          phone: string;
-          /** Generated: last 8 digits of `phone`. Read-only, indexed. */
-          phone_suffix: string;
-          email: string | null;
-          service_id: string | null;
-          service_label: string;
-          starts_at: string;
-          notes: string;
-          status: "pending" | "confirmed" | "cancelled" | "completed" | "no_show";
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          patient_name: string;
-          phone: string;
-          email?: string | null;
-          service_id?: string | null;
-          service_label: string;
-          starts_at: string;
-          notes?: string;
-          status?: "pending" | "confirmed" | "cancelled" | "completed" | "no_show";
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          patient_name?: string;
-          phone?: string;
-          email?: string | null;
-          service_id?: string | null;
-          service_label?: string;
-          starts_at?: string;
-          notes?: string;
-          status?: "pending" | "confirmed" | "cancelled" | "completed" | "no_show";
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "reservations_service_id_fkey";
-            columns: ["service_id"];
-            isOneToOne: false;
-            referencedRelation: "services";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      patient_notification_settings: {
-        Row: {
-          id: string;
-          mode: string;
-          timezone: string;
-          quiet_hours_start: number;
-          quiet_hours_end: number;
-          max_per_patient_per_day: number;
-          reminder_lead_minutes: number;
-          recall_enabled: boolean;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          mode?: string;
-          timezone?: string;
-          quiet_hours_start?: number;
-          quiet_hours_end?: number;
-          max_per_patient_per_day?: number;
-          reminder_lead_minutes?: number;
-          recall_enabled?: boolean;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          mode?: string;
-          timezone?: string;
-          quiet_hours_start?: number;
-          quiet_hours_end?: number;
-          max_per_patient_per_day?: number;
-          reminder_lead_minutes?: number;
-          recall_enabled?: boolean;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      patient_notification_optouts: {
-        Row: {
-          phone_suffix: string;
-          phone: string;
-          reason: string;
-          created_at: string;
-        };
-        Insert: {
-          phone_suffix: string;
-          phone?: string;
-          reason?: string;
-          created_at?: string;
-        };
-        Update: {
-          phone_suffix?: string;
-          phone?: string;
-          reason?: string;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-      patient_notifications: {
-        Row: {
-          id: string;
-          reservation_id: string | null;
-          kind: string;
-          dedupe_key: string;
-          source: string;
-          phone: string;
-          /** Generated column: last 8 digits of `phone`. Never write it. */
-          phone_suffix: string | null;
-          patient_name: string;
-          service_label: string;
-          starts_at: string | null;
-          language: string | null;
-          template_name: string | null;
-          payload: Json;
-          conversation_id: string | null;
-          scheduled_for: string;
-          status: string;
-          skip_reason: string | null;
-          attempts: number;
-          lease_until: string | null;
-          send_started_at: string | null;
-          sent_at: string | null;
-          outbound_message_id: string | null;
-          last_error: string | null;
-          waitlist_id: string | null;
-          slot_id: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          reservation_id?: string | null;
-          kind: string;
-          dedupe_key: string;
-          source?: string;
-          phone: string;
-          patient_name?: string;
-          service_label?: string;
-          starts_at?: string | null;
-          language?: string | null;
-          template_name?: string | null;
-          payload?: Json;
-          conversation_id?: string | null;
-          scheduled_for?: string;
-          status?: string;
-          skip_reason?: string | null;
-          attempts?: number;
-          lease_until?: string | null;
-          send_started_at?: string | null;
-          sent_at?: string | null;
-          outbound_message_id?: string | null;
-          last_error?: string | null;
-          waitlist_id?: string | null;
-          slot_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          reservation_id?: string | null;
-          kind?: string;
-          dedupe_key?: string;
-          source?: string;
-          phone?: string;
-          patient_name?: string;
-          service_label?: string;
-          starts_at?: string | null;
-          language?: string | null;
-          template_name?: string | null;
-          payload?: Json;
-          conversation_id?: string | null;
-          scheduled_for?: string;
-          status?: string;
-          skip_reason?: string | null;
-          attempts?: number;
-          lease_until?: string | null;
-          send_started_at?: string | null;
-          sent_at?: string | null;
-          outbound_message_id?: string | null;
-          last_error?: string | null;
-          waitlist_id?: string | null;
-          slot_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      patient_tooth_note_attachments: {
-        Row: {
-          id: string;
-          note_id: string;
-          file_url: string;
-          file_name: string;
-          mime_type: string;
-          kind: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          note_id: string;
-          file_url: string;
-          file_name: string;
-          mime_type?: string;
-          kind?: string;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          note_id?: string;
-          file_url?: string;
-          file_name?: string;
-          mime_type?: string;
-          kind?: string;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "patient_tooth_note_attachments_note_id_fkey";
-            columns: ["note_id"];
-            isOneToOne: false;
-            referencedRelation: "patient_tooth_notes";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      clinic_hours: {
-        Row: {
-          id: string;
-          open_weekdays: number[];
-          time_windows: string[];
-          slot_minutes: number;
-          horizon_days: number;
-          timezone: string;
-          updated_at: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          open_weekdays?: number[];
-          time_windows?: string[];
-          slot_minutes?: number;
-          horizon_days?: number;
-          timezone?: string;
-          updated_at?: string;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          open_weekdays?: number[];
-          time_windows?: string[];
-          slot_minutes?: number;
-          horizon_days?: number;
-          timezone?: string;
-          updated_at?: string;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
+          completion_tokens?: number
+          day?: string
+          last_rate_limited_at?: string | null
+          model?: string
+          prompt_tokens?: number
+          provider?: string
+          rate_limited_count?: number
+          requests?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       appointment_slots: {
         Row: {
-          id: string;
-          starts_at: string;
-          ends_at: string;
-          status: "open" | "booked" | "cancelled";
-          reservation_id: string | null;
-          created_at: string;
-          updated_at: string;
-        };
+          created_at: string
+          ends_at: string
+          id: string
+          reservation_id: string | null
+          starts_at: string
+          status: string
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          starts_at: string;
-          ends_at: string;
-          status?: "open" | "booked" | "cancelled";
-          reservation_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
+          created_at?: string
+          ends_at: string
+          id?: string
+          reservation_id?: string | null
+          starts_at: string
+          status?: string
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          starts_at?: string;
-          ends_at?: string;
-          status?: "open" | "booked" | "cancelled";
-          reservation_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      patient_profiles: {
+          created_at?: string
+          ends_at?: string
+          id?: string
+          reservation_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_slots_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointment_waitlist: {
         Row: {
-          id: string;
-          patient_key: string;
-          display_name: string;
-          phone: string;
-          email: string | null;
-          date_of_birth: string | null;
-          age_years: number | null;
-          gender: "" | "female" | "male" | "other" | "prefer_not";
-          medical_history: string[];
-          allergies: string[];
-          medications: string;
-          notes: string;
-          created_at: string;
-          updated_at: string;
-        };
+          created_at: string
+          id: string
+          notes: string
+          offered_at: string | null
+          offered_slot_id: string | null
+          patient_name: string
+          phone: string
+          phone_suffix: string | null
+          preferred_from: string | null
+          preferred_to: string | null
+          service_id: string | null
+          service_label: string
+          status: string
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          patient_key: string;
-          display_name?: string;
-          phone?: string;
-          email?: string | null;
-          date_of_birth?: string | null;
-          age_years?: number | null;
-          gender?: "" | "female" | "male" | "other" | "prefer_not";
-          medical_history?: string[];
-          allergies?: string[];
-          medications?: string;
-          notes?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
+          created_at?: string
+          id?: string
+          notes?: string
+          offered_at?: string | null
+          offered_slot_id?: string | null
+          patient_name: string
+          phone: string
+          phone_suffix?: string | null
+          preferred_from?: string | null
+          preferred_to?: string | null
+          service_id?: string | null
+          service_label?: string
+          status?: string
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          patient_key?: string;
-          display_name?: string;
-          phone?: string;
-          email?: string | null;
-          date_of_birth?: string | null;
-          age_years?: number | null;
-          gender?: "" | "female" | "male" | "other" | "prefer_not";
-          medical_history?: string[];
-          allergies?: string[];
-          medications?: string;
-          notes?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      patient_tooth_notes: {
+          created_at?: string
+          id?: string
+          notes?: string
+          offered_at?: string | null
+          offered_slot_id?: string | null
+          patient_name?: string
+          phone?: string
+          phone_suffix?: string | null
+          preferred_from?: string | null
+          preferred_to?: string | null
+          service_id?: string | null
+          service_label?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_waitlist_offered_slot_id_fkey"
+            columns: ["offered_slot_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_waitlist_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      callouts: {
         Row: {
-          id: string;
-          patient_key: string;
-          fdi_number: string;
-          body: string;
-          created_at: string;
-          updated_at: string;
-        };
+          body: string
+          body_ar: string
+          created_at: string
+          id: string
+          lead_image_url: string | null
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          patient_key: string;
-          fdi_number: string;
-          body: string;
-          created_at?: string;
-          updated_at?: string;
-        };
+          body?: string
+          body_ar?: string
+          created_at?: string
+          id?: string
+          lead_image_url?: string | null
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          patient_key?: string;
-          fdi_number?: string;
-          body?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      patient_tooth_surfaces: {
+          body?: string
+          body_ar?: string
+          created_at?: string
+          id?: string
+          lead_image_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      case_studies: {
         Row: {
-          id: string;
-          patient_key: string;
-          fdi_number: string;
-          dentition: "adult" | "primary";
-          mesial: "unmarked" | "decay" | "filling";
-          distal: "unmarked" | "decay" | "filling";
-          occlusal: "unmarked" | "decay" | "filling";
-          facial: "unmarked" | "decay" | "filling";
-          lingual: "unmarked" | "decay" | "filling";
-          whole: "none" | "crown" | "missing";
-          created_at: string;
-          updated_at: string;
-        };
+          agency: string | null
+          category: string | null
+          client: string | null
+          created_at: string
+          deleted_at: string | null
+          description: string
+          description_ar: string
+          director: string | null
+          id: string
+          is_published: boolean
+          media_type: string
+          media_url: string | null
+          production_company: string | null
+          slug: string | null
+          sort_order: number
+          tags: string[]
+          title: string
+          title_ar: string
+          updated_at: string
+          year: string | null
+        }
         Insert: {
-          id?: string;
-          patient_key: string;
-          fdi_number: string;
-          dentition?: "adult" | "primary";
-          mesial?: "unmarked" | "decay" | "filling";
-          distal?: "unmarked" | "decay" | "filling";
-          occlusal?: "unmarked" | "decay" | "filling";
-          facial?: "unmarked" | "decay" | "filling";
-          lingual?: "unmarked" | "decay" | "filling";
-          whole?: "none" | "crown" | "missing";
-          created_at?: string;
-          updated_at?: string;
-        };
+          agency?: string | null
+          category?: string | null
+          client?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string
+          description_ar?: string
+          director?: string | null
+          id?: string
+          is_published?: boolean
+          media_type?: string
+          media_url?: string | null
+          production_company?: string | null
+          slug?: string | null
+          sort_order?: number
+          tags?: string[]
+          title: string
+          title_ar?: string
+          updated_at?: string
+          year?: string | null
+        }
         Update: {
-          id?: string;
-          patient_key?: string;
-          fdi_number?: string;
-          dentition?: "adult" | "primary";
-          mesial?: "unmarked" | "decay" | "filling";
-          distal?: "unmarked" | "decay" | "filling";
-          occlusal?: "unmarked" | "decay" | "filling";
-          facial?: "unmarked" | "decay" | "filling";
-          lingual?: "unmarked" | "decay" | "filling";
-          whole?: "none" | "crown" | "missing";
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          agency?: string | null
+          category?: string | null
+          client?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string
+          description_ar?: string
+          director?: string | null
+          id?: string
+          is_published?: boolean
+          media_type?: string
+          media_url?: string | null
+          production_company?: string | null
+          slug?: string | null
+          sort_order?: number
+          tags?: string[]
+          title?: string
+          title_ar?: string
+          updated_at?: string
+          year?: string | null
+        }
+        Relationships: []
+      }
+      case_study_sections: {
+        Row: {
+          case_study_id: string
+          content: Json
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_visible: boolean
+          layout_variant: string
+          sort_order: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          case_study_id: string
+          content?: Json
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_visible?: boolean
+          layout_variant?: string
+          sort_order?: number
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          case_study_id?: string
+          content?: Json
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_visible?: boolean
+          layout_variant?: string
+          sort_order?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_study_sections_case_study_id_fkey"
+            columns: ["case_study_id"]
+            isOneToOne: false
+            referencedRelation: "case_studies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          logo_url: string | null
+          media_type: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          logo_url?: string | null
+          media_type?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          logo_url?: string | null
+          media_type?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clinic_cdt_fees: {
+        Row: {
+          code: string
+          fee_egp: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          fee_egp?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          fee_egp?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clinic_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          meta: Json
+          role: string
+          thread_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          role: string
+          thread_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          role?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_chat_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_chat_threads: {
+        Row: {
+          context: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          context?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          context?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clinic_hours: {
+        Row: {
+          created_at: string
+          horizon_days: number
+          id: string
+          open_weekdays: number[]
+          slot_minutes: number
+          time_windows: string[]
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          horizon_days?: number
+          id?: string
+          open_weekdays?: number[]
+          slot_minutes?: number
+          time_windows?: string[]
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          horizon_days?: number
+          id?: string
+          open_weekdays?: number[]
+          slot_minutes?: number
+          time_windows?: string[]
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clinic_knowledge: {
+        Row: {
+          body: string
+          body_ar: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_published: boolean
+          search_vector: unknown
+          sort_order: number
+          tags: string[]
+          title: string
+          title_ar: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          body_ar?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_published?: boolean
+          search_vector?: unknown
+          sort_order?: number
+          tags?: string[]
+          title: string
+          title_ar?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          body_ar?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_published?: boolean
+          search_vector?: unknown
+          sort_order?: number
+          tags?: string[]
+          title?: string
+          title_ar?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clinic_treatment_presets: {
+        Row: {
+          code: string
+          label: string
+          slot: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          label: string
+          slot: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          label?: string
+          slot?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_treatment_presets_code_fkey"
+            columns: ["code"]
+            isOneToOne: false
+            referencedRelation: "clinic_cdt_fees"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      experience_entries: {
+        Row: {
+          created_at: string
+          date_label: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          org: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_label?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          org?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_label?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          org?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      faqs: {
+        Row: {
+          answer: string
+          answer_ar: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_published: boolean
+          question: string
+          question_ar: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          answer?: string
+          answer_ar?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_published?: boolean
+          question: string
+          question_ar?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          answer_ar?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_published?: boolean
+          question?: string
+          question_ar?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      featured_project_sections: {
+        Row: {
+          content: Json
+          created_at: string
+          deleted_at: string | null
+          featured_project_id: string
+          id: string
+          is_visible: boolean
+          layout_variant: string
+          sort_order: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          deleted_at?: string | null
+          featured_project_id: string
+          id?: string
+          is_visible?: boolean
+          layout_variant?: string
+          sort_order?: number
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          deleted_at?: string | null
+          featured_project_id?: string
+          id?: string
+          is_visible?: boolean
+          layout_variant?: string
+          sort_order?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "featured_project_sections_featured_project_id_fkey"
+            columns: ["featured_project_id"]
+            isOneToOne: false
+            referencedRelation: "featured_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      featured_projects: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          eyebrow: string
+          eyebrow_ar: string
+          id: string
+          image_url: string | null
+          is_published: boolean
+          media_type: string
+          meta_left: string | null
+          meta_right: string | null
+          slug: string | null
+          sort_order: number
+          title: string
+          title_ar: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          eyebrow?: string
+          eyebrow_ar?: string
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          media_type?: string
+          meta_left?: string | null
+          meta_right?: string | null
+          slug?: string | null
+          sort_order?: number
+          title: string
+          title_ar?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          eyebrow?: string
+          eyebrow_ar?: string
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          media_type?: string
+          meta_left?: string | null
+          meta_right?: string | null
+          slug?: string | null
+          sort_order?: number
+          title?: string
+          title_ar?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      footer_links: {
+        Row: {
+          column_key: string
+          created_at: string
+          deleted_at: string | null
+          display_mode: string
+          href: string
+          icon_key: string | null
+          icon_url: string | null
+          id: string
+          label: string
+          label_ar: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          column_key: string
+          created_at?: string
+          deleted_at?: string | null
+          display_mode?: string
+          href?: string
+          icon_key?: string | null
+          icon_url?: string | null
+          id?: string
+          label: string
+          label_ar?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          column_key?: string
+          created_at?: string
+          deleted_at?: string | null
+          display_mode?: string
+          href?: string
+          icon_key?: string | null
+          icon_url?: string | null
+          id?: string
+          label?: string
+          label_ar?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gallery_comparisons: {
+        Row: {
+          after_image_url: string
+          alt_text: string
+          before_image_url: string
+          created_at: string
+          id: string
+          is_published: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          after_image_url?: string
+          alt_text?: string
+          before_image_url?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          after_image_url?: string
+          alt_text?: string
+          before_image_url?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gallery_items: {
+        Row: {
+          caption: string
+          caption_ar: string
+          category: string
+          created_at: string
+          id: string
+          image_url: string
+          is_published: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          caption?: string
+          caption_ar?: string
+          category?: string
+          created_at?: string
+          id?: string
+          image_url: string
+          is_published?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          caption?: string
+          caption_ar?: string
+          category?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_published?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gallery_showcase: {
+        Row: {
+          alt_text: string
+          created_at: string
+          id: string
+          image_url: string
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string
+          created_at?: string
+          id?: string
+          image_url: string
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hero: {
+        Row: {
+          accent: string
+          accent_ar: string
+          body: string
+          body_ar: string
+          created_at: string
+          cta_primary_href: string
+          cta_primary_label: string
+          cta_primary_label_ar: string
+          cta_secondary_href: string
+          cta_secondary_label: string
+          cta_secondary_label_ar: string
+          headline: string
+          headline_ar: string
+          headline_image_url: string | null
+          id: string
+          kicker: string
+          kicker_ar: string
+          layout: string
+          media_type: string
+          media_url: string | null
+          media_url_desktop: string | null
+          media_url_mobile: string | null
+          updated_at: string
+        }
+        Insert: {
+          accent?: string
+          accent_ar?: string
+          body?: string
+          body_ar?: string
+          created_at?: string
+          cta_primary_href?: string
+          cta_primary_label?: string
+          cta_primary_label_ar?: string
+          cta_secondary_href?: string
+          cta_secondary_label?: string
+          cta_secondary_label_ar?: string
+          headline?: string
+          headline_ar?: string
+          headline_image_url?: string | null
+          id?: string
+          kicker?: string
+          kicker_ar?: string
+          layout?: string
+          media_type?: string
+          media_url?: string | null
+          media_url_desktop?: string | null
+          media_url_mobile?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accent?: string
+          accent_ar?: string
+          body?: string
+          body_ar?: string
+          created_at?: string
+          cta_primary_href?: string
+          cta_primary_label?: string
+          cta_primary_label_ar?: string
+          cta_secondary_href?: string
+          cta_secondary_label?: string
+          cta_secondary_label_ar?: string
+          headline?: string
+          headline_ar?: string
+          headline_image_url?: string | null
+          id?: string
+          kicker?: string
+          kicker_ar?: string
+          layout?: string
+          media_type?: string
+          media_url?: string | null
+          media_url_desktop?: string | null
+          media_url_mobile?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      patient_chart_findings: {
+        Row: {
+          condition_type: string
+          created_at: string
+          id: string
+          note: string
+          patient_key: string
+          severity: string
+          status: string
+          tooth_fdi: string
+          updated_at: string
+          vitality_index: number | null
+        }
+        Insert: {
+          condition_type: string
+          created_at?: string
+          id?: string
+          note?: string
+          patient_key: string
+          severity?: string
+          status?: string
+          tooth_fdi: string
+          updated_at?: string
+          vitality_index?: number | null
+        }
+        Update: {
+          condition_type?: string
+          created_at?: string
+          id?: string
+          note?: string
+          patient_key?: string
+          severity?: string
+          status?: string
+          tooth_fdi?: string
+          updated_at?: string
+          vitality_index?: number | null
+        }
+        Relationships: []
+      }
+      patient_clinical_notes: {
+        Row: {
+          author: string
+          category: string
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          patient_key: string
+          target_id: string
+          target_kind: string
+          tooth_fdi: string | null
+          treatment_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          author?: string
+          category: string
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          patient_key: string
+          target_id?: string
+          target_kind?: string
+          tooth_fdi?: string | null
+          treatment_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          category?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          patient_key?: string
+          target_id?: string
+          target_kind?: string
+          tooth_fdi?: string | null
+          treatment_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_clinical_notes_treatment_id_fkey"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "patient_treatments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_imaging: {
         Row: {
-          id: string;
-          patient_key: string;
-          title: string;
-          kind: "xray" | "cbct" | "photo";
-          tooth_number: number | null;
-          tooth_fdi: string | null;
-          file_url: string;
-          file_name: string;
-          mime_type: string;
-          taken_at: string | null;
-          created_at: string;
-          updated_at: string;
-        };
+          created_at: string
+          file_name: string
+          file_url: string
+          id: string
+          kind: string
+          mime_type: string
+          patient_key: string
+          taken_at: string | null
+          title: string
+          tooth_fdi: string | null
+          tooth_number: number | null
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          patient_key: string;
-          title: string;
-          kind?: "xray" | "cbct" | "photo";
-          tooth_number?: number | null;
-          tooth_fdi?: string | null;
-          file_url: string;
-          file_name: string;
-          mime_type?: string;
-          taken_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
+          created_at?: string
+          file_name: string
+          file_url: string
+          id?: string
+          kind?: string
+          mime_type?: string
+          patient_key: string
+          taken_at?: string | null
+          title: string
+          tooth_fdi?: string | null
+          tooth_number?: number | null
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          patient_key?: string;
-          title?: string;
-          kind?: "xray" | "cbct" | "photo";
-          tooth_number?: number | null;
-          tooth_fdi?: string | null;
-          file_url?: string;
-          file_name?: string;
-          mime_type?: string;
-          taken_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          kind?: string
+          mime_type?: string
+          patient_key?: string
+          taken_at?: string | null
+          title?: string
+          tooth_fdi?: string | null
+          tooth_number?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      patient_lab_orders: {
+        Row: {
+          appliance_type: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string
+          patient_key: string
+          status: string
+          tooth_fdi: string | null
+          updated_at: string
+        }
+        Insert: {
+          appliance_type: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string
+          patient_key: string
+          status?: string
+          tooth_fdi?: string | null
+          updated_at?: string
+        }
+        Update: {
+          appliance_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string
+          patient_key?: string
+          status?: string
+          tooth_fdi?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      patient_notification_optouts: {
+        Row: {
+          created_at: string
+          phone: string
+          phone_suffix: string
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          phone?: string
+          phone_suffix: string
+          reason?: string
+        }
+        Update: {
+          created_at?: string
+          phone?: string
+          phone_suffix?: string
+          reason?: string
+        }
+        Relationships: []
+      }
+      patient_notification_settings: {
+        Row: {
+          id: string
+          max_per_patient_per_day: number
+          mode: string
+          quiet_hours_end: number
+          quiet_hours_start: number
+          recall_enabled: boolean
+          reminder_lead_minutes: number
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          max_per_patient_per_day?: number
+          mode?: string
+          quiet_hours_end?: number
+          quiet_hours_start?: number
+          recall_enabled?: boolean
+          reminder_lead_minutes?: number
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          max_per_patient_per_day?: number
+          mode?: string
+          quiet_hours_end?: number
+          quiet_hours_start?: number
+          recall_enabled?: boolean
+          reminder_lead_minutes?: number
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      patient_notifications: {
+        Row: {
+          attempts: number
+          conversation_id: string | null
+          created_at: string
+          dedupe_key: string
+          id: string
+          kind: string
+          language: string | null
+          last_error: string | null
+          lease_until: string | null
+          outbound_message_id: string | null
+          patient_name: string
+          payload: Json
+          phone: string
+          phone_suffix: string | null
+          reservation_id: string | null
+          scheduled_for: string
+          send_started_at: string | null
+          sent_at: string | null
+          service_label: string
+          skip_reason: string | null
+          slot_id: string | null
+          source: string
+          starts_at: string | null
+          status: string
+          template_name: string | null
+          updated_at: string
+          waitlist_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          conversation_id?: string | null
+          created_at?: string
+          dedupe_key: string
+          id?: string
+          kind: string
+          language?: string | null
+          last_error?: string | null
+          lease_until?: string | null
+          outbound_message_id?: string | null
+          patient_name?: string
+          payload?: Json
+          phone: string
+          phone_suffix?: string | null
+          reservation_id?: string | null
+          scheduled_for?: string
+          send_started_at?: string | null
+          sent_at?: string | null
+          service_label?: string
+          skip_reason?: string | null
+          slot_id?: string | null
+          source?: string
+          starts_at?: string | null
+          status?: string
+          template_name?: string | null
+          updated_at?: string
+          waitlist_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          conversation_id?: string | null
+          created_at?: string
+          dedupe_key?: string
+          id?: string
+          kind?: string
+          language?: string | null
+          last_error?: string | null
+          lease_until?: string | null
+          outbound_message_id?: string | null
+          patient_name?: string
+          payload?: Json
+          phone?: string
+          phone_suffix?: string | null
+          reservation_id?: string | null
+          scheduled_for?: string
+          send_started_at?: string | null
+          sent_at?: string | null
+          service_label?: string
+          skip_reason?: string | null
+          slot_id?: string | null
+          source?: string
+          starts_at?: string | null
+          status?: string
+          template_name?: string | null
+          updated_at?: string
+          waitlist_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_notifications_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_notifications_outbound_message_id_fkey"
+            columns: ["outbound_message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_notifications_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_notifications_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_notifications_waitlist_id_fkey"
+            columns: ["waitlist_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_waitlist"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_prescriptions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dose: string
+          duration_days: number
+          frequency: string
+          id: string
+          instructions: string
+          medication: string
+          patient_key: string
+          status: string
+          tooth_fdi: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dose: string
+          duration_days?: number
+          frequency: string
+          id?: string
+          instructions?: string
+          medication: string
+          patient_key: string
+          status?: string
+          tooth_fdi?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dose?: string
+          duration_days?: number
+          frequency?: string
+          id?: string
+          instructions?: string
+          medication?: string
+          patient_key?: string
+          status?: string
+          tooth_fdi?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      patient_profiles: {
+        Row: {
+          age_years: number | null
+          allergies: string[]
+          created_at: string
+          date_of_birth: string | null
+          display_name: string
+          email: string | null
+          gender: string
+          id: string
+          medical_history: string[]
+          medications: string
+          notes: string
+          patient_key: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          age_years?: number | null
+          allergies?: string[]
+          created_at?: string
+          date_of_birth?: string | null
+          display_name?: string
+          email?: string | null
+          gender?: string
+          id?: string
+          medical_history?: string[]
+          medications?: string
+          notes?: string
+          patient_key: string
+          phone?: string
+          updated_at?: string
+        }
+        Update: {
+          age_years?: number | null
+          allergies?: string[]
+          created_at?: string
+          date_of_birth?: string | null
+          display_name?: string
+          email?: string | null
+          gender?: string
+          id?: string
+          medical_history?: string[]
+          medications?: string
+          notes?: string
+          patient_key?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      patient_tooth_note_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_url: string
+          id: string
+          kind: string
+          mime_type: string
+          note_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_url: string
+          id?: string
+          kind?: string
+          mime_type?: string
+          note_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          kind?: string
+          mime_type?: string
+          note_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_tooth_note_attachments_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "patient_tooth_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_tooth_notes: {
+        Row: {
+          body: string
+          created_at: string
+          fdi_number: string
+          id: string
+          patient_key: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          fdi_number: string
+          id?: string
+          patient_key: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          fdi_number?: string
+          id?: string
+          patient_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      patient_tooth_surfaces: {
+        Row: {
+          created_at: string
+          dentition: string
+          distal: string
+          facial: string
+          fdi_number: string
+          id: string
+          lingual: string
+          mesial: string
+          occlusal: string
+          patient_key: string
+          updated_at: string
+          whole: string
+        }
+        Insert: {
+          created_at?: string
+          dentition?: string
+          distal?: string
+          facial?: string
+          fdi_number: string
+          id?: string
+          lingual?: string
+          mesial?: string
+          occlusal?: string
+          patient_key: string
+          updated_at?: string
+          whole?: string
+        }
+        Update: {
+          created_at?: string
+          dentition?: string
+          distal?: string
+          facial?: string
+          fdi_number?: string
+          id?: string
+          lingual?: string
+          mesial?: string
+          occlusal?: string
+          patient_key?: string
+          updated_at?: string
+          whole?: string
+        }
+        Relationships: []
+      }
+      patient_treatment_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_url: string
+          id: string
+          imaging_id: string | null
+          kind: string
+          mime_type: string
+          treatment_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_url: string
+          id?: string
+          imaging_id?: string | null
+          kind?: string
+          mime_type?: string
+          treatment_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          imaging_id?: string | null
+          kind?: string
+          mime_type?: string
+          treatment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_treatment_attachments_imaging_id_fkey"
+            columns: ["imaging_id"]
+            isOneToOne: false
+            referencedRelation: "patient_imaging"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_treatment_attachments_treatment_id_fkey"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "patient_treatments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_treatments: {
         Row: {
-          id: string;
-          patient_key: string;
-          tooth_name: string;
-          tooth_fdi: string | null;
-          severity: "Critical" | "Minor";
-          last_treatment: string;
-          cdt_code: string | null;
-          phase: "urgent" | "restorative" | "prosthodontic";
-          fee_amount: number;
-          ai_title: string | null;
-          ai_description: string | null;
-          ai_confidence: number | null;
-          ai_recommendation: string | null;
-          status: "open" | "scheduled" | "done";
-          reservation_id: string | null;
-          created_at: string;
-          updated_at: string;
-        };
+          ai_confidence: number | null
+          ai_description: string | null
+          ai_recommendation: string | null
+          ai_title: string | null
+          cdt_code: string | null
+          created_at: string
+          fee_amount: number
+          id: string
+          last_treatment: string
+          patient_key: string
+          phase: string
+          reservation_id: string | null
+          severity: string
+          status: string
+          tooth_fdi: string | null
+          tooth_name: string
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          patient_key: string;
-          tooth_name: string;
-          tooth_fdi?: string | null;
-          severity?: "Critical" | "Minor";
-          last_treatment?: string;
-          cdt_code?: string | null;
-          phase?: "urgent" | "restorative" | "prosthodontic";
-          fee_amount?: number;
-          ai_title?: string | null;
-          ai_description?: string | null;
-          ai_confidence?: number | null;
-          ai_recommendation?: string | null;
-          status?: "open" | "scheduled" | "done";
-          reservation_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
+          ai_confidence?: number | null
+          ai_description?: string | null
+          ai_recommendation?: string | null
+          ai_title?: string | null
+          cdt_code?: string | null
+          created_at?: string
+          fee_amount?: number
+          id?: string
+          last_treatment?: string
+          patient_key: string
+          phase?: string
+          reservation_id?: string | null
+          severity?: string
+          status?: string
+          tooth_fdi?: string | null
+          tooth_name: string
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          patient_key?: string;
-          tooth_name?: string;
-          tooth_fdi?: string | null;
-          severity?: "Critical" | "Minor";
-          last_treatment?: string;
-          cdt_code?: string | null;
-          phase?: "urgent" | "restorative" | "prosthodontic";
-          fee_amount?: number;
-          ai_title?: string | null;
-          ai_description?: string | null;
-          ai_confidence?: number | null;
-          ai_recommendation?: string | null;
-          status?: "open" | "scheduled" | "done";
-          reservation_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
+          ai_confidence?: number | null
+          ai_description?: string | null
+          ai_recommendation?: string | null
+          ai_title?: string | null
+          cdt_code?: string | null
+          created_at?: string
+          fee_amount?: number
+          id?: string
+          last_treatment?: string
+          patient_key?: string
+          phase?: string
+          reservation_id?: string | null
+          severity?: string
+          status?: string
+          tooth_fdi?: string | null
+          tooth_name?: string
+          updated_at?: string
+        }
         Relationships: [
           {
             foreignKeyName: "patient_treatments_reservation_id_fkey"
@@ -1858,818 +1786,1335 @@ export type Database = {
             referencedRelation: "reservations"
             referencedColumns: ["id"]
           },
-        ];
-      };
-      patient_treatment_attachments: {
+        ]
+      }
+      permissions: {
         Row: {
-          id: string;
-          treatment_id: string;
-          file_url: string;
-          file_name: string;
-          mime_type: string;
-          kind: "file" | "image" | "xray";
-          imaging_id: string | null;
-          created_at: string;
-        };
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          label: string
+          sort_order: number
+        }
         Insert: {
-          id?: string;
-          treatment_id: string;
-          file_url: string;
-          file_name: string;
-          mime_type?: string;
-          kind?: "file" | "image" | "xray";
-          imaging_id?: string | null;
-          created_at?: string;
-        };
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          label: string
+          sort_order?: number
+        }
         Update: {
-          id?: string;
-          treatment_id?: string;
-          file_url?: string;
-          file_name?: string;
-          mime_type?: string;
-          kind?: "file" | "image" | "xray";
-          imaging_id?: string | null;
-          created_at?: string;
-        };
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          display_name: string | null
+          id: string
+          role: string
+          role_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          display_name?: string | null
+          id: string
+          role?: string
+          role_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          display_name?: string | null
+          id?: string
+          role?: string
+          role_id?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "patient_treatment_attachments_treatment_id_fkey"
-            columns: ["treatment_id"]
+            foreignKeyName: "profiles_role_id_fkey"
+            columns: ["role_id"]
             isOneToOne: false
-            referencedRelation: "patient_treatments"
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_request_log: {
+        Row: {
+          bucket: string
+          created_at: string
+          id: number
+          identifier: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          id?: never
+          identifier: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          id?: never
+          identifier?: string
+        }
+        Relationships: []
+      }
+      reservations: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          email: string | null
+          id: string
+          notes: string
+          patient_name: string
+          phone: string
+          phone_suffix: string | null
+          service_id: string | null
+          service_label: string
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          notes?: string
+          patient_name: string
+          phone: string
+          phone_suffix?: string | null
+          service_id?: string | null
+          service_label: string
+          starts_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          notes?: string
+          patient_name?: string
+          phone?: string
+          phone_suffix?: string | null
+          service_id?: string | null
+          service_label?: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          created_at: string
+          permission_id: string
+          role_id: string
+        }
+        Insert: {
+          created_at?: string
+          permission_id: string
+          role_id: string
+        }
+        Update: {
+          created_at?: string
+          permission_id?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "patient_treatment_attachments_imaging_id_fkey"
-            columns: ["imaging_id"]
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
             isOneToOne: false
-            referencedRelation: "patient_imaging"
+            referencedRelation: "roles"
             referencedColumns: ["id"]
           },
-        ];
-      };
-      clinic_knowledge: {
+        ]
+      }
+      roles: {
         Row: {
-          id: string;
-          title: string;
-          title_ar: string;
-          body: string;
-          body_ar: string;
-          tags: string[];
-          sort_order: number;
-          is_published: boolean;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          id: string
+          is_admin_role: boolean
+          is_system: boolean
+          key: string
+          name: string
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          title: string;
-          title_ar?: string;
-          body?: string;
-          body_ar?: string;
-          tags?: string[];
-          sort_order?: number;
-          is_published?: boolean;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_admin_role?: boolean
+          is_system?: boolean
+          key: string
+          name: string
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          title?: string;
-          title_ar?: string;
-          body?: string;
-          body_ar?: string;
-          tags?: string[];
-          sort_order?: number;
-          is_published?: boolean;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Relationships: [];
-      };
-      appointment_waitlist: {
-        Row: {
-          id: string;
-          patient_name: string;
-          phone: string;
-          /** Generated column: last 8 digits of `phone`. Never write it. */
-          phone_suffix: string | null;
-          service_id: string | null;
-          service_label: string;
-          preferred_from: string | null;
-          preferred_to: string | null;
-          notes: string;
-          status: string;
-          offered_slot_id: string | null;
-          offered_at: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          patient_name: string;
-          phone: string;
-          service_id?: string | null;
-          service_label?: string;
-          preferred_from?: string | null;
-          preferred_to?: string | null;
-          notes?: string;
-          status?: string;
-          offered_slot_id?: string | null;
-          offered_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          patient_name?: string;
-          phone?: string;
-          service_id?: string | null;
-          service_label?: string;
-          preferred_from?: string | null;
-          preferred_to?: string | null;
-          notes?: string;
-          status?: string;
-          offered_slot_id?: string | null;
-          offered_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      faqs: {
-        Row: {
-          id: string;
-          question: string;
-          question_ar: string;
-          answer: string;
-          answer_ar: string;
-          sort_order: number;
-          is_published: boolean;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          question: string;
-          question_ar?: string;
-          answer?: string;
-          answer_ar?: string;
-          sort_order?: number;
-          is_published?: boolean;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          question?: string;
-          question_ar?: string;
-          answer?: string;
-          answer_ar?: string;
-          sort_order?: number;
-          is_published?: boolean;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_admin_role?: boolean
+          is_system?: boolean
+          key?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
-          id: string;
-          title: string;
-          title_ar: string;
-          tags: string[];
-          description: string;
-          description_ar: string;
-          kind: "our_services" | "laser";
-          image_url: string | null;
-          media_type: "image" | "video";
-          slug: string | null;
-          sort_order: number;
-          is_published: boolean;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
+          created_at: string
+          deleted_at: string | null
+          description: string
+          description_ar: string
+          id: string
+          image_url: string | null
+          is_published: boolean
+          kind: string
+          media_type: string
+          slug: string | null
+          sort_order: number
+          tags: string[]
+          title: string
+          title_ar: string
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          title: string;
-          title_ar?: string;
-          tags?: string[];
-          description?: string;
-          description_ar?: string;
-          kind?: "our_services" | "laser";
-          image_url?: string | null;
-          media_type?: "image" | "video";
-          slug?: string | null;
-          sort_order?: number;
-          is_published?: boolean;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
+          created_at?: string
+          deleted_at?: string | null
+          description?: string
+          description_ar?: string
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          kind?: string
+          media_type?: string
+          slug?: string | null
+          sort_order?: number
+          tags?: string[]
+          title: string
+          title_ar?: string
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          title?: string;
-          title_ar?: string;
-          tags?: string[];
-          description?: string;
-          description_ar?: string;
-          kind?: "our_services" | "laser";
-          image_url?: string | null;
-          media_type?: "image" | "video";
-          slug?: string | null;
-          sort_order?: number;
-          is_published?: boolean;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Relationships: [];
-      };
-      footer_links: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string
+          description_ar?: string
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          kind?: string
+          media_type?: string
+          slug?: string | null
+          sort_order?: number
+          tags?: string[]
+          title?: string
+          title_ar?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
         Row: {
-          id: string;
-          column_key: "portfolio" | "resources" | "follow";
-          label: string;
-          label_ar: string;
-          href: string;
-          display_mode: "text" | "icon";
-          icon_key: string | null;
-          icon_url: string | null;
-          sort_order: number;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
+          about_title: string
+          about_title_ar: string
+          brand_logo_url: string | null
+          brand_name: string
+          case_studies_description: string
+          case_studies_description_ar: string
+          case_studies_title: string
+          case_studies_title_ar: string
+          contact_address: string
+          contact_behance: string
+          contact_blurb: string
+          contact_blurb_ar: string
+          contact_card_image_url: string | null
+          contact_city: string
+          contact_clinic_name: string
+          contact_clinic_name_ar: string
+          contact_country: string
+          contact_credentials: string
+          contact_credentials_ar: string
+          contact_doctor_name: string
+          contact_doctor_name_ar: string
+          contact_email: string
+          contact_email_secondary: string
+          contact_facebook: string
+          contact_headline: string
+          contact_headline_ar: string
+          contact_hours: string
+          contact_instagram: string
+          contact_latitude: number | null
+          contact_linkedin: string
+          contact_longitude: number | null
+          contact_map_url: string
+          contact_mobile: string
+          contact_phone: string
+          contact_phone_secondary: string
+          contact_price_range: string
+          contact_telegram: string
+          contact_title: string
+          contact_title_ar: string
+          contact_whatsapp: string
+          contact_x: string
+          created_at: string
+          dashboard_canvas_color: string
+          dashboard_layout: Json
+          dashboard_panel_color: string
+          dashboard_primary_color: string
+          dashboard_secondary_color: string
+          faq_description: string
+          faq_description_ar: string
+          faq_heading: string
+          faq_heading_ar: string
+          faq_title: string
+          faq_title_ar: string
+          featured_description: string
+          featured_description_ar: string
+          featured_title: string
+          featured_title_ar: string
+          footer_tagline: string
+          footer_tagline_ar: string
+          footer_tagline_image_url: string | null
+          gallery_description: string
+          gallery_description_ar: string
+          gallery_heading: string
+          gallery_heading_ar: string
+          gallery_title: string
+          gallery_title_ar: string
+          homepage_hidden_sections: string[]
+          homepage_section_order: string[]
+          id: string
+          services_description: string
+          services_description_ar: string
+          services_heading: string
+          services_heading_ar: string
+          services_title: string
+          services_title_ar: string
+          slider_heading: string
+          slider_heading_ar: string
+          solutions_description: string
+          solutions_description_ar: string
+          solutions_title: string
+          solutions_title_ar: string
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          column_key: "portfolio" | "resources" | "follow";
-          label: string;
-          label_ar?: string;
-          href?: string;
-          display_mode?: "text" | "icon";
-          icon_key?: string | null;
-          icon_url?: string | null;
-          sort_order?: number;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
+          about_title?: string
+          about_title_ar?: string
+          brand_logo_url?: string | null
+          brand_name?: string
+          case_studies_description?: string
+          case_studies_description_ar?: string
+          case_studies_title?: string
+          case_studies_title_ar?: string
+          contact_address?: string
+          contact_behance?: string
+          contact_blurb?: string
+          contact_blurb_ar?: string
+          contact_card_image_url?: string | null
+          contact_city?: string
+          contact_clinic_name?: string
+          contact_clinic_name_ar?: string
+          contact_country?: string
+          contact_credentials?: string
+          contact_credentials_ar?: string
+          contact_doctor_name?: string
+          contact_doctor_name_ar?: string
+          contact_email?: string
+          contact_email_secondary?: string
+          contact_facebook?: string
+          contact_headline?: string
+          contact_headline_ar?: string
+          contact_hours?: string
+          contact_instagram?: string
+          contact_latitude?: number | null
+          contact_linkedin?: string
+          contact_longitude?: number | null
+          contact_map_url?: string
+          contact_mobile?: string
+          contact_phone?: string
+          contact_phone_secondary?: string
+          contact_price_range?: string
+          contact_telegram?: string
+          contact_title?: string
+          contact_title_ar?: string
+          contact_whatsapp?: string
+          contact_x?: string
+          created_at?: string
+          dashboard_canvas_color?: string
+          dashboard_layout?: Json
+          dashboard_panel_color?: string
+          dashboard_primary_color?: string
+          dashboard_secondary_color?: string
+          faq_description?: string
+          faq_description_ar?: string
+          faq_heading?: string
+          faq_heading_ar?: string
+          faq_title?: string
+          faq_title_ar?: string
+          featured_description?: string
+          featured_description_ar?: string
+          featured_title?: string
+          featured_title_ar?: string
+          footer_tagline?: string
+          footer_tagline_ar?: string
+          footer_tagline_image_url?: string | null
+          gallery_description?: string
+          gallery_description_ar?: string
+          gallery_heading?: string
+          gallery_heading_ar?: string
+          gallery_title?: string
+          gallery_title_ar?: string
+          homepage_hidden_sections?: string[]
+          homepage_section_order?: string[]
+          id?: string
+          services_description?: string
+          services_description_ar?: string
+          services_heading?: string
+          services_heading_ar?: string
+          services_title?: string
+          services_title_ar?: string
+          slider_heading?: string
+          slider_heading_ar?: string
+          solutions_description?: string
+          solutions_description_ar?: string
+          solutions_title?: string
+          solutions_title_ar?: string
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          column_key?: "portfolio" | "resources" | "follow";
-          label?: string;
-          label_ar?: string;
-          href?: string;
-          display_mode?: "text" | "icon";
-          icon_key?: string | null;
-          icon_url?: string | null;
-          sort_order?: number;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Relationships: [];
-      };
+          about_title?: string
+          about_title_ar?: string
+          brand_logo_url?: string | null
+          brand_name?: string
+          case_studies_description?: string
+          case_studies_description_ar?: string
+          case_studies_title?: string
+          case_studies_title_ar?: string
+          contact_address?: string
+          contact_behance?: string
+          contact_blurb?: string
+          contact_blurb_ar?: string
+          contact_card_image_url?: string | null
+          contact_city?: string
+          contact_clinic_name?: string
+          contact_clinic_name_ar?: string
+          contact_country?: string
+          contact_credentials?: string
+          contact_credentials_ar?: string
+          contact_doctor_name?: string
+          contact_doctor_name_ar?: string
+          contact_email?: string
+          contact_email_secondary?: string
+          contact_facebook?: string
+          contact_headline?: string
+          contact_headline_ar?: string
+          contact_hours?: string
+          contact_instagram?: string
+          contact_latitude?: number | null
+          contact_linkedin?: string
+          contact_longitude?: number | null
+          contact_map_url?: string
+          contact_mobile?: string
+          contact_phone?: string
+          contact_phone_secondary?: string
+          contact_price_range?: string
+          contact_telegram?: string
+          contact_title?: string
+          contact_title_ar?: string
+          contact_whatsapp?: string
+          contact_x?: string
+          created_at?: string
+          dashboard_canvas_color?: string
+          dashboard_layout?: Json
+          dashboard_panel_color?: string
+          dashboard_primary_color?: string
+          dashboard_secondary_color?: string
+          faq_description?: string
+          faq_description_ar?: string
+          faq_heading?: string
+          faq_heading_ar?: string
+          faq_title?: string
+          faq_title_ar?: string
+          featured_description?: string
+          featured_description_ar?: string
+          featured_title?: string
+          featured_title_ar?: string
+          footer_tagline?: string
+          footer_tagline_ar?: string
+          footer_tagline_image_url?: string | null
+          gallery_description?: string
+          gallery_description_ar?: string
+          gallery_heading?: string
+          gallery_heading_ar?: string
+          gallery_title?: string
+          gallery_title_ar?: string
+          homepage_hidden_sections?: string[]
+          homepage_section_order?: string[]
+          id?: string
+          services_description?: string
+          services_description_ar?: string
+          services_heading?: string
+          services_heading_ar?: string
+          services_title?: string
+          services_title_ar?: string
+          slider_heading?: string
+          slider_heading_ar?: string
+          solutions_description?: string
+          solutions_description_ar?: string
+          solutions_title?: string
+          solutions_title_ar?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       social_links: {
         Row: {
-          id: string;
-          platform: string;
-          href: string;
-          sort_order: number;
-          created_at: string;
-          updated_at: string;
-          deleted_at: string | null;
-        };
+          created_at: string
+          deleted_at: string | null
+          href: string
+          id: string
+          platform: string
+          sort_order: number
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          platform: string;
-          href?: string;
-          sort_order?: number;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
+          created_at?: string
+          deleted_at?: string | null
+          href?: string
+          id?: string
+          platform: string
+          sort_order?: number
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          platform?: string;
-          href?: string;
-          sort_order?: number;
-          created_at?: string;
-          updated_at?: string;
-          deleted_at?: string | null;
-        };
-        Relationships: [];
-      };
-      about_trust_items: {
-        Row: {
-          id: string;
-          value: string;
-          label: string;
-          sort_order: number;
-          value_ar: string;
-          label_ar: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          value: string;
-          label: string;
-          sort_order?: number;
-          value_ar?: string;
-          label_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          value?: string;
-          label?: string;
-          sort_order?: number;
-          value_ar?: string;
-          label_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          deleted_at?: string | null
+          href?: string
+          id?: string
+          platform?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       solution_panels: {
         Row: {
-          id: string;
-          variant: "dark" | "photo";
-          title: string;
-          body: string;
-          image_url: string;
-          link_href: string | null;
-          sort_order: number;
-          title_ar: string;
-          body_ar: string;
-          created_at: string;
-          updated_at: string;
-        };
+          body: string
+          body_ar: string
+          created_at: string
+          id: string
+          image_url: string
+          link_href: string | null
+          sort_order: number
+          title: string
+          title_ar: string
+          updated_at: string
+          variant: string
+        }
         Insert: {
-          id?: string;
-          variant?: "dark" | "photo";
-          title: string;
-          body?: string;
-          image_url: string;
-          link_href?: string | null;
-          sort_order?: number;
-          title_ar?: string;
-          body_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
+          body?: string
+          body_ar?: string
+          created_at?: string
+          id?: string
+          image_url: string
+          link_href?: string | null
+          sort_order?: number
+          title: string
+          title_ar?: string
+          updated_at?: string
+          variant?: string
+        }
         Update: {
-          id?: string;
-          variant?: "dark" | "photo";
-          title?: string;
-          body?: string;
-          image_url?: string;
-          link_href?: string | null;
-          sort_order?: number;
-          title_ar?: string;
-          body_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      gallery_items: {
+          body?: string
+          body_ar?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          link_href?: string | null
+          sort_order?: number
+          title?: string
+          title_ar?: string
+          updated_at?: string
+          variant?: string
+        }
+        Relationships: []
+      }
+      whatsapp_ai_corrections: {
         Row: {
-          id: string;
-          image_url: string;
-          caption: string;
-          category: string;
-          sort_order: number;
-          is_published: boolean;
-          caption_ar: string;
-          created_at: string;
-          updated_at: string;
-        };
+          ai_text: string
+          conversation_id: string | null
+          created_at: string
+          edited: boolean
+          id: string
+          intent: string | null
+          model: string | null
+          promoted: boolean
+          reason: string | null
+          reviewed: boolean
+          sent_by: string | null
+          sent_text: string
+        }
         Insert: {
-          id?: string;
-          image_url: string;
-          caption?: string;
-          category?: string;
-          sort_order?: number;
-          is_published?: boolean;
-          caption_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
+          ai_text: string
+          conversation_id?: string | null
+          created_at?: string
+          edited: boolean
+          id?: string
+          intent?: string | null
+          model?: string | null
+          promoted?: boolean
+          reason?: string | null
+          reviewed?: boolean
+          sent_by?: string | null
+          sent_text: string
+        }
         Update: {
-          id?: string;
-          image_url?: string;
-          caption?: string;
-          category?: string;
-          sort_order?: number;
-          is_published?: boolean;
-          caption_ar?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      gallery_showcase: {
-        Row: {
-          id: string;
-          image_url: string;
-          alt_text: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          image_url: string;
-          alt_text?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          image_url?: string;
-          alt_text?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      gallery_comparisons: {
-        Row: {
-          id: string;
-          before_image_url: string;
-          after_image_url: string;
-          alt_text: string;
-          sort_order: number;
-          is_published: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          before_image_url?: string;
-          after_image_url?: string;
-          alt_text?: string;
-          sort_order?: number;
-          is_published?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          before_image_url?: string;
-          after_image_url?: string;
-          alt_text?: string;
-          sort_order?: number;
-          is_published?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      patient_clinical_notes: {
-        Row: {
-          id: string;
-          patient_key: string;
-          category: "SOAP" | "Quick Note" | "Alert" | "Lab";
-          content: string;
-          target_kind: "visit" | "tooth" | "treatment";
-          target_id: string;
-          tooth_fdi: string | null;
-          treatment_id: string | null;
-          author: string;
-          created_by: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          patient_key: string;
-          category: "SOAP" | "Quick Note" | "Alert" | "Lab";
-          content: string;
-          target_kind?: "visit" | "tooth" | "treatment";
-          target_id?: string;
-          tooth_fdi?: string | null;
-          treatment_id?: string | null;
-          author?: string;
-          created_by?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          patient_key?: string;
-          category?: "SOAP" | "Quick Note" | "Alert" | "Lab";
-          content?: string;
-          target_kind?: "visit" | "tooth" | "treatment";
-          target_id?: string;
-          tooth_fdi?: string | null;
-          treatment_id?: string | null;
-          author?: string;
-          created_by?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      patient_chart_findings: {
-        Row: {
-          id: string;
-          patient_key: string;
-          tooth_fdi: string;
-          condition_type: string;
-          severity: "LOW" | "MED" | "HIGH" | "CRITICAL";
-          status: "ACTIVE" | "RESOLVED" | "MONITORING";
-          vitality_index: number | null;
-          note: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          patient_key: string;
-          tooth_fdi: string;
-          condition_type: string;
-          severity?: "LOW" | "MED" | "HIGH" | "CRITICAL";
-          status?: "ACTIVE" | "RESOLVED" | "MONITORING";
-          vitality_index?: number | null;
-          note?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          patient_key?: string;
-          tooth_fdi?: string;
-          condition_type?: string;
-          severity?: "LOW" | "MED" | "HIGH" | "CRITICAL";
-          status?: "ACTIVE" | "RESOLVED" | "MONITORING";
-          vitality_index?: number | null;
-          note?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      patient_prescriptions: {
-        Row: {
-          id: string;
-          patient_key: string;
-          medication: string;
-          dose: string;
-          frequency: "ONCE_DAILY" | "TWICE_DAILY" | "NIGHT_ONLY";
-          duration_days: number;
-          instructions: string;
-          status: "ACTIVE" | "EXPIRED";
-          tooth_fdi: string | null;
-          created_by: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          patient_key: string;
-          medication: string;
-          dose: string;
-          frequency: "ONCE_DAILY" | "TWICE_DAILY" | "NIGHT_ONLY";
-          duration_days?: number;
-          instructions?: string;
-          status?: "ACTIVE" | "EXPIRED";
-          tooth_fdi?: string | null;
-          created_by?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          patient_key?: string;
-          medication?: string;
-          dose?: string;
-          frequency?: "ONCE_DAILY" | "TWICE_DAILY" | "NIGHT_ONLY";
-          duration_days?: number;
-          instructions?: string;
-          status?: "ACTIVE" | "EXPIRED";
-          tooth_fdi?: string | null;
-          created_by?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      patient_lab_orders: {
-        Row: {
-          id: string;
-          patient_key: string;
-          appliance_type: string;
-          status: "IMPRESSION" | "FABRICATION" | "SHIPPED" | "DELIVERED";
-          tooth_fdi: string | null;
-          notes: string;
-          created_by: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          patient_key: string;
-          appliance_type: string;
-          status?: "IMPRESSION" | "FABRICATION" | "SHIPPED" | "DELIVERED";
-          tooth_fdi?: string | null;
-          notes?: string;
-          created_by?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          patient_key?: string;
-          appliance_type?: string;
-          status?: "IMPRESSION" | "FABRICATION" | "SHIPPED" | "DELIVERED";
-          tooth_fdi?: string | null;
-          notes?: string;
-          created_by?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      ai_action_proposals: {
-        Row: {
-          id: string;
-          created_by: string;
-          status: "pending" | "confirmed" | "cancelled" | "expired" | "failed";
-          source: "clinic-chat" | "treatment-chat";
-          patient_key: string | null;
-          summary: string;
-          actions: Json;
-          diffs: Json;
-          snapshot_hash: string;
-          expires_at: string;
-          confirmed_at: string | null;
-          result: Json | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          created_by: string;
-          status?: "pending" | "confirmed" | "cancelled" | "expired" | "failed";
-          source?: "clinic-chat" | "treatment-chat";
-          patient_key?: string | null;
-          summary?: string;
-          actions?: Json;
-          diffs?: Json;
-          snapshot_hash: string;
-          expires_at: string;
-          confirmed_at?: string | null;
-          result?: Json | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          created_by?: string;
-          status?: "pending" | "confirmed" | "cancelled" | "expired" | "failed";
-          source?: "clinic-chat" | "treatment-chat";
-          patient_key?: string | null;
-          summary?: string;
-          actions?: Json;
-          diffs?: Json;
-          snapshot_hash?: string;
-          expires_at?: string;
-          confirmed_at?: string | null;
-          result?: Json | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      ai_action_audit_events: {
-        Row: {
-          id: string;
-          proposal_id: string | null;
-          actor_id: string | null;
-          action_kind: string;
-          target: string;
-          outcome: "proposed" | "confirmed" | "cancelled" | "failed" | "stale";
-          before_summary: Json | null;
-          after_summary: Json | null;
-          error_message: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          proposal_id?: string | null;
-          actor_id?: string | null;
-          action_kind: string;
-          target?: string;
-          outcome: "proposed" | "confirmed" | "cancelled" | "failed" | "stale";
-          before_summary?: Json | null;
-          after_summary?: Json | null;
-          error_message?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          proposal_id?: string | null;
-          actor_id?: string | null;
-          action_kind?: string;
-          target?: string;
-          outcome?: "proposed" | "confirmed" | "cancelled" | "failed" | "stale";
-          before_summary?: Json | null;
-          after_summary?: Json | null;
-          error_message?: string | null;
-          created_at?: string;
-        };
+          ai_text?: string
+          conversation_id?: string | null
+          created_at?: string
+          edited?: boolean
+          id?: string
+          intent?: string | null
+          model?: string | null
+          promoted?: boolean
+          reason?: string | null
+          reviewed?: boolean
+          sent_by?: string | null
+          sent_text?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "ai_action_audit_events_proposal_id_fkey";
-            columns: ["proposal_id"];
-            isOneToOne: false;
-            referencedRelation: "ai_action_proposals";
-            referencedColumns: ["id"];
+            foreignKeyName: "whatsapp_ai_corrections_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-    };
-    Views: Record<string, never>;
+        ]
+      }
+      whatsapp_ai_events: {
+        Row: {
+          confidence: number | null
+          conversation_id: string
+          created_at: string
+          decision: string
+          envelope: Json
+          handoff: boolean
+          id: string
+          injection_flags: string[]
+          intent: string | null
+          job_id: string | null
+          language: string | null
+          latency_ms: number | null
+          message_id: string | null
+          model: string | null
+          reason: string
+        }
+        Insert: {
+          confidence?: number | null
+          conversation_id: string
+          created_at?: string
+          decision: string
+          envelope?: Json
+          handoff?: boolean
+          id?: string
+          injection_flags?: string[]
+          intent?: string | null
+          job_id?: string | null
+          language?: string | null
+          latency_ms?: number | null
+          message_id?: string | null
+          model?: string | null
+          reason?: string
+        }
+        Update: {
+          confidence?: number | null
+          conversation_id?: string
+          created_at?: string
+          decision?: string
+          envelope?: Json
+          handoff?: boolean
+          id?: string
+          injection_flags?: string[]
+          intent?: string | null
+          job_id?: string | null
+          language?: string | null
+          latency_ms?: number | null
+          message_id?: string | null
+          model?: string | null
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_ai_events_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_ai_events_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_ai_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_ai_events_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_ai_jobs: {
+        Row: {
+          attempts: number
+          conversation_id: string
+          created_at: string
+          id: string
+          inbound_message_id: string
+          last_error: string | null
+          lease_until: string | null
+          outbound_message_id: string | null
+          send_started_at: string | null
+          skip_reason: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          conversation_id: string
+          created_at?: string
+          id?: string
+          inbound_message_id: string
+          last_error?: string | null
+          lease_until?: string | null
+          outbound_message_id?: string | null
+          send_started_at?: string | null
+          skip_reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          inbound_message_id?: string
+          last_error?: string | null
+          lease_until?: string | null
+          outbound_message_id?: string | null
+          send_started_at?: string | null
+          skip_reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_ai_jobs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_ai_jobs_inbound_message_id_fkey"
+            columns: ["inbound_message_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_ai_jobs_outbound_message_id_fkey"
+            columns: ["outbound_message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_ai_settings: {
+        Row: {
+          ack_media_enabled: boolean
+          allow_booking_writes: boolean
+          full_conversation: boolean
+          human_handoff_minutes: number
+          id: string
+          max_replies_global_per_hour: number
+          max_replies_per_conversation_per_hour: number
+          mode: string
+          updated_at: string
+        }
+        Insert: {
+          ack_media_enabled?: boolean
+          allow_booking_writes?: boolean
+          full_conversation?: boolean
+          human_handoff_minutes?: number
+          id?: string
+          max_replies_global_per_hour?: number
+          max_replies_per_conversation_per_hour?: number
+          mode?: string
+          updated_at?: string
+        }
+        Update: {
+          ack_media_enabled?: boolean
+          allow_booking_writes?: boolean
+          full_conversation?: boolean
+          human_handoff_minutes?: number
+          id?: string
+          max_replies_global_per_hour?: number
+          max_replies_per_conversation_per_hour?: number
+          mode?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_ai_state: {
+        Row: {
+          autoreply_enabled: boolean
+          conversation_id: string
+          handoff_until: string | null
+          offered_at: string | null
+          offered_slot_ids: string[]
+          paused_until: string | null
+          pending: Json
+          state_expires_at: string | null
+          step: string
+          updated_at: string
+        }
+        Insert: {
+          autoreply_enabled?: boolean
+          conversation_id: string
+          handoff_until?: string | null
+          offered_at?: string | null
+          offered_slot_ids?: string[]
+          paused_until?: string | null
+          pending?: Json
+          state_expires_at?: string | null
+          step?: string
+          updated_at?: string
+        }
+        Update: {
+          autoreply_enabled?: boolean
+          conversation_id?: string
+          handoff_until?: string | null
+          offered_at?: string | null
+          offered_slot_ids?: string[]
+          paused_until?: string | null
+          pending?: Json
+          state_expires_at?: string | null
+          step?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_ai_state_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_canned_replies: {
+        Row: {
+          active: boolean
+          attachment: Json | null
+          body: string
+          body_ar: string | null
+          buttons: Json | null
+          category: string | null
+          created_at: string
+          id: string
+          last_used_at: string | null
+          slash_key: string
+          sort_order: number
+          title: string
+          title_ar: string | null
+          updated_at: string
+          use_count: number
+        }
+        Insert: {
+          active?: boolean
+          attachment?: Json | null
+          body: string
+          body_ar?: string | null
+          buttons?: Json | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          slash_key: string
+          sort_order?: number
+          title: string
+          title_ar?: string | null
+          updated_at?: string
+          use_count?: number
+        }
+        Update: {
+          active?: boolean
+          attachment?: Json | null
+          body?: string
+          body_ar?: string | null
+          buttons?: Json | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          slash_key?: string
+          sort_order?: number
+          title?: string
+          title_ar?: string | null
+          updated_at?: string
+          use_count?: number
+        }
+        Relationships: []
+      }
+      whatsapp_conversations: {
+        Row: {
+          assignee_id: string | null
+          contact_name: string | null
+          created_at: string
+          id: string
+          kapso_conversation_id: string | null
+          last_inbound_at: string | null
+          last_message_at: string | null
+          last_message_preview: string
+          last_message_status: string
+          last_message_type: string
+          metadata: Json
+          muted_until: string | null
+          patient_key: string | null
+          phone_number: string
+          phone_suffix: string | null
+          starred: boolean
+          status: string
+          tags: string[]
+          unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          kapso_conversation_id?: string | null
+          last_inbound_at?: string | null
+          last_message_at?: string | null
+          last_message_preview?: string
+          last_message_status?: string
+          last_message_type?: string
+          metadata?: Json
+          muted_until?: string | null
+          patient_key?: string | null
+          phone_number: string
+          phone_suffix?: string | null
+          starred?: boolean
+          status?: string
+          tags?: string[]
+          unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          kapso_conversation_id?: string | null
+          last_inbound_at?: string | null
+          last_message_at?: string | null
+          last_message_preview?: string
+          last_message_status?: string
+          last_message_type?: string
+          metadata?: Json
+          muted_until?: string | null
+          patient_key?: string | null
+          phone_number?: string
+          phone_suffix?: string | null
+          starred?: boolean
+          status?: string
+          tags?: string[]
+          unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversations_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          direction: string
+          flow: Json | null
+          id: string
+          kapso_wamid: string | null
+          media: Json
+          message_type: string
+          raw: Json
+          reply_to: Json | null
+          sender_kind: string
+          sent_by: string | null
+          status: string
+          status_timestamps: Json
+          updated_at: string
+          wa_timestamp: string
+        }
+        Insert: {
+          body?: string
+          conversation_id: string
+          created_at?: string
+          direction: string
+          flow?: Json | null
+          id?: string
+          kapso_wamid?: string | null
+          media?: Json
+          message_type?: string
+          raw?: Json
+          reply_to?: Json | null
+          sender_kind?: string
+          sent_by?: string | null
+          status?: string
+          status_timestamps?: Json
+          updated_at?: string
+          wa_timestamp?: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          direction?: string
+          flow?: Json | null
+          id?: string
+          kapso_wamid?: string | null
+          media?: Json
+          message_type?: string
+          raw?: Json
+          reply_to?: Json | null
+          sender_kind?: string
+          sent_by?: string | null
+          status?: string
+          status_timestamps?: Json
+          updated_at?: string
+          wa_timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_notes: {
+        Row: {
+          author: string
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          pinned: boolean
+          updated_at: string
+        }
+        Insert: {
+          author?: string
+          body?: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_notes_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_webhook_events: {
+        Row: {
+          event: string
+          idempotency_key: string
+          processed_at: string
+        }
+        Insert: {
+          event: string
+          idempotency_key: string
+          processed_at?: string
+        }
+        Update: {
+          event?: string
+          idempotency_key?: string
+          processed_at?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
-      patient_notifications_cron_scheduled: {
-        Args: Record<string, never>;
-        /** null when pg_cron is absent or cron.job is unreadable. */
-        Returns: boolean | null;
-      };
-      search_clinic_knowledge: {
-        Args: { p_query: string; p_limit?: number };
-        Returns: {
-          id: string;
-          title: string;
-          title_ar: string;
-          body: string;
-          body_ar: string;
-          rank: number;
-        }[];
-      };
-      is_admin: { Args: Record<string, never>; Returns: boolean };
-      record_canned_reply_use: {
+      assert_reservation_access: {
         Args: {
-          p_id: string;
-        };
-        Returns: undefined;
-      };
-      cancel_reservation_and_release_slot: {
-        Args: {
-          p_reservation_id: string;
-          p_phone?: string | null;
-        };
-        Returns: string;
-      };
-      reschedule_reservation_to_slot: {
-        Args: {
-          p_reservation_id: string;
-          p_slot_id: string;
-          p_phone?: string | null;
-        };
-        Returns: string;
-      };
+          p_phone: string
+          p_reservation: Database["public"]["Tables"]["reservations"]["Row"]
+        }
+        Returns: undefined
+      }
       book_open_appointment_slot: {
         Args: {
-          p_slot_id: string;
-          p_patient_name: string;
-          p_phone: string;
-          p_email?: string | null;
-          p_service_id?: string | null;
-          p_service_label?: string;
-          p_notes?: string;
-        };
-        Returns: string;
-      };
+          p_email?: string
+          p_notes?: string
+          p_patient_name: string
+          p_phone: string
+          p_service_id?: string
+          p_service_label?: string
+          p_slot_id: string
+        }
+        Returns: string
+      }
+      cancel_reservation_and_release_slot: {
+        Args: { p_phone?: string; p_reservation_id: string }
+        Returns: string
+      }
       check_and_log_rate_limit: {
         Args: {
-          p_bucket: string;
-          p_identifier: string;
-          p_max_requests: number;
-          p_window_seconds: number;
-        };
-        Returns: boolean;
-      };
-    };
-    Enums: Record<string, never>;
-    CompositeTypes: Record<string, never>;
-  };
-};
+          p_bucket: string
+          p_identifier: string
+          p_max_requests: number
+          p_window_seconds: number
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: never; Returns: boolean }
+      patient_notifications_cron_scheduled: { Args: never; Returns: boolean }
+      record_ai_usage: {
+        Args: {
+          p_completion_tokens?: number
+          p_model: string
+          p_prompt_tokens?: number
+          p_provider: string
+          p_rate_limited?: number
+          p_requests?: number
+        }
+        Returns: undefined
+      }
+      record_canned_reply_use: { Args: { p_id: string }; Returns: undefined }
+      reschedule_reservation_to_slot: {
+        Args: { p_phone?: string; p_reservation_id: string; p_slot_id: string }
+        Returns: string
+      }
+      search_clinic_knowledge: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          body: string
+          body_ar: string
+          id: string
+          rank: number
+          title: string
+          title_ar: string
+        }[]
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
 
-export type Tables<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Row"];
-export type TablesInsert<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Insert"];
-export type TablesUpdate<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Update"];
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {},
+  },
+} as const

@@ -3,10 +3,12 @@ import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedA
 import { NotificationsOutboxTable } from "@/features/admin/components/NotificationsOutboxTable";
 import { OptOutManager } from "@/features/admin/components/OptOutManager";
 import { Card } from "@/components/ui/card";
+import { requirePagePermission } from "@/lib/auth/pageGuard";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminOutboxPage() {
+export default async function AdminOutboxPage() {
+  await requirePagePermission("outbox.view");
   return (
     <AdminPageMotion className="space-y-4">
       <LocalizedAdminPageHeader

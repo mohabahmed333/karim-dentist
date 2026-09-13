@@ -1,12 +1,15 @@
 import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
 import { UsageDashboard } from "@/features/admin/components/usage/UsageDashboard";
-import { getPlatformUsageReport } from "@/services/platform_usage";
+import { getCachedPlatformUsageReport } from "@/services/platform_usage/cached";
+import { requirePagePermission } from "@/lib/auth/pageGuard";
 
-export const dynamic = "force-dynamic";
+// Cached: see src/services/platform_usage/cached.ts.
+export const revalidate = 60;
 
 export default async function AdminUsagePage() {
-  const data = await getPlatformUsageReport();
+  await requirePagePermission("usage.view");
+  const data = await getCachedPlatformUsageReport();
   return (
     <AdminPageMotion className="space-y-4">
       <LocalizedAdminPageHeader

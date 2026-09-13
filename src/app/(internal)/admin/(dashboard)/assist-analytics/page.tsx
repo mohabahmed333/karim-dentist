@@ -3,10 +3,12 @@ import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedA
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
 import { AdminAiAnalyticsDashboard } from "@/features/admin/components/admin-ai/AdminAiAnalyticsDashboard";
 import { loadAdminAiAnalytics } from "@/services/admin_ai/loadAdminAiAnalytics";
+import { requirePagePermission } from "@/lib/auth/pageGuard";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminAiAnalyticsPage() {
+  await requirePagePermission("assist-analytics.view");
   const supabase = await createClient();
   const data = await loadAdminAiAnalytics(supabase);
   return (

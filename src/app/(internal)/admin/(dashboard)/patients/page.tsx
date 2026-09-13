@@ -7,6 +7,7 @@ import { parseServiceFilter } from "@/features/admin/lib/serviceFilter";
 import { groupReservationsByPatient } from "@/services/reservations/patientHistory";
 import { pagePatientGroups } from "@/services/reservations/patientDirectoryPage";
 import { listReservationsServer } from "@/services/reservations/queries";
+import { requirePagePermission } from "@/lib/auth/pageGuard";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ type PageProps = {
 };
 
 export default async function AdminPatientsPage({ searchParams }: PageProps) {
+  await requirePagePermission("patients.view");
   const raw = await reservationFiltersCache.parse(searchParams);
   const cohort = raw.cohort;
   const dateActive = Boolean(raw.from && raw.to);

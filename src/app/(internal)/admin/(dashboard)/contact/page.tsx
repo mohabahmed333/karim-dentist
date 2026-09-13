@@ -1,10 +1,12 @@
 import { ContactEditor } from "@/features/admin/components/ContactEditor";
 import { createClient } from "@/lib/supabase/server";
 import { portfolioFallback } from "@/services/portfolio/fallback";
+import { requirePagePermission } from "@/lib/auth/pageGuard";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminContactPage() {
+  await requirePagePermission("contact.view");
   const supabase = await createClient();
   const { data } = await supabase.from("site_settings").select("*").limit(1).maybeSingle();
 

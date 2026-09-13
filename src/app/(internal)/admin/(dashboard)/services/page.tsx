@@ -3,10 +3,12 @@ import { SolutionPanelsEditor } from "@/features/admin/components/SolutionPanels
 import { createClient } from "@/lib/supabase/server";
 import { dentalSolutionsFallback } from "@/services/dental/fallback";
 import type { SolutionPanel } from "@/services/dental/types";
+import { requirePagePermission } from "@/lib/auth/pageGuard";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminServicesPage() {
+  await requirePagePermission("services.view");
   const supabase = await createClient();
   const [services, panels] = await Promise.all([
     supabase

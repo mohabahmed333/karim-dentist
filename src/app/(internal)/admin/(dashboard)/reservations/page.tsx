@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { ReservationsPageView } from "@/features/admin/components/reservations/ReservationsPageView";
 import { ReservationsPageSkeleton } from "@/features/admin/components/reservations/ReservationsPageSkeleton";
+import { requirePagePermission } from "@/lib/auth/pageGuard";
 import {
   reservationFiltersCache,
   resolveReservationFilters,
@@ -21,6 +22,7 @@ type PageProps = {
 export default async function AdminReservationsPage({
   searchParams,
 }: PageProps) {
+  await requirePagePermission("reservations.view");
   const raw = await reservationFiltersCache.parse(searchParams);
   const filters = resolveReservationFilters(raw, defaultMonthFromTo());
 

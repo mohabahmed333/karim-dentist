@@ -17,6 +17,8 @@ export type AdminNavItem = {
   labelKey: AdminMessageKey;
   exact?: boolean;
   badge?: number;
+  /** Permission key required to see/use this item. Omit to always show it. */
+  permission?: string;
 };
 
 export type AdminNavGroup = {
@@ -24,6 +26,8 @@ export type AdminNavGroup = {
   labelKey: AdminMessageKey;
   /** When set, the group's own label is also a link (e.g. Reservations), not just a toggle. */
   href?: string;
+  /** Permission key required to see/use the group's own link, if it has one. */
+  permission?: string;
   items: AdminNavItem[];
   defaultOpen?: boolean;
 };
@@ -57,8 +61,10 @@ export type AdminRailItem = {
   labelKey: AdminMessageKey;
   icon: LucideIcon;
   exact?: boolean;
+  /** Permission key required to see/use this item's own link. */
+  permission?: string;
   /** Shown as a click-to-open dropdown flyout when the sidebar is the narrow icon rail. */
-  children?: { href: string; labelKey: AdminMessageKey }[];
+  children?: { href: string; labelKey: AdminMessageKey; permission?: string }[];
 };
 
 export const adminRailItems: AdminRailItem[] = [
@@ -74,30 +80,36 @@ export const adminRailItems: AdminRailItem[] = [
     href: "/admin/reservations",
     labelKey: "admin.nav.reservations",
     icon: CalendarDays,
-    children: [{ href: "/admin/waitlist", labelKey: "admin.nav.waitlist" }],
+    permission: "reservations.view",
+    children: [
+      { href: "/admin/waitlist", labelKey: "admin.nav.waitlist", permission: "waitlist.view" },
+    ],
   },
   {
     id: "patients",
     href: "/admin/patients",
     labelKey: "admin.nav.patients",
     icon: Users,
+    permission: "patients.view",
   },
   {
     id: "support",
     href: "/admin/support",
     labelKey: "admin.nav.support",
     icon: MessagesSquare,
+    permission: "support.view",
   },
   {
     id: "messaging",
     href: "/admin/quick-replies",
     labelKey: "admin.nav.messagingGroup",
     icon: Inbox,
+    permission: "quick-replies.view",
     children: [
-      { href: "/admin/quick-replies", labelKey: "admin.nav.quickReplies" },
-      { href: "/admin/knowledge", labelKey: "admin.nav.knowledge" },
-      { href: "/admin/assistant-review", labelKey: "admin.nav.assistantReview" },
-      { href: "/admin/outbox", labelKey: "admin.nav.outbox" },
+      { href: "/admin/quick-replies", labelKey: "admin.nav.quickReplies", permission: "quick-replies.view" },
+      { href: "/admin/knowledge", labelKey: "admin.nav.knowledge", permission: "knowledge.view" },
+      { href: "/admin/assistant-review", labelKey: "admin.nav.assistantReview", permission: "assistant-review.view" },
+      { href: "/admin/outbox", labelKey: "admin.nav.outbox", permission: "outbox.view" },
     ],
   },
   {
@@ -105,18 +117,21 @@ export const adminRailItems: AdminRailItem[] = [
     href: "/admin/customize",
     labelKey: "admin.nav.customize",
     icon: LayoutGrid,
+    permission: "customize.view",
   },
   {
     id: "usage",
     href: "/admin/usage",
     labelKey: "admin.nav.usage",
     icon: Gauge,
+    permission: "usage.view",
   },
   {
     id: "settings",
     href: "/admin/settings",
     labelKey: "admin.nav.settings",
     icon: Settings,
+    permission: "settings.view",
   },
 ];
 
@@ -130,20 +145,23 @@ export const adminNavSections: AdminNavSection[] = [
         id: "reservations",
         labelKey: "admin.nav.reservations",
         href: "/admin/reservations",
+        permission: "reservations.view",
         defaultOpen: true,
-        items: [{ href: "/admin/waitlist", labelKey: "admin.nav.waitlist" }],
+        items: [
+          { href: "/admin/waitlist", labelKey: "admin.nav.waitlist", permission: "waitlist.view" },
+        ],
       },
-      { href: "/admin/patients", labelKey: "admin.nav.patients" },
-      { href: "/admin/support", labelKey: "admin.nav.support" },
+      { href: "/admin/patients", labelKey: "admin.nav.patients", permission: "patients.view" },
+      { href: "/admin/support", labelKey: "admin.nav.support", permission: "support.view" },
       {
         id: "messaging",
         labelKey: "admin.nav.messagingGroup",
         defaultOpen: true,
         items: [
-          { href: "/admin/quick-replies", labelKey: "admin.nav.quickReplies" },
-          { href: "/admin/knowledge", labelKey: "admin.nav.knowledge" },
-          { href: "/admin/assistant-review", labelKey: "admin.nav.assistantReview" },
-          { href: "/admin/outbox", labelKey: "admin.nav.outbox" },
+          { href: "/admin/quick-replies", labelKey: "admin.nav.quickReplies", permission: "quick-replies.view" },
+          { href: "/admin/knowledge", labelKey: "admin.nav.knowledge", permission: "knowledge.view" },
+          { href: "/admin/assistant-review", labelKey: "admin.nav.assistantReview", permission: "assistant-review.view" },
+          { href: "/admin/outbox", labelKey: "admin.nav.outbox", permission: "outbox.view" },
         ],
       },
     ],
@@ -152,10 +170,10 @@ export const adminNavSections: AdminNavSection[] = [
     id: "site",
     titleKey: "admin.nav.site",
     items: [
-      { href: "/admin/customize", labelKey: "admin.nav.customize" },
-      { href: "/admin/usage", labelKey: "admin.nav.usage" },
-      { href: "/admin/assist-analytics", labelKey: "admin.nav.assistAnalytics" },
-      { href: "/admin/settings", labelKey: "admin.nav.settings" },
+      { href: "/admin/customize", labelKey: "admin.nav.customize", permission: "customize.view" },
+      { href: "/admin/usage", labelKey: "admin.nav.usage", permission: "usage.view" },
+      { href: "/admin/assist-analytics", labelKey: "admin.nav.assistAnalytics", permission: "assist-analytics.view" },
+      { href: "/admin/settings", labelKey: "admin.nav.settings", permission: "settings.view" },
     ],
   },
 ];
@@ -188,6 +206,42 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin/usage": "admin.nav.usage",
   "/admin/assist-analytics": "admin.nav.assistAnalytics",
   "/admin/settings": "admin.nav.settings",
+};
+
+/**
+ * Permission key required to view each admin page, keyed the same way as
+ * `adminPageLabelKeys`. Used by page-level guards (`requirePagePermission`)
+ * and to filter command palette hits; nav visibility is filtered separately
+ * via each nav entry's own `permission` field above.
+ */
+export const adminPagePermissions: Record<string, string> = {
+  "/admin": "dashboard.view",
+  "/admin/reservations": "reservations.view",
+  "/admin/patients": "patients.view",
+  "/admin/support": "support.view",
+  "/admin/hero": "hero.view",
+  "/admin/about": "about.view",
+  "/admin/homepage-order": "homepage-order.view",
+  "/admin/case-studies": "case-studies.view",
+  "/admin/featured": "featured.view",
+  "/admin/services": "services.view",
+  "/admin/faq": "faq.view",
+  "/admin/knowledge": "knowledge.view",
+  "/admin/quick-replies": "quick-replies.view",
+  "/admin/assistant-review": "assistant-review.view",
+  "/admin/waitlist": "waitlist.view",
+  "/admin/outbox": "outbox.view",
+  "/admin/gallery": "gallery.view",
+  "/admin/slider": "slider.view",
+  "/admin/contact": "contact.view",
+  "/admin/experience": "experience.view",
+  "/admin/clients": "clients.view",
+  "/admin/footer-links": "footer-links.view",
+  "/admin/callout": "callout.view",
+  "/admin/customize": "customize.view",
+  "/admin/usage": "usage.view",
+  "/admin/assist-analytics": "assist-analytics.view",
+  "/admin/settings": "settings.view",
 };
 
 /** English fallbacks for non-React contexts */

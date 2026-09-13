@@ -1,10 +1,12 @@
 import { GalleryEditor } from "@/features/admin/components/GalleryEditor";
 import { createClient } from "@/lib/supabase/server";
 import { dentalGalleryComparisonsFallback } from "@/services/dental/fallback";
+import { requirePagePermission } from "@/lib/auth/pageGuard";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminGalleryPage() {
+  await requirePagePermission("gallery.view");
   const supabase = await createClient();
   const comparisons = await supabase
     .from("gallery_comparisons")

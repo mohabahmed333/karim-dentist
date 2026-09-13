@@ -11,6 +11,7 @@ import { listPatientImagingServer } from "@/services/patient_imaging";
 import { listToothNotesServer } from "@/services/patient_tooth_notes/queries";
 import { listPatientTreatmentsServer } from "@/services/patient_treatments";
 import type { Service } from "@/services/services/types";
+import { requirePagePermission } from "@/lib/auth/pageGuard";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export default async function AdminPatientDetailPage({ params }: Props) {
+  await requirePagePermission("patients.view");
   const { patientKey: encoded } = await params;
   const patientKey = decodePatientKey(encoded);
   const supabase = await createClient();
