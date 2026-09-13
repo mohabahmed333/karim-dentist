@@ -21,6 +21,9 @@ export type SessionPermissions = {
   permissions: Set<string>;
 };
 
+/** `SessionPermissions` with `user` narrowed to non-null, for the authorized-request path. */
+export type AuthorizedSession = SessionPermissions & { user: SessionUser };
+
 const EMPTY: Omit<SessionPermissions, "user"> = {
   isAdmin: false,
   roleId: null,

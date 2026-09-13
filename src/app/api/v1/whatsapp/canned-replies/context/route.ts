@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { loadQuickReplyContext } from "@/services/whatsapp/quickReplyContext";
 
 export const runtime = "nodejs";
@@ -12,7 +12,7 @@ const querySchema = z.object({
 
 /** Values for the fill-in fields of quick replies used in one conversation. */
 export async function GET(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("whatsapp.canned-replies.manage");
   if (auth.error) return auth.error;
   const params = new URL(request.url).searchParams;
   const parsed = querySchema.safeParse({

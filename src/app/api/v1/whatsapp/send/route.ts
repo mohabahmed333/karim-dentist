@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { loadAiSettings, markHumanHandoff } from "@/services/whatsapp_ai/store";
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import {
@@ -97,9 +97,9 @@ function mediaKindFromMime(mime: string): SendKind {
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireAdmin();
+    const auth = await requirePermission("support.reply");
     if (auth.error) return auth.error;
-    const user = auth.user;
+    const user = auth.session.user;
 
     const contentType = request.headers.get("content-type") ?? "";
     const service = createServiceClient();

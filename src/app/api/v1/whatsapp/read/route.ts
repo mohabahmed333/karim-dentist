@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
@@ -17,7 +17,7 @@ const bodySchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireAdmin();
+    const auth = await requirePermission("support.view");
     if (auth.error) return auth.error;
 
     const parsed = bodySchema.safeParse(await request.json());

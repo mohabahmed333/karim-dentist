@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { recordCannedReplyUse } from "@/services/whatsapp/cannedReplies";
 
 export const runtime = "nodejs";
@@ -9,7 +9,7 @@ type Params = { params: Promise<{ id: string }> };
 
 /** Count one use, so the composer's / menu lists the replies staff reach for most. */
 export async function POST(_request: Request, context: Params) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("whatsapp.canned-replies.manage");
   if (auth.error) return auth.error;
   const { id } = await context.params;
   if (!z.string().uuid().safeParse(id).success) {

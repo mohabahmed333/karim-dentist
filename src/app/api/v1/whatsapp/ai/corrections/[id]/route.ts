@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { createServiceClient } from "@/lib/supabase/service";
 import { markReviewed, promoteToKnowledge } from "@/services/whatsapp_ai/corrections";
 
@@ -11,7 +11,7 @@ type Params = { params: Promise<{ id: string }> };
 const bodySchema = z.object({ action: z.enum(["reviewed", "promote"]) });
 
 export async function PATCH(request: Request, context: Params) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("support.reply");
   if (auth.error) return auth.error;
   const { id } = await context.params;
 

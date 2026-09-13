@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { z } from "zod";
 import { listMessagesPage } from "@/services/whatsapp";
 
@@ -20,7 +20,7 @@ function parseBefore(raw?: string) {
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAdmin();
+    const auth = await requirePermission("support.view");
     if (auth.error) return auth.error;
     const supabase = auth.supabase;
 

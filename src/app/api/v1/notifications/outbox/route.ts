@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -12,7 +12,7 @@ const KINDS = new Set([
 
 /** The most recent queued messages, so "why didn't she get it?" has an answer. */
 export async function GET(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("outbox.view");
   if (auth.error) return auth.error;
 
   const params = new URL(request.url).searchParams;

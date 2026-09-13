@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { regenerateOpenSlotsWithClient } from "@/services/clinic_schedule/regenerate";
 import type { ClinicHours } from "@/services/clinic_schedule/types";
 
 const HOURS_ID = "00000000-0000-4000-8000-000000000001";
 
 export async function POST() {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("reservations.regenerate-slots");
   if (auth.error) return auth.error;
   const supabase = auth.supabase;
 

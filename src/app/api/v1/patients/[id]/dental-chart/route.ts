@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { loadDentalChart } from "@/services/dental_chart/loadChart";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: Params) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("patients.view");
   if (auth.error) return auth.error;
   const { id } = await context.params;
   const chart = await loadDentalChart(auth.supabase, id);

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { createServiceClient } from "@/lib/supabase/service";
 import { recordDraftOutcome } from "@/services/whatsapp_ai/recordCorrection";
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
@@ -67,7 +67,7 @@ function draftChoices(flow: unknown): {
 
 /** Edit a draft, or approve and send it. */
 export async function PATCH(request: Request, context: Params) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("support.reply");
   if (auth.error) return auth.error;
   const { id } = await context.params;
 
@@ -96,7 +96,7 @@ export async function PATCH(request: Request, context: Params) {
       conversationId: draft.conversation_id,
       // The approving admin owns the send, even though the AI wrote it. That
       // pairing is the provenance staff need when reviewing later.
-      sentBy: auth.user!.id,
+      sentBy: auth.session.user!.id,
       // Recorded as AI, not human: approving a draft is a person endorsing the
       // assistant, not taking the conversation over. Marking it human tripped
       // the handoff guard, so approving a draft silenced the bot for the next
@@ -112,7 +112,7 @@ export async function PATCH(request: Request, context: Params) {
     await recordDraftOutcome(service, {
       conversationId: draft.conversation_id,
       sentText: text,
-      sentBy: auth.user?.id ?? null,
+      sentBy: auth.session.user?.id ?? null,
     });
     // The send inserted the real message; drop the draft placeholder.
     await service.from("whatsapp_messages").delete().eq("id", id);
@@ -133,7 +133,7 @@ export async function PATCH(request: Request, context: Params) {
 
 /** Discard a draft without sending. */
 export async function DELETE(_request: Request, context: Params) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("support.reply");
   if (auth.error) return auth.error;
   const { id } = await context.params;
 

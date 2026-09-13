@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { createServiceClient } from "@/lib/supabase/service";
 import { loadConversationState } from "@/services/whatsapp_ai/store";
 
@@ -15,7 +15,7 @@ const bodySchema = z.object({
 
 /** Current per-conversation kill switch / pause state. */
 export async function GET(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("support.view");
   if (auth.error) return auth.error;
 
   const conversationId = new URL(request.url).searchParams.get(
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
 /** Per-conversation kill switch and pause. */
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("support.reply");
   if (auth.error) return auth.error;
 
   const parsed = bodySchema.safeParse(await request.json());

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { encounterCreateSchema } from "@/services/dental_chart";
 import { loadDentalChart } from "@/services/dental_chart/loadChart";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, context: Params) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("patients.edit");
   if (auth.error) return auth.error;
   const { id } = await context.params;
   const parsed = encounterCreateSchema.safeParse(await request.json());

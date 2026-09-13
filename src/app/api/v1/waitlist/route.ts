@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { createServiceClient } from "@/lib/supabase/service";
 import { waitlistEntrySchema } from "@/services/waitlist/schemas";
 
@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 /** Everyone still waiting or holding an offer, longest-waiting first. */
 export async function GET() {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("waitlist.view");
   if (auth.error) return auth.error;
   const { data, error } = await createServiceClient()
     .from("appointment_waitlist")
@@ -19,7 +19,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("waitlist.edit");
   if (auth.error) return auth.error;
   const parsed = waitlistEntrySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

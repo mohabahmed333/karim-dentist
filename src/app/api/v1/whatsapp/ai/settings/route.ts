@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { createServiceClient } from "@/lib/supabase/service";
 import { loadAiSettings } from "@/services/whatsapp_ai/store";
 
@@ -17,13 +17,13 @@ const patchSchema = z.object({
 });
 
 export async function GET() {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("support.view");
   if (auth.error) return auth.error;
   return NextResponse.json({ settings: await loadAiSettings(createServiceClient()) });
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("support.reply");
   if (auth.error) return auth.error;
 
   const parsed = patchSchema.safeParse(await request.json());

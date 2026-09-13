@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   resolveSessionPermissions,
   hasPermission,
-  type SessionPermissions,
+  type AuthorizedSession,
 } from "@/lib/auth/permissions";
 
 /**
@@ -20,7 +20,7 @@ export async function requirePermission(key: string) {
   if (!session.user) {
     return {
       supabase,
-      session: null as SessionPermissions | null,
+      session: null as AuthorizedSession | null,
       error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
     };
   }
@@ -28,10 +28,10 @@ export async function requirePermission(key: string) {
   if (!hasPermission(session, key)) {
     return {
       supabase,
-      session: null as SessionPermissions | null,
+      session: null as AuthorizedSession | null,
       error: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     };
   }
 
-  return { supabase, session, error: null };
+  return { supabase, session: session as AuthorizedSession, error: null };
 }

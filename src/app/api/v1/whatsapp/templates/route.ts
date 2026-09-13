@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import {
   parseTemplateFields,
@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const auth = await requireAdmin();
+    const auth = await requirePermission("whatsapp.templates.manage");
     if (auth.error) return auth.error;
 
     const { businessAccountId } = getKapsoConfig();

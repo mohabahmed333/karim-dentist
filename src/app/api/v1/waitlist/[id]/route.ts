@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -11,7 +11,7 @@ type Params = { params: Promise<{ id: string }> };
  * offer already queued for them can still be traced back.
  */
 export async function DELETE(_request: Request, context: Params) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("waitlist.remove");
   if (auth.error) return auth.error;
   const { id } = await context.params;
   const db = createServiceClient();

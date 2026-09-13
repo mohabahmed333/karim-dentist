@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { z } from "zod";
 import {
   createCannedReply,
@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAdmin();
+    const auth = await requirePermission("whatsapp.canned-replies.manage");
     if (auth.error) return auth.error;
     const supabase = auth.supabase;
     const all = new URL(request.url).searchParams.get("all") === "1";
@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("whatsapp.canned-replies.manage");
   if (auth.error) return auth.error;
   const parsed = createCannedReplySchema.safeParse(
     await request.json().catch(() => null),
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const auth = await requireAdmin();
+    const auth = await requirePermission("whatsapp.canned-replies.manage");
     if (auth.error) return auth.error;
     const supabase = auth.supabase;
     const id = new URL(request.url).searchParams.get("id");

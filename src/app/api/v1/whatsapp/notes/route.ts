@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { z } from "zod";
 import { firstNameFromEmail } from "@/features/admin/lib/dashboardModel";
 
@@ -27,10 +27,10 @@ function authorFromUser(email: string | null | undefined): string {
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireAdmin();
+    const auth = await requirePermission("support.reply");
     if (auth.error) return auth.error;
     const supabase = auth.supabase;
-    const user = auth.user;
+    const user = auth.session.user;
 
     const parsed = postSchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const auth = await requireAdmin();
+    const auth = await requirePermission("support.reply");
     if (auth.error) return auth.error;
     const supabase = auth.supabase;
 
@@ -88,7 +88,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const auth = await requireAdmin();
+    const auth = await requirePermission("support.reply");
     if (auth.error) return auth.error;
     const supabase = auth.supabase;
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/api/requireAdmin";
+import { requirePermission } from "@/lib/api/requirePermission";
 import { isDuplicateSlashKey, updateCannedReply } from "@/services/whatsapp/cannedReplies";
 import { updateCannedReplySchema } from "@/services/whatsapp/cannedReplyInput";
 
@@ -10,7 +10,7 @@ type Params = { params: Promise<{ id: string }> };
 
 /** Edit a quick reply: any subset of its fields, including switching it off. */
 export async function PATCH(request: Request, context: Params) {
-  const auth = await requireAdmin();
+  const auth = await requirePermission("whatsapp.canned-replies.manage");
   if (auth.error) return auth.error;
   const { id } = await context.params;
   if (!z.string().uuid().safeParse(id).success) {
