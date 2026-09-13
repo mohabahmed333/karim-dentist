@@ -41,6 +41,7 @@ export function createFakeDb(options: FakeDbOptions = {}) {
   ) {
     const filters: FakeRow = {};
     const excludes: { column: string; value: unknown }[] = [];
+    const oneOf: { column: string; values: unknown[] }[] = [];
     const ranges: { column: string; op: "gte" | "lte" | "lt" | "gt"; value: unknown }[] = [];
     let orderBy: { column: string; ascending: boolean } | null = null;
     let limitN: number | null = null;
@@ -56,6 +57,8 @@ export function createFakeDb(options: FakeDbOptions = {}) {
       });
     const notExcluded = (row: FakeRow) =>
       excludes.every((e) => row[e.column] !== e.value);
+    const isOneOf = (row: FakeRow) =>
+      oneOf.every((f) => f.values.includes(row[f.column]));
 
     const api = {
       eq(column: string, value: unknown) {
@@ -68,6 +71,10 @@ export function createFakeDb(options: FakeDbOptions = {}) {
       },
       neq(column: string, value: unknown) {
         excludes.push({ column, value });
+        return api;
+      },
+      in(column: string, values: unknown[]) {
+        oneOf.push({ column, values });
         return api;
       },
       gte(column: string, value: unknown) {
@@ -101,7 +108,7 @@ export function createFakeDb(options: FakeDbOptions = {}) {
         calls.push({ type: "select", table, filters: { ...filters } });
         if (fail) return { data: null, error: fail };
         const row = (tables[table] ?? []).find(
-          (r) => matches(r, filters) && inRange(r) && notExcluded(r),
+          (r) => matches(r, filters) && inRange(r) && notExcluded(r) && isOneOf(r),
         );
         return { data: row ?? null, error: null };
       },
@@ -118,7 +125,7 @@ export function createFakeDb(options: FakeDbOptions = {}) {
           calls.push({ type: "select", table, filters: { ...filters } });
           if (fail) return Promise.resolve({ data: null, error: fail }).then(resolve);
           let rows = (tables[table] ?? []).filter(
-            (r) => matches(r, filters) && inRange(r) && notExcluded(r),
+            (r) => matches(r, filters) && inRange(r) && notExcluded(r) && isOneOf(r),
           );
           if (orderBy) {
             const { column, ascending } = orderBy;

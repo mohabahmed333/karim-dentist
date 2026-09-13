@@ -39,7 +39,12 @@ export type RunDeps = {
   chat: (messages: { role: string; content: string }[]) => Promise<string>;
   send: (text: string, ui?: ReplyUi) => Promise<{ id: string }>;
   draft: (text: string, reason: string, ui?: ReplyUi) => Promise<{ id: string }>;
-  runActions: (actions: BotAction[]) => Promise<{ ok: boolean; message: string }>;
+  runActions: (actions: BotAction[]) => Promise<{
+    ok: boolean;
+    message: string;
+    /** Server-composed text to add to the reply, e.g. deposit instructions. */
+    append?: string;
+  }>;
   rememberOfferedSlots: (slotIds: string[]) => Promise<void>;
   /** Hand the thread to a colleague, and tell them why. */
   requestHuman?: (reason: string) => Promise<void>;
@@ -230,7 +235,7 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
   );
   // Carrying the thread means not volunteering to leave it. The patient can
   // still ask for a person at any time, and that is handled before the model.
-  const outgoing = deps.policy.settings.full_conversation
+  let outgoing = deps.policy.settings.full_conversation
     ? introduced
     : withHumanOffer(introduced, envelope.language, struggles);
 
@@ -285,6 +290,10 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
       });
       return { status: "drafted", reason: "action_failed", messageId: id, envelope };
     }
+    // Facts the server must state itself, appended rather than asked of the
+    // model: an amount or a payment address it invented would send a patient's
+    // money to the wrong place.
+    if (result.append) outgoing = `${outgoing}\n\n${result.append}`;
     // The booking really happened: nothing is pending any more.
     booking = nextBookingState(booking, {
       collected: {},

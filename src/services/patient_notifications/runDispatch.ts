@@ -8,6 +8,7 @@
 
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import { clinicContactFromSettings } from "@/lib/clinic/whatsappClinicContact";
+import { sweepExpiredHolds } from "@/services/deposits/sweepExpiredHolds";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { phoneSuffixForLookup } from "@/services/reservations/phoneSuffix";
 import { sendWhatsappMessage } from "@/services/whatsapp/sendMessage";
@@ -63,6 +64,29 @@ export async function runDispatch(
       recallEnabled: Boolean(flags?.recall_enabled),
     }).catch(() => 0);
   }
+
+  // Deposit holds whose time is up, released before the queue is read below.
+  // Doing it first means a slot freed this minute is offered to the waitlist in
+  // this same tick, via the trigger on appointment_slots — the waitlist offer
+  // that recovers the revenue is then already queued when findDue runs.
+  //
+  // Deliberately not gated on settings.mode: releasing a held slot is a booking
+  // operation, not a message, so holds still expire with messaging switched off.
+  await sweepExpiredHolds(db, now, {
+    notify: async ({ conversationId, text }) => {
+      await sendWhatsappMessage({
+        service: db,
+        client: createKapsoClient(),
+        phoneNumberId: getKapsoConfig().phoneNumberId,
+        conversationId,
+        sentBy: null,
+        // The clinic's own bookkeeping, not the assistant: must not spend the
+        // reply budget or trip the human_active gate.
+        senderKind: "system",
+        text,
+      });
+    },
+  }).catch(() => ({ expired: 0, notified: 0 }));
 
   const [{ data: settingsRow }, due] = await Promise.all([
     db

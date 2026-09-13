@@ -1,11 +1,19 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { hasVisibleServiceTitle } from "@/features/portfolio/lib/serviceKindGroups";
+import type { Json } from "@/lib/supabase/database.types";
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import { clinicContactFromSettings } from "@/lib/clinic/whatsappClinicContact";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { aiChat, AiChatError, hasAnyAiKey } from "@/services/ai_chat";
 import { addOptOut, isOptOutMessage } from "@/services/patient_notifications/optouts";
+import { handleInboundImage } from "@/services/deposits/handleInboundImage";
+import { depositInstructions } from "@/services/deposits/receiptMessages";
+import {
+  findOpenRequestByConversation,
+  loadDepositSettings,
+} from "@/services/deposits/store";
+import { receiptMediaUrl } from "@/services/deposits/receiptMedia";
 import { searchClinicKnowledge } from "@/services/clinic_knowledge/search";
 import { buildHistoryTurns } from "./historyTurns";
 import { readBookingState } from "./bookingState";
@@ -80,7 +88,7 @@ export async function processAutoReplyJob(
           .maybeSingle(),
         db
           .from("whatsapp_messages")
-          .select("id,body,message_type,flow")
+          .select("id,body,message_type,flow,media,raw")
           .eq("id", job.inbound_message_id)
           .maybeSingle(),
         loadAiSettings(db),
@@ -118,6 +126,72 @@ export async function processAutoReplyJob(
       });
       await finishJob(db, jobId, { status: "skipped", skipReason: "opted_out_keyword" });
       return "opted_out";
+    }
+
+    // A screenshot answering a deposit we are waiting on is not a question for
+    // the model. Handled here, before the policy gate that would otherwise
+    // dismiss every image as unreadable — and handleInboundImage returns
+    // `handled: false` for anything else, so an ordinary photo behaves exactly
+    // as it did before deposits existed.
+    const receipt = await handleInboundImage(
+      { db },
+      {
+        conversationId: conversation.id,
+        messageId: inbound.id,
+        messageType: inbound.message_type,
+        mediaUrl: receiptMediaUrl(inbound.media, inbound.raw),
+        language: pickPatientLanguage({
+          lastInboundBody: inbound.body ?? "",
+          patientName: conversation.contact_name ?? "",
+        }),
+      },
+    ).catch((err) => {
+      // Never let the deposit path break an ordinary reply: fall through to the
+      // assistant, which is what would have happened without this feature.
+      console.error("deposit receipt handling failed", err);
+      return { handled: false } as const;
+    });
+
+    if (receipt.handled) {
+      // Written before the send, like every other outbound path here: a crash
+      // afterwards must not be retried, because Meta may already have it.
+      await finishJob(db, jobId, {
+        status: "queued",
+        sendStartedAt: new Date().toISOString(),
+      });
+      try {
+        const config = getKapsoConfig();
+        await sendWhatsappMessage({
+          service: db,
+          client: createKapsoClient(),
+          phoneNumberId: config.phoneNumberId,
+          conversationId: conversation.id,
+          sentBy: null,
+          // "system", not "ai": this is the clinic's own bookkeeping talking,
+          // so it must not spend the assistant's reply budget or trip the
+          // human_active gate for the next message.
+          senderKind: "system",
+          text: receipt.replyText,
+        });
+      } catch (err) {
+        console.error("deposit receipt reply failed to send", err);
+      }
+      await recordAiEvent(db, {
+        conversationId: conversation.id,
+        jobId,
+        decision: "skip",
+        reason: `deposit_${receipt.outcome}:${receipt.reason}`,
+        intent: null,
+        confidence: null,
+        language: null,
+        handoff: false,
+        injectionFlags: [],
+        model: null,
+        latencyMs: 0,
+        envelope: {},
+      });
+      await finishJob(db, jobId, { status: "sent" });
+      return `deposit_${receipt.outcome}`;
     }
 
     // Slots this conversation was explicitly offered and may still claim — a
@@ -396,7 +470,13 @@ export async function processAutoReplyJob(
         return { id: message.id };
       },
       async runActions(actions: BotAction[]) {
-        return runBotActions(db, conversation.phone_number, actions);
+        return runBotActions(db, conversation.phone_number, actions, {
+          conversationId: conversation.id,
+          language: pickPatientLanguage({
+            lastInboundBody: inbound.body ?? "",
+            patientName: conversation.contact_name ?? "",
+          }),
+        });
       },
       isFirstAiReply: aiRepliesEver === 0,
       // What the patient tapped, if they tapped. The id is ours; the title is
@@ -518,18 +598,48 @@ export async function runBotActions(
   db: ServiceClient,
   phone: string,
   actions: BotAction[],
-): Promise<{ ok: boolean; message: string }> {
+  context?: { conversationId: string; language: "ar" | "en" },
+): Promise<{ ok: boolean; message: string; append?: string }> {
+  let append: string | undefined;
+
   for (const action of actions) {
     try {
       if (action.kind === "booking.book_slot") {
-        const { error } = await db.rpc("book_open_appointment_slot", {
-          p_slot_id: action.slotId!,
-          p_patient_name: action.patientName ?? "WhatsApp patient",
-          p_phone: phone,
-          p_service_label: action.serviceLabel ?? "General consultation",
-          p_notes: bookingNotes(action),
-        });
-        if (error) throw new Error(error.message);
+        // When a deposit is required the slot is held rather than booked, and
+        // the patient is told what to transfer. Same locking discipline as the
+        // ordinary path; a separate function because a defaulted argument on
+        // the original would make PostgREST's overload resolution ambiguous.
+        const hold = context ? await openDepositHold(db, context.conversationId) : null;
+        if (hold) {
+          const { error } = await db.rpc("book_slot_with_deposit_hold", {
+            p_slot_id: action.slotId!,
+            p_patient_name: action.patientName ?? "WhatsApp patient",
+            p_phone: phone,
+            p_service_label: action.serviceLabel ?? "General consultation",
+            p_notes: bookingNotes(action),
+            p_conversation_id: context!.conversationId,
+            p_amount_egp: hold.amountEgp,
+            p_hold_minutes: hold.holdMinutes,
+            p_settings: hold.snapshot,
+          });
+          if (error) throw new Error(error.message);
+          append = depositInstructions({
+            amountEgp: hold.amountEgp,
+            instapayHandle: hold.instapayHandle,
+            walletNumber: hold.walletNumber,
+            holdMinutes: hold.holdMinutes,
+            language: context!.language,
+          });
+        } else {
+          const { error } = await db.rpc("book_open_appointment_slot", {
+            p_slot_id: action.slotId!,
+            p_patient_name: action.patientName ?? "WhatsApp patient",
+            p_phone: phone,
+            p_service_label: action.serviceLabel ?? "General consultation",
+            p_notes: bookingNotes(action),
+          });
+          if (error) throw new Error(error.message);
+        }
       } else if (action.kind === "booking.reschedule") {
         const { error } = await db.rpc("reschedule_reservation_to_slot", {
           p_reservation_id: action.reservationId!,
@@ -556,5 +666,58 @@ export async function runBotActions(
       };
     }
   }
-  return { ok: true, message: "done" };
+  return { ok: true, message: "done", ...(append ? { append } : {}) };
+}
+
+/**
+ * Whether this booking should be held for a deposit, and on what terms.
+ *
+ * Null — book normally — whenever deposits are off, unconfigured, or the
+ * settings row is missing. A misconfigured deposit must never stop a patient
+ * booking; it just does not ask them for money.
+ */
+async function openDepositHold(
+  db: ServiceClient,
+  conversationId: string,
+): Promise<
+  | {
+      amountEgp: number;
+      holdMinutes: number;
+      instapayHandle: string;
+      walletNumber: string;
+      snapshot: Json;
+    }
+  | null
+> {
+  const settings = await loadDepositSettings(db).catch(() => null);
+  if (!settings?.enabled) return null;
+
+  const amountEgp = Number(settings.amount_egp);
+  if (!Number.isFinite(amountEgp) || amountEgp <= 0) return null;
+
+  // Nowhere to send the money is not a deposit, it is a dead end.
+  const instapayHandle = settings.instapay_handle.trim();
+  const walletNumber = settings.wallet_number.trim();
+  if (!instapayHandle && !walletNumber) return null;
+
+  // One live deposit per conversation is a database constraint, so asking for a
+  // second would fail the booking itself. Book normally instead.
+  const existing = await findOpenRequestByConversation(db, conversationId).catch(() => null);
+  if (existing) return null;
+
+  return {
+    amountEgp,
+    holdMinutes: settings.hold_minutes,
+    instapayHandle,
+    walletNumber,
+    // What the patient is about to be told, kept so a later Settings edit
+    // cannot invalidate money already sent to the old account.
+    snapshot: {
+      amount_egp: amountEgp,
+      instapay_handle: instapayHandle,
+      wallet_number: walletNumber,
+      recipient_names: settings.recipient_names ?? [],
+      hold_minutes: settings.hold_minutes,
+    } as Json,
+  };
 }
