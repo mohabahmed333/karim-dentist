@@ -2,16 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { DepositSettings } from "@/services/deposits/store";
 import { AdminSkeleton } from "./AdminSkeleton";
+import { LocalizedAdminPageHeader } from "./LocalizedAdminPageHeader";
 import { HelpTip } from "./HelpTip";
 import {
   SettingsHintBanner,
-  SettingsSaveRow,
   SettingsSectionGroup,
 } from "./SettingsSectionGroup";
 
@@ -31,6 +32,7 @@ async function loadSettings(): Promise<DepositSettings | null> {
 }
 
 export function DepositSettingsForm() {
+  const t = useTranslations();
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [settings, setSettings] = useState<DepositSettings | null>(null);
@@ -150,8 +152,18 @@ export function DepositSettingsForm() {
     );
   }
 
+  const saveButton = (
+    <Button type="button" onClick={() => void onSave()} disabled={pending}>
+      {pending ? t("admin.saving") : t("admin.saveChanges")}
+    </Button>
+  );
+
   return (
     <div className="space-y-6">
+      {/* The primary action sits beside the title, as it does on every editor
+          page — reachable without scrolling past the whole form to find it. */}
+      <LocalizedAdminPageHeader titleKey="admin.settings.deposits" actions={saveButton} />
+
       <SettingsHintBanner>
         A slot booked over WhatsApp is held, not confirmed, until the patient sends a receipt for
         the deposit. Unpaid holds are released automatically and offered to the waitlist.
@@ -318,11 +330,6 @@ export function DepositSettingsForm() {
         </p>
       ) : null}
 
-      <SettingsSaveRow>
-        <Button type="button" onClick={() => void onSave()} disabled={pending}>
-          {pending ? "Saving…" : "Save"}
-        </Button>
-      </SettingsSaveRow>
     </div>
   );
 }
