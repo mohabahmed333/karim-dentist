@@ -1,3 +1,5 @@
+import { normalizeArabic } from "./normalizeArabic";
+
 /**
  * Does the patient want a person rather than the assistant?
  *
@@ -5,16 +7,26 @@
  * one, not a model's opinion on whether they meant it. A false positive costs a
  * handoff, which is always safe; a false negative traps a patient with a bot.
  *
+ * Every Arabic pattern is written against normalizeArabic()'s output, not
+ * against how the word is properly spelled — a patient typing "انسان" for
+ * "إنسان" is not making an error worth noticing, and a pattern written for
+ * only the "correct" spelling would silently miss the far more common one.
+ * That also means most hamza/ة variants that used to be spelled out by hand
+ * ("أحد|احد", "موظف" alone was already safe) collapse to one alternative here.
+ *
  * No \b in the Arabic patterns — JS word boundaries are ASCII-only and silently
  * disable a rule beside an Arabic letter. That has bitten this module twice.
  */
 const HUMAN_REQUEST: RegExp[] = [
   /موظف/,
   /بشري/,
-  /(شخص|انسان|إنسان)\s+(حقيقي|طبيعي)/,
-  /(اكلم|أكلم|اتكلم|أتكلم|كلمني|كلم)\s+(حد|أحد|احد|موظف|انسان|إنسان|شخص)/,
-  /خدمة\s+العملاء/,
-  /(مش|مو|لا)\s+(عايز|عاوز|بدي|اريد|أريد)\s+(اكلم\s+|أكلم\s+|اتكلم\s+مع\s+|أتكلم\s+مع\s+)?(بوت|روبوت|آلي|الي|مساعد)/,
+  /(شخص|انسان)\s+(حقيقي|طبيعي)/,
+  // "مع" (with) is optional: "اتكلم حد" and "اتكلم مع حد" are the same request.
+  // "حد" and "احد" are two different words for "someone", not a hamza spelling
+  // of the same one — folding must not merge them into a single alternative.
+  /(اكلم|اتكلم|كلمني|كلم)\s+(مع\s+)?(حد|احد|موظف|انسان|شخص)/,
+  /خدمه\s+العملاء/,
+  /(مش|مو|لا)\s+(عايز|عاوز|بدي|اريد)\s+(اكلم\s+|اتكلم\s+مع\s+)?(بوت|روبوت|الي|مساعد)/,
   /\bhuman\b/i,
   /\breal\s+person\b/i,
   /\b(live\s+)?agent\b/i,
@@ -37,9 +49,11 @@ const FRUSTRATION: RegExp[] = [
 ];
 
 export function wantsHuman(text: string): boolean {
-  return HUMAN_REQUEST.some((re) => re.test(text));
+  const probe = normalizeArabic(text);
+  return HUMAN_REQUEST.some((re) => re.test(probe));
 }
 
 export function showsFrustration(text: string): boolean {
-  return FRUSTRATION.some((re) => re.test(text));
+  const probe = normalizeArabic(text);
+  return FRUSTRATION.some((re) => re.test(probe));
 }

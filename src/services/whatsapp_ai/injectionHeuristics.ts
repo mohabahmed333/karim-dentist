@@ -1,3 +1,5 @@
+import { normalizeArabic } from "./normalizeArabic";
+
 /**
  * Patterns suggesting the patient is addressing the model rather than the
  * clinic. Any hit forces a handoff. English and Arabic, because the clinic
@@ -6,6 +8,10 @@
  * This is a tripwire, not a filter. Containment comes from the narrow action
  * vocabulary the bot is allowed to emit: a missed pattern costs a wrong draft,
  * never an unbounded write.
+ *
+ * Every Arabic pattern is written against normalizeArabic()'s output — a
+ * pattern written for "أنت" would never fire on the far more common "انت"
+ * (hamza dropped), which is how most patients actually type it.
  */
 const PATTERNS: { flag: string; re: RegExp }[] = [
   { flag: "ignore_instructions", re: /\bignore\s+(all\s+)?(previous|prior|above)\b/i },
@@ -26,8 +32,8 @@ const PATTERNS: { flag: string; re: RegExp }[] = [
   },
   // No \b here: JS word boundaries are ASCII-only, so they never match
   // after an Arabic letter and would silently disable this pattern.
-  { flag: "role_reassign", re: /أنت\s+الآن/ },
-  { flag: "role_reassign", re: /(افرض|تخيل)\s+(إنك|انك|أنك)/ },
+  { flag: "role_reassign", re: /انت\s+الان/ },
+  { flag: "role_reassign", re: /(افرض|تخيل)\s+انك/ },
   { flag: "role_marker", re: /^\s*(system|assistant|developer)\s*:/im },
   { flag: "fence", re: /```/ },
   {
@@ -58,7 +64,7 @@ const INVISIBLE = /[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g;
 
 export function injectionHeuristics(text: string): string[] {
   const flags = new Set<string>();
-  const probe = text.replace(INVISIBLE, "");
+  const probe = normalizeArabic(text.replace(INVISIBLE, ""));
   for (const { flag, re } of PATTERNS) {
     if (re.test(probe)) flags.add(flag);
   }

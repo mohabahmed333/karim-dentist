@@ -78,3 +78,24 @@ describe("wantsHuman — refusing the bot", () => {
     });
   }
 });
+
+describe("wantsHuman — common spelling variants", () => {
+  it("recognises a request whichever way the hamza and ta marbuta landed", () => {
+    for (const text of [
+      "عايز موظف",          // already-correct spelling
+      "انسان حقيقي",        // no hamza on "انسان" — the common way
+      "إنسان حقيقي",        // with hamza — also correct, must still match
+      "عايز خدمه العملاء",  // ه instead of ة — extremely common on a phone keyboard
+      "عايز اكلم حد",       // no hamza on "احد" already covered elsewhere
+      "عايز اتكلم مع احد",
+    ]) {
+      assert.equal(wantsHuman(text), true, text);
+    }
+  });
+
+  it("does not start matching normal words that merely share letters", () => {
+    for (const text of ["عايز احجز ميعاد", "تنظيف اسنان", "عندي وجع في اسناني"]) {
+      assert.equal(wantsHuman(text), false, text);
+    }
+  });
+});

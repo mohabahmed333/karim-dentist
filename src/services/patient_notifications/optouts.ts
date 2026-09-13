@@ -8,6 +8,7 @@
  */
 
 import type { createServiceClient } from "@/lib/supabase/service";
+import { normalizeArabic } from "@/services/whatsapp_ai/normalizeArabic";
 import { phoneSuffixForLookup } from "@/services/reservations/phoneSuffix";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
@@ -19,6 +20,11 @@ type ServiceClient = ReturnType<typeof createServiceClient>;
  *
  * "الغاء" alone is deliberately absent: it means "cancel", and a patient
  * replying it to a reminder is cancelling an appointment, not unsubscribing.
+ *
+ * Each Arabic phrase is listed once, in its normalizeArabic()-folded form —
+ * the incoming text is folded the same way below, so "إيقاف" and "ايقاف" (the
+ * far more common, hamza-dropped spelling) both match a single entry rather
+ * than needing every hamza variant spelled out by hand.
  */
 const OPT_OUT_PHRASES = new Set([
   "stop",
@@ -28,22 +34,21 @@ const OPT_OUT_PHRASES = new Set([
   "opt out",
   "optout",
   "ايقاف",
-  "إيقاف",
   "وقف",
   "ايقاف الرسائل",
-  "إيقاف الرسائل",
   "الغاء الاشتراك",
-  "إلغاء الاشتراك",
 ]);
 
 export function normalizeOptOutText(text: string): string {
-  return text
-    .normalize("NFKC")
-    .toLowerCase()
-    // Punctuation and symbols, which covers emoji: "🛑 STOP!" is still STOP.
-    .replace(/[\p{P}\p{S}]/gu, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return normalizeArabic(
+    text
+      .normalize("NFKC")
+      .toLowerCase()
+      // Punctuation and symbols, which covers emoji: "🛑 STOP!" is still STOP.
+      .replace(/[\p{P}\p{S}]/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
 }
 
 export function isOptOutMessage(text: string | null | undefined): boolean {
