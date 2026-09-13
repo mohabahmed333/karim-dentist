@@ -65,8 +65,17 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isLogin = path === "/admin/login";
+  // Reachable without a session: the login page itself, and the
+  // forgot/reset-password flow (reset-password specifically becomes usable
+  // only once the auth callback route has set a recovery session, but the
+  // proxy can't tell "just recovered" apart from "already signed in" —
+  // it simply must never force either of these to /admin/login).
+  const isPublicAuthPath =
+    isLogin ||
+    path === "/admin/forgot-password" ||
+    path === "/admin/reset-password";
 
-  if (!isLogin && !user) {
+  if (!isPublicAuthPath && !user) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 

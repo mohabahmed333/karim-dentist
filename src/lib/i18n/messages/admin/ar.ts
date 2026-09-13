@@ -161,11 +161,33 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.nav.support": "مكتب الاستقبال",
   "admin.nav.admin": "الإدارة",
 
-  "admin.login.title": "تسجيل دخول الإدارة",
+  "admin.login.title": "تسجيل الدخول إلى حسابك",
+  "admin.login.subtitle": "الرجاء إدخال بياناتك",
   "admin.login.email": "البريد الإلكتروني",
   "admin.login.password": "كلمة المرور",
   "admin.login.submit": "تسجيل الدخول",
   "admin.login.error": "بريد أو كلمة مرور غير صحيحة",
+  "admin.login.forgotPassword": "نسيت كلمة المرور؟",
+
+  "admin.forgotPassword.title": "إعادة تعيين كلمة المرور",
+  "admin.forgotPassword.subtitle":
+    "أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيينها.",
+  "admin.forgotPassword.email": "البريد الإلكتروني",
+  "admin.forgotPassword.submit": "إرسال رابط إعادة التعيين",
+  "admin.forgotPassword.success":
+    "إذا كان هناك حساب مرتبط بهذا البريد، فقد أرسلنا رابط إعادة التعيين إليه.",
+  "admin.forgotPassword.error": "حدث خطأ ما. الرجاء المحاولة مرة أخرى.",
+  "admin.forgotPassword.backToLogin": "العودة لتسجيل الدخول",
+
+  "admin.resetPassword.title": "تعيين كلمة مرور جديدة",
+  "admin.resetPassword.subtitle": "اختر كلمة مرور جديدة لحسابك.",
+  "admin.resetPassword.newPassword": "كلمة المرور الجديدة",
+  "admin.resetPassword.confirmPassword": "تأكيد كلمة المرور",
+  "admin.resetPassword.submit": "تحديث كلمة المرور",
+  "admin.resetPassword.mismatch": "كلمتا المرور غير متطابقتين",
+  "admin.resetPassword.error": "حدث خطأ ما. الرجاء المحاولة مرة أخرى.",
+  "admin.resetPassword.invalidLink": "هذا الرابط غير صالح أو منتهي الصلاحية.",
+  "admin.resetPassword.requestNewLink": "طلب رابط جديد",
 
   "admin.customize.title": "تخصيص",
   "admin.customize.dashboard": "لوحة التحكم",

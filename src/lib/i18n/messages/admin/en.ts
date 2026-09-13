@@ -159,11 +159,33 @@ export const adminEn = {
   "admin.nav.support": "Front desk",
   "admin.nav.admin": "Admin",
 
-  "admin.login.title": "Admin login",
+  "admin.login.title": "Log in to your account",
+  "admin.login.subtitle": "Please enter your details",
   "admin.login.email": "Email",
   "admin.login.password": "Password",
-  "admin.login.submit": "Sign in",
+  "admin.login.submit": "Log in",
   "admin.login.error": "Invalid email or password",
+  "admin.login.forgotPassword": "Forgot password?",
+
+  "admin.forgotPassword.title": "Reset your password",
+  "admin.forgotPassword.subtitle":
+    "Enter your email and we'll send you a link to reset it.",
+  "admin.forgotPassword.email": "Email",
+  "admin.forgotPassword.submit": "Send reset link",
+  "admin.forgotPassword.success":
+    "If an account exists for that email, we've sent a reset link.",
+  "admin.forgotPassword.error": "Something went wrong. Please try again.",
+  "admin.forgotPassword.backToLogin": "Back to login",
+
+  "admin.resetPassword.title": "Set a new password",
+  "admin.resetPassword.subtitle": "Choose a new password for your account.",
+  "admin.resetPassword.newPassword": "New password",
+  "admin.resetPassword.confirmPassword": "Confirm password",
+  "admin.resetPassword.submit": "Update password",
+  "admin.resetPassword.mismatch": "Passwords don't match",
+  "admin.resetPassword.error": "Something went wrong. Please try again.",
+  "admin.resetPassword.invalidLink": "This link is invalid or has expired.",
+  "admin.resetPassword.requestNewLink": "Request a new link",
 
   "admin.customize.title": "Customize",
   "admin.customize.dashboard": "Dashboard",
