@@ -8,10 +8,10 @@ export default async function AdminSettingsDepositsPage() {
   await requirePagePermission("settings.view");
   return (
     <AdminPageMotion className="space-y-4">
-      {/* The header lives in the form, which owns the save state it needs. */}
-      <div className="max-w-3xl">
-        <DepositSettingsForm />
-      </div>
+      {/* The form owns the header, because it owns the save state that button
+          needs — and it spans the page so the action lands on the page's edge,
+          keeping its own fields in a narrower column. */}
+      <DepositSettingsForm />
     </AdminPageMotion>
   );
 }
