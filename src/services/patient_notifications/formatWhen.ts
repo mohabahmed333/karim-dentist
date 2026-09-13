@@ -121,3 +121,71 @@ export function isTomorrowIn(
   const appointmentDay = localDay(new Date(startsAt), timeZone);
   return appointmentDay !== today && appointmentDay === tomorrow;
 }
+
+/**
+ * The clinic's UTC offset, in minutes, at a given instant.
+ *
+ * Never hardcoded: Egypt reintroduced daylight saving in 2023, so the clinic is
+ * UTC+2 in winter and UTC+3 in summer. Read through `Intl` so a change to the
+ * rule needs no change here.
+ */
+export function clinicOffsetMinutes(
+  at: Date,
+  timeZone: string = CLINIC_TIME_ZONE,
+): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    timeZoneName: "shortOffset",
+  }).formatToParts(at);
+  const raw = parts.find((p) => p.type === "timeZoneName")?.value ?? "GMT+2";
+  const match = raw.match(/GMT([+-])(\d+)(?::(\d+))?/);
+  if (!match) return 120;
+  const sign = match[1] === "-" ? -1 : 1;
+  return sign * (Number(match[2]) * 60 + Number(match[3] ?? 0));
+}
+
+/** A trailing "Z" or "+02:00" — the string already names its own instant. */
+const NAMES_ITS_OWN_ZONE = /(?:Z|[+-]\d{2}:?\d{2})$/i;
+
+/**
+ * Read a timestamp that was written in the clinic's local time.
+ *
+ * A transfer receipt printed in Cairo shows a wall clock and no zone, and
+ * `Date.parse` resolves a zone-less string against *the server's* zone — UTC on
+ * Vercel. A transfer made at 17:30 Cairo was therefore stored as 17:30 UTC:
+ * three hours later than it happened, which read as a payment from the future
+ * and sent every fresh receipt to manual review.
+ *
+ * A string that does name a zone is already an instant and is trusted as-is.
+ * Everything else has its wall clock re-anchored to the clinic's zone. The
+ * offset is looked up at the naive instant, which can sit an hour out on the
+ * single night Egypt changes over — immaterial against a 15-minute tolerance.
+ *
+ * Returns an ISO string, or null when there is no readable date in it.
+ */
+export function parseClinicLocalTimestamp(
+  raw: string,
+  timeZone: string = CLINIC_TIME_ZONE,
+): string | null {
+  const text = raw.trim();
+  if (!text) return null;
+
+  const ms = Date.parse(text);
+  if (!Number.isFinite(ms)) return null;
+  if (NAMES_ITS_OWN_ZONE.test(text)) return new Date(ms).toISOString();
+
+  // Recover the wall clock `Date.parse` just read. The local getters return it
+  // in the server's own zone, which is precisely the zone it was assigned, so
+  // this works wherever the code runs.
+  const asRead = new Date(ms);
+  const naiveUtc = Date.UTC(
+    asRead.getFullYear(),
+    asRead.getMonth(),
+    asRead.getDate(),
+    asRead.getHours(),
+    asRead.getMinutes(),
+    asRead.getSeconds(),
+  );
+  const offset = clinicOffsetMinutes(new Date(naiveUtc), timeZone);
+  return new Date(naiveUtc - offset * 60_000).toISOString();
+}

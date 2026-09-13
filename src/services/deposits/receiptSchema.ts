@@ -14,6 +14,7 @@
  */
 
 import { z } from "zod";
+import { parseClinicLocalTimestamp } from "@/services/patient_notifications/formatWhen";
 
 /** ٠١٢٣٤٥٦٧٨٩ and ۰۱۲۳۴۵۶۷۸۹ both appear on Egyptian banking apps. */
 const ARABIC_DIGITS = /[٠-٩۰-۹]/g;
@@ -77,13 +78,19 @@ const text = z
   })
   .catch(null);
 
-/** An ISO timestamp we can actually compare, or null. */
+/**
+ * An ISO timestamp we can actually compare, or null.
+ *
+ * Read as the clinic's local time unless the receipt named a zone itself. An
+ * Egyptian receipt prints a bare wall clock, and resolving that against the
+ * server's zone put every transfer three hours into the future — so every
+ * fresh receipt failed the "not from the future" check and went to review.
+ */
 const timestamp = z
   .unknown()
   .transform((v) => {
     if (typeof v !== "string" || !v.trim()) return null;
-    const ms = Date.parse(foldArabicDigits(v.trim()));
-    return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
+    return parseClinicLocalTimestamp(foldArabicDigits(v.trim()));
   })
   .catch(null);
 

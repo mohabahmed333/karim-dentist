@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requirePermission } from "@/lib/api/requirePermission";
 import { createServiceClient } from "@/lib/supabase/service";
+import { notifyDepositConfirmed } from "@/services/deposits/notifyDecision";
 import { confirmDepositPaid, rejectDeposit } from "@/services/deposits/store";
 
 export const runtime = "nodejs";
@@ -40,5 +41,16 @@ export async function PATCH(
   if (!result.ok) {
     return NextResponse.json({ error: result.error ?? "Could not apply" }, { status: 400 });
   }
-  return NextResponse.json({ ok: true });
+
+  // The patient sent money and is waiting to hear. Confirming used to be
+  // silent — the row moved to paid and nothing reached them — while the
+  // automatic path had always replied. Reported rather than thrown: the
+  // decision is already committed, so a messaging failure must not read as a
+  // failed confirmation, but staff do need to know the patient was not told.
+  const notified =
+    parsed.data.action === "confirm"
+      ? await notifyDepositConfirmed(service, id)
+      : ({ sent: false, reason: "not_applicable" } as const);
+
+  return NextResponse.json({ ok: true, notified });
 }
