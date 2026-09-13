@@ -35,6 +35,10 @@ export function DepositSettingsForm() {
   const [pending, setPending] = useState(false);
   const [settings, setSettings] = useState<DepositSettings | null>(null);
   const [names, setNames] = useState("");
+  /** Raw text per number field while it is being edited. */
+  const [drafts, setDrafts] = useState<Partial<Record<NumberField, string>>>({});
+  /** Why the last save was refused — kept on screen, unlike a toast. */
+  const [problem, setProblem] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -59,13 +63,47 @@ export function DepositSettingsForm() {
     setSettings((current) => (current ? { ...current, [key]: value } : current));
   }
 
+  /**
+   * Keep what was typed, including nothing at all.
+   *
+   * Coercing an emptied field to 0 is how a 200 EGP deposit silently became a
+   * zero one: the amount looked cleared, saved as 0, and the server then refused
+   * to switch deposits on — leaving a toggle that flicked back off with the
+   * complaint pointing at a different field.
+   */
   const setNumber = (key: NumberField, raw: string) => {
-    const parsed = Number(raw);
-    set(key, (Number.isFinite(parsed) ? parsed : 0) as DepositSettings[NumberField]);
+    setDrafts((current) => ({ ...current, [key]: raw }));
+  };
+
+  /** What a number field currently shows: the edit in progress, else the saved value. */
+  const numberValue = (key: NumberField) =>
+    drafts[key] ?? (settings ? String(settings[key]) : "");
+
+  const numberFor = (key: NumberField, fallback: number) => {
+    const raw = drafts[key];
+    if (raw === undefined) return Number(settings?.[key] ?? fallback);
+    const parsed = Number(raw.trim());
+    return raw.trim() !== "" && Number.isFinite(parsed) ? parsed : Number.NaN;
   };
 
   async function onSave() {
     if (!settings) return;
+
+    const amount = numberFor("amount_egp", 0);
+    if (!Number.isFinite(amount)) {
+      setProblem("Enter a deposit amount.");
+      return;
+    }
+    if (settings.enabled && amount <= 0) {
+      setProblem("Set a deposit amount above zero before switching deposits on.");
+      return;
+    }
+    if (settings.enabled && !settings.instapay_handle.trim() && !settings.wallet_number.trim()) {
+      setProblem("Add an InstaPay handle or a wallet number before switching deposits on.");
+      return;
+    }
+
+    setProblem("");
     setPending(true);
     try {
       const res = await fetch("/api/v1/deposits/settings", {
@@ -73,27 +111,30 @@ export function DepositSettingsForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           enabled: settings.enabled,
-          amount_egp: Number(settings.amount_egp),
+          amount_egp: numberFor("amount_egp", 0),
           instapay_handle: settings.instapay_handle,
           wallet_number: settings.wallet_number,
           recipient_names: names
             .split(",")
             .map((n) => n.trim())
             .filter(Boolean),
-          hold_minutes: settings.hold_minutes,
+          hold_minutes: numberFor("hold_minutes", 30),
           auto_confirm: settings.auto_confirm,
           ocr_cross_check: settings.ocr_cross_check,
-          min_confidence: Number(settings.min_confidence),
-          amount_tolerance_egp: Number(settings.amount_tolerance_egp),
-          receipt_max_age_hours: settings.receipt_max_age_hours,
+          min_confidence: numberFor("min_confidence", 0.75),
+          amount_tolerance_egp: numberFor("amount_tolerance_egp", 0),
+          receipt_max_age_hours: numberFor("receipt_max_age_hours", 48),
         }),
       });
       const body = (await res.json()) as { settings?: DepositSettings; error?: string };
       if (!res.ok) throw new Error(body.error ?? "Save failed");
       setSettings(body.settings ?? settings);
+      setDrafts({});
       toast.success("Deposit settings saved");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
+      const message = err instanceof Error ? err.message : "Save failed";
+      setProblem(message);
+      toast.error(message);
     } finally {
       setPending(false);
     }
@@ -139,7 +180,7 @@ export function DepositSettingsForm() {
                 id="deposit-amount"
                 type="number"
                 min={0}
-                value={String(settings.amount_egp)}
+                value={numberValue("amount_egp")}
                 onChange={(e) => setNumber("amount_egp", e.target.value)}
               />
             </div>
@@ -150,7 +191,7 @@ export function DepositSettingsForm() {
                 type="number"
                 min={5}
                 max={240}
-                value={String(settings.hold_minutes)}
+                value={numberValue("hold_minutes")}
                 onChange={(e) => setNumber("hold_minutes", e.target.value)}
               />
             </div>
@@ -236,7 +277,7 @@ export function DepositSettingsForm() {
                 step="0.05"
                 min={0}
                 max={1}
-                value={String(settings.min_confidence)}
+                value={numberValue("min_confidence")}
                 onChange={(e) => setNumber("min_confidence", e.target.value)}
               />
             </div>
@@ -246,7 +287,7 @@ export function DepositSettingsForm() {
                 id="deposit-tolerance"
                 type="number"
                 min={0}
-                value={String(settings.amount_tolerance_egp)}
+                value={numberValue("amount_tolerance_egp")}
                 onChange={(e) => setNumber("amount_tolerance_egp", e.target.value)}
               />
             </div>
@@ -257,13 +298,25 @@ export function DepositSettingsForm() {
                 type="number"
                 min={1}
                 max={720}
-                value={String(settings.receipt_max_age_hours)}
+                value={numberValue("receipt_max_age_hours")}
                 onChange={(e) => setNumber("receipt_max_age_hours", e.target.value)}
               />
             </div>
           </div>
         </details>
       </SettingsSectionGroup>
+
+      {problem ? (
+        // On screen rather than in a toast: the refusal usually names a field
+        // other than the one just changed, and a message that disappears turns
+        // that into a switch that mysteriously flicks itself back off.
+        <p
+          role="alert"
+          className="rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-sm text-[#B91C1C]"
+        >
+          {problem}
+        </p>
+      ) : null}
 
       <SettingsSaveRow>
         <Button type="button" onClick={() => void onSave()} disabled={pending}>
