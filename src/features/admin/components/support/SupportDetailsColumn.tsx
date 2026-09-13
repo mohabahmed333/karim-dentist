@@ -4,7 +4,15 @@ import { useState } from "react";
 import { PanelRightClose } from "lucide-react";
 import { useTranslations } from "@/lib/i18n";
 import { SupportDetailsTabs } from "./SupportDetailsTabs";
-import type { SupportDetails, SupportMessage } from "./supportDummyData";
+import {
+  SupportConversationMeta,
+  type StaffOption,
+} from "./SupportConversationMeta";
+import type {
+  SupportConversation,
+  SupportDetails,
+  SupportMessage,
+} from "./supportDummyData";
 
 type Props = {
   details: SupportDetails;
@@ -17,6 +25,14 @@ type Props = {
   onTogglePinNote?: (id: string, pinned: boolean) => void | Promise<void>;
   onEditNote?: (id: string, body: string) => void | Promise<void>;
   onDeleteNote?: (id: string) => void | Promise<void>;
+  /** Tags/assignee editor, real WhatsApp conversations only. */
+  conversation?: SupportConversation;
+  staffOptions?: StaffOption[];
+  onTagsChange?: (tags: string[]) => void;
+  onAssigneeChange?: (
+    assigneeId: string | null,
+    assigneeName: string | null,
+  ) => void;
 };
 
 export function SupportDetailsColumn({
@@ -29,6 +45,10 @@ export function SupportDetailsColumn({
   onTogglePinNote,
   onEditNote,
   onDeleteNote,
+  conversation,
+  staffOptions,
+  onTagsChange,
+  onAssigneeChange,
 }: Props) {
   const t = useTranslations();
   const [open, setOpen] = useState<Record<string, boolean>>({
@@ -40,20 +60,28 @@ export function SupportDetailsColumn({
   });
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col border-s border-[#E5E7EB] bg-white">
-      <header className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
-        <h2 className="text-sm font-semibold text-[#111827]">
+    <aside className="flex h-full min-h-0 w-full flex-col border-s border-[var(--admin-border)] bg-[var(--admin-panel)]">
+      <header className="flex shrink-0 items-center justify-between border-b border-[var(--admin-border)] px-4 py-3">
+        <h2 className="text-sm font-semibold text-[var(--admin-text)]">
           {t("admin.frontDesk.patientDetails")}
         </h2>
         <button
           type="button"
           onClick={onToggleDetails}
-          className="rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6]"
+          className="rounded-md p-1.5 text-[var(--admin-muted)] hover:bg-[var(--admin-hover)]"
           aria-label={t("admin.frontDesk.hideDetails")}
         >
           <PanelRightClose className="h-4 w-4" />
         </button>
       </header>
+      {conversation && staffOptions && onTagsChange && onAssigneeChange ? (
+        <SupportConversationMeta
+          conversation={conversation}
+          staffOptions={staffOptions}
+          onTagsChange={onTagsChange}
+          onAssigneeChange={onAssigneeChange}
+        />
+      ) : null}
       <SupportDetailsTabs
         details={details}
         messages={messages}

@@ -123,10 +123,10 @@ export function ChatMessageBubble({
       className={cn(
         "group flex flex-col rounded-xl transition-[box-shadow,background-color] duration-500",
         isAgent ? "items-end" : "items-start",
-        highlighted && "bg-[#EEF2FF]/80 ring-2 ring-[#6366F1]/40",
+        highlighted && "bg-[var(--wa-highlight-bg)] ring-2 ring-[var(--wa-highlight-ring)]",
       )}
     >
-      <p className="mb-1 px-1 text-xs font-medium text-[#6B7280]">
+      <p className="mb-1 px-1 text-xs font-medium text-[var(--wa-bubble-meta-text)]">
         {m.authorName}
       </p>
       <div className="relative max-w-[75%]">
@@ -146,11 +146,11 @@ export function ChatMessageBubble({
             }
           }}
           className={cn(
-            "px-3.5 py-2.5 text-sm leading-relaxed text-[#111827] select-text",
+            "px-3.5 py-2.5 text-sm leading-relaxed select-text",
             onReply && "cursor-pointer",
             isAgent
-              ? "rounded-2xl rounded-tr-md border border-[#E5E7EB] bg-white"
-              : "rounded-2xl rounded-tl-md bg-[#F3F4F6]",
+              ? "rounded-2xl rounded-tr-md border border-[var(--wa-bubble-out-border)] bg-[var(--wa-bubble-out-bg)] text-[var(--wa-bubble-out-text)]"
+              : "rounded-2xl rounded-tl-md bg-[var(--wa-bubble-in-bg)] text-[var(--wa-bubble-in-text)]",
           )}
         >
           {m.replyTo ? (
@@ -162,7 +162,7 @@ export function ChatMessageBubble({
           {images.length > 0 ? <MessageMediaGrid items={images} /> : null}
           {images.length === 0 &&
           (m.messageType === "image" || m.messageType === "sticker") ? (
-            <p className="mb-1 text-xs font-medium text-[#0EA5E9]">
+            <p className="mb-1 text-xs font-medium text-[var(--wa-accent)]">
               {t("admin.frontDesk.photo")}
             </p>
           ) : null}
@@ -170,7 +170,7 @@ export function ChatMessageBubble({
             <MessageVideo key={v.url} url={v.url} name={v.name} />
           ))}
           {videos.length === 0 && m.messageType === "video" ? (
-            <p className="mb-1 text-xs font-medium text-[#8B5CF6]">
+            <p className="mb-1 text-xs font-medium text-[var(--wa-accent)]">
               {t("admin.frontDesk.video")}
             </p>
           ) : null}
@@ -179,7 +179,7 @@ export function ChatMessageBubble({
           ))}
           {audios.length === 0 &&
           (m.messageType === "audio" || m.messageType === "voice") ? (
-            <p className="mb-1 text-xs font-medium text-[#10B981]">
+            <p className="mb-1 text-xs font-medium text-[var(--wa-accent)]">
               {t("admin.frontDesk.voice")}
             </p>
           ) : null}
@@ -205,7 +205,7 @@ export function ChatMessageBubble({
           audios.length === 0 &&
           docs.length === 0 &&
           !m.flow ? (
-            <p className="text-[#9CA3AF] italic">
+            <p className="text-[var(--wa-bubble-meta-text)] italic">
               {t("admin.frontDesk.unsupportedType")}
             </p>
           ) : null}
@@ -221,13 +221,13 @@ export function ChatMessageBubble({
               {formatWhatsappText(body)}
             </p>
           ) : null}
-          <div className="mt-1.5 flex items-center justify-between gap-2 text-[12px] text-[#6B7280]">
+          <div className="mt-1.5 flex items-center justify-between gap-2 text-[12px] text-[var(--wa-bubble-meta-text)]">
             <span className="inline-flex items-center gap-1">
               {onReply ? (
                 <button
                   type="button"
                   onClick={startReply}
-                  className="inline-flex items-center gap-1 rounded px-1 py-0.5 font-medium text-[#6B7280] opacity-70 hover:bg-black/5 hover:text-[#111827] hover:opacity-100 group-hover:opacity-100"
+                  className="inline-flex items-center gap-1 rounded px-1 py-0.5 font-medium text-[var(--wa-bubble-meta-text)] opacity-70 hover:bg-black/5 hover:text-[var(--wa-surface-text)] hover:opacity-100 group-hover:opacity-100"
                   aria-label={t("admin.frontDesk.reply")}
                 >
                   <Reply className="h-3 w-3" />
@@ -238,7 +238,7 @@ export function ChatMessageBubble({
                 <button
                   type="button"
                   onClick={() => onSaveAsQuickReply?.(m)}
-                  className="inline-flex items-center rounded p-1 text-[#6B7280] opacity-70 hover:bg-black/5 hover:text-[#111827] hover:opacity-100 group-hover:opacity-100"
+                  className="inline-flex items-center rounded p-1 text-[var(--wa-bubble-meta-text)] opacity-70 hover:bg-black/5 hover:text-[var(--wa-surface-text)] hover:opacity-100 group-hover:opacity-100"
                   aria-label={t("admin.frontDesk.saveAsQuickReply")}
                   title={t("admin.frontDesk.saveAsQuickReply")}
                 >

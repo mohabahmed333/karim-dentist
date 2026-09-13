@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import {
   isAdminNavGroup,
@@ -63,13 +64,26 @@ function NavGroup({
           </button>
         </div>
       </AdminNavTreeRow>
-      {open ? (
-        <AdminNavTreeList
-          items={group.items}
-          depth={1}
-          pendingCount={pendingCount}
-        />
-      ) : null}
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div
+            key="children"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="mt-1.5">
+              <AdminNavTreeList
+                items={group.items}
+                depth={1}
+                pendingCount={pendingCount}
+              />
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </>
   );
 }

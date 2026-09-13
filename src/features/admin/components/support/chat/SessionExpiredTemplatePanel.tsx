@@ -144,15 +144,15 @@ export function SessionExpiredTemplatePanel({
   const unsupportedCount = templates.length - sendable.length;
 
   return (
-    <div className="border-t border-[#E5E7EB] bg-[#F9FAFB] px-4 py-4">
+    <div className="border-t border-[var(--wa-composer-border)] bg-[var(--wa-composer-bg)] px-4 py-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-[#111827]">
+          <p className="text-sm font-medium text-[var(--wa-composer-text)]">
             {mode === "optional"
               ? t("admin.frontDesk.templateOptionalTitle")
               : t("admin.frontDesk.sessionExpiredTitle")}
           </p>
-          <p className="mt-1 text-xs text-[#6B7280]">
+          <p className="mt-1 text-xs text-[var(--wa-bubble-meta-text)]">
             {mode === "optional"
               ? t("admin.frontDesk.templateOptionalBody")
               : t("admin.frontDesk.sessionExpiredBody")}
@@ -162,7 +162,7 @@ export function SessionExpiredTemplatePanel({
           <button
             type="button"
             onClick={onDismiss}
-            className="shrink-0 rounded-md p-1 text-[#6B7280] hover:bg-[#E5E7EB] hover:text-[#111827]"
+            className="shrink-0 rounded-md p-1 text-[var(--wa-bubble-meta-text)] hover:bg-[var(--wa-composer-icon-hover-bg)] hover:text-[var(--wa-composer-text)]"
             aria-label={t("admin.frontDesk.templateDismiss")}
           >
             <X className="size-4" />
@@ -177,15 +177,15 @@ export function SessionExpiredTemplatePanel({
           aria-label={t("admin.frontDesk.templateLoading")}
         >
           <div className="space-y-1.5">
-            <Skeleton className="h-3 w-16 bg-[#E8EAED]" />
-            <Skeleton className="h-10 w-full rounded-md bg-[#E8EAED]" />
+            <Skeleton className="h-3 w-16 bg-[var(--wa-surface-hover)]" />
+            <Skeleton className="h-10 w-full rounded-md bg-[var(--wa-surface-hover)]" />
           </div>
-          <Skeleton className="h-9 w-28 rounded-md bg-[#E8EAED]" />
+          <Skeleton className="h-9 w-28 rounded-md bg-[var(--wa-surface-hover)]" />
         </div>
       ) : error ? (
         <p className="mt-3 text-xs text-[#B91C1C]">{error}</p>
       ) : sendable.length === 0 ? (
-        <p className="mt-3 text-xs text-[#6B7280]">
+        <p className="mt-3 text-xs text-[var(--wa-bubble-meta-text)]">
           {t("admin.frontDesk.templateEmpty")}
           {unsupportedCount > 0
             ? ` ${t("admin.frontDesk.templateUnsupportedHint")}`
@@ -194,7 +194,7 @@ export function SessionExpiredTemplatePanel({
       ) : (
         <div className="mt-3 space-y-3">
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-[#374151]">
+            <label className="block text-xs font-medium text-[var(--wa-composer-text)]">
               {t("admin.frontDesk.templatePick")}
             </label>
             <AdminSelect
@@ -225,7 +225,7 @@ export function SessionExpiredTemplatePanel({
             return (
               <label
                 key={id}
-                className="block text-xs font-medium text-[#374151]"
+                className="block text-xs font-medium text-[var(--wa-composer-text)]"
               >
                 {field.section === "header"
                   ? t("admin.frontDesk.templateHeaderParam")
@@ -246,7 +246,7 @@ export function SessionExpiredTemplatePanel({
 
           <button
             type="button"
-            className="inline-flex h-9 items-center justify-center rounded-md bg-[#111827] px-4 text-sm font-medium text-white disabled:opacity-50"
+            className="inline-flex h-9 items-center justify-center rounded-md bg-[var(--wa-accent)] px-4 text-sm font-medium text-white disabled:opacity-50"
             disabled={!selected || sending}
             onClick={() => void handleSend()}
           >

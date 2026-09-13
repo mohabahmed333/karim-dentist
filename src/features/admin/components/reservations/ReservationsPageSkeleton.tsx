@@ -1,13 +1,5 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { AdminSkeleton as Block } from "@/features/admin/components/AdminSkeleton";
 import { CALENDAR_GRID_DAYS } from "@/services/reservations/timeline";
-
-function Block({ className }: { className?: string }) {
-  return (
-    <Skeleton
-      className={`bg-[var(--admin-hover,#eeeff1)] ${className ?? ""}`}
-    />
-  );
-}
 
 type Props = {
   /** When false, omit month/filters row (page header already visible). */

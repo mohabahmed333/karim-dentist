@@ -11,10 +11,9 @@ import {
 } from "@/services/experience_entries";
 import { useBoardCrud } from "../hooks/useBoardCrud";
 import { LocalizedAdminPageHeader } from "./LocalizedAdminPageHeader";
-import { CollectionSplitLayout } from "./CollectionSplitLayout";
 import { CollectionTable } from "./CollectionTable";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
-import { ExperienceEditCard } from "./ExperienceEditCard";
+import { ExperienceFormDialog } from "./ExperienceFormDialog";
 import { Button } from "@/components/ui/button";
 
 type Props = { items: ExperienceEntry[] };
@@ -44,38 +43,46 @@ export function ExperienceEditor({ items: initial }: Props) {
           </Button>
         }
       />
-      <CollectionSplitLayout
-        list={
-          <div className="p-2">
-            <CollectionTable
-              tableId="experience"
-              rows={board.items}
-              selectedId={board.selected?.id}
-              emptyMessage={t("admin.pages.experience.empty")}
-              onRowClick={board.openItem}
-              columns={[
-                { key: "title", header: t("admin.cms.title"), cell: (r) => r.title },
-                { key: "org", header: t("admin.pages.experience.org"), cell: (r) => r.org ?? "—" },
-                {
-                  key: "date",
-                  header: t("admin.reservations.date"),
-                  cell: (r) => r.date_label ?? "—",
-                },
-              ]}
-            />
-          </div>
-        }
-        detail={
-          board.selected ? (
-            <ExperienceEditCard
-              item={board.selected}
-              pending={board.pending}
-              message={board.message}
-              onSubmit={board.onSave}
-              onDeleteClick={() => setDeleteOpen(true)}
-            />
-          ) : null
-        }
+      <CollectionTable
+        framed
+        tableId="experience"
+        rows={board.items}
+        selectedId={board.selected?.id}
+        emptyMessage={t("admin.pages.experience.empty")}
+        onRowClick={board.openItem}
+        rowActions={[
+          { id: "edit", label: t("admin.edit"), icon: "edit", onClick: (r) => board.openItem(r.id) },
+          {
+            id: "delete",
+            label: t("admin.delete"),
+            icon: "delete",
+            tone: "danger",
+            onClick: (r) => {
+              board.openItem(r.id);
+              setDeleteOpen(true);
+            },
+          },
+        ]}
+        columns={[
+          { key: "title", header: t("admin.cms.title"), cell: (r) => r.title },
+          { key: "org", header: t("admin.pages.experience.org"), cell: (r) => r.org ?? "—" },
+          {
+            key: "date",
+            header: t("admin.reservations.date"),
+            cell: (r) => r.date_label ?? "—",
+          },
+        ]}
+      />
+      <ExperienceFormDialog
+        open={Boolean(board.selected)}
+        item={board.selected}
+        pending={board.pending}
+        message={board.message}
+        onOpenChange={(open) => {
+          if (!open) board.close();
+        }}
+        onSubmit={board.onSave}
+        onDeleteClick={() => setDeleteOpen(true)}
       />
       <ConfirmDeleteDialog
         open={deleteOpen}

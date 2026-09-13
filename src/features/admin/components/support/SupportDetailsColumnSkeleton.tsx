@@ -1,14 +1,8 @@
-import { Skeleton } from "@/components/ui/skeleton";
-
-const bone = "bg-[#E8EAED]";
-
-function Block({ className }: { className?: string }) {
-  return <Skeleton className={`${bone} ${className ?? ""}`} />;
-}
+import { AdminSkeleton as Block } from "@/features/admin/components/AdminSkeleton";
 
 function Section() {
   return (
-    <div className="border-b border-[#E5E7EB] px-4 py-3">
+    <div className="border-b border-[var(--admin-border)] px-4 py-3">
       <div className="mb-3 flex items-center justify-between">
         <Block className="h-4 w-24" />
         <Block className="size-4 rounded" />
@@ -25,12 +19,12 @@ function Section() {
 /** Details column — width matches the resizable panel default. */
 export function SupportDetailsColumnSkeleton() {
   return (
-    <aside className="flex h-full min-h-0 w-full min-w-[260px] max-w-[480px] shrink-0 flex-col border-s border-[#E5E7EB] bg-white">
-      <header className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
+    <aside className="flex h-full min-h-0 w-full min-w-[260px] max-w-[480px] shrink-0 flex-col border-s border-[var(--admin-border)] bg-[var(--admin-panel)]">
+      <header className="flex shrink-0 items-center justify-between border-b border-[var(--admin-border)] px-4 py-3">
         <Block className="h-4 w-28" />
         <Block className="size-8 rounded-md" />
       </header>
-      <div className="flex gap-2 border-b border-[#E5E7EB] px-4 py-2">
+      <div className="flex gap-2 border-b border-[var(--admin-border)] px-4 py-2">
         <Block className="h-7 w-16 rounded-md" />
         <Block className="h-7 w-14 rounded-md" />
         <Block className="h-7 w-12 rounded-md" />

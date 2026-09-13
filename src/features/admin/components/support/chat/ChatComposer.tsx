@@ -414,7 +414,7 @@ export function ChatComposer({
   }
 
   return (
-    <div className="relative z-20 shrink-0 overflow-visible border-t border-[#E5E7EB] bg-[#F7F8FA]">
+    <div className="relative z-20 shrink-0 overflow-visible border-t border-[var(--wa-composer-border)] bg-[var(--wa-composer-bg)]">
       {templateOpen && conversationId && onSendTemplate ? (
         <div ref={templateRef}>
           <SessionExpiredTemplatePanel
@@ -483,7 +483,7 @@ export function ChatComposer({
                 <div ref={attachRef} className="relative z-30 mb-0.5 shrink-0">
                   <button
                     type="button"
-                    className="flex size-10 items-center justify-center rounded-full text-[#54656F] hover:bg-[#E9EDEF]"
+                    className="flex size-10 items-center justify-center rounded-full text-[var(--wa-composer-icon)] hover:bg-[var(--wa-composer-icon-hover-bg)]"
                     aria-label={t("admin.frontDesk.attach")}
                     aria-expanded={attachOpen}
                     onClick={() => {
@@ -509,7 +509,7 @@ export function ChatComposer({
                     />
                   ) : null}
                 </div>
-                <div className="relative flex min-w-0 flex-1 items-end gap-1 rounded-[24px] bg-[#E9EDEF] ps-3 pe-1.5 py-1.5">
+                <div className="relative flex min-w-0 flex-1 items-end gap-1 rounded-[24px] bg-[var(--wa-composer-field-bg)] ps-3 pe-1.5 py-1.5">
                   <textarea
                     ref={taRef}
                     value={draft}
@@ -554,7 +554,7 @@ export function ChatComposer({
                     }}
                     rows={1}
                     className={cn(
-                      "max-h-[140px] min-h-[28px] min-w-0 flex-1 resize-none bg-transparent py-1.5 text-[15px] leading-5 text-[#111B21] outline-none placeholder:text-[#8696A0]",
+                      "max-h-[140px] min-h-[28px] min-w-0 flex-1 resize-none bg-transparent py-1.5 text-[15px] leading-5 text-[var(--wa-composer-text)] outline-none placeholder:text-[var(--wa-composer-placeholder)]",
                       textDir === "rtl"
                         ? "text-right placeholder:text-right"
                         : "text-left placeholder:text-left",
@@ -566,8 +566,8 @@ export function ChatComposer({
                     <button
                       type="button"
                       className={cn(
-                        "flex size-8 items-center justify-center rounded-full text-[#54656F] hover:bg-[#D1D7DB]",
-                        emojiOpen && "bg-[#D1D7DB] text-[#111B21]",
+                        "flex size-8 items-center justify-center rounded-full text-[var(--wa-composer-icon)] hover:bg-[var(--wa-composer-icon-hover-bg)]",
+                        emojiOpen && "bg-[var(--wa-composer-icon-hover-bg)] text-[var(--wa-composer-text)]",
                       )}
                       aria-label={t("admin.frontDesk.emoji")}
                       aria-expanded={emojiOpen}
@@ -603,7 +603,7 @@ export function ChatComposer({
                     disabled={disabled}
                     data-showreel-action="whatsapp-voice"
                     whileTap={reduced || disabled ? undefined : { scale: 0.88 }}
-                    className="mb-0.5 flex size-10 shrink-0 items-center justify-center rounded-full text-[#54656F] hover:bg-[#E9EDEF] disabled:opacity-40"
+                    className="mb-0.5 flex size-10 shrink-0 items-center justify-center rounded-full text-[var(--wa-composer-icon)] hover:bg-[var(--wa-composer-icon-hover-bg)] disabled:opacity-40"
                     aria-label={t("admin.frontDesk.recordVoice")}
                     onClick={() => {
                       setAttachOpen(false);

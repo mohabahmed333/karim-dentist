@@ -44,7 +44,7 @@ export function EhrVisitPanel({ group, visits, onSelect }: Props) {
   return (
     <div
       data-ehr-node="visit-panel"
-      className="min-h-0 max-h-[280px] overflow-y-auto rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)] [&_td]:text-[var(--admin-primary)]"
+      className="min-h-0 max-h-[280px] overflow-y-auto rounded-xl bg-[var(--admin-panel)] [&_td]:text-[var(--admin-primary)]"
     >
       <CollectionTable
         tableId="ehr-visits"

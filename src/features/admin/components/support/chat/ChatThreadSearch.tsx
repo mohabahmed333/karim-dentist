@@ -90,9 +90,9 @@ export function ChatThreadSearch({
           .replace("{total}", String(hits.length));
 
   return (
-    <div className="shrink-0 border-b border-[#E5E7EB] bg-white">
+    <div className="shrink-0 border-b border-[var(--wa-surface-border)] bg-[var(--wa-surface-bg)]">
       <div className="flex items-center gap-1.5 px-3 py-2">
-        <Search className="h-4 w-4 shrink-0 text-[#9CA3AF]" aria-hidden />
+        <Search className="h-4 w-4 shrink-0 text-[var(--wa-surface-muted-text)]" aria-hidden />
         <input
           ref={inputRef}
           value={query}
@@ -111,16 +111,16 @@ export function ChatThreadSearch({
           placeholder={t("admin.frontDesk.searchMessagesPlaceholder")}
           aria-label={t("admin.frontDesk.searchMessagesAria")}
           aria-controls={resultsOpen ? listId : undefined}
-          className="min-w-0 flex-1 bg-transparent text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF]"
+          className="min-w-0 flex-1 bg-transparent text-sm text-[var(--wa-surface-text)] outline-none placeholder:text-[var(--wa-surface-muted-text)]"
         />
-        <span className="shrink-0 tabular-nums text-[11px] text-[#6B7280]">
+        <span className="shrink-0 tabular-nums text-[11px] text-[var(--wa-surface-muted-text)]">
           {query.trim() ? countLabel : null}
         </span>
         <button
           type="button"
           onClick={() => go(-1)}
           disabled={hits.length === 0}
-          className="rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6] disabled:opacity-40"
+          className="rounded-md p-1.5 text-[var(--wa-surface-muted-text)] hover:bg-[var(--wa-surface-hover)] disabled:opacity-40"
           aria-label={t("admin.frontDesk.searchPrev")}
         >
           <ChevronUp className="h-4 w-4" />
@@ -129,7 +129,7 @@ export function ChatThreadSearch({
           type="button"
           onClick={() => go(1)}
           disabled={hits.length === 0}
-          className="rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6] disabled:opacity-40"
+          className="rounded-md p-1.5 text-[var(--wa-surface-muted-text)] hover:bg-[var(--wa-surface-hover)] disabled:opacity-40"
           aria-label={t("admin.frontDesk.searchNext")}
         >
           <ChevronDown className="h-4 w-4" />
@@ -138,8 +138,8 @@ export function ChatThreadSearch({
           type="button"
           onClick={() => setResultsOpen((v) => !v)}
           className={cn(
-            "rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6]",
-            resultsOpen && "bg-[#F3F4F6] text-[#111827]",
+            "rounded-md p-1.5 text-[var(--wa-surface-muted-text)] hover:bg-[var(--wa-surface-hover)]",
+            resultsOpen && "bg-[var(--wa-surface-hover)] text-[var(--wa-surface-text)]",
           )}
           aria-expanded={resultsOpen}
           aria-label={
@@ -153,7 +153,7 @@ export function ChatThreadSearch({
         <button
           type="button"
           onClick={close}
-          className="rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6]"
+          className="rounded-md p-1.5 text-[var(--wa-surface-muted-text)] hover:bg-[var(--wa-surface-hover)]"
           aria-label={t("admin.frontDesk.hideMessageSearch")}
         >
           <X className="h-4 w-4" />
@@ -163,12 +163,12 @@ export function ChatThreadSearch({
       {resultsOpen && query.trim() ? (
         <ul
           id={listId}
-          className="max-h-44 overflow-y-auto border-t border-[#F3F4F6]"
+          className="max-h-44 overflow-y-auto border-t border-[var(--wa-surface-hover)]"
           role="listbox"
           aria-label={t("admin.frontDesk.searchMessages")}
         >
           {hits.length === 0 ? (
-            <li className="px-4 py-3 text-center text-xs text-[#9CA3AF]">
+            <li className="px-4 py-3 text-center text-xs text-[var(--wa-surface-muted-text)]">
               {t("admin.frontDesk.searchNoMatches")}
             </li>
           ) : (
@@ -180,17 +180,17 @@ export function ChatThreadSearch({
                     type="button"
                     onClick={() => jumpToIndex(index)}
                     className={cn(
-                      "flex w-full flex-col gap-0.5 px-4 py-2.5 text-start hover:bg-[#F9FAFB]",
-                      selected && "bg-[#EEF2FF]",
+                      "flex w-full flex-col gap-0.5 px-4 py-2.5 text-start hover:bg-[var(--wa-surface-hover)]",
+                      selected && "bg-[var(--wa-highlight-bg)]",
                     )}
                   >
-                    <span className="flex items-center justify-between gap-2 text-[11px] text-[#6B7280]">
-                      <span className="truncate font-medium text-[#374151]">
+                    <span className="flex items-center justify-between gap-2 text-[11px] text-[var(--wa-surface-muted-text)]">
+                      <span className="truncate font-medium text-[var(--wa-surface-text)]">
                         {hit.authorName}
                       </span>
                       <span className="shrink-0 tabular-nums">{hit.time}</span>
                     </span>
-                    <span className="line-clamp-2 text-xs text-[#111827]">
+                    <span className="line-clamp-2 text-xs text-[var(--wa-surface-text)]">
                       {hit.snippet}
                     </span>
                   </button>

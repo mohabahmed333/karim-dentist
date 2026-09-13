@@ -38,16 +38,16 @@ export function CustomizeSectionNav({ active, itemId }: Props) {
             aria-expanded={open}
             aria-haspopup="dialog"
             onClick={() => setOpen((value) => !value)}
-            className="flex max-w-[11rem] items-center gap-1.5 rounded-[6px] bg-[#ebebeb] px-2.5 py-1 text-[12px] font-medium text-[#1a1a1a] hover:bg-[#e2e2e2]"
+            className="flex max-w-[11rem] items-center gap-1.5 rounded-[6px] bg-[var(--admin-hover)] px-2.5 py-1 text-[12px] font-medium text-[var(--admin-text)] hover:bg-[var(--admin-active)]"
           >
             <span className="truncate">{t(SECTION_LABEL_KEYS[active])}</span>
             {count !== null ? (
-              <span className="text-[10px] tabular-nums text-[#8a8a8a]">
+              <span className="text-[10px] tabular-nums text-[var(--admin-muted)]">
                 {count}
               </span>
             ) : null}
             {itemId ? (
-              <span className="text-[10px] text-[#8a8a8a]">· item</span>
+              <span className="text-[10px] text-[var(--admin-muted)]">· item</span>
             ) : null}
             <ChevronDownIcon className="size-3.5 shrink-0 opacity-60" />
           </button>
@@ -55,7 +55,7 @@ export function CustomizeSectionNav({ active, itemId }: Props) {
       >
         <p
           id="customize-section-menu-title"
-          className="border-b border-[#f0f0f0] px-3 py-2 text-[12px] font-semibold text-[#1a1a1a]"
+          className="border-b border-[var(--admin-border)] px-3 py-2 text-[12px] font-semibold text-[var(--admin-text)]"
         >
           {t("admin.nav.content")}
         </p>
@@ -75,15 +75,15 @@ export function CustomizeSectionNav({ active, itemId }: Props) {
                   }}
                   className={
                     selected
-                      ? "flex w-full items-center gap-2 rounded-[6px] bg-[#f0f0f0] px-2.5 py-2 text-start text-[12px] font-medium text-[#1a1a1a]"
-                      : "flex w-full items-center gap-2 rounded-[6px] px-2.5 py-2 text-start text-[12px] text-[#1a1a1a] hover:bg-[#f5f5f5]"
+                      ? "flex w-full items-center gap-2 rounded-[6px] bg-[var(--admin-hover)] px-2.5 py-2 text-start text-[12px] font-medium text-[var(--admin-text)]"
+                      : "flex w-full items-center gap-2 rounded-[6px] px-2.5 py-2 text-start text-[12px] text-[var(--admin-text)] hover:bg-[var(--admin-hover)]"
                   }
                 >
                   <span className="min-w-0 flex-1 truncate">
                     {t(SECTION_LABEL_KEYS[section])}
                   </span>
                   {sectionCount !== null ? (
-                    <span className="text-[10px] tabular-nums text-[#8a8a8a]">
+                    <span className="text-[10px] tabular-nums text-[var(--admin-muted)]">
                       {sectionCount}
                     </span>
                   ) : null}

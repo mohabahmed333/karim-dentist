@@ -108,7 +108,7 @@ export function InboxMessagePreview({ conversation }: Props) {
 
   if (!meta || kind === "text") {
     return (
-      <div className="mt-0.5 flex min-w-0 items-center gap-1 text-sm text-[#6B7280]">
+      <div className="mt-0.5 flex min-w-0 items-center gap-1 text-sm text-[var(--wa-surface-muted-text)]">
         {showTicks ? (
           <span className="shrink-0">
             <MessageStatusTicks status={status} />

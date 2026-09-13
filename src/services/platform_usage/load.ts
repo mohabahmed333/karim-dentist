@@ -37,23 +37,32 @@ export type PlatformUsageData = PlatformUsageReport & {
 export async function loadPlatformUsage(
   deps: PlatformUsageDeps,
 ): Promise<PlatformUsageData> {
-  const storageUsedBytes = await deps.getStorageUsedBytes();
-  const databaseUsedBytes = deps.hasAccessToken
-    ? await deps.fetchDatabaseSize()
-    : null;
-  const egressUsedBytes = deps.hasAccessToken ? await deps.fetchEgress() : null;
-  const mau = deps.hasAccessToken ? await deps.fetchMau() : null;
-  const users = await deps.countAuthUsers();
+  const [
+    storageUsedBytes,
+    databaseUsedBytes,
+    egressUsedBytes,
+    mau,
+    users,
+    apiCounts,
+    kapsoMessagesUsed,
+    vercel,
+    aiRows,
+  ] = await Promise.all([
+    deps.getStorageUsedBytes(),
+    deps.hasAccessToken ? deps.fetchDatabaseSize() : Promise.resolve(null),
+    deps.hasAccessToken ? deps.fetchEgress() : Promise.resolve(null),
+    deps.hasAccessToken ? deps.fetchMau() : Promise.resolve(null),
+    deps.countAuthUsers(),
+    deps.hasAccessToken ? deps.fetchApiCounts() : Promise.resolve(null),
+    deps.countKapsoMessages(),
+    deps.hasVercelToken ? deps.fetchVercelUsage() : Promise.resolve(null),
+    // Null means the rows could not be read at all — which the page says
+    // differently from "no model has been asked anything today".
+    deps.fetchAiUsageToday?.() ?? Promise.resolve(null),
+  ]);
   const authMauUsed = mau ?? users;
   const authSource: AuthUsageSource =
     mau !== null ? "mau" : users !== null ? "users" : "unavailable";
-  const apiCounts = deps.hasAccessToken ? await deps.fetchApiCounts() : null;
-  const kapsoMessagesUsed = await deps.countKapsoMessages();
-  const vercel = deps.hasVercelToken ? await deps.fetchVercelUsage() : null;
-
-  // Null means the rows could not be read at all — which the page says
-  // differently from "no model has been asked anything today".
-  const aiRows = (await deps.fetchAiUsageToday?.()) ?? null;
   const aiUsage =
     aiRows === null
       ? null

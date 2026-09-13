@@ -72,7 +72,7 @@ export const LivePreview = memo(function LivePreview({
 
   return (
     <div
-      className="relative flex min-h-0 flex-1 flex-col bg-[#f0f0f0]"
+      className="relative flex min-h-0 flex-1 flex-col bg-[var(--admin-canvas)]"
       data-tour="preview"
     >
       <div className="flex shrink-0 justify-center px-5 pt-4 pb-2">

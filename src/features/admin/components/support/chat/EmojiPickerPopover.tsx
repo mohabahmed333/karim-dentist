@@ -14,7 +14,7 @@ type Props = {
 export function EmojiPickerPopover({ onPick }: Props) {
   const t = useTranslations();
   return (
-    <div className="absolute bottom-full end-0 z-30 mb-1.5 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-lg">
+    <div className="absolute bottom-full end-0 z-30 mb-1.5 overflow-hidden rounded-xl border border-[var(--wa-surface-border)] bg-[var(--wa-surface-bg)] shadow-lg">
       <Picker
         theme={Theme.LIGHT}
         width={320}

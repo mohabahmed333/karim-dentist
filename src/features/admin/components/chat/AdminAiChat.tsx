@@ -337,7 +337,7 @@ export function AdminAiChat({
               topSlot={
                 <>
                   {uploads.length > 0 ? (
-                    <div className="flex flex-wrap gap-2 border-b border-[#E8EAED] px-3 py-2">
+                    <div className="flex flex-wrap gap-2 border-b border-[var(--admin-border)] px-3 py-2">
                       {uploads.map((item) => (
                         <button
                           key={item.id}
@@ -350,7 +350,7 @@ export function AdminAiChat({
                               return prev.filter((u) => u.id !== item.id);
                             })
                           }
-                          className="relative size-14 overflow-hidden rounded-lg border border-[#E8EAED]"
+                          className="relative size-14 overflow-hidden rounded-lg border border-[var(--admin-border)]"
                           title={t("admin.chat.remove")}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}

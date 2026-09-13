@@ -29,7 +29,7 @@ describe("showreelBubbleClass", () => {
 
   it("keeps the shared skin when nothing overrides it", () => {
     const cls = showreelBubbleClass(false);
-    assert.ok(cls.includes("bg-white"));
-    assert.ok(cls.includes("text-[#111111]"));
+    assert.ok(cls.includes("bg-[var(--admin-panel)]"));
+    assert.ok(cls.includes("text-[var(--admin-text)]"));
   });
 });

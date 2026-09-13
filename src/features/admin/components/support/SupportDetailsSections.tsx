@@ -68,25 +68,27 @@ export function SupportDetailsSections({
       >
         <div className="space-y-2">
           {details.tickets.length === 0 ? (
-            <p className="text-xs text-[#9CA3AF]">
+            <p className="text-xs text-[var(--admin-muted)]">
               {t("admin.frontDesk.noVisits")}
             </p>
           ) : null}
           {details.tickets.map((ticket) => (
             <div
               key={ticket.id}
-              className="flex items-start gap-2 rounded-md border border-[#E5E7EB] p-2"
+              className="flex items-start gap-2 rounded-md border border-[var(--admin-border)] p-2"
             >
-              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#FEE2E2] text-[#DC2626]">
+              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300">
                 <FileText className="h-3.5 w-3.5" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-[12px] font-semibold text-[#111827]">
+                <p className="text-[12px] font-semibold text-[var(--admin-text)]">
                   {ticket.title}
                 </p>
-                <p className="text-[11px] text-[#6B7280]">{ticket.creator}</p>
+                <p className="text-[11px] text-[var(--admin-muted)]">
+                  {ticket.creator}
+                </p>
               </div>
-              <span className="shrink-0 rounded bg-[#F3F4F6] px-1.5 py-0.5 text-[10px] font-medium text-[#374151]">
+              <span className="shrink-0 rounded bg-[var(--admin-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--admin-text)]">
                 {ticket.status}
               </span>
             </div>

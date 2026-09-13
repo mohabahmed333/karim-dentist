@@ -1,15 +1,9 @@
 import { INBOX_WIDTH_DEFAULT } from "./inboxColumnWidth";
-import { Skeleton } from "@/components/ui/skeleton";
-
-const bone = "bg-[#E8EAED]";
-
-function Block({ className }: { className?: string }) {
-  return <Skeleton className={`${bone} ${className ?? ""}`} />;
-}
+import { AdminSkeleton as Block } from "@/features/admin/components/AdminSkeleton";
 
 function InboxRow() {
   return (
-    <div className="flex w-full gap-3.5 border-b border-[#E5E7EB] px-4 py-3.5">
+    <div className="flex w-full gap-3.5 border-b border-[var(--admin-border)] px-4 py-3.5">
       <Block className="h-11 w-11 shrink-0 rounded-full" />
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex items-start justify-between gap-2">
@@ -27,10 +21,10 @@ function InboxRow() {
 export function SupportInboxColumnSkeleton() {
   return (
     <aside
-      className="flex h-full min-h-0 shrink-0 flex-col border-r border-[#E5E7EB] bg-white"
+      className="flex h-full min-h-0 shrink-0 flex-col border-r border-[var(--admin-border)] bg-[var(--admin-panel)]"
       style={{ width: INBOX_WIDTH_DEFAULT }}
     >
-      <div className="shrink-0 border-b border-[#E5E7EB] px-4 py-3">
+      <div className="shrink-0 border-b border-[var(--admin-border)] px-4 py-3">
         <div className="flex items-center justify-between gap-2">
           <Block className="h-5 w-28" />
           <Block className="size-8 rounded-md" />
@@ -48,4 +42,3 @@ export function SupportInboxColumnSkeleton() {
     </aside>
   );
 }
-

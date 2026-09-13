@@ -8,7 +8,7 @@ import {
   SUPPORT_CONVERSATIONS,
   SUPPORT_DETAILS,
   SUPPORT_MESSAGES,
-} from "@/features/admin/components/support/supportDummyData";
+} from "./buildShowreelSupportFixtureData";
 import type { AdminDemoInbox } from "@/features/admin/lib/adminDemoInbox";
 import { buildShowreelDashboardProps } from "./buildShowreelDashboardProps";
 import { WHATSAPP_SHOWREEL_SCRIPT } from "./fixtures/whatsappFixtures";

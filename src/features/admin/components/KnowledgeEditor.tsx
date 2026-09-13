@@ -11,10 +11,9 @@ import {
 } from "@/services/clinic_knowledge";
 import { useBoardCrud } from "../hooks/useBoardCrud";
 import { LocalizedAdminPageHeader } from "./LocalizedAdminPageHeader";
-import { CollectionSplitLayout } from "./CollectionSplitLayout";
 import { CollectionTable } from "./CollectionTable";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
-import { KnowledgeEditCard } from "./KnowledgeEditCard";
+import { KnowledgeFormDialog } from "./KnowledgeFormDialog";
 import { Button } from "@/components/ui/button";
 
 type Props = { items: ClinicKnowledge[] };
@@ -55,84 +54,79 @@ export function KnowledgeEditor({ items: initial }: Props) {
           </Button>
         }
       />
-      <CollectionSplitLayout
-        list={
-          <div className="p-2">
-            <CollectionTable
-              tableId="clinic_knowledge"
-              rows={board.items}
-              selectedId={board.selected?.id}
-              emptyMessage={t("admin.pages.knowledge.empty")}
-              onRowClick={board.openItem}
-              bulkEntityLabel={t("admin.pages.knowledge.title").toLowerCase()}
-              rowActions={[
-                {
-                  id: "edit",
-                  label: t("admin.edit"),
-                  icon: "edit",
-                  onClick: (r) => board.openItem(r.id),
-                },
-                {
-                  id: "delete",
-                  label: t("admin.delete"),
-                  icon: "delete",
-                  tone: "danger",
-                  onClick: (r) => {
-                    board.openItem(r.id);
-                    setDeleteOpen(true);
-                  },
-                },
-              ]}
-              bulkActions={[
-                {
-                  id: "delete",
-                  label: t("admin.table.bulkDelete"),
-                  tone: "danger",
-                  onClick: async (selected) => {
-                    for (const row of selected) {
-                      await softDeleteClinicKnowledge(row.id);
-                    }
-                    toast.success(t("admin.delete"));
-                    window.location.reload();
-                  },
-                },
-              ]}
-              columns={[
-                {
-                  key: "title",
-                  header: t("admin.pages.knowledge.entry"),
-                  sortValue: (r) => r.title,
-                  searchValue: (r) =>
-                    `${r.title} ${r.title_ar ?? ""} ${r.body} ${r.body_ar ?? ""}`,
-                  cell: (r) => r.title,
-                },
-                {
-                  key: "tags",
-                  header: t("admin.pages.knowledge.tags"),
-                  sortValue: (r) => (r.tags ?? []).join(","),
-                  cell: (r) => (r.tags ?? []).join(", "),
-                },
-                {
-                  key: "published",
-                  header: t("admin.cms.published"),
-                  sortValue: (r) => (r.is_published ? 1 : 0),
-                  cell: (r) => (r.is_published ? t("admin.yes") : t("admin.no")),
-                },
-              ]}
-            />
-          </div>
-        }
-        detail={
-          board.selected ? (
-            <KnowledgeEditCard
-              item={board.selected}
-              pending={board.pending}
-              message={board.message}
-              onSubmit={board.onSave}
-              onDeleteClick={() => setDeleteOpen(true)}
-            />
-          ) : null
-        }
+      <CollectionTable
+        framed
+        tableId="clinic_knowledge"
+        rows={board.items}
+        selectedId={board.selected?.id}
+        emptyMessage={t("admin.pages.knowledge.empty")}
+        onRowClick={board.openItem}
+        bulkEntityLabel={t("admin.pages.knowledge.title").toLowerCase()}
+        rowActions={[
+          {
+            id: "edit",
+            label: t("admin.edit"),
+            icon: "edit",
+            onClick: (r) => board.openItem(r.id),
+          },
+          {
+            id: "delete",
+            label: t("admin.delete"),
+            icon: "delete",
+            tone: "danger",
+            onClick: (r) => {
+              board.openItem(r.id);
+              setDeleteOpen(true);
+            },
+          },
+        ]}
+        bulkActions={[
+          {
+            id: "delete",
+            label: t("admin.table.bulkDelete"),
+            tone: "danger",
+            onClick: async (selected) => {
+              for (const row of selected) {
+                await softDeleteClinicKnowledge(row.id);
+              }
+              toast.success(t("admin.delete"));
+              window.location.reload();
+            },
+          },
+        ]}
+        columns={[
+          {
+            key: "title",
+            header: t("admin.pages.knowledge.entry"),
+            sortValue: (r) => r.title,
+            searchValue: (r) =>
+              `${r.title} ${r.title_ar ?? ""} ${r.body} ${r.body_ar ?? ""}`,
+            cell: (r) => r.title,
+          },
+          {
+            key: "tags",
+            header: t("admin.pages.knowledge.tags"),
+            sortValue: (r) => (r.tags ?? []).join(","),
+            cell: (r) => (r.tags ?? []).join(", "),
+          },
+          {
+            key: "published",
+            header: t("admin.cms.published"),
+            sortValue: (r) => (r.is_published ? 1 : 0),
+            cell: (r) => (r.is_published ? t("admin.yes") : t("admin.no")),
+          },
+        ]}
+      />
+      <KnowledgeFormDialog
+        open={Boolean(board.selected)}
+        item={board.selected}
+        pending={board.pending}
+        message={board.message}
+        onOpenChange={(open) => {
+          if (!open) board.close();
+        }}
+        onSubmit={board.onSave}
+        onDeleteClick={() => setDeleteOpen(true)}
       />
       <ConfirmDeleteDialog
         open={deleteOpen}

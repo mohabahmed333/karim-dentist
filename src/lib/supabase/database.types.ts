@@ -44,39 +44,39 @@ export type Database = {
           body: string
           body_ar: string
           copy_image_url: string | null
-          copy_media_type: string
+          copy_media_type: "image" | "video"
           created_at: string
           drop_cap: string
           drop_cap_logo_url: string | null
           id: string
           image_url: string | null
-          media_type: string
+          media_type: "image" | "video"
           updated_at: string
         }
         Insert: {
           body?: string
           body_ar?: string
           copy_image_url?: string | null
-          copy_media_type?: string
+          copy_media_type?: "image" | "video"
           created_at?: string
           drop_cap?: string
           drop_cap_logo_url?: string | null
           id?: string
           image_url?: string | null
-          media_type?: string
+          media_type?: "image" | "video"
           updated_at?: string
         }
         Update: {
           body?: string
           body_ar?: string
           copy_image_url?: string | null
-          copy_media_type?: string
+          copy_media_type?: "image" | "video"
           created_at?: string
           drop_cap?: string
           drop_cap_logo_url?: string | null
           id?: string
           image_url?: string | null
-          media_type?: string
+          media_type?: "image" | "video"
           updated_at?: string
         }
         Relationships: []
@@ -123,7 +123,7 @@ export type Database = {
           created_at: string
           error_message: string | null
           id: string
-          outcome: string
+          outcome: "proposed" | "confirmed" | "cancelled" | "failed" | "stale"
           proposal_id: string | null
           target: string
         }
@@ -135,7 +135,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           id?: string
-          outcome: string
+          outcome: "proposed" | "confirmed" | "cancelled" | "failed" | "stale"
           proposal_id?: string | null
           target?: string
         }
@@ -147,7 +147,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           id?: string
-          outcome?: string
+          outcome?: "proposed" | "confirmed" | "cancelled" | "failed" | "stale"
           proposal_id?: string | null
           target?: string
         }
@@ -173,8 +173,8 @@ export type Database = {
           patient_key: string | null
           result: Json | null
           snapshot_hash: string
-          source: string
-          status: string
+          source: "clinic-chat" | "treatment-chat"
+          status: "pending" | "confirmed" | "cancelled" | "expired" | "failed"
           summary: string
           updated_at: string
         }
@@ -189,8 +189,8 @@ export type Database = {
           patient_key?: string | null
           result?: Json | null
           snapshot_hash: string
-          source?: string
-          status?: string
+          source?: "clinic-chat" | "treatment-chat"
+          status?: "pending" | "confirmed" | "cancelled" | "expired" | "failed"
           summary?: string
           updated_at?: string
         }
@@ -205,8 +205,8 @@ export type Database = {
           patient_key?: string | null
           result?: Json | null
           snapshot_hash?: string
-          source?: string
-          status?: string
+          source?: "clinic-chat" | "treatment-chat"
+          status?: "pending" | "confirmed" | "cancelled" | "expired" | "failed"
           summary?: string
           updated_at?: string
         }
@@ -255,7 +255,7 @@ export type Database = {
           id: string
           reservation_id: string | null
           starts_at: string
-          status: string
+          status: "open" | "booked" | "cancelled"
           updated_at: string
         }
         Insert: {
@@ -264,7 +264,7 @@ export type Database = {
           id?: string
           reservation_id?: string | null
           starts_at: string
-          status?: string
+          status?: "open" | "booked" | "cancelled"
           updated_at?: string
         }
         Update: {
@@ -273,7 +273,7 @@ export type Database = {
           id?: string
           reservation_id?: string | null
           starts_at?: string
-          status?: string
+          status?: "open" | "booked" | "cancelled"
           updated_at?: string
         }
         Relationships: [
@@ -391,7 +391,7 @@ export type Database = {
           director: string | null
           id: string
           is_published: boolean
-          media_type: string
+          media_type: "image" | "video"
           media_url: string | null
           production_company: string | null
           slug: string | null
@@ -413,7 +413,7 @@ export type Database = {
           director?: string | null
           id?: string
           is_published?: boolean
-          media_type?: string
+          media_type?: "image" | "video"
           media_url?: string | null
           production_company?: string | null
           slug?: string | null
@@ -435,7 +435,7 @@ export type Database = {
           director?: string | null
           id?: string
           is_published?: boolean
-          media_type?: string
+          media_type?: "image" | "video"
           media_url?: string | null
           production_company?: string | null
           slug?: string | null
@@ -501,7 +501,7 @@ export type Database = {
           deleted_at: string | null
           id: string
           logo_url: string | null
-          media_type: string
+          media_type: "image" | "video"
           name: string
           sort_order: number
           updated_at: string
@@ -511,7 +511,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           logo_url?: string | null
-          media_type?: string
+          media_type?: "image" | "video"
           name: string
           sort_order?: number
           updated_at?: string
@@ -521,7 +521,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           logo_url?: string | null
-          media_type?: string
+          media_type?: "image" | "video"
           name?: string
           sort_order?: number
           updated_at?: string
@@ -552,7 +552,7 @@ export type Database = {
           created_at: string
           id: string
           meta: Json
-          role: string
+          role: "user" | "assistant" | "system"
           thread_id: string
         }
         Insert: {
@@ -560,7 +560,7 @@ export type Database = {
           created_at?: string
           id?: string
           meta?: Json
-          role: string
+          role: "user" | "assistant" | "system"
           thread_id: string
         }
         Update: {
@@ -568,7 +568,7 @@ export type Database = {
           created_at?: string
           id?: string
           meta?: Json
-          role?: string
+          role?: "user" | "assistant" | "system"
           thread_id?: string
         }
         Relationships: [
@@ -587,7 +587,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
-          kind: string
+          kind: "home" | "session"
           title: string
           updated_at: string
         }
@@ -596,7 +596,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
-          kind?: string
+          kind?: "home" | "session"
           title?: string
           updated_at?: string
         }
@@ -605,7 +605,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
-          kind?: string
+          kind?: "home" | "session"
           title?: string
           updated_at?: string
         }
@@ -1058,7 +1058,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_published: boolean
-          media_type: string
+          media_type: "image" | "video"
           meta_left: string | null
           meta_right: string | null
           slug: string | null
@@ -1075,7 +1075,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_published?: boolean
-          media_type?: string
+          media_type?: "image" | "video"
           meta_left?: string | null
           meta_right?: string | null
           slug?: string | null
@@ -1092,7 +1092,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_published?: boolean
-          media_type?: string
+          media_type?: "image" | "video"
           meta_left?: string | null
           meta_right?: string | null
           slug?: string | null
@@ -1105,10 +1105,10 @@ export type Database = {
       }
       footer_links: {
         Row: {
-          column_key: string
+          column_key: "portfolio" | "resources" | "follow"
           created_at: string
           deleted_at: string | null
-          display_mode: string
+          display_mode: "text" | "icon"
           href: string
           icon_key: string | null
           icon_url: string | null
@@ -1119,10 +1119,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          column_key: string
+          column_key: "portfolio" | "resources" | "follow"
           created_at?: string
           deleted_at?: string | null
-          display_mode?: string
+          display_mode?: "text" | "icon"
           href?: string
           icon_key?: string | null
           icon_url?: string | null
@@ -1133,10 +1133,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          column_key?: string
+          column_key?: "portfolio" | "resources" | "follow"
           created_at?: string
           deleted_at?: string | null
-          display_mode?: string
+          display_mode?: "text" | "icon"
           href?: string
           icon_key?: string | null
           icon_url?: string | null
@@ -1261,7 +1261,7 @@ export type Database = {
           kicker: string
           kicker_ar: string
           layout: string
-          media_type: string
+          media_type: "image" | "video"
           media_url: string | null
           media_url_desktop: string | null
           media_url_mobile: string | null
@@ -1286,7 +1286,7 @@ export type Database = {
           kicker?: string
           kicker_ar?: string
           layout?: string
-          media_type?: string
+          media_type?: "image" | "video"
           media_url?: string | null
           media_url_desktop?: string | null
           media_url_mobile?: string | null
@@ -1311,7 +1311,7 @@ export type Database = {
           kicker?: string
           kicker_ar?: string
           layout?: string
-          media_type?: string
+          media_type?: "image" | "video"
           media_url?: string | null
           media_url_desktop?: string | null
           media_url_mobile?: string | null
@@ -1326,8 +1326,8 @@ export type Database = {
           id: string
           note: string
           patient_key: string
-          severity: string
-          status: string
+          severity: "LOW" | "MED" | "HIGH" | "CRITICAL"
+          status: "ACTIVE" | "RESOLVED" | "MONITORING"
           tooth_fdi: string
           updated_at: string
           vitality_index: number | null
@@ -1338,8 +1338,8 @@ export type Database = {
           id?: string
           note?: string
           patient_key: string
-          severity?: string
-          status?: string
+          severity?: "LOW" | "MED" | "HIGH" | "CRITICAL"
+          status?: "ACTIVE" | "RESOLVED" | "MONITORING"
           tooth_fdi: string
           updated_at?: string
           vitality_index?: number | null
@@ -1350,8 +1350,8 @@ export type Database = {
           id?: string
           note?: string
           patient_key?: string
-          severity?: string
-          status?: string
+          severity?: "LOW" | "MED" | "HIGH" | "CRITICAL"
+          status?: "ACTIVE" | "RESOLVED" | "MONITORING"
           tooth_fdi?: string
           updated_at?: string
           vitality_index?: number | null
@@ -1361,42 +1361,42 @@ export type Database = {
       patient_clinical_notes: {
         Row: {
           author: string
-          category: string
+          category: "SOAP" | "Quick Note" | "Alert" | "Lab"
           content: string
           created_at: string
           created_by: string | null
           id: string
           patient_key: string
           target_id: string
-          target_kind: string
+          target_kind: "visit" | "tooth" | "treatment"
           tooth_fdi: string | null
           treatment_id: string | null
           updated_at: string
         }
         Insert: {
           author?: string
-          category: string
+          category: "SOAP" | "Quick Note" | "Alert" | "Lab"
           content: string
           created_at?: string
           created_by?: string | null
           id?: string
           patient_key: string
           target_id?: string
-          target_kind?: string
+          target_kind?: "visit" | "tooth" | "treatment"
           tooth_fdi?: string | null
           treatment_id?: string | null
           updated_at?: string
         }
         Update: {
           author?: string
-          category?: string
+          category?: "SOAP" | "Quick Note" | "Alert" | "Lab"
           content?: string
           created_at?: string
           created_by?: string | null
           id?: string
           patient_key?: string
           target_id?: string
-          target_kind?: string
+          target_kind?: "visit" | "tooth" | "treatment"
           tooth_fdi?: string | null
           treatment_id?: string | null
           updated_at?: string
@@ -1417,7 +1417,7 @@ export type Database = {
           file_name: string
           file_url: string
           id: string
-          kind: string
+          kind: "xray" | "cbct" | "photo"
           mime_type: string
           patient_key: string
           taken_at: string | null
@@ -1431,7 +1431,7 @@ export type Database = {
           file_name: string
           file_url: string
           id?: string
-          kind?: string
+          kind?: "xray" | "cbct" | "photo"
           mime_type?: string
           patient_key: string
           taken_at?: string | null
@@ -1445,7 +1445,7 @@ export type Database = {
           file_name?: string
           file_url?: string
           id?: string
-          kind?: string
+          kind?: "xray" | "cbct" | "photo"
           mime_type?: string
           patient_key?: string
           taken_at?: string | null
@@ -1464,7 +1464,7 @@ export type Database = {
           id: string
           notes: string
           patient_key: string
-          status: string
+          status: "IMPRESSION" | "FABRICATION" | "SHIPPED" | "DELIVERED"
           tooth_fdi: string | null
           updated_at: string
         }
@@ -1475,7 +1475,7 @@ export type Database = {
           id?: string
           notes?: string
           patient_key: string
-          status?: string
+          status?: "IMPRESSION" | "FABRICATION" | "SHIPPED" | "DELIVERED"
           tooth_fdi?: string | null
           updated_at?: string
         }
@@ -1486,7 +1486,7 @@ export type Database = {
           id?: string
           notes?: string
           patient_key?: string
-          status?: string
+          status?: "IMPRESSION" | "FABRICATION" | "SHIPPED" | "DELIVERED"
           tooth_fdi?: string | null
           updated_at?: string
         }
@@ -1681,12 +1681,12 @@ export type Database = {
           created_by: string | null
           dose: string
           duration_days: number
-          frequency: string
+          frequency: "ONCE_DAILY" | "TWICE_DAILY" | "NIGHT_ONLY"
           id: string
           instructions: string
           medication: string
           patient_key: string
-          status: string
+          status: "ACTIVE" | "EXPIRED"
           tooth_fdi: string | null
           updated_at: string
         }
@@ -1695,12 +1695,12 @@ export type Database = {
           created_by?: string | null
           dose: string
           duration_days?: number
-          frequency: string
+          frequency: "ONCE_DAILY" | "TWICE_DAILY" | "NIGHT_ONLY"
           id?: string
           instructions?: string
           medication: string
           patient_key: string
-          status?: string
+          status?: "ACTIVE" | "EXPIRED"
           tooth_fdi?: string | null
           updated_at?: string
         }
@@ -1709,12 +1709,12 @@ export type Database = {
           created_by?: string | null
           dose?: string
           duration_days?: number
-          frequency?: string
+          frequency?: "ONCE_DAILY" | "TWICE_DAILY" | "NIGHT_ONLY"
           id?: string
           instructions?: string
           medication?: string
           patient_key?: string
-          status?: string
+          status?: "ACTIVE" | "EXPIRED"
           tooth_fdi?: string | null
           updated_at?: string
         }
@@ -1728,7 +1728,7 @@ export type Database = {
           date_of_birth: string | null
           display_name: string
           email: string | null
-          gender: string
+          gender: "" | "female" | "male" | "other" | "prefer_not"
           id: string
           medical_history: string[]
           medications: string
@@ -1744,7 +1744,7 @@ export type Database = {
           date_of_birth?: string | null
           display_name?: string
           email?: string | null
-          gender?: string
+          gender?: "" | "female" | "male" | "other" | "prefer_not"
           id?: string
           medical_history?: string[]
           medications?: string
@@ -1760,7 +1760,7 @@ export type Database = {
           date_of_birth?: string | null
           display_name?: string
           email?: string | null
-          gender?: string
+          gender?: "" | "female" | "male" | "other" | "prefer_not"
           id?: string
           medical_history?: string[]
           medications?: string
@@ -1839,45 +1839,45 @@ export type Database = {
       patient_tooth_surfaces: {
         Row: {
           created_at: string
-          dentition: string
-          distal: string
-          facial: string
+          dentition: "adult" | "primary"
+          distal: "unmarked" | "decay" | "filling"
+          facial: "unmarked" | "decay" | "filling"
           fdi_number: string
           id: string
-          lingual: string
-          mesial: string
-          occlusal: string
+          lingual: "unmarked" | "decay" | "filling"
+          mesial: "unmarked" | "decay" | "filling"
+          occlusal: "unmarked" | "decay" | "filling"
           patient_key: string
           updated_at: string
-          whole: string
+          whole: "none" | "crown" | "missing"
         }
         Insert: {
           created_at?: string
-          dentition?: string
-          distal?: string
-          facial?: string
+          dentition?: "adult" | "primary"
+          distal?: "unmarked" | "decay" | "filling"
+          facial?: "unmarked" | "decay" | "filling"
           fdi_number: string
           id?: string
-          lingual?: string
-          mesial?: string
-          occlusal?: string
+          lingual?: "unmarked" | "decay" | "filling"
+          mesial?: "unmarked" | "decay" | "filling"
+          occlusal?: "unmarked" | "decay" | "filling"
           patient_key: string
           updated_at?: string
-          whole?: string
+          whole?: "none" | "crown" | "missing"
         }
         Update: {
           created_at?: string
-          dentition?: string
-          distal?: string
-          facial?: string
+          dentition?: "adult" | "primary"
+          distal?: "unmarked" | "decay" | "filling"
+          facial?: "unmarked" | "decay" | "filling"
           fdi_number?: string
           id?: string
-          lingual?: string
-          mesial?: string
-          occlusal?: string
+          lingual?: "unmarked" | "decay" | "filling"
+          mesial?: "unmarked" | "decay" | "filling"
+          occlusal?: "unmarked" | "decay" | "filling"
           patient_key?: string
           updated_at?: string
-          whole?: string
+          whole?: "none" | "crown" | "missing"
         }
         Relationships: []
       }
@@ -1888,7 +1888,7 @@ export type Database = {
           file_url: string
           id: string
           imaging_id: string | null
-          kind: string
+          kind: "file" | "image" | "xray"
           mime_type: string
           treatment_id: string
         }
@@ -1898,7 +1898,7 @@ export type Database = {
           file_url: string
           id?: string
           imaging_id?: string | null
-          kind?: string
+          kind?: "file" | "image" | "xray"
           mime_type?: string
           treatment_id: string
         }
@@ -1908,7 +1908,7 @@ export type Database = {
           file_url?: string
           id?: string
           imaging_id?: string | null
-          kind?: string
+          kind?: "file" | "image" | "xray"
           mime_type?: string
           treatment_id?: string
         }
@@ -1941,10 +1941,10 @@ export type Database = {
           id: string
           last_treatment: string
           patient_key: string
-          phase: string
+          phase: "urgent" | "restorative" | "prosthodontic"
           reservation_id: string | null
-          severity: string
-          status: string
+          severity: "Critical" | "Minor"
+          status: "open" | "scheduled" | "done"
           tooth_fdi: string | null
           tooth_name: string
           updated_at: string
@@ -1960,10 +1960,10 @@ export type Database = {
           id?: string
           last_treatment?: string
           patient_key: string
-          phase?: string
+          phase?: "urgent" | "restorative" | "prosthodontic"
           reservation_id?: string | null
-          severity?: string
-          status?: string
+          severity?: "Critical" | "Minor"
+          status?: "open" | "scheduled" | "done"
           tooth_fdi?: string | null
           tooth_name: string
           updated_at?: string
@@ -1979,10 +1979,10 @@ export type Database = {
           id?: string
           last_treatment?: string
           patient_key?: string
-          phase?: string
+          phase?: "urgent" | "restorative" | "prosthodontic"
           reservation_id?: string | null
-          severity?: string
-          status?: string
+          severity?: "Critical" | "Minor"
+          status?: "open" | "scheduled" | "done"
           tooth_fdi?: string | null
           tooth_name?: string
           updated_at?: string
@@ -2036,7 +2036,7 @@ export type Database = {
           id: string
           job_title: string | null
           phone: string | null
-          role: string
+          role: "admin" | "viewer"
           role_id: string | null
           updated_at: string
         }
@@ -2048,7 +2048,7 @@ export type Database = {
           id: string
           job_title?: string | null
           phone?: string | null
-          role?: string
+          role?: "admin" | "viewer"
           role_id?: string | null
           updated_at?: string
         }
@@ -2060,7 +2060,7 @@ export type Database = {
           id?: string
           job_title?: string | null
           phone?: string | null
-          role?: string
+          role?: "admin" | "viewer"
           role_id?: string | null
           updated_at?: string
         }
@@ -2109,7 +2109,7 @@ export type Database = {
           service_id: string | null
           service_label: string
           starts_at: string
-          status: string
+          status: "pending" | "confirmed" | "cancelled" | "completed" | "no_show"
           updated_at: string
         }
         Insert: {
@@ -2125,7 +2125,7 @@ export type Database = {
           service_id?: string | null
           service_label: string
           starts_at: string
-          status?: string
+          status?: "pending" | "confirmed" | "cancelled" | "completed" | "no_show"
           updated_at?: string
         }
         Update: {
@@ -2141,7 +2141,7 @@ export type Database = {
           service_id?: string | null
           service_label?: string
           starts_at?: string
-          status?: string
+          status?: "pending" | "confirmed" | "cancelled" | "completed" | "no_show"
           updated_at?: string
         }
         Relationships: [
@@ -2232,8 +2232,8 @@ export type Database = {
           id: string
           image_url: string | null
           is_published: boolean
-          kind: string
-          media_type: string
+          kind: "our_services" | "laser"
+          media_type: "image" | "video"
           slug: string | null
           sort_order: number
           tags: string[]
@@ -2249,8 +2249,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_published?: boolean
-          kind?: string
-          media_type?: string
+          kind?: "our_services" | "laser"
+          media_type?: "image" | "video"
           slug?: string | null
           sort_order?: number
           tags?: string[]
@@ -2266,8 +2266,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_published?: boolean
-          kind?: string
-          media_type?: string
+          kind?: "our_services" | "laser"
+          media_type?: "image" | "video"
           slug?: string | null
           sort_order?: number
           tags?: string[]
@@ -2574,7 +2574,7 @@ export type Database = {
           title: string
           title_ar: string
           updated_at: string
-          variant: string
+          variant: "dark" | "photo"
         }
         Insert: {
           body?: string
@@ -2587,7 +2587,7 @@ export type Database = {
           title: string
           title_ar?: string
           updated_at?: string
-          variant?: string
+          variant?: "dark" | "photo"
         }
         Update: {
           body?: string
@@ -2600,7 +2600,7 @@ export type Database = {
           title?: string
           title_ar?: string
           updated_at?: string
-          variant?: string
+          variant?: "dark" | "photo"
         }
         Relationships: []
       }
@@ -2662,7 +2662,7 @@ export type Database = {
           confidence: number | null
           conversation_id: string
           created_at: string
-          decision: string
+          decision: "auto_send" | "draft" | "skip" | "error"
           envelope: Json
           handoff: boolean
           id: string
@@ -2679,7 +2679,7 @@ export type Database = {
           confidence?: number | null
           conversation_id: string
           created_at?: string
-          decision: string
+          decision: "auto_send" | "draft" | "skip" | "error"
           envelope?: Json
           handoff?: boolean
           id?: string
@@ -2745,7 +2745,7 @@ export type Database = {
           outbound_message_id: string | null
           send_started_at: string | null
           skip_reason: string | null
-          status: string
+          status: "queued" | "running" | "sent" | "drafted" | "skipped" | "failed" | "abandoned"
           updated_at: string
         }
         Insert: {
@@ -2759,7 +2759,7 @@ export type Database = {
           outbound_message_id?: string | null
           send_started_at?: string | null
           skip_reason?: string | null
-          status?: string
+          status?: "queued" | "running" | "sent" | "drafted" | "skipped" | "failed" | "abandoned"
           updated_at?: string
         }
         Update: {
@@ -2773,7 +2773,7 @@ export type Database = {
           outbound_message_id?: string | null
           send_started_at?: string | null
           skip_reason?: string | null
-          status?: string
+          status?: "queued" | "running" | "sent" | "drafted" | "skipped" | "failed" | "abandoned"
           updated_at?: string
         }
         Relationships: [
@@ -2809,7 +2809,7 @@ export type Database = {
           id: string
           max_replies_global_per_hour: number
           max_replies_per_conversation_per_hour: number
-          mode: string
+          mode: "off" | "draft_only" | "auto"
           updated_at: string
         }
         Insert: {
@@ -2820,7 +2820,7 @@ export type Database = {
           id?: string
           max_replies_global_per_hour?: number
           max_replies_per_conversation_per_hour?: number
-          mode?: string
+          mode?: "off" | "draft_only" | "auto"
           updated_at?: string
         }
         Update: {
@@ -2831,7 +2831,7 @@ export type Database = {
           id?: string
           max_replies_global_per_hour?: number
           max_replies_per_conversation_per_hour?: number
-          mode?: string
+          mode?: "off" | "draft_only" | "auto"
           updated_at?: string
         }
         Relationships: []
@@ -2846,7 +2846,7 @@ export type Database = {
           paused_until: string | null
           pending: Json
           state_expires_at: string | null
-          step: string
+          step: "idle" | "collecting" | "awaiting_slot" | "awaiting_confirm"
           updated_at: string
         }
         Insert: {
@@ -2858,7 +2858,7 @@ export type Database = {
           paused_until?: string | null
           pending?: Json
           state_expires_at?: string | null
-          step?: string
+          step?: "idle" | "collecting" | "awaiting_slot" | "awaiting_confirm"
           updated_at?: string
         }
         Update: {
@@ -2870,7 +2870,7 @@ export type Database = {
           paused_until?: string | null
           pending?: Json
           state_expires_at?: string | null
-          step?: string
+          step?: "idle" | "collecting" | "awaiting_slot" | "awaiting_confirm"
           updated_at?: string
         }
         Relationships: [
@@ -2955,7 +2955,7 @@ export type Database = {
           phone_number: string
           phone_suffix: string | null
           starred: boolean
-          status: string
+          status: "active" | "ended" | "archived"
           tags: string[]
           unread_count: number
           updated_at: string
@@ -2977,7 +2977,7 @@ export type Database = {
           phone_number: string
           phone_suffix?: string | null
           starred?: boolean
-          status?: string
+          status?: "active" | "ended" | "archived"
           tags?: string[]
           unread_count?: number
           updated_at?: string
@@ -2999,7 +2999,7 @@ export type Database = {
           phone_number?: string
           phone_suffix?: string | null
           starred?: boolean
-          status?: string
+          status?: "active" | "ended" | "archived"
           tags?: string[]
           unread_count?: number
           updated_at?: string
@@ -3019,7 +3019,7 @@ export type Database = {
           body: string
           conversation_id: string
           created_at: string
-          direction: string
+          direction: "inbound" | "outbound"
           flow: Json | null
           id: string
           kapso_wamid: string | null
@@ -3038,7 +3038,7 @@ export type Database = {
           body?: string
           conversation_id: string
           created_at?: string
-          direction: string
+          direction: "inbound" | "outbound"
           flow?: Json | null
           id?: string
           kapso_wamid?: string | null
@@ -3057,7 +3057,7 @@ export type Database = {
           body?: string
           conversation_id?: string
           created_at?: string
-          direction?: string
+          direction?: "inbound" | "outbound"
           flow?: Json | null
           id?: string
           kapso_wamid?: string | null
@@ -3152,11 +3152,11 @@ export type Database = {
       }
       book_open_appointment_slot: {
         Args: {
-          p_email?: string
+          p_email?: string | null
           p_notes?: string
           p_patient_name: string
           p_phone: string
-          p_service_id?: string
+          p_service_id?: string | null
           p_service_label?: string
           p_slot_id: string
         }
@@ -3180,7 +3180,7 @@ export type Database = {
         Returns: Json
       }
       cancel_reservation_and_release_slot: {
-        Args: { p_phone?: string; p_reservation_id: string }
+        Args: { p_phone?: string | null; p_reservation_id: string }
         Returns: string
       }
       check_and_log_rate_limit: {
@@ -3219,7 +3219,7 @@ export type Database = {
         Returns: boolean
       }
       reschedule_reservation_to_slot: {
-        Args: { p_phone?: string; p_reservation_id: string; p_slot_id: string }
+        Args: { p_phone?: string | null; p_reservation_id: string; p_slot_id: string }
         Returns: string
       }
       search_clinic_knowledge: {

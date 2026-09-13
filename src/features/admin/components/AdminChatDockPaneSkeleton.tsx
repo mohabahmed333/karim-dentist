@@ -1,23 +1,17 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { AdminSkeleton as Block } from "@/features/admin/components/AdminSkeleton";
 import { ChatUiSkeleton } from "@/features/admin/components/chat/ChatUiSkeleton";
 import type { DockChatTab } from "./AdminChatDockTabs";
-
-const bone = "bg-[#E8EAED]";
-
-function Block({ className }: { className?: string }) {
-  return <Skeleton className={`${bone} ${className ?? ""}`} />;
-}
 
 function CompactInboxSkeleton() {
   return (
     <div
-      className="flex h-full min-h-0 flex-col bg-white"
+      className="flex h-full min-h-0 flex-col bg-[var(--admin-panel)]"
       aria-busy="true"
       aria-label="Loading"
     >
-      <div className="shrink-0 border-b border-[#E5E7EB] px-3 py-2.5">
+      <div className="shrink-0 border-b border-[var(--admin-border)] px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
           <Block className="h-4 w-28" />
           <div className="flex gap-1">
@@ -34,7 +28,7 @@ function CompactInboxSkeleton() {
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="flex gap-3 border-b border-[#E5E7EB] px-3 py-3"
+            className="flex gap-3 border-b border-[var(--admin-border)] px-3 py-3"
           >
             <Block className="size-10 shrink-0 rounded-full" />
             <div className="min-w-0 flex-1 space-y-2">
@@ -56,7 +50,7 @@ function CompactInboxSkeleton() {
 export function AdminChatDockPaneSkeleton({ tab }: { tab: DockChatTab }) {
   if (tab === "assist") {
     return (
-      <div className="h-full min-h-0 bg-white">
+      <div className="h-full min-h-0 bg-[var(--admin-panel)]">
         <ChatUiSkeleton showClose={false} />
       </div>
     );

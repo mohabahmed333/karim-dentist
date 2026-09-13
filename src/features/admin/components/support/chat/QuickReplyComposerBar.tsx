@@ -29,7 +29,7 @@ export function QuickReplyComposerBar({ unfilled, attachment, onRemoveAttachment
         </p>
       ) : null}
       {attachment ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[#374151] ring-1 ring-[#E5E7EB]">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--wa-surface-bg)] px-2.5 py-1 text-[var(--wa-surface-text)] ring-1 ring-[var(--wa-surface-border)]">
           <Icon className="size-3.5" aria-hidden />
           {t("admin.frontDesk.quickReplyAttachment")}{" "}
           {attachment.kind === "location" ? t("admin.pages.quickReplies.attachLocation") : attachment.name}

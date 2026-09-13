@@ -10,6 +10,9 @@ type Props = {
   exact?: boolean;
   badge?: number;
   className?: string;
+  /** "pill" (default) fills the row on active — used for top-level items.
+   *  "text" only colors the label, for nested child rows under a group. */
+  activeStyle?: "pill" | "text";
 };
 
 export function AdminNavLink({
@@ -18,6 +21,7 @@ export function AdminNavLink({
   exact,
   badge,
   className,
+  activeStyle = "pill",
 }: Props) {
   const pathname = usePathname();
   const active = exact ? pathname === href : pathname.startsWith(href);
@@ -31,7 +35,9 @@ export function AdminNavLink({
       className={cn(
         "flex items-center justify-between rounded-md px-2 py-1 text-[13px] transition-colors",
         active
-          ? "bg-[var(--admin-active)] font-medium text-[var(--admin-primary)]"
+          ? activeStyle === "pill"
+            ? "bg-[var(--admin-active)] font-medium text-[var(--admin-primary-contrast)]"
+            : "font-medium text-[var(--admin-primary-contrast)] hover:bg-[var(--admin-hover)]"
           : "text-[var(--admin-text)]/80 hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]",
         className,
       )}

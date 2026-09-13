@@ -10,5 +10,5 @@ import { cn } from "@/lib/utils";
  * carry `aria-busy` and a screen-reader line saying what is loading.
  */
 export function AdminSkeleton({ className }: { className?: string }) {
-  return <Skeleton aria-hidden className={cn("bg-[var(--admin-border,#e6e6e6)]", className)} />;
+  return <Skeleton aria-hidden className={cn("bg-[var(--admin-hover,#eeeff1)]", className)} />;
 }

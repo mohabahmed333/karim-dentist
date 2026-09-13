@@ -15,7 +15,7 @@ export function EditorOpenPageLink({ href, children }: Props) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="shrink-0 text-[10px] font-medium text-[#1a1a1a] underline-offset-2 hover:underline"
+      className="shrink-0 text-[10px] font-medium text-[var(--admin-text)] underline-offset-2 hover:underline"
     >
       {children ?? t("admin.customize.openPage")}
     </a>

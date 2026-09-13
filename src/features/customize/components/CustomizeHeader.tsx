@@ -58,17 +58,17 @@ export function CustomizeHeader({ active, itemId, onStartGuide }: Props) {
   });
 
   return (
-    <header className="customize-header shrink-0 border-b border-[#ebebeb] bg-white">
+    <header className="customize-header shrink-0 border-b border-[var(--admin-border)] bg-[var(--admin-panel)]">
       <div className="flex h-11 items-center gap-3 px-3">
         <div className="flex shrink-0 items-center gap-2">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1a1a1a] text-[10px] font-semibold text-white">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--admin-primary)] text-[10px] font-semibold text-white">
             I
           </span>
           <div className="hidden min-w-0 sm:block">
             <p className="truncate text-[13px] font-medium leading-tight">
               {data.settings?.brand_name ?? t("admin.brand")}
             </p>
-            <p className="truncate text-[10px] text-[#8a8a8a]">
+            <p className="truncate text-[10px] text-[var(--admin-muted)]">
               {t("admin.customize.title")}
             </p>
           </div>
@@ -82,7 +82,7 @@ export function CustomizeHeader({ active, itemId, onStartGuide }: Props) {
           <TourGuidesMenu onStartGuide={onStartGuide} />
           <button
             type="button"
-            className="hidden rounded-[6px] px-2 py-1 text-[11px] text-[#6b6b6b] hover:bg-[#f0f0f0] hover:text-[#1a1a1a] lg:inline"
+            className="hidden rounded-[6px] px-2 py-1 text-[11px] text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)] lg:inline"
             onClick={() => requestLeave("/admin")}
           >
             {t("admin.customize.dashboard")}
@@ -91,12 +91,12 @@ export function CustomizeHeader({ active, itemId, onStartGuide }: Props) {
             href="/"
             target="_blank"
             rel="noreferrer"
-            className="hidden rounded-[6px] px-2 py-1 text-[11px] text-[#6b6b6b] hover:bg-[#f0f0f0] hover:text-[#1a1a1a] lg:inline"
+            className="hidden rounded-[6px] px-2 py-1 text-[11px] text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)] lg:inline"
           >
             {t("admin.customize.viewSite")}
           </a>
-          <div className="mx-0.5 hidden h-4 w-px bg-[#e5e5e5] lg:block" />
-          <span className="hidden rounded-[4px] bg-[#f0f0f0] px-1.5 py-0.5 text-[10px] text-[#6b6b6b] md:inline">
+          <div className="mx-0.5 hidden h-4 w-px bg-[var(--admin-border)] lg:block" />
+          <span className="hidden rounded-[4px] bg-[var(--admin-hover)] px-1.5 py-0.5 text-[10px] text-[var(--admin-muted)] md:inline">
             {t(STATUS_KEY[status])}
           </span>
           <CustomizeHistoryControls

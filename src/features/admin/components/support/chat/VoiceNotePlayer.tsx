@@ -72,12 +72,12 @@ export function VoiceNotePlayer({ url, peaks = DEFAULT_PEAKS }: Props) {
   const timeLabel = `${Math.floor((progress * duration) || 0)}s / ${Math.floor(duration || 0)}s`;
 
   return (
-    <div className="mb-2 flex min-w-[220px] items-center gap-2 rounded-xl bg-[#EEF2FF] px-2.5 py-2">
+    <div className="mb-2 flex min-w-[220px] items-center gap-2 rounded-xl bg-[var(--wa-surface-hover)] px-2.5 py-2">
       <audio ref={audioRef} src={url} preload="metadata" />
       <button
         type="button"
         onClick={toggle}
-        className="rounded-full bg-[#111827] p-1.5 text-white"
+        className="rounded-full bg-[var(--wa-accent)] p-1.5 text-white"
         aria-label={playing ? "Pause" : "Play"}
       >
         {playing ? (
@@ -98,10 +98,11 @@ export function VoiceNotePlayer({ url, peaks = DEFAULT_PEAKS }: Props) {
         {peaks.map((p, i) => (
           <span
             key={i}
-            className="w-1 rounded-sm bg-[#6366F1]"
+            className="w-1 rounded-sm"
             style={{
               height: `${Math.max(4, p * 28)}px`,
               opacity: i / peaks.length <= progress ? 1 : 0.35,
+              backgroundColor: "var(--wa-accent)",
             }}
           />
         ))}
@@ -109,11 +110,11 @@ export function VoiceNotePlayer({ url, peaks = DEFAULT_PEAKS }: Props) {
       <button
         type="button"
         onClick={cycleRate}
-        className="rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#4338CA]"
+        className="rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[var(--wa-accent)]"
       >
         {rate}x
       </button>
-      <span className="text-[10px] text-[#6B7280]">{timeLabel}</span>
+      <span className="text-[10px] text-[var(--wa-bubble-meta-text)]">{timeLabel}</span>
     </div>
   );
 }

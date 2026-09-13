@@ -58,17 +58,17 @@ export function ChatPanelHeader({
     <header className={`flex flex-col gap-2 ${CHAT_HEADER}`}>
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-[14px] font-semibold text-[#111111]">
+          <p className="truncate text-[14px] font-semibold text-[var(--admin-text)]">
             {title}
           </p>
-          <p className="truncate text-[12px] text-[#70758A]">{subtitle}</p>
+          <p className="truncate text-[12px] text-[var(--admin-muted)]">{subtitle}</p>
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
           {onViewProfile ? (
             <button
               type="button"
               onClick={onViewProfile}
-              className="rounded-xl bg-[#F3F4F6] px-3 py-1.5 text-[12px] font-medium text-[#111111] hover:bg-[#E8EAED]"
+              className="rounded-xl bg-[var(--admin-hover)] px-3 py-1.5 text-[12px] font-medium text-[var(--admin-text)] hover:bg-[var(--admin-active)]"
             >
               {t("admin.chat.viewProfile")}
             </button>
@@ -80,7 +80,7 @@ export function ChatPanelHeader({
               whileHover={reduced ? undefined : { scale: 1.03 }}
               whileTap={reduced ? undefined : { scale: 0.96 }}
               onClick={onNewChat}
-              className="inline-flex items-center gap-1 rounded-xl bg-[#F3F4F6] px-2.5 py-1.5 text-[12px] font-medium text-[#111111] hover:bg-[#E8EAED]"
+              className="inline-flex items-center gap-1 rounded-xl bg-[var(--admin-hover)] px-2.5 py-1.5 text-[12px] font-medium text-[var(--admin-text)] hover:bg-[var(--admin-active)]"
             >
               <Plus className="size-3.5" />
               {resolvedNew}
@@ -92,7 +92,7 @@ export function ChatPanelHeader({
             <button
               type="button"
               onClick={onClear}
-              className="rounded-xl px-2.5 py-1.5 text-[12px] font-medium text-[#70758A] hover:bg-[#F3F4F6] hover:text-[#111111]"
+              className="rounded-xl px-2.5 py-1.5 text-[12px] font-medium text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]"
             >
               {resolvedClear}
             </button>
@@ -110,7 +110,7 @@ export function ChatPanelHeader({
               aria-label={t("admin.chat.close")}
               onClick={onClose}
               data-showreel-action="chat-close"
-              className="rounded-lg p-1.5 text-[#70758A] hover:bg-[#F3F4F6] hover:text-[#111111]"
+              className="rounded-lg p-1.5 text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]"
             >
               <X className="size-4" />
             </button>
@@ -120,7 +120,7 @@ export function ChatPanelHeader({
 
       {tabs && tabs.length > 0 && tab && onTabChange ? (
         <div
-          className="flex shrink-0 rounded-xl bg-[#F3F4F6] p-1"
+          className="flex shrink-0 rounded-xl bg-[var(--admin-hover)] p-1"
           role="tablist"
           aria-label={t("admin.chat.panels")}
         >
@@ -136,8 +136,8 @@ export function ChatPanelHeader({
                 onClick={() => onTabChange(item.id)}
                 className={`rounded-lg px-3.5 py-1.5 text-[12px] font-semibold transition-colors ${
                   active
-                    ? "bg-white text-[#111111] shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
-                    : "text-[#70758A] hover:text-[#111111]"
+                    ? "bg-[var(--admin-panel)] text-[var(--admin-text)] shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
+                    : "text-[var(--admin-muted)] hover:text-[var(--admin-text)]"
                 }`}
               >
                 {item.label}

@@ -32,7 +32,7 @@ export function ChatMessageAttachment({
       href={url}
       target="_blank"
       rel="noreferrer"
-      className="group relative mt-2 inline-block w-full max-w-[168px] overflow-hidden rounded-xl bg-[#E8EAED]"
+      className="group relative mt-2 inline-block w-full max-w-[168px] overflow-hidden rounded-xl bg-[var(--admin-hover)]"
     >
       <div className="relative aspect-[4/3] w-full">
         {/* eslint-disable-next-line @next/next/no-img-element */}

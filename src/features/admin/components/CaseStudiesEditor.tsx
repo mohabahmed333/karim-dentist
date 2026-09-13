@@ -11,8 +11,7 @@ import {
 } from "@/services/case_studies";
 import { useBoardCrud } from "../hooks/useBoardCrud";
 import { LocalizedAdminPageHeader } from "./LocalizedAdminPageHeader";
-import { CaseStudyEditCard } from "./CaseStudyEditCard";
-import { CollectionSplitLayout } from "./CollectionSplitLayout";
+import { CaseStudyFormDialog } from "./CaseStudyFormDialog";
 import { CollectionTable } from "./CollectionTable";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { Badge } from "@/components/ui/badge";
@@ -53,42 +52,50 @@ export function CaseStudiesEditor({ items: initial }: Props) {
           </Button>
         }
       />
-      <CollectionSplitLayout
-        list={
-          <div className="p-2">
-            <CollectionTable
-              tableId="casestudies"
-              rows={board.items}
-              selectedId={board.selected?.id}
-              emptyMessage={t("admin.pages.caseStudies.empty")}
-              onRowClick={board.openItem}
-              columns={[
-                { key: "title", header: t("admin.cms.title"), cell: (r) => r.title },
-                { key: "year", header: t("admin.cms.year"), cell: (r) => r.year ?? "—" },
-                {
-                  key: "status",
-                  header: t("admin.status"),
-                  cell: (r) => (
-                    <Badge variant={r.is_published ? "default" : "secondary"}>
-                      {r.is_published ? t("admin.publish") : t("admin.draft")}
-                    </Badge>
-                  ),
-                },
-              ]}
-            />
-          </div>
-        }
-        detail={
-          board.selected ? (
-            <CaseStudyEditCard
-              item={board.selected}
-              pending={board.pending}
-              message={board.message}
-              onSubmit={board.onSave}
-              onDeleteClick={() => setDeleteOpen(true)}
-            />
-          ) : null
-        }
+      <CollectionTable
+        framed
+        tableId="casestudies"
+        rows={board.items}
+        selectedId={board.selected?.id}
+        emptyMessage={t("admin.pages.caseStudies.empty")}
+        onRowClick={board.openItem}
+        rowActions={[
+          { id: "edit", label: t("admin.edit"), icon: "edit", onClick: (r) => board.openItem(r.id) },
+          {
+            id: "delete",
+            label: t("admin.delete"),
+            icon: "delete",
+            tone: "danger",
+            onClick: (r) => {
+              board.openItem(r.id);
+              setDeleteOpen(true);
+            },
+          },
+        ]}
+        columns={[
+          { key: "title", header: t("admin.cms.title"), cell: (r) => r.title },
+          { key: "year", header: t("admin.cms.year"), cell: (r) => r.year ?? "—" },
+          {
+            key: "status",
+            header: t("admin.status"),
+            cell: (r) => (
+              <Badge variant={r.is_published ? "default" : "secondary"}>
+                {r.is_published ? t("admin.publish") : t("admin.draft")}
+              </Badge>
+            ),
+          },
+        ]}
+      />
+      <CaseStudyFormDialog
+        open={Boolean(board.selected)}
+        item={board.selected}
+        pending={board.pending}
+        message={board.message}
+        onOpenChange={(open) => {
+          if (!open) board.close();
+        }}
+        onSubmit={board.onSave}
+        onDeleteClick={() => setDeleteOpen(true)}
       />
       <ConfirmDeleteDialog
         open={deleteOpen}

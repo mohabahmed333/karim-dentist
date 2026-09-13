@@ -22,6 +22,10 @@ export type ConversationListFilters = {
   status?: "open" | "archived" | "all";
   sort?: "newest" | "name" | "unread";
   limit?: number;
+  starredOnly?: boolean;
+  assigneeId?: string;
+  tag?: string;
+  mutedOnly?: boolean;
 };
 
 export async function listConversations(
@@ -43,6 +47,19 @@ export async function listConversations(
     query = query.or(
       `contact_name.ilike.%${q}%,phone_number.ilike.%${q}%,last_message_preview.ilike.%${q}%`,
     );
+  }
+
+  if (filters?.starredOnly) {
+    query = query.eq("starred", true);
+  }
+  if (filters?.assigneeId) {
+    query = query.eq("assignee_id", filters.assigneeId);
+  }
+  if (filters?.tag) {
+    query = query.contains("tags", [filters.tag]);
+  }
+  if (filters?.mutedOnly) {
+    query = query.gt("muted_until", new Date().toISOString());
   }
 
   const sort = filters?.sort ?? "newest";

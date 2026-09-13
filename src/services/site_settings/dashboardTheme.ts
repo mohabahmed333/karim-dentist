@@ -19,6 +19,10 @@ export const DEFAULT_DASHBOARD_SECONDARY = "#3B82F6";
 export const DEFAULT_DASHBOARD_CANVAS = "#F7F8F8";
 export const DEFAULT_DASHBOARD_PANEL = "#FFFFFF";
 
+/** Dark-mode chrome — canvas/panel ignore the customized (light) DB values while dark mode is on. */
+export const DARK_DASHBOARD_CANVAS = "#18191B";
+export const DARK_DASHBOARD_PANEL = "#202124";
+
 export function normalizeHexColor(value: string | null | undefined, fallback: string) {
   const raw = (value ?? "").trim();
   if (/^#[0-9A-Fa-f]{6}$/.test(raw)) return raw.toUpperCase();

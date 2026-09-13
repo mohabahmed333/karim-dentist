@@ -2,7 +2,7 @@ import {
   SUPPORT_CONVERSATIONS,
   SUPPORT_DETAILS,
   SUPPORT_MESSAGES,
-} from "@/features/admin/components/support/supportDummyData";
+} from "./buildShowreelSupportFixtureData";
 import type { AdminDemoInbox } from "@/features/admin/lib/adminDemoInbox";
 
 export function buildShowreelDemoInbox(

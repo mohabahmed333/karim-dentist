@@ -48,29 +48,29 @@ export function CustomizeVisibilityMenu() {
             aria-expanded={open}
             aria-haspopup="dialog"
             onClick={() => setOpen((value) => !value)}
-            className="rounded-[6px] px-2 py-1 text-[11px] text-[#6b6b6b] hover:bg-[#f0f0f0] hover:text-[#1a1a1a]"
+            className="rounded-[6px] px-2 py-1 text-[11px] text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]"
           >
             Customise
           </button>
         }
       >
-        <div className="flex items-center justify-between border-b border-[#f0f0f0] px-3 py-2">
+        <div className="flex items-center justify-between border-b border-[var(--admin-border)] px-3 py-2">
           <p
             id="customize-visibility-title"
-            className="text-[13px] font-semibold text-[#1a1a1a]"
+            className="text-[13px] font-semibold text-[var(--admin-text)]"
           >
             Customise
           </p>
           <button
             type="button"
             aria-label="Close"
-            className="rounded p-0.5 text-[#8a8a8a] hover:bg-[#f0f0f0] hover:text-[#1a1a1a]"
+            className="rounded p-0.5 text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]"
             onClick={() => setOpen(false)}
           >
             <XIcon className="size-3.5" />
           </button>
         </div>
-        <p className="px-3 pt-2 text-[10px] leading-4 text-[#8a8a8a]">
+        <p className="px-3 pt-2 text-[10px] leading-4 text-[var(--admin-muted)]">
           Show or hide homepage sections. Drag to reorder. Save to publish.
         </p>
         <ul className="max-h-72 overflow-y-auto px-1 py-1.5">

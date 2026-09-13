@@ -12,10 +12,9 @@ import type { AdminMessageKey } from "@/lib/i18n";
 import { useTranslations } from "@/lib/i18n";
 import { useBoardCrud } from "../hooks/useBoardCrud";
 import { LocalizedAdminPageHeader } from "./LocalizedAdminPageHeader";
-import { CollectionSplitLayout } from "./CollectionSplitLayout";
 import { CollectionTable } from "./CollectionTable";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
-import { FeaturedEditCard } from "./FeaturedEditCard";
+import { FeaturedFormDialog } from "./FeaturedFormDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -63,46 +62,54 @@ export function FeaturedEditor({
           </Button>
         }
       />
-      <CollectionSplitLayout
-        list={
-          <div className="p-2">
-            <CollectionTable
-              tableId="featured"
-              rows={board.items}
-              selectedId={board.selected?.id}
-              emptyMessage={t(emptyKey)}
-              onRowClick={board.openItem}
-              columns={[
-                { key: "title", header: t("admin.name"), cell: (r) => r.title },
-                {
-                  key: "media",
-                  header: t("admin.media"),
-                  cell: (r) => (r.image_url ? t("admin.yes") : "—"),
-                },
-                {
-                  key: "status",
-                  header: t("admin.status"),
-                  cell: (r) => (
-                    <Badge variant={r.is_published ? "default" : "secondary"}>
-                      {r.is_published ? t("admin.publish") : t("admin.draft")}
-                    </Badge>
-                  ),
-                },
-              ]}
-            />
-          </div>
-        }
-        detail={
-          board.selected ? (
-            <FeaturedEditCard
-              item={board.selected}
-              pending={board.pending}
-              message={board.message}
-              onSubmit={board.onSave}
-              onDeleteClick={() => setDeleteOpen(true)}
-            />
-          ) : null
-        }
+      <CollectionTable
+        framed
+        tableId="featured"
+        rows={board.items}
+        selectedId={board.selected?.id}
+        emptyMessage={t(emptyKey)}
+        onRowClick={board.openItem}
+        rowActions={[
+          { id: "edit", label: t("admin.edit"), icon: "edit", onClick: (r) => board.openItem(r.id) },
+          {
+            id: "delete",
+            label: t("admin.delete"),
+            icon: "delete",
+            tone: "danger",
+            onClick: (r) => {
+              board.openItem(r.id);
+              setDeleteOpen(true);
+            },
+          },
+        ]}
+        columns={[
+          { key: "title", header: t("admin.name"), cell: (r) => r.title },
+          {
+            key: "media",
+            header: t("admin.media"),
+            cell: (r) => (r.image_url ? t("admin.yes") : "—"),
+          },
+          {
+            key: "status",
+            header: t("admin.status"),
+            cell: (r) => (
+              <Badge variant={r.is_published ? "default" : "secondary"}>
+                {r.is_published ? t("admin.publish") : t("admin.draft")}
+              </Badge>
+            ),
+          },
+        ]}
+      />
+      <FeaturedFormDialog
+        open={Boolean(board.selected)}
+        item={board.selected}
+        pending={board.pending}
+        message={board.message}
+        onOpenChange={(open) => {
+          if (!open) board.close();
+        }}
+        onSubmit={board.onSave}
+        onDeleteClick={() => setDeleteOpen(true)}
       />
       <ConfirmDeleteDialog
         open={deleteOpen}

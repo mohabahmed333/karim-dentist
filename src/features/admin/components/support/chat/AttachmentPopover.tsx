@@ -57,7 +57,7 @@ export function AttachmentPopover({ onSend, onClose, onOpenTemplate }: Props) {
   return (
     <>
       {locationOpen ? null : (
-      <div className="absolute bottom-full start-0 z-50 mb-1.5 w-56 overflow-hidden rounded-lg border border-[#E5E7EB] bg-white py-1 shadow-lg">
+      <div className="absolute bottom-full start-0 z-50 mb-1.5 w-56 overflow-hidden rounded-lg border border-[var(--wa-surface-border)] bg-[var(--wa-surface-bg)] py-1 shadow-lg">
         <input
           ref={mediaRef}
           type="file"
@@ -147,10 +147,10 @@ function MenuItem({
   return (
     <button
       type="button"
-      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#111827] hover:bg-[#F3F4F6]"
+      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[var(--wa-surface-text)] hover:bg-[var(--wa-surface-hover)]"
       onClick={onClick}
     >
-      <span className="text-[#6B7280]">{icon}</span>
+      <span className="text-[var(--wa-surface-muted-text)]">{icon}</span>
       {label}
     </button>
   );

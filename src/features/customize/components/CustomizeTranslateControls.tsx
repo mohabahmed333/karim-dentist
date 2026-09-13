@@ -67,16 +67,16 @@ export function CustomizeTranslateControls({ activeSection }: Props) {
           aria-expanded={open}
           aria-haspopup="dialog"
           onClick={() => setOpen((value) => !value)}
-          className="rounded-[6px] px-2 py-1 text-[11px] text-[#6b6b6b] hover:bg-[#f0f0f0] hover:text-[#1a1a1a] disabled:opacity-50"
+          className="rounded-[6px] px-2 py-1 text-[11px] text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)] disabled:opacity-50"
         >
           {t("admin.customize.translate")} · {translateModulesSummary(selected)}
         </button>
       }
     >
-      <div className="border-b border-[#f0f0f0] px-3 py-2">
+      <div className="border-b border-[var(--admin-border)] px-3 py-2">
         <p
           id="cms-translate-menu-title"
-          className="text-[13px] font-semibold text-[#1a1a1a]"
+          className="text-[13px] font-semibold text-[var(--admin-text)]"
         >
           {t("admin.customize.translate")}
         </p>
@@ -87,7 +87,7 @@ export function CustomizeTranslateControls({ activeSection }: Props) {
         onToggleModule={toggleModule}
         onToggleAll={toggleAll}
       />
-      <div className="flex items-center justify-between gap-2 border-t border-[#f0f0f0] px-3 py-2">
+      <div className="flex items-center justify-between gap-2 border-t border-[var(--admin-border)] px-3 py-2">
         <button
           type="button"
           className="text-[11px] font-medium text-[#2f6fed] hover:underline disabled:opacity-50"

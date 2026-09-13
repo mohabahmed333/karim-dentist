@@ -443,3 +443,63 @@ export async function setConversationStatus(
   if (error) throw error;
   return data;
 }
+
+export async function setConversationStarred(
+  supabase: ServiceClient,
+  conversationId: string,
+  starred: boolean,
+): Promise<WhatsappConversation> {
+  const { data, error } = await supabase
+    .from("whatsapp_conversations")
+    .update({ starred, updated_at: new Date().toISOString() })
+    .eq("id", conversationId)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function setConversationTags(
+  supabase: ServiceClient,
+  conversationId: string,
+  tags: string[],
+): Promise<WhatsappConversation> {
+  const { data, error } = await supabase
+    .from("whatsapp_conversations")
+    .update({ tags, updated_at: new Date().toISOString() })
+    .eq("id", conversationId)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function setConversationAssignee(
+  supabase: ServiceClient,
+  conversationId: string,
+  assigneeId: string | null,
+): Promise<WhatsappConversation> {
+  const { data, error } = await supabase
+    .from("whatsapp_conversations")
+    .update({ assignee_id: assigneeId, updated_at: new Date().toISOString() })
+    .eq("id", conversationId)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function setConversationMuted(
+  supabase: ServiceClient,
+  conversationId: string,
+  mutedUntil: string | null,
+): Promise<WhatsappConversation> {
+  const { data, error } = await supabase
+    .from("whatsapp_conversations")
+    .update({ muted_until: mutedUntil, updated_at: new Date().toISOString() })
+    .eq("id", conversationId)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}

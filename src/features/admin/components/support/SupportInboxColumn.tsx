@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Bot, ChevronDown, Search, Star, X } from "lucide-react";
+import { Bot, BellOff, ChevronDown, Search, Star, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AiModeSwitch } from "./AiModeSwitch";
 import { useTranslations } from "@/lib/i18n";
@@ -19,6 +19,7 @@ import {
 } from "./compactInboxMotion";
 import { ChatLayoutToggle } from "@/features/admin/components/ChatLayoutToggle";
 import type { AdminChatLayout } from "@/features/admin/hooks/useAdminChatLayout";
+import { useWhatsappTheme } from "./chat/theme/useWhatsappTheme";
 
 export type InboxStatusFilter = "open" | "archived" | "all";
 export type InboxSort = "newest" | "unread" | "name";
@@ -31,6 +32,9 @@ type Props = {
   openLabel?: string;
   filter?: InboxStatusFilter;
   onFilterChange?: (filter: InboxStatusFilter) => void;
+  starredOnly?: boolean;
+  onStarredOnlyChange?: (starredOnly: boolean) => void;
+  onStar?: (id: string, starred: boolean) => void;
   sort?: InboxSort;
   onSortChange?: (sort: InboxSort) => void;
   search?: string;
@@ -73,6 +77,9 @@ export function SupportInboxColumn({
   openLabel,
   filter = "open",
   onFilterChange,
+  starredOnly = false,
+  onStarredOnlyChange,
+  onStar,
   sort = "newest",
   onSortChange,
   search = "",
@@ -86,6 +93,7 @@ export function SupportInboxColumn({
   loading = false,
 }: Props) {
   const t = useTranslations();
+  const { vars } = useWhatsappTheme();
   const reduced = useReducedMotion();
   const showreelDemo =
     typeof document !== "undefined" &&
@@ -139,25 +147,26 @@ export function SupportInboxColumn({
 
   return (
     <aside
+      style={{
+        ...(vars as React.CSSProperties),
+        ...(!compact && widthPx
+          ? { width: widthPx, minWidth: widthPx, maxWidth: widthPx }
+          : undefined),
+      }}
       className={cn(
-        "flex h-full min-h-0 flex-col border-r border-[#E5E7EB] bg-white",
+        "flex h-full min-h-0 flex-col border-r border-[var(--wa-surface-border)] bg-[var(--wa-surface-bg)]",
         compact
           ? "w-full min-w-0"
           : widthPx
             ? "shrink-0"
             : "w-[36%] min-w-[340px]",
       )}
-      style={
-        !compact && widthPx
-          ? { width: widthPx, minWidth: widthPx, maxWidth: widthPx }
-          : undefined
-      }
     >
-      <div className={cn("shrink-0 border-b border-[#E5E7EB]", compact ? "px-3 py-2.5" : "px-4 py-3")}>
+      <div className={cn("shrink-0 border-b border-[var(--wa-surface-border)]", compact ? "px-3 py-2.5" : "px-4 py-3")}>
         <div className="flex items-center justify-between gap-2">
           <h1
             className={cn(
-              "font-bold text-[#111827]",
+              "font-bold text-[var(--wa-surface-text)]",
               compact ? "text-sm" : "text-base",
             )}
           >
@@ -168,8 +177,8 @@ export function SupportInboxColumn({
             <button
               type="button"
               className={cn(
-                "rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6]",
-                searchOpen && "bg-[#F3F4F6] text-[#111827]",
+                "rounded-md p-1.5 text-[var(--wa-surface-muted-text)] hover:bg-[var(--wa-surface-hover)]",
+                searchOpen && "bg-[var(--wa-surface-hover)] text-[var(--wa-surface-text)]",
               )}
               aria-label={
                 searchOpen
@@ -202,7 +211,7 @@ export function SupportInboxColumn({
                 type="button"
                 onClick={onClose}
                 data-showreel-action="chat-close"
-                className="hidden rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6] sm:inline-flex"
+                className="hidden rounded-md p-1.5 text-[var(--wa-surface-muted-text)] hover:bg-[var(--wa-surface-hover)] sm:inline-flex"
                 aria-label={t("admin.frontDesk.closeBubble")}
               >
                 <X className="h-4 w-4" />
@@ -216,22 +225,22 @@ export function SupportInboxColumn({
             value={search}
             onChange={(e) => onSearchChange?.(e.target.value)}
             placeholder={t("admin.frontDesk.searchPlaceholder")}
-            className="mt-3 w-full rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#9CA3AF]"
+            className="mt-3 w-full rounded-md border border-[var(--wa-surface-border)] bg-[var(--wa-surface-bg)] px-3 py-2 text-sm text-[var(--wa-surface-text)] outline-none placeholder:text-[var(--wa-surface-muted-text)] focus:border-[var(--wa-accent)]"
             aria-label={t("admin.frontDesk.searchAria")}
             autoFocus
           />
         ) : null}
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <div className="inline-flex overflow-hidden rounded-md border border-[#E5E7EB]">
+          <div className="inline-flex overflow-hidden rounded-md border border-[var(--wa-surface-border)]">
             <button
               type="button"
               onClick={() => onFilterChange?.("open")}
               className={cn(
                 "px-2.5 py-1 text-xs font-medium",
                 filter === "open"
-                  ? "bg-[#111827] text-white"
-                  : "bg-white text-[#374151] hover:bg-[#F9FAFB]",
+                  ? "bg-[var(--wa-accent)] text-white"
+                  : "bg-[var(--wa-surface-bg)] text-[var(--wa-surface-text)] hover:bg-[var(--wa-surface-hover)]",
               )}
             >
               {openText}
@@ -240,10 +249,10 @@ export function SupportInboxColumn({
               type="button"
               onClick={() => onFilterChange?.("archived")}
               className={cn(
-                "border-l border-[#E5E7EB] px-2.5 py-1 text-xs font-medium",
+                "border-l border-[var(--wa-surface-border)] px-2.5 py-1 text-xs font-medium",
                 filter === "archived"
-                  ? "bg-[#111827] text-white"
-                  : "bg-white text-[#374151] hover:bg-[#F9FAFB]",
+                  ? "bg-[var(--wa-accent)] text-white"
+                  : "bg-[var(--wa-surface-bg)] text-[var(--wa-surface-text)] hover:bg-[var(--wa-surface-hover)]",
               )}
             >
               {t("admin.frontDesk.archived")}
@@ -252,30 +261,52 @@ export function SupportInboxColumn({
               type="button"
               onClick={() => onFilterChange?.("all")}
               className={cn(
-                "border-l border-[#E5E7EB] px-2.5 py-1 text-xs font-medium",
+                "border-l border-[var(--wa-surface-border)] px-2.5 py-1 text-xs font-medium",
                 filter === "all"
-                  ? "bg-[#111827] text-white"
-                  : "bg-white text-[#374151] hover:bg-[#F9FAFB]",
+                  ? "bg-[var(--wa-accent)] text-white"
+                  : "bg-[var(--wa-surface-bg)] text-[var(--wa-surface-text)] hover:bg-[var(--wa-surface-hover)]",
               )}
             >
               {t("admin.frontDesk.all")}
             </button>
           </div>
 
+          {onStarredOnlyChange ? (
+            <button
+              type="button"
+              onClick={() => onStarredOnlyChange(!starredOnly)}
+              aria-pressed={starredOnly}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium",
+                starredOnly
+                  ? "border-[#FBBF24] bg-[#FFFBEB] text-[#92400E]"
+                  : "border-[#E5E7EB] bg-white text-[#374151] hover:bg-[#F9FAFB]",
+              )}
+            >
+              <Star
+                className={cn(
+                  "h-3.5 w-3.5",
+                  starredOnly && "fill-[#FBBF24] text-[#FBBF24]",
+                )}
+              />
+              {t("admin.frontDesk.starredFilter")}
+            </button>
+          ) : null}
+
           <div className="relative">
             <button
               type="button"
               onClick={() => setSortOpen((v) => !v)}
-              className="inline-flex items-center gap-1 rounded-md border border-[#E5E7EB] bg-white px-2.5 py-1 text-xs font-medium text-[#374151] hover:bg-[#F9FAFB]"
+              className="inline-flex items-center gap-1 rounded-md border border-[var(--wa-surface-border)] bg-[var(--wa-surface-bg)] px-2.5 py-1 text-xs font-medium text-[var(--wa-surface-text)] hover:bg-[var(--wa-surface-hover)]"
               aria-expanded={sortOpen}
               aria-haspopup="listbox"
             >
               {sortLabel}
-              <ChevronDown className="h-3 w-3 text-[#9CA3AF]" />
+              <ChevronDown className="h-3 w-3 text-[var(--wa-surface-muted-text)]" />
             </button>
             {sortOpen ? (
               <div
-                className="absolute left-0 z-20 mt-1 w-40 overflow-hidden rounded-md border border-[#E5E7EB] bg-white py-1 shadow-lg"
+                className="absolute left-0 z-20 mt-1 w-40 overflow-hidden rounded-md border border-[var(--wa-surface-border)] bg-[var(--wa-surface-bg)] py-1 shadow-lg"
                 role="listbox"
               >
                 {SORT_KEYS.map((opt) => (
@@ -285,10 +316,10 @@ export function SupportInboxColumn({
                     role="option"
                     aria-selected={sort === opt.value}
                     className={cn(
-                      "flex w-full px-3 py-1.5 text-left text-xs hover:bg-[#F3F4F6]",
+                      "flex w-full px-3 py-1.5 text-left text-xs hover:bg-[var(--wa-surface-hover)]",
                       sort === opt.value
-                        ? "font-semibold text-[#111827]"
-                        : "text-[#374151]",
+                        ? "font-semibold text-[var(--wa-surface-text)]"
+                        : "text-[var(--wa-surface-text)]",
                     )}
                     onClick={() => {
                       onSortChange?.(opt.value);
@@ -311,29 +342,29 @@ export function SupportInboxColumn({
               <div
                 key={i}
                 className={cn(
-                  "flex w-full gap-3.5 border-b border-[#E5E7EB]",
+                  "flex w-full gap-3.5 border-b border-[var(--wa-surface-border)]",
                   compact ? "px-3 py-3" : "px-4 py-3.5",
                 )}
               >
                 <Skeleton
                   className={cn(
-                    "shrink-0 rounded-full bg-[#E8EAED]",
+                    "shrink-0 rounded-full bg-[var(--wa-surface-hover)]",
                     compact ? "h-9 w-9" : "h-11 w-11",
                   )}
                 />
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <Skeleton className="h-4 w-32 bg-[#E8EAED]" />
-                    <Skeleton className="h-3.5 w-12 bg-[#E8EAED]" />
+                    <Skeleton className="h-4 w-32 bg-[var(--wa-surface-hover)]" />
+                    <Skeleton className="h-3.5 w-12 bg-[var(--wa-surface-hover)]" />
                   </div>
-                  <Skeleton className="h-3.5 w-full bg-[#E8EAED]" />
-                  <Skeleton className="h-3.5 w-2/3 bg-[#E8EAED]" />
+                  <Skeleton className="h-3.5 w-full bg-[var(--wa-surface-hover)]" />
+                  <Skeleton className="h-3.5 w-2/3 bg-[var(--wa-surface-hover)]" />
                 </div>
               </div>
             ))}
           </div>
         ) : conversations.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-[#9CA3AF]">
+          <p className="px-4 py-8 text-center text-sm text-[var(--wa-surface-muted-text)]">
             {filter === "archived"
               ? t("admin.frontDesk.emptyArchived")
               : t("admin.frontDesk.noMatch")}
@@ -349,9 +380,9 @@ export function SupportInboxColumn({
               data-conversation-id={c.id}
               onClick={() => selectConversation(c.id, c.unread)}
               className={cn(
-                "flex w-full gap-3.5 border-b border-[#E5E7EB] text-left transition-colors",
+                "flex w-full gap-3.5 border-b border-[var(--wa-surface-border)] text-left transition-colors",
                 compact ? "px-3 py-3" : "px-4 py-3.5",
-                active ? "bg-[#F3F4F6]" : "bg-white hover:bg-[#F9FAFB]",
+                active ? "bg-[var(--wa-surface-hover)]" : "bg-[var(--wa-surface-bg)] hover:bg-[var(--wa-surface-hover)]",
                 c.id === CLINIC_ASSIST_CHAT_ID && "border-b-[#E0E7FF]",
               )}
             >
@@ -376,7 +407,7 @@ export function SupportInboxColumn({
                 <div className="flex items-start justify-between gap-2">
                   <p
                     className={cn(
-                      "truncate font-semibold text-[#111827]",
+                      "truncate font-semibold text-[var(--wa-surface-text)]",
                       compact ? "text-sm" : "text-[15px]",
                     )}
                   >
@@ -384,17 +415,51 @@ export function SupportInboxColumn({
                   </p>
                   <div
                     className={cn(
-                      "flex shrink-0 items-center gap-1 text-[#6B7280]",
+                      "flex shrink-0 items-center gap-1 text-[var(--wa-surface-muted-text)]",
                       compact ? "text-[12px]" : "text-[13px]",
                     )}
                   >
                     {c.id === CLINIC_ASSIST_CHAT_ID ? (
-                      <span className="rounded-full bg-[#EEF2FF] px-1.5 py-0.5 text-[10px] font-semibold text-[#4338CA]">
+                      <span className="rounded-full bg-[var(--wa-highlight-bg)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--wa-accent)]">
                         {t("admin.frontDesk.aiTag")}
                       </span>
                     ) : null}
-                    {c.starred && c.id !== CLINIC_ASSIST_CHAT_ID ? (
+                    {c.id !== CLINIC_ASSIST_CHAT_ID && onStar ? (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onStar(c.id, !c.starred);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key !== "Enter" && e.key !== " ") return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onStar(c.id, !c.starred);
+                        }}
+                        aria-pressed={Boolean(c.starred)}
+                        aria-label={
+                          c.starred
+                            ? t("admin.frontDesk.starOff")
+                            : t("admin.frontDesk.starOn")
+                        }
+                        className="shrink-0"
+                      >
+                        <Star
+                          className={cn(
+                            "h-3.5 w-3.5",
+                            c.starred
+                              ? "fill-[#FBBF24] text-[#FBBF24]"
+                              : "text-[#D1D5DB] hover:text-[#FBBF24]",
+                          )}
+                        />
+                      </span>
+                    ) : c.starred && c.id !== CLINIC_ASSIST_CHAT_ID ? (
                       <Star className="h-3.5 w-3.5 fill-[#FBBF24] text-[#FBBF24]" />
+                    ) : null}
+                    {c.muted ? (
+                      <BellOff className="h-3.5 w-3.5 text-[var(--wa-surface-muted-text)]" />
                     ) : null}
                     {c.whatsapp ? (
                       <span className="text-[#22C55E]">
@@ -410,7 +475,7 @@ export function SupportInboxColumn({
                     <div className="mt-2 flex justify-end">
                       <motion.span
                         key={`${c.id}-unread`}
-                        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#374151] px-1.5 text-[11px] font-semibold text-white"
+                        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[var(--wa-accent)] px-1.5 text-[11px] font-semibold text-white"
                         initial={false}
                         animate={
                           poppingUnreadId === c.id

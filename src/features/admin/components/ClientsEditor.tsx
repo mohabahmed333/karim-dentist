@@ -11,8 +11,7 @@ import {
 } from "@/services/clients";
 import { useBoardCrud } from "../hooks/useBoardCrud";
 import { LocalizedAdminPageHeader } from "./LocalizedAdminPageHeader";
-import { ClientEditCard } from "./ClientEditCard";
-import { CollectionSplitLayout } from "./CollectionSplitLayout";
+import { ClientFormDialog } from "./ClientFormDialog";
 import { CollectionTable } from "./CollectionTable";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { Button } from "@/components/ui/button";
@@ -44,37 +43,45 @@ export function ClientsEditor({ items: initial }: Props) {
           </Button>
         }
       />
-      <CollectionSplitLayout
-        list={
-          <div className="p-2">
-            <CollectionTable
-              tableId="clients"
-              rows={board.items}
-              selectedId={board.selected?.id}
-              emptyMessage={t("admin.pages.clients.empty")}
-              onRowClick={board.openItem}
-              columns={[
-                { key: "name", header: t("admin.name"), cell: (r) => r.name },
-                {
-                  key: "logo",
-                  header: t("admin.pages.clients.logo"),
-                  cell: (r) => (r.logo_url ? t("admin.yes") : "—"),
-                },
-              ]}
-            />
-          </div>
-        }
-        detail={
-          board.selected ? (
-            <ClientEditCard
-              item={board.selected}
-              pending={board.pending}
-              message={board.message}
-              onSubmit={board.onSave}
-              onDeleteClick={() => setDeleteOpen(true)}
-            />
-          ) : null
-        }
+      <CollectionTable
+        framed
+        tableId="clients"
+        rows={board.items}
+        selectedId={board.selected?.id}
+        emptyMessage={t("admin.pages.clients.empty")}
+        onRowClick={board.openItem}
+        rowActions={[
+          { id: "edit", label: t("admin.edit"), icon: "edit", onClick: (r) => board.openItem(r.id) },
+          {
+            id: "delete",
+            label: t("admin.delete"),
+            icon: "delete",
+            tone: "danger",
+            onClick: (r) => {
+              board.openItem(r.id);
+              setDeleteOpen(true);
+            },
+          },
+        ]}
+        columns={[
+          { key: "name", header: t("admin.name"), cell: (r) => r.name },
+          {
+            key: "logo",
+            header: t("admin.pages.clients.logo"),
+            cell: (r) => (r.logo_url ? t("admin.yes") : "—"),
+          },
+        ]}
+      />
+      <ClientFormDialog
+        open={Boolean(board.selected)}
+        item={board.selected}
+        pending={board.pending}
+        message={board.message}
+        onOpenChange={(open) => {
+          if (!open) board.close();
+        }}
+        onSubmit={board.onSave}
+        onDeleteClick={() => setDeleteOpen(true)}
       />
       <ConfirmDeleteDialog
         open={deleteOpen}

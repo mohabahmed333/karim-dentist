@@ -72,7 +72,7 @@ export function SupportNotesPanel({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl border border-[#FDE68A] bg-[#FFFBEB] p-3 shadow-sm">
+      <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 p-3 shadow-sm">
         <textarea
           placeholder={t("admin.frontDesk.addNote")}
           rows={3}
@@ -87,21 +87,21 @@ export function SupportNotesPanel({
             }
           }}
           className={cn(
-            "w-full resize-none rounded-lg border border-[#FDE68A]/80 bg-white px-3 py-2.5 text-sm text-[#111827] outline-none placeholder:text-[#A16207] focus:border-[#F59E0B] focus:ring-2 focus:ring-[#FDE68A]/60",
+            "w-full resize-none rounded-lg border border-amber-200/80 bg-[var(--admin-panel)] dark:border-amber-500/30 px-3 py-2.5 text-sm text-[var(--admin-text)] outline-none placeholder:text-amber-700 dark:placeholder:text-amber-400/70 focus:border-amber-500 focus:ring-2 focus:ring-amber-200/60 dark:focus:ring-amber-500/30",
             draftDir === "rtl"
               ? "text-right placeholder:text-right"
               : "text-left placeholder:text-left",
           )}
         />
         <div className="mt-2 flex items-center justify-between gap-2">
-          <p className="text-[10px] text-[#A16207]/80">
+          <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80">
             {t("admin.frontDesk.noteHint")}
           </p>
           <button
             type="button"
             disabled={busy || !draft.trim()}
             onClick={() => void saveDraft()}
-            className="rounded-md bg-[#111827] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+            className="rounded-md bg-[var(--admin-text)] px-3 py-1.5 text-xs font-semibold text-[var(--admin-panel)] disabled:opacity-40"
           >
             {t("admin.frontDesk.saveNote")}
           </button>
@@ -109,7 +109,7 @@ export function SupportNotesPanel({
       </div>
 
       {ordered.length === 0 ? (
-        <p className="py-4 text-center text-xs text-[#9CA3AF]">
+        <p className="py-4 text-center text-xs text-[var(--admin-muted)]">
           {t("admin.frontDesk.noNotes")}
         </p>
       ) : null}

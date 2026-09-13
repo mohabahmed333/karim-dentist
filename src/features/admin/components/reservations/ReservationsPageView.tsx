@@ -343,107 +343,105 @@ export function ReservationsPageView({
                 )}
               </p>
             </div>
-            <div className="overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)]">
-              <CollectionTable
-                tableId="reservations"
-                framed={false}
-                rows={tableRows}
-                serverFiltering={serverFiltering}
-                onRowClick={editor.openRow}
-                emptyMessage={t("admin.reservations.empty")}
-                searchPlaceholder={t("admin.reservations.patient")}
-                bulkEntityLabel={t("admin.reservations.title").toLowerCase()}
-                rowActions={[
-                  {
-                    id: "edit",
-                    label: t("admin.edit"),
-                    icon: "edit",
-                    onClick: (r) => editor.openRow(r.id),
+            <CollectionTable
+              framed
+              tableId="reservations"
+              rows={tableRows}
+              serverFiltering={serverFiltering}
+              onRowClick={editor.openRow}
+              emptyMessage={t("admin.reservations.empty")}
+              searchPlaceholder={t("admin.reservations.patient")}
+              bulkEntityLabel={t("admin.reservations.title").toLowerCase()}
+              rowActions={[
+                {
+                  id: "edit",
+                  label: t("admin.edit"),
+                  icon: "edit",
+                  onClick: (r) => editor.openRow(r.id),
+                },
+                {
+                  id: "delete",
+                  label: t("admin.delete"),
+                  icon: "delete",
+                  tone: "danger",
+                  onClick: (r) => {
+                    editor.openRow(r.id);
+                    editor.setDeleteOpen(true);
                   },
-                  {
-                    id: "delete",
-                    label: t("admin.delete"),
-                    icon: "delete",
-                    tone: "danger",
-                    onClick: (r) => {
-                      editor.openRow(r.id);
-                      editor.setDeleteOpen(true);
-                    },
-                  },
-                ]}
-                bulkActions={[
-                  {
-                    id: "delete",
-                    label: t("admin.table.bulkDelete"),
-                    tone: "danger",
-                    onClick: async (selected) => {
-                      try {
-                        for (const row of selected) {
-                          await releaseAppointmentSlot(row.id);
-                          await softDeleteReservation(row.id);
-                        }
-                        toast.success(t("admin.delete"));
-                        router.refresh();
-                      } catch (error) {
-                        toast.error(
-                          error instanceof Error
-                            ? error.message
-                            : t("admin.table.bulkDelete"),
-                        );
+                },
+              ]}
+              bulkActions={[
+                {
+                  id: "delete",
+                  label: t("admin.table.bulkDelete"),
+                  tone: "danger",
+                  onClick: async (selected) => {
+                    try {
+                      for (const row of selected) {
+                        await releaseAppointmentSlot(row.id);
+                        await softDeleteReservation(row.id);
                       }
-                    },
+                      toast.success(t("admin.delete"));
+                      router.refresh();
+                    } catch (error) {
+                      toast.error(
+                        error instanceof Error
+                          ? error.message
+                          : t("admin.table.bulkDelete"),
+                      );
+                    }
                   },
-                ]}
-                columns={[
-                  {
-                    key: "patient",
-                    header: t("admin.reservations.patient"),
-                    sortValue: (r) => r.patient_name,
-                    searchValue: (r) =>
-                      `${r.patient_name} ${r.phone ?? ""} ${r.service_label}`,
-                    cell: (r) => (
-                      <span className="font-medium">{r.patient_name}</span>
-                    ),
-                  },
-                  {
-                    key: "phone",
-                    header: t("admin.reservations.phone"),
-                    sortValue: (r) => r.phone ?? "",
-                    cell: (r) => r.phone || "—",
-                  },
-                  {
-                    key: "service",
-                    header: t("admin.reservations.service"),
-                    sortValue: (r) => r.service_label,
-                    cell: (r) => (
-                      <ReservationServiceLabel
-                        serviceId={r.service_id}
-                        storedLabel={r.service_label}
-                        services={services}
-                      />
-                    ),
-                  },
-                  {
-                    key: "when",
-                    header: t("admin.reservations.when"),
-                    sortValue: (r) => r.starts_at,
-                    cell: (r) => formatReservationWhen(r.starts_at),
-                  },
-                  {
-                    key: "status",
-                    header: t("admin.status"),
-                    sortValue: (r) => r.status,
-                    cell: (r) => (
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs capitalize ${statusBadgeClass(r.status)}`}
-                      >
-                        {r.status}
-                      </span>
-                    ),
-                  },
-                ]}
-              />
-            </div>
+                },
+              ]}
+              columns={[
+                {
+                  key: "patient",
+                  header: t("admin.reservations.patient"),
+                  sortValue: (r) => r.patient_name,
+                  searchValue: (r) =>
+                    `${r.patient_name} ${r.phone ?? ""} ${r.service_label}`,
+                  cell: (r) => (
+                    <span className="font-medium">{r.patient_name}</span>
+                  ),
+                },
+                {
+                  key: "phone",
+                  header: t("admin.reservations.phone"),
+                  sortValue: (r) => r.phone ?? "",
+                  cell: (r) => r.phone || "—",
+                },
+                {
+                  key: "service",
+                  header: t("admin.reservations.service"),
+                  sortValue: (r) => r.service_label,
+                  cell: (r) => (
+                    <ReservationServiceLabel
+                      serviceId={r.service_id}
+                      storedLabel={r.service_label}
+                      services={services}
+                    />
+                  ),
+                },
+                {
+                  key: "when",
+                  header: t("admin.reservations.when"),
+                  sortValue: (r) => r.starts_at,
+                  cell: (r) => formatReservationWhen(r.starts_at),
+                },
+                {
+                  key: "status",
+                  header: t("admin.status"),
+                  sortValue: (r) => r.status,
+                  cell: (r) => (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs capitalize ${statusBadgeClass(r.status)}`}
+                    >
+                      {r.status}
+                    </span>
+                  ),
+                },
+              ]}
+            />
           </section>
         </>
       )}

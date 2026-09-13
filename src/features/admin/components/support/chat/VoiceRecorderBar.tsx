@@ -58,18 +58,18 @@ export function VoiceRecorderBar({ onCancel, onSend, demo = false }: Props) {
       <button
         type="button"
         onClick={discard}
-        className="rounded-lg p-2 text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]"
+        className="rounded-lg p-2 text-[var(--wa-composer-icon)] hover:bg-[var(--wa-composer-icon-hover-bg)] hover:text-[var(--wa-composer-text)]"
         aria-label={t("admin.frontDesk.deleteRecording")}
       >
         <Trash2 className="size-5" strokeWidth={1.75} />
       </button>
 
-      <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-[#E5E7EB] bg-[#F3F4F6] px-3 py-2">
+      <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-[var(--wa-composer-border)] bg-[var(--wa-composer-field-bg)] px-3 py-2">
         {paused ? (
           <button
             type="button"
             onClick={togglePreview}
-            className="shrink-0 rounded-full p-0.5 text-[#111827] hover:bg-white/80"
+            className="shrink-0 rounded-full p-0.5 text-[var(--wa-composer-text)] hover:bg-white/80"
             aria-label={
               previewPlaying
                 ? t("admin.frontDesk.pausePreview")
@@ -89,7 +89,7 @@ export function VoiceRecorderBar({ onCancel, onSend, demo = false }: Props) {
           </span>
         )}
 
-        <span className="shrink-0 tabular-nums text-[13px] font-medium text-[#111827]">
+        <span className="shrink-0 tabular-nums text-[13px] font-medium text-[var(--wa-composer-text)]">
           {clock}
         </span>
 
@@ -107,7 +107,7 @@ export function VoiceRecorderBar({ onCancel, onSend, demo = false }: Props) {
         <button
           type="button"
           onClick={resume}
-          className="rounded-lg p-2 text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]"
+          className="rounded-lg p-2 text-[var(--wa-composer-icon)] hover:bg-[var(--wa-composer-icon-hover-bg)] hover:text-[var(--wa-composer-text)]"
           aria-label={t("admin.frontDesk.continueRecording")}
         >
           <Mic className="size-5" strokeWidth={1.75} />
@@ -117,7 +117,7 @@ export function VoiceRecorderBar({ onCancel, onSend, demo = false }: Props) {
           type="button"
           onClick={pause}
           disabled={phase !== "recording"}
-          className="rounded-lg p-2 text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827] disabled:opacity-40"
+          className="rounded-lg p-2 text-[var(--wa-composer-icon)] hover:bg-[var(--wa-composer-icon-hover-bg)] hover:text-[var(--wa-composer-text)] disabled:opacity-40"
           aria-label={t("admin.frontDesk.pauseRecording")}
         >
           <Pause className="size-5" strokeWidth={1.75} />

@@ -63,7 +63,7 @@ export function SupportDetailsTabs({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 border-b border-[#E5E7EB] px-1">
+      <div className="flex shrink-0 border-b border-[var(--admin-border)] px-1">
         {TAB_KEYS.map((item) => (
           <button
             key={item.id}
@@ -72,13 +72,15 @@ export function SupportDetailsTabs({
             className={cn(
               "flex-1 border-b-2 px-0.5 py-2.5 text-[10px] font-semibold transition-colors sm:text-[11px]",
               tab === item.id
-                ? "border-[#111827] text-[#111827]"
-                : "border-transparent text-[#6B7280] hover:text-[#111827]",
+                ? "border-[var(--admin-text)] text-[var(--admin-text)]"
+                : "border-transparent text-[var(--admin-muted)] hover:text-[var(--admin-text)]",
             )}
           >
             {t(item.key)}
             {counts[item.id] ? (
-              <span className="ms-0.5 text-[#9CA3AF]">{counts[item.id]}</span>
+              <span className="ms-0.5 text-[var(--admin-muted)]">
+                {counts[item.id]}
+              </span>
             ) : null}
           </button>
         ))}
@@ -111,7 +113,7 @@ export function SupportDetailsTabs({
                     href={img.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="aspect-square overflow-hidden rounded-md bg-[#F3F4F6]"
+                    className="aspect-square overflow-hidden rounded-md bg-[var(--admin-hover)]"
                     title={img.name || t("admin.frontDesk.image")}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -139,14 +141,14 @@ export function SupportDetailsTabs({
                       href={link.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-start gap-2 rounded-md border border-[#E5E7EB] px-2 py-1.5 hover:bg-[#F9FAFB]"
+                      className="flex items-start gap-2 rounded-md border border-[var(--admin-border)] px-2 py-1.5 hover:bg-[var(--admin-hover)]"
                     >
-                      <Link2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#3B82F6]" />
+                      <Link2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
                       <span className="min-w-0">
-                        <span className="block truncate text-xs font-medium text-[#111827]">
+                        <span className="block truncate text-xs font-medium text-[var(--admin-text)]">
                           {link.label}
                         </span>
-                        <span className="block truncate text-[10px] text-[#9CA3AF]">
+                        <span className="block truncate text-[10px] text-[var(--admin-muted)]">
                           {link.url}
                         </span>
                       </span>
@@ -172,12 +174,12 @@ export function SupportDetailsTabs({
                         href={file.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-2 rounded-md border border-[#E5E7EB] px-2 py-1.5 hover:bg-[#F9FAFB]"
+                        className="flex items-center gap-2 rounded-md border border-[var(--admin-border)] px-2 py-1.5 hover:bg-[var(--admin-hover)]"
                       >
-                        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#F3F4F6] text-[#374151]">
+                        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--admin-hover)] text-[var(--admin-text)]">
                           <Icon className="h-3.5 w-3.5" />
                         </span>
-                        <span className="min-w-0 flex-1 truncate text-xs font-medium text-[#111827]">
+                        <span className="min-w-0 flex-1 truncate text-xs font-medium text-[var(--admin-text)]">
                           {file.name}
                         </span>
                       </a>
@@ -194,5 +196,9 @@ export function SupportDetailsTabs({
 }
 
 function Empty({ label }: { label: string }) {
-  return <p className="py-8 text-center text-xs text-[#9CA3AF]">{label}</p>;
+  return (
+    <p className="py-8 text-center text-xs text-[var(--admin-muted)]">
+      {label}
+    </p>
+  );
 }

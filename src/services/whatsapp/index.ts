@@ -16,6 +16,10 @@ export {
   insertOutboundMessage,
   clearConversationUnread,
   setConversationStatus,
+  setConversationStarred,
+  setConversationTags,
+  setConversationAssignee,
+  setConversationMuted,
   upsertConversationFromKapso,
 } from "./mutations";
 export { resolveConversationStatus } from "./resolveConversationStatus";

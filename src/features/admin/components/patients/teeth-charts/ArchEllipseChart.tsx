@@ -52,13 +52,13 @@ export function ArchEllipseChart({
       <path
         d={guidePath(76, 30, 68)}
         fill="none"
-        stroke="#e5e7eb"
+        stroke="var(--admin-border)"
         strokeWidth={1.2}
       />
       <path
         d={guidePath(66, 24, 118)}
         fill="none"
-        stroke="#e5e7eb"
+        stroke="var(--admin-border)"
         strokeWidth={1.2}
       />
       {UPPER.map((fdi, idx) => {
@@ -140,9 +140,9 @@ function ToothEllipse({
   const state = toothVisualState(fdi, selectedFdi, commented);
   const hovered = fdi === hoveredFdi && state !== "active";
   const fill =
-    state === "active" ? "#E2F163" : state === "has-comment" || hovered ? "#dbeafe" : "#fafafa";
+    state === "active" ? "#E2F163" : state === "has-comment" || hovered ? "#dbeafe" : "var(--admin-hover)";
   const stroke =
-    state === "active" ? "#111111" : state === "has-comment" ? "#2563eb" : hovered ? "#93c5fd" : "#d1d5db";
+    state === "active" ? "#111111" : state === "has-comment" ? "#2563eb" : hovered ? "#93c5fd" : "var(--admin-border)";
 
   return (
     <g

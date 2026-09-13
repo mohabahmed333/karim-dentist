@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { PanelLeft } from "lucide-react";
+import { Moon, PanelLeft, Sun } from "lucide-react";
 import { useTranslations } from "@/lib/i18n";
 import { AdminMobileNav } from "./AdminMobileNav";
 import { adminPageLabelKeys } from "@/features/admin/lib/adminNav";
@@ -13,12 +13,18 @@ type Props = {
   pendingCount?: number;
   sidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
+  darkMode?: boolean;
+  onToggleDarkMode?: () => void;
+  permissions?: string[] | null;
 };
 
 export function AdminTopbar({
   pendingCount = 0,
   sidebarCollapsed = false,
   onToggleSidebar,
+  darkMode = false,
+  onToggleDarkMode,
+  permissions,
 }: Props) {
   const pathname = usePathname();
   const t = useTranslations();
@@ -35,7 +41,7 @@ export function AdminTopbar({
   return (
     <header className="sticky top-0 z-40 shrink-0 border-b border-[var(--admin-border)] bg-[var(--admin-panel)]/90 px-4 py-2 backdrop-blur-md md:px-6">
       <div className="flex items-center gap-3">
-        <AdminMobileNav pendingCount={pendingCount} />
+        <AdminMobileNav pendingCount={pendingCount} permissions={permissions} />
         {onToggleSidebar ? (
           <button
             type="button"
@@ -56,9 +62,27 @@ export function AdminTopbar({
           </p>
         </div>
         <div className="relative mx-auto min-w-0 w-full max-w-sm">
-          <CommandPalette />
+          <CommandPalette permissions={permissions} />
         </div>
         <div className="ms-auto flex items-center gap-2">
+          {onToggleDarkMode ? (
+            <button
+              type="button"
+              onClick={onToggleDarkMode}
+              aria-label={
+                darkMode ? t("admin.lightModeAria") : t("admin.darkModeAria")
+              }
+              title={darkMode ? t("admin.lightMode") : t("admin.darkMode")}
+              aria-pressed={darkMode}
+              className="shrink-0 rounded-md p-1.5 text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]"
+            >
+              {darkMode ? (
+                <Sun className="size-4" aria-hidden />
+              ) : (
+                <Moon className="size-4" aria-hidden />
+              )}
+            </button>
+          ) : null}
           <DashboardLayoutTopbarControls />
           <AdminNewMenu />
         </div>

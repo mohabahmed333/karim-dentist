@@ -12,7 +12,7 @@ export function DeviceSwitcher({ value, onChange }: Props) {
     <div
       role="group"
       aria-label="Preview device"
-      className="inline-flex w-fit items-center rounded-[10px] border border-[#e3e3e3] bg-[#f0f0f0] p-0.5"
+      className="inline-flex w-fit items-center rounded-[10px] border border-[var(--admin-border)] bg-[var(--admin-hover)] p-0.5"
       data-tour="devices"
     >
       {PREVIEW_DEVICES.map((device) => {
@@ -27,8 +27,8 @@ export function DeviceSwitcher({ value, onChange }: Props) {
             data-showreel-action={`customize-device-${device.id}`}
             className={
               active
-                ? "inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-white px-3.5 text-[12px] font-medium text-[#1a1a1a] shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
-                : "inline-flex h-8 items-center gap-1.5 rounded-[8px] px-3.5 text-[12px] font-medium text-[#6b6b6b] hover:text-[#1a1a1a]"
+                ? "inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-[var(--admin-panel)] px-3.5 text-[12px] font-medium text-[var(--admin-text)] shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+                : "inline-flex h-8 items-center gap-1.5 rounded-[8px] px-3.5 text-[12px] font-medium text-[var(--admin-muted)] hover:text-[var(--admin-text)]"
             }
           >
             <DeviceIcon id={device.id} />

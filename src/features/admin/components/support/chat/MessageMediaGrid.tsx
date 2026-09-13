@@ -34,7 +34,7 @@ export function MessageMediaGrid({ items }: Props) {
           type="button"
           onClick={() => open(item)}
           className={cn(
-            "group relative overflow-hidden rounded-lg bg-[#E5E7EB]",
+            "group relative overflow-hidden rounded-lg bg-[var(--wa-surface-hover)]",
             items.length > 1 &&
               items.length % 2 === 1 &&
               index === items.length - 1 &&

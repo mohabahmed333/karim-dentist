@@ -10,6 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  AdminSelect,
+  AdminSelectContent,
+  AdminSelectItem,
+  AdminSelectTrigger,
+  AdminSelectValue,
+} from "@/features/admin/ui";
+import { SettingsSaveRow, SettingsSectionGroup } from "./SettingsSectionGroup";
+import {
   clinicHoursUpsertSchema,
   getClinicHours,
   saveClinicHours,
@@ -38,9 +46,6 @@ const TIME_OPTIONS: string[] = (() => {
   }
   return out;
 })();
-
-const SELECT_CLASS =
-  "h-9 w-full cursor-pointer rounded-lg border border-[var(--admin-border,#e5e7eb)] bg-[var(--admin-panel,#fff)] px-3 text-sm text-[var(--admin-text,#1a1a1a)] outline-none";
 
 function parseWindow(window: string): { start: string; end: string } {
   const [start = "10:00", end = "12:00"] = window.split("-");
@@ -190,10 +195,9 @@ export function ClinicHoursEditor() {
   }
 
   return (
-    <div className="space-y-5">
-      <div>
-        <p className="text-sm font-medium text-[var(--admin-text)]">Open days</p>
-        <div className="mt-2 flex flex-wrap gap-2">
+    <div className="space-y-6">
+      <SettingsSectionGroup title="Open days">
+        <div className="flex flex-wrap gap-2">
           {DAY_LABELS.map((day) => {
             const on = openWeekdays.includes(day.value);
             return (
@@ -212,13 +216,13 @@ export function ClinicHoursEditor() {
             );
           })}
         </div>
-      </div>
+      </SettingsSectionGroup>
 
-      <div className="space-y-2">
-        <Label>Time windows</Label>
-        <p className="text-[12px] text-[var(--admin-muted)]">
-          Choose From / To times from the lists — no typing.
-        </p>
+      <SettingsSectionGroup
+        title="Time windows"
+        hint="Choose From / To times from the lists — no typing."
+        className="space-y-3"
+      >
         {windows.map((w, i) => {
           const { start, end } = parseWindow(w);
           return (
@@ -230,33 +234,41 @@ export function ClinicHoursEditor() {
                 <span className="text-[11px] font-medium text-[var(--admin-muted)]">
                   From
                 </span>
-                <select
-                  className={SELECT_CLASS}
+                <AdminSelect
                   value={start}
-                  onChange={(e) => updateWindow(i, "start", e.target.value)}
+                  onValueChange={(value) => updateWindow(i, "start", String(value))}
                 >
-                  {TIME_OPTIONS.map((t) => (
-                    <option key={`s-${i}-${t}`} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
+                  <AdminSelectTrigger className="w-full">
+                    <AdminSelectValue />
+                  </AdminSelectTrigger>
+                  <AdminSelectContent>
+                    {TIME_OPTIONS.map((t) => (
+                      <AdminSelectItem key={`s-${i}-${t}`} value={t}>
+                        {t}
+                      </AdminSelectItem>
+                    ))}
+                  </AdminSelectContent>
+                </AdminSelect>
               </label>
               <label className="grid min-w-[8rem] flex-1 gap-1">
                 <span className="text-[11px] font-medium text-[var(--admin-muted)]">
                   To
                 </span>
-                <select
-                  className={SELECT_CLASS}
+                <AdminSelect
                   value={end}
-                  onChange={(e) => updateWindow(i, "end", e.target.value)}
+                  onValueChange={(value) => updateWindow(i, "end", String(value))}
                 >
-                  {TIME_OPTIONS.map((t) => (
-                    <option key={`e-${i}-${t}`} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
+                  <AdminSelectTrigger className="w-full">
+                    <AdminSelectValue />
+                  </AdminSelectTrigger>
+                  <AdminSelectContent>
+                    {TIME_OPTIONS.map((t) => (
+                      <AdminSelectItem key={`e-${i}-${t}`} value={t}>
+                        {t}
+                      </AdminSelectItem>
+                    ))}
+                  </AdminSelectContent>
+                </AdminSelect>
               </label>
               <Button
                 type="button"
@@ -273,38 +285,46 @@ export function ClinicHoursEditor() {
         <Button type="button" variant="outline" size="sm" onClick={addWindow}>
           Add window
         </Button>
-      </div>
+      </SettingsSectionGroup>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="space-y-1.5">
-          <Label>Slot length (minutes)</Label>
-          <select
-            className={SELECT_CLASS}
-            value={slotMinutes}
-            onChange={(e) => setSlotMinutes(Number(e.target.value))}
-          >
-            {[15, 30, 45, 60, 90, 120].map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="space-y-1.5">
-          <Label>Publish horizon (days)</Label>
-          <Input
-            type="number"
-            min={7}
-            max={60}
-            value={horizonDays}
-            onChange={(e) => setHorizonDays(Number(e.target.value))}
-          />
-        </label>
-      </div>
+      <SettingsSectionGroup title="Scheduling">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="space-y-1.5">
+            <Label>Slot length (minutes)</Label>
+            <AdminSelect
+              value={String(slotMinutes)}
+              onValueChange={(value) => setSlotMinutes(Number(value))}
+            >
+              <AdminSelectTrigger className="w-full">
+                <AdminSelectValue />
+              </AdminSelectTrigger>
+              <AdminSelectContent>
+                {[15, 30, 45, 60, 90, 120].map((m) => (
+                  <AdminSelectItem key={m} value={String(m)}>
+                    {m}
+                  </AdminSelectItem>
+                ))}
+              </AdminSelectContent>
+            </AdminSelect>
+          </label>
+          <label className="space-y-1.5">
+            <Label>Publish horizon (days)</Label>
+            <Input
+              type="number"
+              min={7}
+              max={60}
+              value={horizonDays}
+              onChange={(e) => setHorizonDays(Number(e.target.value))}
+            />
+          </label>
+        </div>
+      </SettingsSectionGroup>
 
-      <Button type="button" disabled={pending} onClick={() => void onSave()}>
-        {pending ? t("admin.saving") : t("admin.pages.hours.save")}
-      </Button>
+      <SettingsSaveRow>
+        <Button type="button" disabled={pending} onClick={() => void onSave()}>
+          {pending ? t("admin.saving") : t("admin.pages.hours.save")}
+        </Button>
+      </SettingsSaveRow>
     </div>
   );
 }

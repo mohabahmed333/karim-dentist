@@ -32,15 +32,10 @@ import {
 } from "./clinicAssistChat";
 import { ReceptionChat } from "@/features/admin/components/chat/reception/ReceptionChat";
 import type { ActivePatient } from "@/features/admin/components/chat/reception/flowTypes";
-import {
-  SUPPORT_CONVERSATIONS,
-  SUPPORT_DETAILS,
-  SUPPORT_MESSAGES,
-  getDetails,
-  getMessages,
-  type SupportConversation,
-  type SupportDetails,
-  type SupportMessage,
+import type {
+  SupportConversation,
+  SupportDetails,
+  SupportMessage,
 } from "./supportDummyData";
 import { InboxColumnResizeHandle } from "./InboxColumnResizeHandle";
 import { INBOX_WIDTH_MAX, INBOX_WIDTH_MIN } from "./inboxColumnWidth";
@@ -107,11 +102,7 @@ export function SupportInboxView({
   const rtl = locale === "ar";
   const initial = useMemo<LiveInbox>(
     () => ({
-      conversations: propConversations?.length
-        ? propConversations
-        : useKapso
-          ? []
-          : SUPPORT_CONVERSATIONS,
+      conversations: propConversations ?? [],
       detailsById: propDetailsById ?? {},
       messagesById: propMessagesById ?? {},
       openCount: propOpenCount ?? propConversations?.length ?? 0,
@@ -123,7 +114,6 @@ export function SupportInboxView({
       propMessagesById,
       propOpenCount,
       initialCursors,
-      useKapso,
     ],
   );
 
@@ -139,6 +129,7 @@ export function SupportInboxView({
     useState<InboxStatusFilter>(inboxStatusProp);
   const [localSort, setLocalSort] = useState<InboxSort>(inboxSortProp);
   const [localSearch, setLocalSearch] = useState(inboxQProp);
+  const [starredOnly, setStarredOnly] = useState(false);
   const [searchDraft, setSearchDraft] = useState(
     compact ? inboxQProp : urlInbox.iq || inboxQProp,
   );
@@ -158,6 +149,35 @@ export function SupportInboxView({
     [inboxFilter, inboxSearch, inboxSort],
   );
 
+  const [staffOptions, setStaffOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const staffById = useMemo(
+    () => Object.fromEntries(staffOptions.map((s) => [s.id, s.name])),
+    [staffOptions],
+  );
+
+  useEffect(() => {
+    if (!useKapso) return;
+    let cancelled = false;
+    fetch("/api/v1/whatsapp/conversations/staff")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { staff?: { id: string; display_name: string | null }[] } | null) => {
+        if (cancelled || !data?.staff) return;
+        setStaffOptions(
+          data.staff.map((s) => ({
+            id: s.id,
+            name: s.display_name || t("admin.frontDesk.unnamedStaff"),
+          })),
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch once per mount
+  }, [useKapso]);
+
   const alertViewRef = useRef<InboxAlertView>({
     selectedId: "",
     threadVisible: panelVisible,
@@ -168,6 +188,7 @@ export function SupportInboxView({
     agentName,
     conversationFilters,
     { viewRef: alertViewRef, onUnreadTotal },
+    staffById,
   );
   const {
     conversations,
@@ -180,6 +201,10 @@ export function SupportInboxView({
     replaceConversationMessages,
     patchDetails,
     patchConversationStatus,
+    patchConversationStarred,
+    patchConversationTags,
+    patchConversationAssignee,
+    patchConversationMuted,
     touchConversation,
   } = live;
   const listLoading = useKapso && (filterLoading || isFilterPending);
@@ -214,6 +239,8 @@ export function SupportInboxView({
   const demoTickTimersRef = useRef<number[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [starring, setStarring] = useState(false);
+  const [muting, setMuting] = useState(false);
   const [assistPatient, setAssistPatient] = useState<ActivePatient | null>(
     null,
   );
@@ -391,6 +418,10 @@ export function SupportInboxView({
       list = conversations.filter((c) => c.status === "archived");
     }
 
+    if (starredOnly) {
+      list = list.filter((c) => c.starred);
+    }
+
     const q = inboxSearch.trim().toLowerCase();
     const aiHay = [
       clinicAssistConversation.name,
@@ -410,6 +441,7 @@ export function SupportInboxView({
     inboxFilter,
     inboxSearch,
     showClinicAssist,
+    starredOnly,
   ]);
 
   const conversation = useMemo(
@@ -428,27 +460,19 @@ export function SupportInboxView({
 
   const messages = useMemo(() => {
     if (!selectedId || selectedId === CLINIC_ASSIST_CHAT_ID) return [];
-    const base =
-      messagesById[selectedId] ??
-      SUPPORT_MESSAGES[selectedId] ??
-      (useKapso ? [] : getMessages(selectedId));
+    const base = messagesById[selectedId] ?? [];
     const extras = extraMessages[selectedId] ?? [];
     const ids = new Set(base.map((m) => m.id));
     const merged = [...base, ...extras.filter((m) => !ids.has(m.id))];
     return groupAdjacentImageMessages(merged);
-  }, [extraMessages, messagesById, selectedId, useKapso]);
+  }, [extraMessages, messagesById, selectedId]);
 
-  const details =
-    (selectedId && detailsById[selectedId]) ||
-    (selectedId && SUPPORT_DETAILS[selectedId]) ||
-    (useKapso
-      ? {
-          attributes: [],
-          clientData: [],
-          tickets: [],
-          notes: [],
-        }
-      : getDetails(selectedId || "jasper"));
+  const details = (selectedId && detailsById[selectedId]) || {
+    attributes: [],
+    clientData: [],
+    tickets: [],
+    notes: [],
+  };
 
   const duration = reduced ? 0.01 : 0.28;
   const ease = [0.22, 1, 0.36, 1] as const;
@@ -761,6 +785,92 @@ export function SupportInboxView({
     }
   }
 
+  async function handleStarToggle(conversationId: string, starred: boolean) {
+    if (!useKapso || starring) return;
+    setStarring(true);
+    try {
+      const res = await fetch("/api/v1/whatsapp/conversations/star", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, starred }),
+      });
+      if (!res.ok) {
+        toast.error(t("admin.frontDesk.starFail"));
+        return;
+      }
+      patchConversationStarred(conversationId, starred);
+    } catch {
+      toast.error(t("admin.frontDesk.starFail"));
+    } finally {
+      setStarring(false);
+    }
+  }
+
+  async function handleMuteToggle(conversationId: string, muted: boolean) {
+    if (!useKapso || muting) return;
+    setMuting(true);
+    const mutedUntil = muted
+      ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 365).toISOString()
+      : null;
+    try {
+      const res = await fetch("/api/v1/whatsapp/conversations/mute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, mutedUntil }),
+      });
+      if (!res.ok) {
+        toast.error(muted ? t("admin.frontDesk.muteFail") : t("admin.frontDesk.unmuteFail"));
+        return;
+      }
+      patchConversationMuted(conversationId, mutedUntil);
+      toast.success(muted ? t("admin.frontDesk.muteOn") : t("admin.frontDesk.muteOff"));
+    } catch {
+      toast.error(t("admin.frontDesk.updateFail"));
+    } finally {
+      setMuting(false);
+    }
+  }
+
+  async function handleTagsChange(conversationId: string, tags: string[]) {
+    if (!useKapso) return;
+    try {
+      const res = await fetch("/api/v1/whatsapp/conversations/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, tags }),
+      });
+      if (!res.ok) {
+        toast.error(t("admin.frontDesk.tagFail"));
+        return;
+      }
+      patchConversationTags(conversationId, tags);
+    } catch {
+      toast.error(t("admin.frontDesk.tagFail"));
+    }
+  }
+
+  async function handleAssigneeChange(
+    conversationId: string,
+    assigneeId: string | null,
+    assigneeName: string | null,
+  ) {
+    if (!useKapso) return;
+    try {
+      const res = await fetch("/api/v1/whatsapp/conversations/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, assigneeId }),
+      });
+      if (!res.ok) {
+        toast.error(t("admin.frontDesk.assignFail"));
+        return;
+      }
+      patchConversationAssignee(conversationId, assigneeId, assigneeName);
+    } catch {
+      toast.error(t("admin.frontDesk.assignFail"));
+    }
+  }
+
   async function addNote(body: string) {
     if (!useKapso || !selectedId || !body.trim()) return;
     const res = await fetch("/api/v1/whatsapp/notes", {
@@ -904,6 +1014,9 @@ export function SupportInboxView({
                 }}
                 filter={inboxFilter}
                 onFilterChange={setInboxFilter}
+                starredOnly={starredOnly}
+                onStarredOnlyChange={useKapso ? setStarredOnly : undefined}
+                onStar={useKapso ? handleStarToggle : undefined}
                 sort={inboxSort}
                 onSortChange={setInboxSort}
                 search={searchDraft}
@@ -1013,6 +1126,12 @@ export function SupportInboxView({
                 onArchiveToggle={
                   useKapso ? () => void handleArchiveToggle() : undefined
                 }
+                muting={muting}
+                onMuteToggle={
+                  useKapso
+                    ? (muted) => void handleMuteToggle(conversation.id, muted)
+                    : undefined
+                }
                 onAskAi={() => {
                   setAssistReturnId(conversation.id);
                   setAssistPatient(conversationToAssistPatient(conversation));
@@ -1052,6 +1171,9 @@ export function SupportInboxView({
               }}
               filter={inboxFilter}
               onFilterChange={setInboxFilter}
+              starredOnly={starredOnly}
+              onStarredOnlyChange={useKapso ? setStarredOnly : undefined}
+              onStar={useKapso ? handleStarToggle : undefined}
               sort={inboxSort}
               onSortChange={setInboxSort}
               search={searchDraft}
@@ -1134,6 +1256,12 @@ export function SupportInboxView({
                 onArchiveToggle={
                   useKapso ? () => void handleArchiveToggle() : undefined
                 }
+                muting={muting}
+                onMuteToggle={
+                  useKapso
+                    ? (muted) => void handleMuteToggle(conversation.id, muted)
+                    : undefined
+                }
                 onAskAi={() => {
                   setAssistReturnId(conversation.id);
                   setAssistPatient(conversationToAssistPatient(conversation));
@@ -1175,6 +1303,18 @@ export function SupportInboxView({
                         onTogglePinNote={togglePinNote}
                         onEditNote={editNote}
                         onDeleteNote={deleteNote}
+                        conversation={useKapso ? conversation : undefined}
+                        staffOptions={staffOptions}
+                        onTagsChange={(tags) =>
+                          handleTagsChange(conversation.id, tags)
+                        }
+                        onAssigneeChange={(assigneeId, assigneeName) =>
+                          handleAssigneeChange(
+                            conversation.id,
+                            assigneeId,
+                            assigneeName,
+                          )
+                        }
                       />
                     </div>
                   </motion.div>

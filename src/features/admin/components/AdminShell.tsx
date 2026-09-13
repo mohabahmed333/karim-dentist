@@ -12,10 +12,13 @@ import { AdminFloatingBubbles } from "./AdminFloatingBubbles";
 import { WhatsappLiveBoot } from "./WhatsappLiveBoot";
 import { QuickBookProvider } from "./quick-book/QuickBookProvider";
 import { useAdminSidebarCollapse } from "@/features/admin/hooks/useAdminSidebarCollapse";
+import { useAdminDarkMode } from "@/features/admin/hooks/useAdminDarkMode";
 import { useAdminChatLayout } from "@/features/admin/hooks/useAdminChatLayout";
 import { nextDockCollapsedOnLayoutToggle } from "@/features/admin/lib/adminChatDemoLayout";
 import { shouldHideAdminChatBubbles } from "@/features/admin/lib/adminPatientPath";
 import {
+  DARK_DASHBOARD_CANVAS,
+  DARK_DASHBOARD_PANEL,
   DEFAULT_DASHBOARD_CANVAS,
   DEFAULT_DASHBOARD_PANEL,
   DEFAULT_DASHBOARD_PRIMARY,
@@ -34,6 +37,7 @@ type ThemeDetail = {
   canvas: string;
   /** Main content area behind cards — not card chrome. */
   content: string;
+  panel: string;
 };
 
 type Props = {
@@ -60,6 +64,8 @@ type Props = {
   /** Showreel: override the persisted sidebar-collapse preference so
       recordings don't depend on the real app's localStorage state. */
   forceSidebarCollapsed?: boolean;
+  /** Permission keys granted to the current session; omit to show all nav (demos). */
+  permissions?: string[] | null;
 };
 
 function applyRootThemeVars(theme: ThemeDetail) {
@@ -68,8 +74,7 @@ function applyRootThemeVars(theme: ThemeDetail) {
   root.style.setProperty("--admin-secondary", theme.secondary);
   root.style.setProperty("--admin-canvas", theme.canvas);
   root.style.setProperty("--admin-content", theme.content);
-  // Cards / chrome stay white — not driven by content color.
-  root.style.setProperty("--admin-panel", DEFAULT_DASHBOARD_PANEL);
+  root.style.setProperty("--admin-panel", theme.panel);
 }
 
 function clearRootThemeVars() {
@@ -97,6 +102,7 @@ export function AdminShell({
   hideFloatingBubbles = false,
   forceFlushMain = false,
   forceSidebarCollapsed,
+  permissions,
 }: Props) {
   const pathname = usePathname();
   const isCustomize = pathname.startsWith("/admin/customize");
@@ -107,6 +113,7 @@ export function AdminShell({
   const { locale } = useLocale();
   const reduced = useReducedMotion();
   const { collapsed, toggle, ready: sidebarReady } = useAdminSidebarCollapse();
+  const { darkMode, toggle: toggleDarkMode } = useAdminDarkMode();
   const {
     layout: storedChatLayout,
     toggleLayout: toggleChatLayout,
@@ -224,10 +231,22 @@ export function AdminShell({
     return () => window.removeEventListener(ADMIN_THEME_EVENT, onTheme);
   }, []);
 
+  // Dark mode overrides canvas/content/panel to fixed dark defaults, ignoring the
+  // customized (light) DB values; primary/secondary brand colors pass through unchanged.
+  const effectiveCanvas = darkMode ? DARK_DASHBOARD_CANVAS : canvas;
+  const effectiveContent = darkMode ? DARK_DASHBOARD_CANVAS : content;
+  const effectivePanel = darkMode ? DARK_DASHBOARD_PANEL : DEFAULT_DASHBOARD_PANEL;
+
   useEffect(() => {
-    applyRootThemeVars({ primary, secondary, canvas, content });
+    applyRootThemeVars({
+      primary,
+      secondary,
+      canvas: effectiveCanvas,
+      content: effectiveContent,
+      panel: effectivePanel,
+    });
     return () => clearRootThemeVars();
-  }, [primary, secondary, canvas, content]);
+  }, [primary, secondary, effectiveCanvas, effectiveContent, effectivePanel]);
 
   const duration = reduced ? 0.01 : 0.32;
   const ease = [0.22, 1, 0.36, 1] as const;
@@ -239,16 +258,17 @@ export function AdminShell({
       className={cn(
         "admin-shell flex h-screen overflow-hidden bg-[var(--admin-canvas)] text-[var(--admin-text)]",
         locale === "ar" && "font-[family-name:var(--font-arabic)]",
+        darkMode && "dark",
       )}
       style={{
         ["--admin-primary" as string]: primary,
         ["--admin-secondary" as string]: secondary,
-        ["--admin-canvas" as string]: canvas,
-        ["--admin-content" as string]: content,
-        ["--admin-panel" as string]: DEFAULT_DASHBOARD_PANEL,
+        ["--admin-canvas" as string]: effectiveCanvas,
+        ["--admin-content" as string]: effectiveContent,
+        ["--admin-panel" as string]: effectivePanel,
       }}
     >
-      <AdminIconRail />
+      <AdminIconRail permissions={permissions} />
       <AnimatePresence initial={false}>
         {!sidebarCollapsed ? (
           <motion.div
@@ -263,7 +283,7 @@ export function AdminShell({
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration, ease }}
           >
-            <AdminSidebar pendingCount={pendingCount} />
+            <AdminSidebar pendingCount={pendingCount} permissions={permissions} />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -273,6 +293,9 @@ export function AdminShell({
             pendingCount={pendingCount}
             sidebarCollapsed={sidebarCollapsed}
             onToggleSidebar={isCustomize ? undefined : toggle}
+            darkMode={darkMode}
+            onToggleDarkMode={toggleDarkMode}
+            permissions={permissions}
           />
           <main
             className={cn(

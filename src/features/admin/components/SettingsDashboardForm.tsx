@@ -18,6 +18,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ADMIN_THEME_EVENT } from "@/features/admin/lib/adminThemeEvent";
+import {
+  SettingsHintBanner,
+  SettingsSaveRow,
+  SettingsSectionGroup,
+} from "./SettingsSectionGroup";
 import { useTranslations } from "@/lib/i18n";
 
 type Props = { settings: SiteSettings | null };
@@ -101,12 +106,10 @@ export function SettingsDashboardForm({ settings: initial }: Props) {
   const panelLabel = t("admin.settings.theme.panel");
 
   return (
-    <form className="space-y-5" onSubmit={(e) => void onSubmit(e)}>
-      <p className="text-sm text-[var(--admin-muted)]">
-        {t("admin.settings.theme.hint")}
-      </p>
+    <form className="space-y-6" onSubmit={(e) => void onSubmit(e)}>
+      <SettingsHintBanner>{t("admin.settings.theme.hint")}</SettingsHintBanner>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(16rem,0.85fr)] lg:items-start">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)] lg:items-start">
         <DashboardThemeExample
           primary={primary}
           secondary={secondary}
@@ -123,8 +126,8 @@ export function SettingsDashboardForm({ settings: initial }: Props) {
           outlineLabel={t("admin.settings.theme.outline")}
         />
 
-        <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        <div className="space-y-6">
+          <ColorFieldGroup title={t("admin.settings.theme.groupBrand")}>
             <ColorField
               id="dashboard_primary_color"
               label={primaryLabel}
@@ -145,6 +148,8 @@ export function SettingsDashboardForm({ settings: initial }: Props) {
                 secondaryLabel,
               )}
             />
+          </ColorFieldGroup>
+          <ColorFieldGroup title={t("admin.settings.theme.groupBackground")}>
             <ColorField
               id="dashboard_canvas_color"
               label={canvasLabel}
@@ -165,13 +170,29 @@ export function SettingsDashboardForm({ settings: initial }: Props) {
                 panelLabel,
               )}
             />
-          </div>
-          <Button type="submit" disabled={pending}>
-            {pending ? t("admin.saving") : t("admin.settings.theme.save")}
-          </Button>
+          </ColorFieldGroup>
+          <SettingsSaveRow>
+            <Button type="submit" disabled={pending}>
+              {pending ? t("admin.saving") : t("admin.settings.theme.save")}
+            </Button>
+          </SettingsSaveRow>
         </div>
       </div>
     </form>
+  );
+}
+
+function ColorFieldGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <SettingsSectionGroup title={title}>
+      <div className="grid grid-cols-2 gap-3">{children}</div>
+    </SettingsSectionGroup>
   );
 }
 
@@ -364,23 +385,27 @@ function ColorField({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-2.5 transition-colors focus-within:border-[var(--admin-primary)]">
+      <div className="relative size-9 shrink-0 overflow-hidden rounded-md border border-[var(--admin-border)]">
         <input
           type="color"
           aria-label={pickerLabel}
           value={/^#[0-9A-Fa-f]{6}$/.test(value) ? value : "#5E6AD2"}
           onChange={(e) => onChange(e.target.value.toUpperCase())}
-          className="h-9 w-12 cursor-pointer rounded border border-[var(--admin-border)] bg-[var(--admin-panel)] p-0.5"
+          className="absolute -inset-1 size-11 cursor-pointer"
         />
+      </div>
+      <div className="min-w-0 flex-1 space-y-0.5">
+        <Label htmlFor={id} className="text-[11px] text-[var(--admin-muted)]">
+          {label}
+        </Label>
         <Input
           id={id}
           name={id}
           value={value}
           onChange={(e) => onChange(e.target.value.toUpperCase())}
           placeholder="#5E6AD2"
-          className="font-mono uppercase"
+          className="h-6 border-0 bg-transparent p-0 font-mono text-[13px] uppercase shadow-none focus-visible:ring-0"
         />
       </div>
     </div>

@@ -136,15 +136,12 @@ export function NotificationSettingsForm() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-medium">Patient notifications</h2>
-          <p className="text-xs text-[var(--admin-muted)]">
-            WhatsApp confirmations, reminders and follow-ups sent to patients.
-          </p>
-        </div>
-        <span className={`rounded-full border px-2.5 py-0.5 text-xs ${badge.className}`}>{badge.label}</span>
-      </header>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-hover)] px-3.5 py-2.5">
+        <p className="text-sm text-[var(--admin-muted)]">
+          WhatsApp confirmations, reminders and follow-ups sent to patients.
+        </p>
+        <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs ${badge.className}`}>{badge.label}</span>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="space-y-5 lg:sticky lg:top-4 lg:self-start">

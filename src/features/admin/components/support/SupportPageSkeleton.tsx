@@ -5,7 +5,7 @@ import { SupportInboxColumnSkeleton } from "./SupportInboxColumnSkeleton";
 export function SupportPageSkeleton() {
   return (
     <div
-      className="flex h-full min-h-0 w-full flex-1 overflow-hidden bg-white font-sans text-[#111827]"
+      className="flex h-full min-h-0 w-full flex-1 overflow-hidden bg-[var(--admin-panel)] font-sans text-[var(--admin-text)]"
       aria-busy
       aria-label="Loading front desk"
     >

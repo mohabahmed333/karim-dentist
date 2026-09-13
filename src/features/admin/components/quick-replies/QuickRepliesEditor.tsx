@@ -7,11 +7,10 @@ import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n";
 import type { WhatsappCannedReply } from "@/services/whatsapp/cannedReplies";
 import { useBoardCrud } from "../../hooks/useBoardCrud";
-import { CollectionSplitLayout } from "../CollectionSplitLayout";
 import { CollectionTable } from "../CollectionTable";
 import { ConfirmDeleteDialog } from "../ConfirmDeleteDialog";
 import { LocalizedAdminPageHeader } from "../LocalizedAdminPageHeader";
-import { QuickReplyEditCard } from "./QuickReplyEditCard";
+import { QuickReplyFormDialog } from "./QuickReplyFormDialog";
 import {
   QuickReplyApiError,
   createQuickReply,
@@ -68,91 +67,86 @@ export function QuickRepliesEditor({ items: initial }: Props) {
           </Button>
         }
       />
-      <CollectionSplitLayout
-        list={
-          <div className="p-2">
-            <CollectionTable
-              tableId="whatsapp_canned_replies"
-              rows={board.items}
-              selectedId={board.selected?.id}
-              emptyMessage={t("admin.pages.quickReplies.empty")}
-              onRowClick={board.openItem}
-              rowActions={[
-                { id: "edit", label: t("admin.edit"), icon: "edit", onClick: (r) => board.openItem(r.id) },
-                {
-                  id: "delete",
-                  label: t("admin.delete"),
-                  icon: "delete",
-                  tone: "danger",
-                  onClick: (r) => {
-                    board.openItem(r.id);
-                    setDeleteOpen(true);
-                  },
-                },
-              ]}
-              columns={[
-                {
-                  key: "slash_key",
-                  header: t("admin.pages.quickReplies.slashKey"),
-                  sortValue: (r) => r.slash_key,
-                  searchValue: (r) =>
-                    `${r.slash_key} ${r.title} ${r.title_ar ?? ""} ${r.body} ${r.body_ar ?? ""} ${r.category ?? ""}`,
-                  cell: (r) => `/${r.slash_key}`,
-                },
-                {
-                  key: "title",
-                  header: t("admin.pages.quickReplies.titleEn"),
-                  sortValue: (r) => r.title,
-                  cell: (r) => (
-                    <span className="inline-flex items-center gap-1.5">
-                      {r.title}
-                      {r.attachment ? (
-                        (r.attachment as { kind?: string }).kind === "location" ? (
-                          <MapPin className="size-3.5 text-muted-foreground" aria-hidden />
-                        ) : (
-                          <Paperclip className="size-3.5 text-muted-foreground" aria-hidden />
-                        )
-                      ) : null}
-                      {Array.isArray(r.buttons) && r.buttons.length ? (
-                        <MessageSquarePlus className="size-3.5 text-muted-foreground" aria-hidden />
-                      ) : null}
-                    </span>
-                  ),
-                },
-                {
-                  key: "category",
-                  header: t("admin.pages.quickReplies.category"),
-                  sortValue: (r) => r.category ?? "",
-                  cell: (r) => r.category ?? "—",
-                },
-                {
-                  key: "uses",
-                  header: t("admin.pages.quickReplies.uses"),
-                  sortValue: (r) => r.use_count,
-                  cell: (r) => r.use_count,
-                },
-                {
-                  key: "active",
-                  header: t("admin.pages.quickReplies.active"),
-                  sortValue: (r) => (r.active ? 1 : 0),
-                  cell: (r) => (r.active ? t("admin.yes") : t("admin.no")),
-                },
-              ]}
-            />
-          </div>
-        }
-        detail={
-          board.selected ? (
-            <QuickReplyEditCard
-              item={board.selected}
-              categories={categories}
-              pending={board.pending}
-              message={board.message}
-              onSubmit={board.onSave}
-              onDeleteClick={() => setDeleteOpen(true)}
-            />
-          ) : null
-        }
+      <CollectionTable
+        framed
+        tableId="whatsapp_canned_replies"
+        rows={board.items}
+        selectedId={board.selected?.id}
+        emptyMessage={t("admin.pages.quickReplies.empty")}
+        onRowClick={board.openItem}
+        rowActions={[
+          { id: "edit", label: t("admin.edit"), icon: "edit", onClick: (r) => board.openItem(r.id) },
+          {
+            id: "delete",
+            label: t("admin.delete"),
+            icon: "delete",
+            tone: "danger",
+            onClick: (r) => {
+              board.openItem(r.id);
+              setDeleteOpen(true);
+            },
+          },
+        ]}
+        columns={[
+          {
+            key: "slash_key",
+            header: t("admin.pages.quickReplies.slashKey"),
+            sortValue: (r) => r.slash_key,
+            searchValue: (r) =>
+              `${r.slash_key} ${r.title} ${r.title_ar ?? ""} ${r.body} ${r.body_ar ?? ""} ${r.category ?? ""}`,
+            cell: (r) => `/${r.slash_key}`,
+          },
+          {
+            key: "title",
+            header: t("admin.pages.quickReplies.titleEn"),
+            sortValue: (r) => r.title,
+            cell: (r) => (
+              <span className="inline-flex items-center gap-1.5">
+                {r.title}
+                {r.attachment ? (
+                  (r.attachment as { kind?: string }).kind === "location" ? (
+                    <MapPin className="size-3.5 text-muted-foreground" aria-hidden />
+                  ) : (
+                    <Paperclip className="size-3.5 text-muted-foreground" aria-hidden />
+                  )
+                ) : null}
+                {Array.isArray(r.buttons) && r.buttons.length ? (
+                  <MessageSquarePlus className="size-3.5 text-muted-foreground" aria-hidden />
+                ) : null}
+              </span>
+            ),
+          },
+          {
+            key: "category",
+            header: t("admin.pages.quickReplies.category"),
+            sortValue: (r) => r.category ?? "",
+            cell: (r) => r.category ?? "—",
+          },
+          {
+            key: "uses",
+            header: t("admin.pages.quickReplies.uses"),
+            sortValue: (r) => r.use_count,
+            cell: (r) => r.use_count,
+          },
+          {
+            key: "active",
+            header: t("admin.pages.quickReplies.active"),
+            sortValue: (r) => (r.active ? 1 : 0),
+            cell: (r) => (r.active ? t("admin.yes") : t("admin.no")),
+          },
+        ]}
+      />
+      <QuickReplyFormDialog
+        open={Boolean(board.selected)}
+        item={board.selected}
+        categories={categories}
+        pending={board.pending}
+        message={board.message}
+        onOpenChange={(open) => {
+          if (!open) board.close();
+        }}
+        onSubmit={board.onSave}
+        onDeleteClick={() => setDeleteOpen(true)}
       />
       <ConfirmDeleteDialog
         open={deleteOpen}

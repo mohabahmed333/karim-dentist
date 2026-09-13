@@ -37,15 +37,17 @@ export function ReplyQuote({ reply, variant = "customer", className }: Props) {
       className={cn(
         "mb-1.5 overflow-hidden rounded-md border-l-[3px] px-2.5 py-1.5",
         isAgent
-          ? "border-l-[#D97706] bg-[#ECFDF5]"
-          : "border-l-[#6366F1] bg-[#EEF2FF]",
+          ? "border-l-[var(--wa-reply-quote-out-border)] bg-[var(--wa-reply-quote-out-bg)]"
+          : "border-l-[var(--wa-reply-quote-in-border)] bg-[var(--wa-reply-quote-in-bg)]",
         className,
       )}
     >
       <p
         className={cn(
           "truncate text-xs font-semibold",
-          isAgent ? "text-[#B45309]" : "text-[#4F46E5]",
+          isAgent
+            ? "text-[var(--wa-reply-quote-out-text)]"
+            : "text-[var(--wa-reply-quote-in-text)]",
         )}
       >
         {reply.authorName}
@@ -53,7 +55,7 @@ export function ReplyQuote({ reply, variant = "customer", className }: Props) {
       <p
         dir={dir}
         className={cn(
-          "line-clamp-2 text-xs text-[#4B5563]",
+          "line-clamp-2 text-xs text-[var(--wa-surface-muted-text)]",
           dir === "rtl" ? "text-right" : "text-left",
         )}
       >

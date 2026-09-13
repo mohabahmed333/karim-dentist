@@ -90,7 +90,7 @@ export function ChatComposerBar({
             aria-label={t("admin.chat.attach")}
             data-showreel-action={showreelAttachAction}
             onClick={() => fileRef.current?.click()}
-            className="flex h-12 w-11 shrink-0 items-center justify-center border-e border-[#E8EAED] text-[#70758A] hover:bg-[#F3F4F6] sm:h-13 sm:w-12"
+            className="flex h-12 w-11 shrink-0 items-center justify-center border-e border-[var(--admin-border)] text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] sm:h-13 sm:w-12"
           >
             <Paperclip className="size-4" strokeWidth={1.75} />
           </button>
@@ -100,7 +100,7 @@ export function ChatComposerBar({
             type="button"
             aria-label={t("admin.chat.mediaLibrary")}
             onClick={onOpenLibrary}
-            className="flex h-12 w-11 shrink-0 items-center justify-center border-e border-[#E8EAED] text-[#70758A] hover:bg-[#F3F4F6] sm:h-13 sm:w-12"
+            className="flex h-12 w-11 shrink-0 items-center justify-center border-e border-[var(--admin-border)] text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] sm:h-13 sm:w-12"
           >
             <ImageIcon className="size-4" strokeWidth={1.75} />
           </button>
@@ -121,7 +121,7 @@ export function ChatComposerBar({
             }
           }}
           placeholder={resolvedPlaceholder}
-          className="my-2 min-w-0 flex-1 resize-none bg-transparent px-3 py-1.5 text-[13px] leading-5 text-[#111111] outline-none placeholder:text-[#70758A] sm:px-4"
+          className="my-2 min-w-0 flex-1 resize-none bg-transparent px-3 py-1.5 text-[13px] leading-5 text-[var(--admin-text)] outline-none placeholder:text-[var(--admin-muted)] sm:px-4"
         />
         {showVoice ? (
           <button
@@ -134,8 +134,8 @@ export function ChatComposerBar({
             aria-pressed={dictation.state === "recording"}
             disabled={pending || dictation.state === "transcribing"}
             onClick={() => (dictation.state === "recording" ? dictation.stop() : void dictation.start())}
-            className={`flex h-12 w-11 shrink-0 items-center justify-center border-e border-[#E8EAED] hover:bg-[#F3F4F6] disabled:opacity-40 sm:h-13 sm:w-12 ${
-              dictation.state === "recording" ? "text-red-600" : "text-[#70758A]"
+            className={`flex h-12 w-11 shrink-0 items-center justify-center border-e border-[var(--admin-border)] hover:bg-[var(--admin-hover)] disabled:opacity-40 sm:h-13 sm:w-12 ${
+              dictation.state === "recording" ? "text-red-600" : "text-[var(--admin-muted)]"
             }`}
           >
             {dictation.state === "transcribing" ? (
@@ -153,7 +153,7 @@ export function ChatComposerBar({
           data-showreel-action={showreelSendAction}
           onClick={onSend}
           aria-label={t("admin.chat.send")}
-          className="flex h-12 w-11 shrink-0 items-center justify-center border-s border-[#E8EAED] text-[#70758A] hover:bg-[#F3F4F6] disabled:opacity-40 sm:h-13 sm:w-12"
+          className="flex h-12 w-11 shrink-0 items-center justify-center border-s border-[var(--admin-border)] text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] disabled:opacity-40 sm:h-13 sm:w-12"
         >
           <Send className="size-4" strokeWidth={1.75} />
         </button>

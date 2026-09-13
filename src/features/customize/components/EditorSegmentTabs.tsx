@@ -23,7 +23,7 @@ export function EditorSegmentTabs<T extends string>({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className="grid gap-0.5 rounded-[6px] bg-[#ececec] p-0.5"
+      className="grid gap-0.5 rounded-[6px] bg-[var(--admin-hover)] p-0.5"
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
       {options.map((option) => {
@@ -36,8 +36,8 @@ export function EditorSegmentTabs<T extends string>({
             aria-selected={selected}
             className={
               selected
-                ? "h-7 rounded-[5px] bg-[#1a1a1a] text-[11px] font-medium text-white shadow-sm"
-                : "h-7 rounded-[5px] text-[11px] font-medium text-[#5c5c5c] hover:text-[#1a1a1a]"
+                ? "h-7 rounded-[5px] bg-[var(--admin-primary)] text-[11px] font-medium text-white shadow-sm"
+                : "h-7 rounded-[5px] text-[11px] font-medium text-[var(--admin-muted)] hover:text-[var(--admin-text)]"
             }
             onClick={() => onChange(option.id)}
           >

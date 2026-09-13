@@ -84,9 +84,12 @@ export function AiModeSwitch({ compact = false }: { compact?: boolean }) {
         aria-expanded={open}
         className={cn(
           "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
-          settings.mode === "auto" && "border-[#A7F3D0] bg-[#ECFDF5] text-[#065F46]",
-          settings.mode === "draft_only" && "border-[#DDD6FE] bg-[#F5F3FF] text-[#5B21B6]",
-          settings.mode === "off" && "border-[#E5E7EB] bg-[#F9FAFB] text-[#6B7280]",
+          settings.mode === "auto" &&
+            "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300",
+          settings.mode === "draft_only" &&
+            "border-violet-200 bg-violet-50 text-violet-800 dark:border-violet-500/30 dark:bg-violet-500/15 dark:text-violet-300",
+          settings.mode === "off" &&
+            "border-[var(--admin-border)] bg-[var(--admin-hover)] text-[var(--admin-muted)]",
         )}
       >
         {busy ? (
@@ -107,7 +110,7 @@ export function AiModeSwitch({ compact = false }: { compact?: boolean }) {
           />
           <div
             className={cn(
-              "absolute right-0 z-20 mt-1.5 w-64 rounded-lg border border-[#E5E7EB] bg-white p-1.5 shadow-lg",
+              "absolute right-0 z-20 mt-1.5 w-64 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-1.5 shadow-lg",
               compact && "w-56",
             )}
           >
@@ -121,21 +124,21 @@ export function AiModeSwitch({ compact = false }: { compact?: boolean }) {
                   setOpen(false);
                 }}
                 className={cn(
-                  "flex w-full flex-col gap-0.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-[#F9FAFB]",
-                  settings.mode === m.value && "bg-[#F3F4F6]",
+                  "flex w-full flex-col gap-0.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-[var(--admin-hover)]",
+                  settings.mode === m.value && "bg-[var(--admin-active)]",
                 )}
               >
-                <span className="text-[12px] font-medium text-[#111827]">
+                <span className="text-[12px] font-medium text-[var(--admin-text)]">
                   {t(m.labelKey as never)}
                 </span>
-                <span className="text-[11px] leading-snug text-[#6B7280]">
+                <span className="text-[11px] leading-snug text-[var(--admin-muted)]">
                   {t(m.hintKey as never)}
                 </span>
               </button>
             ))}
 
-            <div className="mt-1 border-t border-[#F3F4F6] pt-1.5">
-              <label className="flex cursor-pointer items-start gap-2 rounded-md px-2.5 py-2 hover:bg-[#F9FAFB]">
+            <div className="mt-1 border-t border-[var(--admin-hover)] pt-1.5">
+              <label className="flex cursor-pointer items-start gap-2 rounded-md px-2.5 py-2 hover:bg-[var(--admin-hover)]">
                 <input
                   type="checkbox"
                   className="mt-0.5"
@@ -146,16 +149,16 @@ export function AiModeSwitch({ compact = false }: { compact?: boolean }) {
                   }
                 />
                 <span className="flex flex-col gap-0.5">
-                  <span className="text-[12px] font-medium text-[#111827]">
+                  <span className="text-[12px] font-medium text-[var(--admin-text)]">
                     {t("admin.frontDesk.aiAllowBooking")}
                   </span>
-                  <span className="text-[11px] leading-snug text-[#6B7280]">
+                  <span className="text-[11px] leading-snug text-[var(--admin-muted)]">
                     {t("admin.frontDesk.aiAllowBookingHint")}
                   </span>
                 </span>
               </label>
 
-              <label className="flex cursor-pointer items-start gap-2 rounded-md px-2.5 py-2 hover:bg-[#F9FAFB]">
+              <label className="flex cursor-pointer items-start gap-2 rounded-md px-2.5 py-2 hover:bg-[var(--admin-hover)]">
                 <input
                   type="checkbox"
                   className="mt-0.5"
@@ -166,10 +169,10 @@ export function AiModeSwitch({ compact = false }: { compact?: boolean }) {
                   }
                 />
                 <span className="flex flex-col gap-0.5">
-                  <span className="text-[12px] font-medium text-[#111827]">
+                  <span className="text-[12px] font-medium text-[var(--admin-text)]">
                     {t("admin.frontDesk.aiFullConversation")}
                   </span>
-                  <span className="text-[11px] leading-snug text-[#6B7280]">
+                  <span className="text-[11px] leading-snug text-[var(--admin-muted)]">
                     {t("admin.frontDesk.aiFullConversationHint")}
                   </span>
                 </span>

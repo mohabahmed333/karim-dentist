@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Archive,
   ArchiveRestore,
+  Bell,
+  BellOff,
   Calendar,
   ChevronLeft,
   ExternalLink,
@@ -30,6 +32,8 @@ import { SupportAvatar } from "./SupportAvatar";
 import { ChatComposer } from "./chat/ChatComposer";
 import { ChatGalleryProvider } from "./chat/ChatGalleryContext";
 import { ChatMessageBubble } from "./chat/ChatMessageBubble";
+import { WaThemeSwitcher } from "./chat/WaThemeSwitcher";
+import { useWhatsappTheme } from "./chat/theme/useWhatsappTheme";
 import { AiDraftCard } from "./chat/AiDraftCard";
 import { SaveQuickReplyDialog } from "./chat/SaveQuickReplyDialog";
 import { ChatThreadSearch } from "./chat/ChatThreadSearch";
@@ -72,6 +76,8 @@ type Props = {
   onInteractiveChange?: (draft: InteractiveDraft | null) => void;
   onArchiveToggle?: () => void;
   archiving?: boolean;
+  onMuteToggle?: (muted: boolean) => void;
+  muting?: boolean;
   onAskAi?: () => void;
   /** Show patient workspace CTA (full support page only). */
   showWorkspace?: boolean;
@@ -102,6 +108,8 @@ export function SupportChatColumn({
   onInteractiveChange,
   onArchiveToggle,
   archiving,
+  onMuteToggle,
+  muting,
   onAskAi,
   showWorkspace = true,
   onBack,
@@ -109,6 +117,7 @@ export function SupportChatColumn({
 }: Props) {
   const t = useTranslations();
   const { openQuickBook } = useQuickBook();
+  const { preference, setTheme, siteDarkMode, vars } = useWhatsappTheme();
   const archived = conversation.status === "archived";
   const allowMessageSearch = !onBack;
   const [searchOpen, setSearchOpen] = useState(false);
@@ -246,14 +255,17 @@ export function SupportChatColumn({
 
   return (
     <ChatGalleryProvider images={galleryImages}>
-    <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-[#F9FAFB]">
-      <header className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] bg-white px-4 py-3">
+    <section
+      style={vars as React.CSSProperties}
+      className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-[var(--wa-wallpaper-bg)]"
+    >
+      <header className="flex shrink-0 items-center justify-between border-b border-[var(--wa-header-border)] bg-[var(--wa-header-bg)] px-4 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           {onBack ? (
             <button
               type="button"
               onClick={onBack}
-              className="rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6]"
+              className="rounded-md p-1.5 text-[var(--wa-header-icon)] hover:bg-[var(--wa-header-hover)]"
               aria-label={t("admin.frontDesk.backToChats")}
             >
               <ChevronLeft className="h-5 w-5 rtl:rotate-180" />
@@ -264,24 +276,29 @@ export function SupportChatColumn({
             color={conversation.avatarColor}
           />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-[#111827]">
+            <p className="truncate text-sm font-semibold text-[var(--wa-header-text)]">
               {conversation.name}
             </p>
             {conversation.phone ? (
-              <p className="truncate text-xs text-[#6B7280]">
+              <p className="truncate text-xs text-[var(--wa-header-subtext)]">
                 {conversation.phone}
               </p>
             ) : null}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          <WaThemeSwitcher
+            value={preference}
+            onChange={setTheme}
+            disabled={siteDarkMode}
+          />
           {allowMessageSearch ? (
             <button
               type="button"
               onClick={() => setSearchOpen((v) => !v)}
               className={cn(
-                "rounded-md p-1.5 text-[#6B7280] transition-colors hover:bg-[#F3F4F6]",
-                searchOpen && "bg-[#F3F4F6] text-[#111827]",
+                "rounded-md p-1.5 text-[var(--wa-header-icon)] transition-colors hover:bg-[var(--wa-header-hover)]",
+                searchOpen && "bg-[var(--wa-header-hover)] text-[var(--wa-header-text)]",
               )}
               aria-label={
                 searchOpen
@@ -310,7 +327,7 @@ export function SupportChatColumn({
             type="button"
             onClick={openAppointmentForClient}
             data-showreel-action="whatsapp-book"
-            className="rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6]"
+            className="rounded-md p-1.5 text-[var(--wa-header-icon)] hover:bg-[var(--wa-header-hover)]"
             aria-label={t("admin.frontDesk.book")}
             title={t("admin.frontDesk.bookTitle")}
           >
@@ -321,7 +338,7 @@ export function SupportChatColumn({
               type="button"
               onClick={onArchiveToggle}
               disabled={archiving}
-              className="rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6] disabled:opacity-50"
+              className="rounded-md p-1.5 text-[var(--wa-header-icon)] hover:bg-[var(--wa-header-hover)] disabled:opacity-50"
               aria-label={
                 archived
                   ? t("admin.frontDesk.unarchiveAria")
@@ -340,13 +357,37 @@ export function SupportChatColumn({
               )}
             </button>
           ) : null}
+          {onMuteToggle ? (
+            <button
+              type="button"
+              onClick={() => onMuteToggle(!conversation.muted)}
+              disabled={muting}
+              className="rounded-md p-1.5 text-[var(--wa-header-icon)] hover:bg-[var(--wa-header-hover)] disabled:opacity-50"
+              aria-label={
+                conversation.muted
+                  ? t("admin.frontDesk.unmuteAria")
+                  : t("admin.frontDesk.muteAria")
+              }
+              title={
+                conversation.muted
+                  ? t("admin.frontDesk.unmute")
+                  : t("admin.frontDesk.mute")
+              }
+            >
+              {conversation.muted ? (
+                <BellOff className="h-4 w-4" />
+              ) : (
+                <Bell className="h-4 w-4" />
+              )}
+            </button>
+          ) : null}
           {onToggleDetails ? (
             <button
               type="button"
               onClick={onToggleDetails}
               className={cn(
-                "rounded-md p-1.5 text-[#6B7280] transition-colors hover:bg-[#F3F4F6]",
-                detailsOpen && "bg-[#F3F4F6] text-[#111827]",
+                "rounded-md p-1.5 text-[var(--wa-header-icon)] transition-colors hover:bg-[var(--wa-header-hover)]",
+                detailsOpen && "bg-[var(--wa-header-hover)] text-[var(--wa-header-text)]",
               )}
               aria-label={
                 detailsOpen
@@ -384,7 +425,7 @@ export function SupportChatColumn({
               type="button"
               onClick={onClose}
               data-showreel-action="chat-close"
-              className="rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6]"
+              className="rounded-md p-1.5 text-[var(--wa-header-icon)] hover:bg-[var(--wa-header-hover)]"
               aria-label={t("admin.frontDesk.closeBubble")}
             >
               <X className="h-4 w-4" />
@@ -404,10 +445,11 @@ export function SupportChatColumn({
 
       <div
         ref={listRef}
-        className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6"
+        style={{ backgroundImage: vars["--wa-wallpaper-pattern"] }}
+        className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-[var(--wa-wallpaper-bg)] p-6"
       >
         {loadingMore ? (
-          <p className="text-center text-xs text-[#9CA3AF]">
+          <p className="text-center text-xs text-[var(--wa-bubble-meta-text)]">
             {t("admin.frontDesk.loadingEarlier")}
           </p>
         ) : null}

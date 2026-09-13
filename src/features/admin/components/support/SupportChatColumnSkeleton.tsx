@@ -1,10 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
-
-const bone = "bg-[#E8EAED]";
-
-function Block({ className }: { className?: string }) {
-  return <Skeleton className={`${bone} ${className ?? ""}`} />;
-}
+import { AdminSkeleton as Block } from "@/features/admin/components/AdminSkeleton";
 
 function Bubble({ agent }: { agent?: boolean }) {
   return (
@@ -13,8 +7,8 @@ function Bubble({ agent }: { agent?: boolean }) {
       <div
         className={
           agent
-            ? "max-w-[75%] rounded-2xl rounded-tr-md border border-[#E5E7EB] bg-white px-3.5 py-2.5"
-            : "max-w-[75%] rounded-2xl rounded-tl-md bg-[#F3F4F6] px-3.5 py-2.5"
+            ? "max-w-[75%] rounded-2xl rounded-tr-md border border-[var(--admin-border)] bg-[var(--admin-panel)] px-3.5 py-2.5"
+            : "max-w-[75%] rounded-2xl rounded-tl-md bg-[var(--admin-hover)] px-3.5 py-2.5"
         }
       >
         <div className="space-y-2">
@@ -29,8 +23,8 @@ function Bubble({ agent }: { agent?: boolean }) {
 /** Chat column — same shell as SupportChatColumn + WhatsApp composer. */
 export function SupportChatColumnSkeleton() {
   return (
-    <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-[#F9FAFB]">
-      <header className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] bg-white px-4 py-3">
+    <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-[var(--admin-canvas)]">
+      <header className="flex shrink-0 items-center justify-between border-b border-[var(--admin-border)] bg-[var(--admin-panel)] px-4 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <Block className="h-9 w-9 shrink-0 rounded-full" />
           <div className="min-w-0 space-y-1.5">
@@ -39,6 +33,8 @@ export function SupportChatColumnSkeleton() {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          <Block className="size-8 rounded-md" />
+          <Block className="size-8 rounded-md" />
           <Block className="h-8 w-16 rounded-md" />
           <Block className="size-8 rounded-md" />
           <Block className="size-8 rounded-md" />
@@ -54,7 +50,7 @@ export function SupportChatColumnSkeleton() {
         <Bubble agent />
       </div>
 
-      <div className="shrink-0 border-t border-[#E5E7EB] bg-[#F7F8FA] px-3 py-2.5">
+      <div className="shrink-0 border-t border-[var(--admin-border)] bg-[var(--admin-panel)] px-3 py-2.5">
         <div className="flex items-end gap-2">
           <Block className="mb-0.5 size-10 shrink-0 rounded-full" />
           <Block className="h-11 min-w-0 flex-1 rounded-[24px]" />

@@ -99,12 +99,12 @@ export function VoiceWaveform({
         const at = (i + 0.5) / n;
         const played = showHead && at <= (progress ?? 0);
         const color = active
-          ? "#8B929E"
+          ? "var(--wa-composer-icon)"
           : showHead
             ? played
-              ? "#111827"
-              : "#C5CAD3"
-            : "#8B929E";
+              ? "var(--wa-surface-text)"
+              : "var(--wa-surface-border)"
+            : "var(--wa-composer-icon)";
         return (
           <span
             key={i}

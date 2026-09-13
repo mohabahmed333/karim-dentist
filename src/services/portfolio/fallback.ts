@@ -149,6 +149,7 @@ export const portfolioFallback: PortfolioData = {
   },
   hero: {
     id: "fallback",
+    layout: "classic",
     kicker: "",
     kicker_ar: "",
     headline: "Caring for Your Smile, One Visit at a Time.",

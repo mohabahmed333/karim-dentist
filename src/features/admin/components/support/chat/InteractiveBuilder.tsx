@@ -32,7 +32,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
         <button
           type="button"
           data-showreel-action="whatsapp-quick-replies"
-          className="inline-flex items-center gap-1 rounded-md border border-[#E5E7EB] px-2 py-1 text-xs text-[#6B7280] hover:bg-[#F3F4F6]"
+          className="inline-flex items-center gap-1 rounded-md border border-[var(--wa-surface-border)] px-2 py-1 text-xs text-[var(--wa-surface-muted-text)] hover:bg-[var(--wa-surface-hover)]"
           onClick={() =>
             onChange({ mode: "buttons", labels: ["Yes", "No"] })
           }
@@ -42,7 +42,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
         </button>
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded-md border border-[#E5E7EB] px-2 py-1 text-xs text-[#6B7280] hover:bg-[#F3F4F6]"
+          className="inline-flex items-center gap-1 rounded-md border border-[var(--wa-surface-border)] px-2 py-1 text-xs text-[var(--wa-surface-muted-text)] hover:bg-[var(--wa-surface-hover)]"
           onClick={() =>
             onChange({
               mode: "cta",
@@ -60,7 +60,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
 
   return (
     <div
-      className="mb-2 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] p-3"
+      className="mb-2 rounded-lg border border-[var(--wa-surface-border)] bg-[var(--wa-surface-hover)] p-3"
       data-showreel-action="whatsapp-quick-replies-open"
     >
       <div className="mb-2 flex items-center justify-between">
@@ -85,7 +85,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
         <button
           type="button"
           aria-label="Remove interactive"
-          className="rounded p-1 text-[#6B7280] hover:bg-white"
+          className="rounded p-1 text-[var(--wa-surface-muted-text)] hover:bg-[var(--wa-surface-bg)]"
           onClick={() => onChange(null)}
         >
           <X className="h-3.5 w-3.5" />
@@ -155,8 +155,8 @@ function Tab({
       onClick={onClick}
       className={
         active
-          ? "rounded bg-white px-2 py-0.5 text-xs font-medium text-[#111827] shadow-sm"
-          : "rounded px-2 py-0.5 text-xs text-[#6B7280]"
+          ? "rounded bg-[var(--wa-surface-bg)] px-2 py-0.5 text-xs font-medium text-[var(--wa-surface-text)] shadow-sm"
+          : "rounded px-2 py-0.5 text-xs text-[var(--wa-surface-muted-text)]"
       }
     >
       {label}

@@ -19,7 +19,7 @@ type Props = {
 
 function ShortcutHint({ label }: { label: string }) {
   return (
-    <kbd className="ms-1 hidden rounded-[3px] border border-[#e0e0e0] bg-[#f7f7f7] px-1 py-px text-[9px] font-normal text-[#8a8a8a] sm:inline">
+    <kbd className="ms-1 hidden rounded-[3px] border border-[var(--admin-border)] bg-[var(--admin-hover)] px-1 py-px text-[9px] font-normal text-[var(--admin-muted)] sm:inline">
       {label}
     </kbd>
   );
@@ -45,7 +45,7 @@ export function CustomizeHistoryControls({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-7 rounded-[6px] px-2 text-xs text-[#6b6b6b]"
+        className="h-7 rounded-[6px] px-2 text-xs text-[var(--admin-muted)]"
         title={`${t("admin.customize.undo")} (${undoShortcut})`}
         onClick={onUndo}
         disabled={!canUndo || busy}
@@ -57,7 +57,7 @@ export function CustomizeHistoryControls({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-7 rounded-[6px] px-2 text-xs text-[#6b6b6b]"
+        className="h-7 rounded-[6px] px-2 text-xs text-[var(--admin-muted)]"
         title={`${t("admin.customize.redo")} (${redoShortcut})`}
         onClick={onRedo}
         disabled={!canRedo || busy}
@@ -69,7 +69,7 @@ export function CustomizeHistoryControls({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-7 rounded-[6px] px-2 text-xs text-[#6b6b6b]"
+        className="h-7 rounded-[6px] px-2 text-xs text-[var(--admin-muted)]"
         title={t("admin.customize.discardTitle")}
         onClick={onDiscard}
         disabled={clean || busy}
@@ -79,7 +79,7 @@ export function CustomizeHistoryControls({
       <Button
         type="button"
         size="sm"
-        className="h-7 rounded-[6px] bg-[#1a1a1a] px-2.5 text-xs text-white hover:bg-[#333]"
+        className="h-7 rounded-[6px] bg-[var(--admin-primary)] px-2.5 text-xs text-white hover:opacity-90"
         title={`${t("admin.customize.save")} (${saveShortcut})`}
         onClick={onSave}
         disabled={clean || busy}

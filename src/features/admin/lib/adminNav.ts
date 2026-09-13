@@ -183,9 +183,25 @@ export const adminNavSections: AdminNavSection[] = [
       { href: "/admin/customize", labelKey: "admin.nav.customize", permission: "customize.view" },
       { href: "/admin/usage", labelKey: "admin.nav.usage", permission: "usage.view" },
       { href: "/admin/assist-analytics", labelKey: "admin.nav.assistAnalytics", permission: "assist-analytics.view" },
-      { href: "/admin/settings", labelKey: "admin.nav.settings", permission: "settings.view" },
-      { href: "/admin/settings/accounts", labelKey: "admin.nav.accounts", permission: "accounts.view" },
-      { href: "/admin/settings/roles", labelKey: "admin.nav.roles", permission: "roles.view" },
+    ],
+    groups: [
+      {
+        id: "settings",
+        labelKey: "admin.nav.settings",
+        href: "/admin/settings",
+        permission: "settings.view",
+        defaultOpen: false,
+        items: [
+          { href: "/admin/settings/clinic-hours", labelKey: "admin.settings.hours", permission: "settings.view" },
+          { href: "/admin/settings/site", labelKey: "admin.settings.brand", permission: "settings.view" },
+          { href: "/admin/settings/clinic-prices", labelKey: "admin.settings.clinic", permission: "settings.view" },
+          { href: "/admin/settings/whatsapp-ai", labelKey: "admin.settings.whatsappAi", permission: "settings.view" },
+          { href: "/admin/settings/patient-notifications", labelKey: "admin.settings.notifications", permission: "settings.view" },
+          { href: "/admin/settings/deposits", labelKey: "admin.settings.deposits", permission: "settings.view" },
+          { href: "/admin/settings/accounts", labelKey: "admin.nav.accounts", permission: "accounts.view" },
+          { href: "/admin/settings/roles", labelKey: "admin.nav.roles", permission: "roles.view" },
+        ],
+      },
     ],
   },
 ];
@@ -219,8 +235,15 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin/usage": "admin.nav.usage",
   "/admin/assist-analytics": "admin.nav.assistAnalytics",
   "/admin/settings": "admin.nav.settings",
-  // No adminPagePermissions entry on purpose: changing your own password is
-  // not privileged, so it stays visible to every role.
+  "/admin/settings/clinic-hours": "admin.settings.hours",
+  "/admin/settings/site": "admin.settings.brand",
+  "/admin/settings/clinic-prices": "admin.settings.clinic",
+  "/admin/settings/whatsapp-ai": "admin.settings.whatsappAi",
+  "/admin/settings/patient-notifications": "admin.settings.notifications",
+  "/admin/settings/deposits": "admin.settings.deposits",
+  // No adminPagePermissions entries on purpose: your own profile and password
+  // are not privileged, so they stay visible to every role.
+  "/admin/account/profile": "admin.nav.profile",
   "/admin/account/password": "admin.nav.changePassword",
 };
 
@@ -259,6 +282,12 @@ export const adminPagePermissions: Record<string, string> = {
   "/admin/usage": "usage.view",
   "/admin/assist-analytics": "assist-analytics.view",
   "/admin/settings": "settings.view",
+  "/admin/settings/clinic-hours": "settings.view",
+  "/admin/settings/site": "settings.view",
+  "/admin/settings/clinic-prices": "settings.view",
+  "/admin/settings/whatsapp-ai": "settings.view",
+  "/admin/settings/patient-notifications": "settings.view",
+  "/admin/settings/deposits": "settings.view",
   "/admin/settings/accounts": "accounts.view",
   "/admin/settings/roles": "roles.view",
 };

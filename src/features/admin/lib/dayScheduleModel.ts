@@ -132,14 +132,14 @@ export function statusBlockStyle(status: ReservationStatus): {
   switch (status) {
     case "confirmed":
       return {
-        background: "color-mix(in srgb, var(--admin-primary) 14%, white)",
-        border: "color-mix(in srgb, var(--admin-primary) 35%, white)",
+        background: "color-mix(in srgb, var(--admin-primary) 14%, var(--admin-panel))",
+        border: "color-mix(in srgb, var(--admin-primary) 35%, var(--admin-panel))",
         color: "var(--admin-text)",
       };
     case "pending":
       return {
-        background: "color-mix(in srgb, var(--admin-secondary) 18%, white)",
-        border: "color-mix(in srgb, var(--admin-secondary) 40%, white)",
+        background: "color-mix(in srgb, var(--admin-secondary) 18%, var(--admin-panel))",
+        border: "color-mix(in srgb, var(--admin-secondary) 40%, var(--admin-panel))",
         color: "var(--admin-text)",
       };
     case "completed":
@@ -150,7 +150,7 @@ export function statusBlockStyle(status: ReservationStatus): {
       };
     case "no_show":
       return {
-        background: "color-mix(in srgb, var(--admin-muted) 12%, white)",
+        background: "color-mix(in srgb, var(--admin-muted) 12%, var(--admin-panel))",
         border: "var(--admin-border)",
         color: "var(--admin-muted)",
       };

@@ -1133,7 +1133,7 @@ export function ReceptionChat({
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={chatTransition(reduced, 0.2)}
-                      className="flex flex-wrap gap-2 overflow-hidden border-b border-[#E8EAED] px-3 py-2"
+                      className="flex flex-wrap gap-2 overflow-hidden border-b border-[var(--admin-border)] px-3 py-2"
                     >
                       {uploads.map((item) => (
                         <motion.button

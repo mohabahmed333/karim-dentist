@@ -12,10 +12,9 @@ import {
 import { isReservedFooterLink } from "@/features/portfolio/lib/footerLinkHref";
 import { useBoardCrud } from "../hooks/useBoardCrud";
 import { LocalizedAdminPageHeader } from "./LocalizedAdminPageHeader";
-import { CollectionSplitLayout } from "./CollectionSplitLayout";
 import { CollectionTable } from "./CollectionTable";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
-import { FooterLinkEditCard } from "./FooterLinkEditCard";
+import { FooterLinkFormDialog } from "./FooterLinkFormDialog";
 import { Button } from "@/components/ui/button";
 
 type Props = { items: FooterLink[] };
@@ -57,42 +56,37 @@ export function FooterLinksEditor({ items: initial }: Props) {
           </Button>
         }
       />
-      <CollectionSplitLayout
-        list={
-          <div className="p-2">
-            <CollectionTable
-              tableId="footerlinks"
-              rows={board.items}
-              selectedId={board.selected?.id}
-              emptyMessage={t("admin.pages.footer.empty")}
-              onRowClick={(id) => {
-                const row = board.items.find((item) => item.id === id);
-                if (!row || isReservedFooterLink(row)) return;
-                board.openItem(id);
-              }}
-              columns={[
-                { key: "label", header: "Label", cell: (r) => r.label },
-                {
-                  key: "column",
-                  header: "Column",
-                  cell: (r) => columnLabel[r.column_key] ?? r.column_key,
-                },
-                { key: "href", header: "Href", cell: (r) => r.href },
-              ]}
-            />
-          </div>
-        }
-        detail={
-          board.selected ? (
-            <FooterLinkEditCard
-              item={board.selected}
-              pending={board.pending}
-              message={board.message}
-              onSubmit={board.onSave}
-              onDeleteClick={() => setDeleteOpen(true)}
-            />
-          ) : null
-        }
+      <CollectionTable
+        framed
+        tableId="footerlinks"
+        rows={board.items}
+        selectedId={board.selected?.id}
+        emptyMessage={t("admin.pages.footer.empty")}
+        onRowClick={(id) => {
+          const row = board.items.find((item) => item.id === id);
+          if (!row || isReservedFooterLink(row)) return;
+          board.openItem(id);
+        }}
+        columns={[
+          { key: "label", header: "Label", cell: (r) => r.label },
+          {
+            key: "column",
+            header: "Column",
+            cell: (r) => columnLabel[r.column_key] ?? r.column_key,
+          },
+          { key: "href", header: "Href", cell: (r) => r.href },
+        ]}
+      />
+      <FooterLinkFormDialog
+        open={Boolean(board.selected)}
+        item={board.selected}
+        pending={board.pending}
+        message={board.message}
+        onOpenChange={(open) => {
+          if (!open) board.close();
+        }}
+        onSubmit={board.onSave}
+        onDeleteClick={() => setDeleteOpen(true)}
       />
       <ConfirmDeleteDialog
         open={deleteOpen}

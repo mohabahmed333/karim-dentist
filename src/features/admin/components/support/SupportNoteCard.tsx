@@ -44,22 +44,24 @@ export function SupportNoteCard({
   return (
     <li
       className={cn(
-        "rounded-xl border bg-white p-3 shadow-sm",
-        n.pinned ? "border-[#F59E0B]/50 bg-[#FFFBEB]" : "border-[#E5E7EB]",
+        "rounded-xl border p-3 shadow-sm",
+        n.pinned
+          ? "border-amber-500/50 bg-amber-50 dark:bg-amber-500/10"
+          : "border-[var(--admin-border)] bg-[var(--admin-panel)]",
       )}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-[11px] font-semibold text-[#111827]">
+          <p className="truncate text-[11px] font-semibold text-[var(--admin-text)]">
             {n.author}
             {n.pinned ? (
-              <span className="ms-1.5 inline-flex items-center gap-0.5 rounded-full bg-[#FEF3C7] px-1.5 py-0.5 text-[10px] font-medium text-[#B45309]">
+              <span className="ms-1.5 inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
                 <Pin className="h-2.5 w-2.5" />
                 {t("admin.frontDesk.pinned")}
               </span>
             ) : null}
           </p>
-          <p className="text-[10px] text-[#9CA3AF]">
+          <p className="text-[10px] text-[var(--admin-muted)]">
             {formatNoteTime(n.updatedAt || n.createdAt, locale)}
             {edited ? ` · ${t("admin.frontDesk.edited")}` : ""}
           </p>
@@ -114,12 +116,12 @@ export function SupportNoteCard({
             value={editBody}
             dir={inputDir}
             onChange={(e) => onEditBody(e.target.value)}
-            className="w-full resize-none rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm outline-none focus:border-[#F59E0B]"
+            className="w-full resize-none rounded-lg border border-[var(--admin-border)] px-3 py-2 text-sm outline-none focus:border-amber-500"
           />
           <div className="flex justify-end gap-1.5">
             <button
               type="button"
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[#6B7280] hover:bg-[#F3F4F6]"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[var(--admin-muted)] hover:bg-[var(--admin-hover)]"
               onClick={onCancelEdit}
             >
               <X className="h-3 w-3" />
@@ -128,7 +130,7 @@ export function SupportNoteCard({
             <button
               type="button"
               disabled={busy || !editBody.trim()}
-              className="inline-flex items-center gap-1 rounded-md bg-[#111827] px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-40"
+              className="inline-flex items-center gap-1 rounded-md bg-[var(--admin-text)] px-2.5 py-1 text-xs font-semibold text-[var(--admin-panel)] disabled:opacity-40"
               onClick={onSaveEdit}
             >
               <Check className="h-3 w-3" />
@@ -141,7 +143,7 @@ export function SupportNoteCard({
           dir={bodyDir}
           lang={bodyDir === "rtl" ? "ar" : undefined}
           className={cn(
-            "whitespace-pre-wrap text-sm leading-relaxed text-[#111827]",
+            "whitespace-pre-wrap text-sm leading-relaxed text-[var(--admin-text)]",
             bodyDir === "rtl" ? "text-right" : "text-left",
           )}
         >
@@ -170,7 +172,7 @@ function IconBtn({
       aria-label={label}
       onClick={onClick}
       className={cn(
-        "rounded-md p-1.5 text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]",
+        "rounded-md p-1.5 text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]",
         danger && "hover:bg-red-50 hover:text-red-600",
       )}
     >

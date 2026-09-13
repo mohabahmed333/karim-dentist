@@ -125,17 +125,17 @@ export function SlashCommandMenu({
     <div
       dir={rtl ? "rtl" : "ltr"}
       className={cn(
-        "absolute bottom-full z-20 mb-2 flex w-full max-w-md flex-col overflow-hidden rounded-lg border border-[#E5E7EB] bg-white shadow-lg",
+        "absolute bottom-full z-20 mb-2 flex w-full max-w-md flex-col overflow-hidden rounded-lg border border-[var(--wa-surface-border)] bg-[var(--wa-surface-bg)] shadow-lg",
         rtl ? "right-0" : "left-0",
       )}
       role="listbox"
       aria-label={t("admin.frontDesk.cannedTitle")}
     >
-      <div className="shrink-0 border-b border-[#E5E7EB] p-2">
+      <div className="shrink-0 border-b border-[var(--wa-surface-border)] p-2">
         <div className="relative">
           <Search
             className={cn(
-              "pointer-events-none absolute top-1/2 size-3.5 -translate-y-1/2 text-[#9CA3AF]",
+              "pointer-events-none absolute top-1/2 size-3.5 -translate-y-1/2 text-[var(--wa-surface-muted-text)]",
               rtl ? "right-2.5" : "left-2.5",
             )}
             aria-hidden
@@ -174,7 +174,7 @@ export function SlashCommandMenu({
           onScroll={updateMoreBelow}
         >
           {filtered.length === 0 ? (
-            <p className="px-3 py-4 text-center text-xs text-[#9CA3AF]">
+            <p className="px-3 py-4 text-center text-xs text-[var(--wa-surface-muted-text)]">
               {t("admin.frontDesk.cannedNoMatch")}
             </p>
           ) : (
@@ -186,34 +186,34 @@ export function SlashCommandMenu({
                 aria-selected={i === selectedIndex}
                 dir={rtl ? "rtl" : "ltr"}
                 className={cn(
-                  "flex w-full flex-col gap-0.5 px-3 py-2 text-sm hover:bg-[#F3F4F6]",
+                  "flex w-full flex-col gap-0.5 px-3 py-2 text-sm hover:bg-[var(--wa-surface-hover)]",
                   rtl ? "text-right" : "text-left",
-                  i === selectedIndex && "bg-[#F3F4F6]",
+                  i === selectedIndex && "bg-[var(--wa-surface-hover)]",
                 )}
                 onMouseEnter={() => onSelectedIndexChange(i)}
                 onClick={() => onSelect(r)}
               >
-                <span className="flex items-center gap-1.5 font-medium text-[#111827]">
+                <span className="flex items-center gap-1.5 font-medium text-[var(--wa-surface-text)]">
                   <span className="truncate">
                     /{r.slash_key} · {r.title}
                   </span>
                   {r.attachment ? (
                     r.attachment.kind === "location" ? (
-                      <MapPin className="size-3 shrink-0 text-[#6B7280]" aria-hidden />
+                      <MapPin className="size-3 shrink-0 text-[var(--wa-surface-muted-text)]" aria-hidden />
                     ) : (
-                      <Paperclip className="size-3 shrink-0 text-[#6B7280]" aria-hidden />
+                      <Paperclip className="size-3 shrink-0 text-[var(--wa-surface-muted-text)]" aria-hidden />
                     )
                   ) : null}
                   {r.buttons.length ? (
-                    <MessageSquarePlus className="size-3 shrink-0 text-[#6B7280]" aria-hidden />
+                    <MessageSquarePlus className="size-3 shrink-0 text-[var(--wa-surface-muted-text)]" aria-hidden />
                   ) : null}
                   {r.category ? (
-                    <span className="shrink-0 rounded bg-[#EEF2FF] px-1.5 py-px text-[10px] font-medium text-[#4338CA]">
+                    <span className="shrink-0 rounded bg-[var(--wa-highlight-bg)] px-1.5 py-px text-[10px] font-medium text-[var(--wa-accent)]">
                       {r.category}
                     </span>
                   ) : null}
                 </span>
-                <span className="line-clamp-1 text-xs text-[#6B7280]">
+                <span className="line-clamp-1 text-xs text-[var(--wa-surface-muted-text)]">
                   {r.body}
                 </span>
               </button>
@@ -226,8 +226,8 @@ export function SlashCommandMenu({
             className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center"
             aria-hidden
           >
-            <div className="h-8 w-full bg-gradient-to-t from-white to-transparent" />
-            <div className="flex w-full items-center justify-center gap-1 bg-white pb-1.5 text-[11px] font-medium text-[#6B7280]">
+            <div className="h-8 w-full bg-gradient-to-t from-[var(--wa-surface-bg)] to-transparent" />
+            <div className="flex w-full items-center justify-center gap-1 bg-[var(--wa-surface-bg)] pb-1.5 text-[11px] font-medium text-[var(--wa-surface-muted-text)]">
               <ChevronDown className="size-3.5" />
               {t("admin.frontDesk.cannedMore")}
             </div>
@@ -236,7 +236,7 @@ export function SlashCommandMenu({
       </div>
       <Link
         href="/admin/quick-replies"
-        className="block shrink-0 border-t border-[#E5E7EB] px-3 py-2 text-xs font-medium text-[var(--admin-primary)] hover:bg-[#F3F4F6]"
+        className="block shrink-0 border-t border-[var(--wa-surface-border)] px-3 py-2 text-xs font-medium text-[var(--admin-primary)] hover:bg-[var(--wa-surface-hover)]"
       >
         {t("admin.frontDesk.cannedManage")}
       </Link>

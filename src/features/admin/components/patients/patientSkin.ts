@@ -1,15 +1,14 @@
 /** Shared gray surfaces for the single-patient profile shell. */
-export const PATIENT_SHELL =
-  "bg-[#F1F5F9]";
+export const PATIENT_SHELL = "bg-[var(--admin-canvas)]";
 
 export const PATIENT_PANEL =
-  "rounded-2xl border border-[#E2E8F0] bg-[#F8F9FA]";
+  "rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-panel)]";
 
 export const PATIENT_PANEL_PAD =
-  "rounded-2xl border border-[#E2E8F0] bg-[#F8F9FA] p-5";
+  "rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-panel)] p-5";
 
 export const PATIENT_NEST =
-  "rounded-xl border border-[#E2E8F0] bg-[#EEF2F6]";
+  "rounded-xl border border-[var(--admin-border)] bg-[var(--admin-hover)]";
 
-export const PATIENT_INK = "text-[#1E293B]";
-export const PATIENT_MUTE = "text-[#64748B]";
+export const PATIENT_INK = "text-[var(--admin-text)]";
+export const PATIENT_MUTE = "text-[var(--admin-muted)]";

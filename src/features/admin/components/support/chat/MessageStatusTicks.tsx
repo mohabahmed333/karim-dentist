@@ -39,7 +39,7 @@ export function MessageStatusTicks({ status, timestamps }: Props) {
     return (
       <span
         title={title}
-        className="inline-flex items-center gap-0.5 text-[#9CA3AF]"
+        className="inline-flex items-center gap-0.5 text-[var(--wa-bubble-meta-text)]"
       >
         <Clock className="h-3.5 w-3.5" aria-hidden />
         <span className="sr-only">{t("admin.frontDesk.msgPending")}</span>
@@ -50,7 +50,7 @@ export function MessageStatusTicks({ status, timestamps }: Props) {
     return (
       <span
         title={title}
-        className="inline-flex items-center gap-0.5 text-[#DC2626]"
+        className="inline-flex items-center gap-0.5 text-[var(--wa-tick-failed)]"
       >
         <AlertCircle className="h-3.5 w-3.5" aria-hidden />
         <span className="sr-only">{t("admin.frontDesk.msgFailed")}</span>
@@ -61,7 +61,7 @@ export function MessageStatusTicks({ status, timestamps }: Props) {
     return (
       <span
         title={title}
-        className="inline-flex items-center gap-0.5 text-[#6B7280]"
+        className="inline-flex items-center gap-0.5 text-[var(--wa-tick-sent)]"
       >
         <Check className="h-3.5 w-3.5 stroke-[2.5]" aria-hidden />
         <span className="sr-only">{t("admin.frontDesk.msgSent")}</span>
@@ -72,7 +72,7 @@ export function MessageStatusTicks({ status, timestamps }: Props) {
     return (
       <span
         title={title}
-        className="inline-flex items-center gap-0.5 text-[#6B7280]"
+        className="inline-flex items-center gap-0.5 text-[var(--wa-tick-sent)]"
       >
         <CheckCheck className="h-3.5 w-3.5 stroke-[2.5]" aria-hidden />
         <span className="sr-only">{t("admin.frontDesk.msgDelivered")}</span>
@@ -82,7 +82,7 @@ export function MessageStatusTicks({ status, timestamps }: Props) {
   return (
     <span
       title={title}
-      className={cn("inline-flex items-center gap-0.5 text-[#53BDEB]")}
+      className={cn("inline-flex items-center gap-0.5 text-[var(--wa-tick-read)]")}
     >
       <CheckCheck className="h-3.5 w-3.5 stroke-[2.5]" aria-hidden />
       <span className="sr-only">{t("admin.frontDesk.msgRead")}</span>

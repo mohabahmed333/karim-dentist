@@ -26,7 +26,7 @@ import {
 import { useTranslations } from "@/lib/i18n";
 import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 import { cn } from "@/lib/utils";
-import { adminPageLabelKeys } from "@/features/admin/lib/adminNav";
+import { adminPageLabelKeys, adminPagePermissions } from "@/features/admin/lib/adminNav";
 import {
   buildStaticCommandHits,
   commandPaletteGroups,
@@ -85,8 +85,17 @@ function shortcutLabel(): string {
   return /Mac|iPhone|iPad/i.test(navigator.platform) ? "⌘K" : "Ctrl+K";
 }
 
-export function CommandPalette() {
+type Props = {
+  /** Omit to show every hit unfiltered (e.g. showreel demos with no session). */
+  permissions?: string[] | null;
+};
+
+export function CommandPalette({ permissions }: Props = {}) {
   const t = useTranslations();
+  const permissionSet = useMemo(
+    () => (permissions ? new Set(permissions) : null),
+    [permissions],
+  );
   const router = useRouter();
   const quickBook = useOptionalQuickBook();
   const reduced = useReducedMotion();
@@ -116,8 +125,12 @@ export function CommandPalette() {
         publicFeatured: t("admin.search.publicFeatured"),
         publicExperience: t("admin.search.publicExperience"),
         newReservation: t("admin.search.newReservation"),
+      }).filter((hit) => {
+        if (hit.kind !== "page" || !permissionSet) return true;
+        const required = adminPagePermissions[hit.href];
+        return !required || permissionSet.has(required);
       }),
-    [t],
+    [t, permissionSet],
   );
 
   const allHits = useMemo(

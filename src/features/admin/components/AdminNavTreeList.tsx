@@ -84,6 +84,7 @@ export function AdminNavTreeList({
               label={t(item.labelKey)}
               exact={item.exact}
               badge={badge}
+              activeStyle={depth > 0 ? "text" : "pill"}
             />
           </TreeRow>
         );

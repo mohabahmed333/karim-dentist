@@ -60,12 +60,18 @@ export type LiveInbox = {
   cursorsById: Record<string, string | null>;
 };
 
+// Stable reference: an inline `{}` default is re-created on every call,
+// which would defeat `refreshConversations`'s memoization (see staffById
+// usage below) and stall the filter-loading effect.
+const EMPTY_STAFF_BY_ID: Record<string, string | null> = {};
+
 export function useWhatsappInboxLive(
   enabled: boolean,
   initial: LiveInbox,
   agentName = "Front desk",
   conversationFilters?: ConversationListFilters | null,
   alert?: InboxLiveAlert,
+  staffById: Record<string, string | null> = EMPTY_STAFF_BY_ID,
 ) {
   const viewRef = alert?.viewRef;
   const onUnreadRef = useRef(alert?.onUnreadTotal);
@@ -150,6 +156,7 @@ export function useWhatsappInboxLive(
         notesByConversation,
         patientGroups,
         agentName,
+        staffById,
       );
       return {
         ...prev,
@@ -158,7 +165,7 @@ export function useWhatsappInboxLive(
         openCount: mapped.openCount,
       };
     });
-  }, [agentName, filters]);
+  }, [agentName, filters, staffById]);
 
   const prependPage = useCallback(
     (
@@ -219,6 +226,73 @@ export function useWhatsappInboxLive(
           openCount: conversations.filter((c) => c.status === "active").length,
         };
       });
+    },
+    [],
+  );
+
+  const patchConversationStarred = useCallback(
+    (conversationId: string, starred: boolean) => {
+      setLive((prev) => ({
+        ...prev,
+        conversations: prev.conversations.map((c) =>
+          c.id === conversationId ? { ...c, starred } : c,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const patchConversationTags = useCallback(
+    (conversationId: string, tags: string[]) => {
+      setLive((prev) => ({
+        ...prev,
+        conversations: prev.conversations.map((c) => {
+          if (c.id !== conversationId) return c;
+          const builtin = c.tags.filter(
+            (t) =>
+              t.label === "WhatsApp" ||
+              t.label === "Patient" ||
+              t.label === "Ended" ||
+              t.label === "Archived" ||
+              t.label === "Demo",
+          );
+          return { ...c, tags: [...builtin, ...tags.map((label) => ({ label }))] };
+        }),
+      }));
+    },
+    [],
+  );
+
+  const patchConversationAssignee = useCallback(
+    (
+      conversationId: string,
+      assigneeId: string | null,
+      assigneeName: string | null,
+    ) => {
+      setLive((prev) => ({
+        ...prev,
+        conversations: prev.conversations.map((c) =>
+          c.id === conversationId ? { ...c, assigneeId, assigneeName } : c,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const patchConversationMuted = useCallback(
+    (conversationId: string, mutedUntil: string | null) => {
+      setLive((prev) => ({
+        ...prev,
+        conversations: prev.conversations.map((c) =>
+          c.id === conversationId
+            ? {
+                ...c,
+                mutedUntil,
+                muted: Boolean(mutedUntil && mutedUntil > new Date().toISOString()),
+              }
+            : c,
+        ),
+      }));
     },
     [],
   );
@@ -289,6 +363,7 @@ export function useWhatsappInboxLive(
             {},
             [],
             agentName,
+            staffById,
           );
           const prevById = new Map(
             prev.conversations.map((row) => [row.id, row]),
@@ -309,6 +384,11 @@ export function useWhatsappInboxLive(
                 timestamp: row.timestamp,
                 status: row.status,
                 unread: row.unread,
+                starred: row.starred,
+                assigneeId: row.assigneeId,
+                assigneeName: row.assigneeName,
+                mutedUntil: row.mutedUntil,
+                muted: row.muted,
               };
             }),
             openCount: mapped.openCount,
@@ -330,7 +410,7 @@ export function useWhatsappInboxLive(
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("focus", pull);
     };
-  }, [enabled, filters, agentName]);
+  }, [enabled, filters, agentName, staffById]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -496,6 +576,10 @@ export function useWhatsappInboxLive(
     replaceConversationMessages,
     patchDetails,
     patchConversationStatus,
+    patchConversationStarred,
+    patchConversationTags,
+    patchConversationAssignee,
+    patchConversationMuted,
     touchConversation,
   };
 }

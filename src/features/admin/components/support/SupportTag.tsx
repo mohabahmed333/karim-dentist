@@ -13,8 +13,8 @@ export function SupportTag({ label, tone = "neutral", className }: Props) {
       className={cn(
         "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
         tone === "danger"
-          ? "bg-[#FEE2E2] text-[#991B1B]"
-          : "bg-[#F3F4F6] text-[#374151]",
+          ? "bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300"
+          : "bg-[var(--admin-hover)] text-[var(--admin-text)]",
         className,
       )}
     >

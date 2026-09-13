@@ -1,13 +1,5 @@
 import type { ReactNode } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-
-function Block({ className }: { className?: string }) {
-  return (
-    <Skeleton
-      className={`bg-[var(--admin-hover,#eeeff1)] ${className ?? ""}`}
-    />
-  );
-}
+import { AdminSkeleton as Block } from "@/features/admin/components/AdminSkeleton";
 
 function Card({
   className,

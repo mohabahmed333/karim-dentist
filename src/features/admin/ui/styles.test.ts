@@ -9,7 +9,7 @@ import {
 describe("admin ui styles", () => {
   it("exposes shared menu + field class tokens", () => {
     assert.match(adminMenuPanelClass, /rounded-\[10px\]/);
-    assert.match(adminMenuItemClass, /F2F2F2/);
+    assert.match(adminMenuItemClass, /admin-hover/);
     assert.match(adminFieldClass, /admin-border/);
   });
 });

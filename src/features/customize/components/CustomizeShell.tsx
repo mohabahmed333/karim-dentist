@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useLocale, useTranslations } from "@/lib/i18n";
+import { useAdminDarkMode } from "@/features/admin/hooks/useAdminDarkMode";
 import { cn } from "@/lib/utils";
 import {
   CustomizeRouteProvider,
@@ -22,6 +23,7 @@ import { useTourRouteSync } from "./useTourRouteSync";
 function CustomizeShellInner() {
   const { route, navigate } = useCustomizeRoute();
   const { locale } = useLocale();
+  const { darkMode } = useAdminDarkMode();
   const [device, setDevice] = useState<PreviewDeviceId>("desktop");
   const tour = useCustomizeTour();
   useTourRouteSync(tour.open, tour.step, route, navigate);
@@ -31,8 +33,9 @@ function CustomizeShellInner() {
       <UnsavedChangesGuard>
         <div
           className={cn(
-            "customize-shell relative flex h-full min-h-0 flex-1 overflow-hidden bg-[#f2f2f2] text-[#1a1a1a]",
+            "customize-shell relative flex h-full min-h-0 flex-1 overflow-hidden bg-[var(--admin-canvas)] text-[var(--admin-text)]",
             locale === "ar" && "font-[family-name:var(--font-arabic)]",
+            darkMode && "dark",
           )}
         >
           <CustomizeSidebar>
@@ -43,7 +46,7 @@ function CustomizeShellInner() {
               builderMode={route.builderMode}
             />
           </CustomizeSidebar>
-          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-white">
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--admin-panel)]">
             <CustomizeHeader
               active={route.section}
               itemId={route.itemId}
@@ -78,7 +81,7 @@ export function CustomizeShell() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-full min-h-0 flex-1 items-center justify-center bg-[#f2f2f2] text-sm text-[#6b6b6b]">
+        <div className="flex h-full min-h-0 flex-1 items-center justify-center bg-[var(--admin-canvas)] text-sm text-[var(--admin-muted)]">
           {t("admin.customize.loading")}
         </div>
       }

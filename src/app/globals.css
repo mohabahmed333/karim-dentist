@@ -115,6 +115,10 @@ html:has(.customize-shell),
   --admin-muted: #6b6f76;
   --admin-hover: #eeeff1;
   --admin-active: color-mix(in srgb, var(--admin-primary) 12%, white);
+  /* Text drawn straight on the canvas/panel (not inside a tinted pill) needs to
+     stay readable even when the customized primary is near-black or near-white —
+     see --admin-primary-contrast override in the dark block below. */
+  --admin-primary-contrast: var(--admin-primary);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -148,6 +152,39 @@ html:has(.customize-shell),
   --sidebar-ring: oklch(0.65 0 0);
 }
 
+/* Dark admin chrome — brand primary/secondary stay whatever was customized; only the fixed
+   neutrals change. Declared on both `html:has(...)` (so portaled dropdowns/selects/popovers/
+   dialogs — rendered outside .admin-shell — inherit it) and `.admin-shell.dark`/`.customize-shell.dark`
+   themselves (their own light values are declared directly on the same selector list below,
+   so they must be overridden directly too, not just inherited from html). */
+html:has(.admin-shell.dark),
+html:has(.customize-shell.dark),
+.admin-shell.dark,
+.customize-shell.dark {
+  --admin-border: #34363a;
+  --admin-text: #e8e9ea;
+  --admin-muted: #9a9da3;
+  --admin-hover: #2a2c30;
+  --admin-active: color-mix(in srgb, var(--admin-primary) 18%, #202124);
+  /* Lighten a dark customized primary so it stays legible on a dark panel —
+     without this, a black/near-black accent color makes active nav text
+     disappear into the dark background. */
+  --admin-primary-contrast: color-mix(in srgb, var(--admin-primary) 55%, white);
+}
+
+.admin-shell.dark {
+  color-scheme: dark;
+}
+
+/* .customize-shell isn't driven by AdminShell's JS (no live DB-customized colors), so unlike
+   .admin-shell its canvas/panel/content don't flip via inline style — set the dark values here. */
+.customize-shell.dark {
+  color-scheme: dark;
+  --admin-canvas: #18191b;
+  --admin-content: #18191b;
+  --admin-panel: #202124;
+}
+
 .admin-shell {
   color-scheme: light;
   --background: var(--admin-canvas);
@@ -166,7 +203,7 @@ html:has(.customize-shell),
   --accent-foreground: #ffffff;
   --destructive: oklch(0.577 0.245 27.325);
   --border: var(--admin-border);
-  --input: #e2e4e8;
+  --input: var(--admin-border);
   --ring: var(--admin-primary);
   --sidebar: var(--admin-canvas);
   --sidebar-foreground: var(--admin-text);
@@ -181,6 +218,32 @@ html:has(.customize-shell),
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: 13px;
   letter-spacing: -0.01em;
+}
+
+/* Same shadcn-token mapping as .admin-shell, for the nested .customize-shell — without this,
+   shadcn UI (Select/Dialog/etc) inside Customize stays pinned to the static light values
+   declared in the shared base block above and never reacts to dark mode. */
+.customize-shell {
+  color-scheme: light;
+  --background: var(--admin-canvas);
+  --foreground: var(--admin-text);
+  --card: var(--admin-panel);
+  --card-foreground: var(--admin-text);
+  --popover: var(--admin-panel);
+  --popover-foreground: var(--admin-text);
+  --primary: var(--admin-primary);
+  --primary-foreground: #ffffff;
+  --secondary: var(--admin-secondary);
+  --secondary-foreground: #ffffff;
+  --muted: var(--admin-panel);
+  --muted-foreground: var(--admin-muted);
+  --accent: var(--admin-secondary);
+  --accent-foreground: #ffffff;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: var(--admin-border);
+  --input: var(--admin-border);
+  --ring: var(--admin-primary);
+  color: var(--foreground);
 }
 
 /* Flat admin UI — no shadows; borders allowed for cards/panels */
@@ -212,6 +275,14 @@ html:has(.admin-shell) [data-slot="dialog-content"] {
   color: #1d1c1d !important;
 }
 
+html:has(.admin-shell.dark) [data-slot="dropdown-menu-content"],
+html:has(.admin-shell.dark) [data-slot="select-content"],
+html:has(.admin-shell.dark) [data-slot="popover-content"],
+html:has(.admin-shell.dark) [data-slot="dialog-content"] {
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+
 html:has(.admin-shell) [data-slot="dropdown-menu-content"],
 html:has(.admin-shell) [data-slot="select-content"] {
   border-radius: 10px !important;
@@ -229,6 +300,13 @@ html:has(.admin-shell) [data-slot="dropdown-menu-checkbox-item"][data-highlighte
 html:has(.admin-shell) [data-slot="select-item"][data-highlighted] {
   background-color: #f2f2f2 !important;
   color: #1d1c1d !important;
+}
+
+html:has(.admin-shell.dark) [data-slot="dropdown-menu-item"][data-highlighted],
+html:has(.admin-shell.dark) [data-slot="dropdown-menu-checkbox-item"][data-highlighted],
+html:has(.admin-shell.dark) [data-slot="select-item"][data-highlighted] {
+  background-color: var(--admin-hover) !important;
+  color: var(--admin-text) !important;
 }
 
 /* Linear-style card: hairline border, almost flat */
@@ -261,12 +339,28 @@ html:has(.admin-shell) [data-slot="popover-content"] :is(input, textarea, select
   background-color: #f4f5f7 !important;
 }
 
+html:has(.admin-shell.dark) .admin-shell :is(input, textarea, select, [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]),
+html:has(.admin-shell.dark) [data-slot="dialog-content"] :is(input, textarea, select, [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]),
+html:has(.admin-shell.dark) [data-slot="select-content"] :is(input, textarea, select, [data-slot="input"]),
+html:has(.admin-shell.dark) [data-slot="dropdown-menu-content"] :is(input, textarea, select, [data-slot="input"]),
+html:has(.admin-shell.dark) [data-slot="popover-content"] :is(input, textarea, select, [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]) {
+  background-color: #26282c !important;
+}
+
 html:has(.admin-shell) .admin-shell :is(input, textarea, select, [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]):focus-visible,
 html:has(.admin-shell) [data-slot="dialog-content"] :is(input, textarea, select, [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]):focus-visible,
 html:has(.admin-shell) [data-slot="popover-content"] :is(input, textarea, select, [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]):focus-visible {
   border-color: #d1d5db !important;
   outline: none !important;
   box-shadow: 0 0 0 2px rgba(209, 213, 219, 0.45) !important;
+}
+
+html:has(.admin-shell.dark) .admin-shell :is(input, textarea, select, [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]):focus-visible,
+html:has(.admin-shell.dark) [data-slot="dialog-content"] :is(input, textarea, select, [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]):focus-visible,
+html:has(.admin-shell.dark) [data-slot="popover-content"] :is(input, textarea, select, [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]):focus-visible {
+  border-color: var(--admin-primary) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--admin-primary) 35%, transparent) !important;
 }
 
 html:has(.admin-shell) .admin-shell :is(input, [data-slot="input"]).border-0,
@@ -2770,28 +2864,28 @@ a.featured-card {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: #1a1a1a;
+  color: var(--admin-text);
 }
 
 .customize-shell .customize-editor label {
-  color: #8a8a8a;
+  color: var(--admin-muted);
 }
 
 .customize-shell .customize-editor input,
 .customize-shell .customize-editor textarea,
 .customize-shell .customize-editor select {
-  border-color: #e5e5e5;
+  border-color: var(--admin-border);
   border-radius: 6px;
-  background: #fff;
-  color: #1a1a1a;
+  background: var(--admin-panel);
+  color: var(--admin-text);
   box-shadow: none;
 }
 
 .customize-shell .customize-editor input:focus-visible,
 .customize-shell .customize-editor textarea:focus-visible {
-  border-color: #cfcfcf;
+  border-color: var(--admin-muted);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-text) 4%, transparent);
 }
 
 .customize-shell input[type="number"]::-webkit-outer-spin-button,

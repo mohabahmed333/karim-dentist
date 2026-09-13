@@ -233,6 +233,29 @@ function detailsFromPatient(
   };
 }
 
+const MESSAGE_STATUSES = [
+  "draft",
+  "pending",
+  "received",
+  "sent",
+  "delivered",
+  "read",
+  "failed",
+] as const;
+
+/**
+ * The row's status, only if the UI knows how to render it.
+ *
+ * `whatsapp_messages.status` is a text column, so an unrecognised value is
+ * possible; dropping it shows the message without a tick rather than rendering
+ * a state that does not exist.
+ */
+function messageStatus(value: string | null | undefined): SupportMessage["status"] {
+  return MESSAGE_STATUSES.includes(value as (typeof MESSAGE_STATUSES)[number])
+    ? (value as SupportMessage["status"])
+    : undefined;
+}
+
 export function mapWhatsappMessage(
   m: WhatsappMessage,
   contactName: string,
@@ -247,7 +270,7 @@ export function mapWhatsappMessage(
     time: formatTime(m.wa_timestamp),
     waTimestamp: m.wa_timestamp,
     read: m.status === "read" || m.status === "delivered",
-    status: m.status,
+    status: messageStatus(m.status),
     isDraft: m.status === "draft",
     senderKind: (m.sender_kind ?? "human") as "human" | "ai" | "system",
     statusTimestamps: parseStatusTimestamps(m.status_timestamps),
@@ -313,7 +336,9 @@ export function mapWhatsappToSupportUi(
   notesByConversation: Record<string, WhatsappNote[]> = {},
   patientGroups: PatientGroup[] = [],
   agentName = "Front desk",
+  staffById: Record<string, string | null> = {},
 ) {
+  const now = new Date().toISOString();
   const uiConversations: SupportConversation[] = conversations.map((c) => {
     const patient = resolvePatientGroup(c, patientGroups);
     const name =
@@ -325,6 +350,8 @@ export function mapWhatsappToSupportUi(
         .filter((m) => m.direction === "inbound")
         .map((m) => m.wa_timestamp),
     );
+    const muted = Boolean(c.muted_until && c.muted_until > now);
+    const tags = c.tags ?? [];
     return {
       id: c.id,
       name,
@@ -372,9 +399,15 @@ export function mapWhatsappToSupportUi(
           ? [{ label: "Archived" }]
           : []),
         ...(metaRecord(c.metadata).is_demo ? [{ label: "Demo" }] : []),
+        ...tags.map((label) => ({ label })),
       ],
       unread: c.unread_count > 0 ? String(c.unread_count) : undefined,
       whatsapp: true,
+      starred: c.starred ?? false,
+      assigneeId: c.assignee_id ?? null,
+      assigneeName: c.assignee_id ? staffById[c.assignee_id] ?? null : null,
+      mutedUntil: c.muted_until ?? null,
+      muted,
       phone: patient?.phone || c.phone_number,
       patientKey,
       workspaceHref: patientKey

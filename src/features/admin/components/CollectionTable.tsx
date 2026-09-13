@@ -404,8 +404,7 @@ export function CollectionTable<T>({
     <div
       className={cn(
         "relative",
-        framed &&
-          "overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)]",
+        framed && "overflow-hidden rounded-xl bg-[var(--admin-panel)]",
         className,
       )}
     >
@@ -456,7 +455,7 @@ export function CollectionTable<T>({
             {enableColumnManager ? (
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] px-2.5 text-[12px] font-medium text-[var(--admin-text)] outline-none hover:bg-[var(--admin-hover)]"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium text-[var(--admin-text)] outline-none hover:bg-[var(--admin-hover)]"
                 >
                   <Columns3 className="size-3.5" />
                   {t("admin.table.manageColumns")}
@@ -505,7 +504,7 @@ export function CollectionTable<T>({
 
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="inline-flex size-8 items-center justify-center rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] text-[var(--admin-text)] outline-none hover:bg-[var(--admin-hover)]"
+                className="inline-flex size-8 items-center justify-center rounded-lg text-[var(--admin-text)] outline-none hover:bg-[var(--admin-hover)]"
                 aria-label={t("admin.table.more")}
               >
                 <MoreVertical className="size-3.5" />
