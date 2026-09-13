@@ -217,6 +217,20 @@ export async function callProvider(input: ProviderCallInput): Promise<ProviderRe
       why ? `returned an empty completion (finish_reason: ${why})` : "returned an empty completion",
     );
   }
+
+  // A completion cut off mid-sentence is worse than no completion at all when
+  // the caller wanted JSON: it parses as nothing, and the caller cannot tell a
+  // truncated answer from a model that refused. Treating it as a provider
+  // failure is what lets the chain move to the next model — which is the whole
+  // reason a chain exists. Seen in production as an assistant reply that
+  // stopped mid-word and became "a team member will reply shortly".
+  if (choice?.finish_reason === "length") {
+    throw fail(
+      `ran out of tokens mid-answer (max_tokens: ${input.maxTokens ?? "unset"})`,
+      { detail: content.slice(-DETAIL_LIMIT), failedGeneration: content },
+    );
+  }
+
   return { content, usage: readUsage(payload?.usage) };
 }
 

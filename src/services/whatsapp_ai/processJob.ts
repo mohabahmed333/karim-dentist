@@ -387,7 +387,10 @@ export async function processAutoReplyJob(
           // reasoning is spent from the same budget. At 700 the JSON was being
           // cut off mid-object — "confidence": and nothing after it — which
           // reaches the patient as a parse failure and a silent draft.
-          maxTokens: 1600,
+          // Headroom, not a diagnosis: a production reply came back cut off
+          // mid-word well under this ceiling. Truncation now fails the model so
+          // the chain moves on, and a bigger budget makes it less likely at all.
+          maxTokens: 2400,
           timeoutMs: AI_TIMEOUT_MS,
           deadlineMs: AI_DEADLINE_MS,
           messages: messages as { role: "system" | "user" | "assistant"; content: string }[],

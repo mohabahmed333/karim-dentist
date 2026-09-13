@@ -313,3 +313,71 @@ describe("callProvider — a completion the provider rejected", () => {
     );
   });
 });
+
+describe("callProvider — a completion cut off mid-answer", () => {
+  const ok = (payload: unknown) =>
+    (async () =>
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })) as unknown as typeof fetch;
+
+  const call = (payload: unknown, maxTokens?: number) =>
+    callProvider({
+      provider: "gemini",
+      model: "gemini-3.8-flash",
+      apiKey: "k",
+      messages: [{ role: "user", content: "hi" }],
+      responseFormat: "json_object",
+      maxTokens,
+      fetchImpl: ok(payload),
+    });
+
+  it("fails rather than returning half a JSON object", async () => {
+    // Seen in production: the assistant stopped mid-word and the truncated
+    // envelope became "a team member will reply shortly". A chain exists so
+    // that the next model can try; that only happens if this throws.
+    await assert.rejects(
+      () =>
+        call(
+          {
+            choices: [
+              {
+                finish_reason: "length",
+                message: { content: '{"intent":"booking_request","reply":"هنحجز كشف يوم' },
+              },
+            ],
+          },
+          1600,
+        ),
+      (err: ProviderError) =>
+        /ran out of tokens mid-answer/.test(err.message) && /1600/.test(err.message),
+    );
+  });
+
+  it("keeps the partial answer, which is the only evidence of what went wrong", async () => {
+    await assert.rejects(
+      () =>
+        call({
+          choices: [
+            { finish_reason: "length", message: { content: '{"reply":"half a sentence' } },
+          ],
+        }),
+      (err: ProviderError) => err.failedGeneration === '{"reply":"half a sentence',
+    );
+  });
+
+  it("still accepts a completion that finished normally", async () => {
+    const reply = await call({
+      choices: [{ finish_reason: "stop", message: { content: '{"ok":true}' } }],
+    });
+    assert.equal(reply.content, '{"ok":true}');
+  });
+
+  it("says so when the budget was exhausted before a single character", async () => {
+    await assert.rejects(
+      () => call({ choices: [{ finish_reason: "length", message: { content: "" } }] }),
+      (err: ProviderError) => /finish_reason: length/.test(err.message),
+    );
+  });
+});
