@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 
 type Props = {
   pendingCount?: number;
+  permissions?: string[] | null;
 };
 
-export function AdminMobileNav({ pendingCount = 0 }: Props) {
+export function AdminMobileNav({ pendingCount = 0, permissions }: Props) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const t = useTranslations();
@@ -41,7 +42,7 @@ export function AdminMobileNav({ pendingCount = 0 }: Props) {
                 onClick={() => setOpen(false)}
               />
               <div className="relative flex h-full bg-[var(--admin-canvas)]">
-                <AdminIconRail />
+                <AdminIconRail permissions={permissions} />
                 <div className="flex w-64 flex-col border-s border-[var(--admin-border)]">
                   <div className="flex justify-end p-2">
                     <Button
@@ -54,7 +55,7 @@ export function AdminMobileNav({ pendingCount = 0 }: Props) {
                       <X className="size-5" />
                     </Button>
                   </div>
-                  <AdminSidebar pendingCount={pendingCount} mobile />
+                  <AdminSidebar pendingCount={pendingCount} mobile permissions={permissions} />
                 </div>
               </div>
             </div>,

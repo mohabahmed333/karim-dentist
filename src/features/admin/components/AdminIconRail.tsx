@@ -4,7 +4,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useLocale, useTranslations } from "@/lib/i18n";
-import { adminRailItems, type AdminRailItem } from "@/features/admin/lib/adminNav";
+import {
+  adminRailItems,
+  filterAdminRailItems,
+  type AdminRailItem,
+} from "@/features/admin/lib/adminNav";
 import {
   Tooltip,
   TooltipContent,
@@ -72,11 +76,18 @@ function RailDropdownItem({
   );
 }
 
-export function AdminIconRail() {
+type Props = {
+  /** Omit to show every item unfiltered (e.g. showreel demos with no session). */
+  permissions?: string[] | null;
+};
+
+export function AdminIconRail({ permissions }: Props = {}) {
   const pathname = usePathname();
   const t = useTranslations();
   const { locale } = useLocale();
   const tipSide = locale === "ar" ? "left" : "right";
+  const permissionSet = permissions ? new Set(permissions) : null;
+  const items = filterAdminRailItems(adminRailItems, permissionSet);
 
   return (
     <TooltipProvider>
@@ -88,7 +99,7 @@ export function AdminIconRail() {
         >
           DL
         </div>
-        {adminRailItems.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon;
           const label = t(item.labelKey);
           const active = item.exact

@@ -257,6 +257,84 @@ export const adminPageLabels: Record<string, string> = Object.fromEntries(
   Object.entries(adminPageLabelKeys).map(([href, key]) => [href, adminEn[key]]),
 );
 
+/**
+ * UI-only nav filtering: hides items the current role can't see. This is a
+ * convenience layered on top of the real enforcement in `requirePagePermission`
+ * (pages) and `requirePermission` (actions) — it fails open (shows everything)
+ * when `permissions` is null, so callers that don't fetch a session (demos,
+ * showreel) keep working unfiltered.
+ */
+function isPermitted(
+  permission: string | undefined,
+  permissions: Set<string> | null,
+): boolean {
+  if (!permissions || !permission) return true;
+  return permissions.has(permission);
+}
+
+export function filterAdminRailItems(
+  items: AdminRailItem[],
+  permissions: Set<string> | null,
+): AdminRailItem[] {
+  const result: AdminRailItem[] = [];
+  for (const item of items) {
+    const children = item.children?.filter((child) =>
+      isPermitted(child.permission, permissions),
+    );
+    const ownPermitted = isPermitted(item.permission, permissions);
+    const anyChildPermitted = (children?.length ?? 0) > 0;
+    if (!ownPermitted && !anyChildPermitted) continue;
+    result.push({ ...item, children });
+  }
+  return result;
+}
+
+function filterAdminNavGroup(
+  group: AdminNavGroup,
+  permissions: Set<string> | null,
+): AdminNavGroup | null {
+  const items = group.items.filter((item) =>
+    isPermitted(item.permission, permissions),
+  );
+  const ownPermitted = isPermitted(group.permission, permissions);
+  if (!ownPermitted && items.length === 0) return null;
+  return { ...group, items };
+}
+
+export function filterAdminNavSections(
+  sections: AdminNavSection[],
+  permissions: Set<string> | null,
+): AdminNavSection[] {
+  const result: AdminNavSection[] = [];
+  for (const section of sections) {
+    if (section.entries) {
+      const entries: AdminNavSectionEntry[] = [];
+      for (const entry of section.entries) {
+        if (isAdminNavGroup(entry)) {
+          const filtered = filterAdminNavGroup(entry, permissions);
+          if (filtered) entries.push(filtered);
+        } else if (isPermitted(entry.permission, permissions)) {
+          entries.push(entry);
+        }
+      }
+      if (entries.length > 0) result.push({ ...section, entries });
+      continue;
+    }
+
+    const items = section.items?.filter((item) =>
+      isPermitted(item.permission, permissions),
+    );
+    const groups: AdminNavGroup[] = [];
+    for (const group of section.groups ?? []) {
+      const filtered = filterAdminNavGroup(group, permissions);
+      if (filtered) groups.push(filtered);
+    }
+    if ((items?.length ?? 0) === 0 && groups.length === 0) continue;
+    result.push({ ...section, items, groups });
+  }
+  return result;
+}
+
 export function flattenAdminNavItems(): AdminNavItem[] {
   return adminNavSections.flatMap((section) => {
     if (section.entries) {

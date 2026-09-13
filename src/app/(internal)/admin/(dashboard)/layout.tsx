@@ -1,6 +1,7 @@
 import { AdminShell } from "@/features/admin/components/AdminShell";
 import { Toaster } from "@/components/ui/sonner";
 import { createClient } from "@/lib/supabase/server";
+import { resolveSessionPermissions } from "@/lib/auth/permissions";
 import {
   DEFAULT_DASHBOARD_CANVAS,
   DEFAULT_DASHBOARD_PRIMARY,
@@ -64,6 +65,9 @@ export default async function AdminLayout({
     /* keep defaults */
   }
 
+  const supabase = await createClient();
+  const session = await resolveSessionPermissions(supabase);
+
   return (
     <NuqsAdapter>
       <AdminShell
@@ -72,6 +76,7 @@ export default async function AdminLayout({
         secondaryColor={chrome.secondaryColor}
         canvasColor={chrome.canvasColor}
         contentColor={chrome.contentColor}
+        permissions={[...session.permissions]}
       >
         {children}
       </AdminShell>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FolderOpen } from "lucide-react";
-import { adminNavSections } from "@/features/admin/lib/adminNav";
+import { adminNavSections, filterAdminNavSections } from "@/features/admin/lib/adminNav";
 import { useTranslations } from "@/lib/i18n";
 import { AdminAccountMenu } from "./AdminAccountMenu";
 import { AdminNavSectionBlock } from "./AdminNavSectionBlock";
@@ -10,13 +10,18 @@ import { AdminNavSectionBlock } from "./AdminNavSectionBlock";
 type Props = {
   pendingCount?: number;
   mobile?: boolean;
+  /** Omit to show every section unfiltered (e.g. showreel demos with no session). */
+  permissions?: string[] | null;
 };
 
 export function AdminSidebar({
   pendingCount = 0,
   mobile = false,
+  permissions,
 }: Props) {
   const t = useTranslations();
+  const permissionSet = permissions ? new Set(permissions) : null;
+  const sections = filterAdminNavSections(adminNavSections, permissionSet);
 
   return (
     <aside
@@ -34,7 +39,7 @@ export function AdminSidebar({
           {t("admin.clinicWorkspace")}
         </p>
       </div>
-      {adminNavSections.map((section) => (
+      {sections.map((section) => (
         <AdminNavSectionBlock
           key={section.id}
           section={section}
