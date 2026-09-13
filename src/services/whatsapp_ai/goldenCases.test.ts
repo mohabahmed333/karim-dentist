@@ -464,3 +464,55 @@ describe("golden — replying to a follow-up", () => {
     assert.equal(decision.reason, "intent_feedback_negative");
   });
 });
+
+describe("golden — rating a visit", () => {
+  const envelopeOf = (raw: string) => extractAutoReplyEnvelope(raw).envelope;
+
+  const reply = (over: Record<string, unknown>) =>
+    JSON.stringify({
+      language: "ar",
+      intent: "feedback_positive",
+      confidence: 0.95,
+      reply: "شكراً لحضرتك!",
+      ...over,
+    });
+
+  it("keeps a score the patient gave", () => {
+    assert.equal(envelopeOf(reply({ rating: 5 })).rating, 5);
+    assert.equal(envelopeOf(reply({ rating: 1 })).rating, 1);
+  });
+
+  it("is null when the message was not a rating at all", () => {
+    // Most messages are not. The field has to be absent-safe.
+    assert.equal(envelopeOf(reply({})).rating, null);
+    assert.equal(envelopeOf(reply({ rating: null })).rating, null);
+  });
+
+  it("refuses a score outside 1-5 rather than clamping it", () => {
+    // "10/10" must not become a 10; losing the rating is cheaper than
+    // recording one the scale cannot express.
+    assert.equal(envelopeOf(reply({ rating: 10 })).rating, null);
+    assert.equal(envelopeOf(reply({ rating: 0 })).rating, null);
+    assert.equal(envelopeOf(reply({ rating: -3 })).rating, null);
+  });
+
+  it("refuses a score that is not a whole number", () => {
+    assert.equal(envelopeOf(reply({ rating: 4.5 })).rating, null);
+  });
+
+  it("costs the rating, never the reply, when the model puts words there", () => {
+    const envelope = envelopeOf(reply({ rating: "ممتاز" }));
+    assert.equal(envelope.rating, null);
+    assert.equal(envelope.reply, "شكراً لحضرتك!");
+    assert.equal(envelope.intent, "feedback_positive");
+  });
+
+  it("a low score still drafts for a person, as negative feedback always has", () => {
+    const { decision, envelope } = decide(
+      reply({ intent: "feedback_negative", rating: 2, handoff: true, confidence: 0.9 }),
+    );
+    assert.equal(decision.action, "draft");
+    assert.equal(envelope.rating, 2);
+  });
+});
+

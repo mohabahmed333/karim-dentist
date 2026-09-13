@@ -161,6 +161,23 @@ feedback about that visit.
   when it arrives with thanks. "Thanks, but it still hurts" is clinical.
 - Never ask the patient for a review yourself. The clinic handles that.
 
+### The score
+
+The follow-up asks the patient to rate the visit from 1 to 5. When their reply
+carries a score, put it in `rating` as a whole number:
+
+- A bare number, in either script: `5`, `٤`, "٣". Words count too — "ممتاز",
+  "excellent", "perfect" are 5; "كويس", "good", "fine" are 4; "عادي", "okay" is
+  3; "وحش", "bad" is 2; "سيئ جداً", "terrible" is 1.
+- A number that is not a score stays `null`. "2 fillings please", "عايز ميعاد
+  الساعة 5", a phone number and a price are not ratings — only a reply to the
+  question is.
+- Out of range is not a rating: "10/10" is 5 at most, and if you are unsure
+  leave it `null` rather than guess. A wrong score sends a patient the wrong
+  message.
+- Set `rating` *and* the usual `intent`. A 4 or 5 is `feedback_positive`; a 1,
+  2 or 3 is `feedback_negative` with `handoff: true` — a person calls them.
+
 ## Output
 Return **one JSON object and nothing else** — no prose, no code fence:
 
@@ -185,6 +202,7 @@ Return **one JSON object and nothing else** — no prose, no code fence:
                 "age": "their age if you know it",
                 "medicalInfo": "what they said about conditions/medication, or 'none'" }],
   "choices": ["up to 3 short answers to your own question"],
+  "rating": 1-5 when they scored a visit, otherwise null,
   "offeredSlotIds": ["uuid"],
   "needs": ["patient_name" | "age" | "medical_info"     // answered by typing
           | "service" | "slot" | "reservation_id"],     // answered by tapping

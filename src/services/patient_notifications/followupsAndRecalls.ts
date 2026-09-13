@@ -28,6 +28,16 @@ const FOLLOWUP_UNTIL = 3 * DAY;
 const RECALL_AFTER = 180 * DAY;
 /** How long after a follow-up a reply still counts as answering it. */
 const REVIEW_REPLY_WINDOW = 3 * DAY;
+/**
+ * How long an unhappy patient is left alone before the review link follows.
+ *
+ * They were promised a call. Asking them to rate the clinic publicly before
+ * that call happens is the worst possible moment; withholding the link
+ * altogether is review gating, which Google prohibits. So it waits.
+ */
+const REVIEW_DELAY_AFTER_LOW = 2 * DAY;
+/** At or below this, a patient is owed a conversation before a review link. */
+const LOW_RATING = 3;
 
 export type VisitRow = {
   id: string;
@@ -46,6 +56,8 @@ export type Enqueue = {
   patient_name: string;
   service_label: string;
   starts_at: string | null;
+  /** When it should go out. Defaults to now at insert time. */
+  scheduled_for?: string;
 };
 
 export function selectFollowups(visits: VisitRow[], now: Date): Enqueue[] {
@@ -119,6 +131,11 @@ export type FeedbackEvent = {
   intent: string | null;
   created_at: string;
 };
+export type VisitRating = {
+  conversation_id: string | null;
+  rating: number;
+  created_at: string;
+};
 
 /**
  * Ask for a review only from a patient who has just said they are happy.
@@ -129,21 +146,47 @@ export type FeedbackEvent = {
  * Google. Asking an unhappy patient to rate you publicly is how a clinic earns
  * its one-star reviews.
  */
+/**
+ * Who gets asked for a review, and when.
+ *
+ * Everyone who answered the follow-up gets the link — sending it only to happy
+ * patients is review gating, which Google's policy prohibits and which can get
+ * a clinic's reviews removed. What a low score changes is the timing: those
+ * patients were promised a call, so the link waits until after it rather than
+ * arriving while they are still annoyed.
+ *
+ * A score decides it when there is one. Older follow-ups answered before
+ * ratings existed fall back to the sentiment the assistant recorded.
+ */
 export function selectReviewRequests(
   followups: SentFollowup[],
   events: FeedbackEvent[],
+  ratings: VisitRating[] = [],
+  now: Date = new Date(),
 ): Enqueue[] {
   const out: Enqueue[] = [];
   for (const f of followups) {
     if (!f.conversation_id || !f.sent_at) continue;
     const sentAt = Date.parse(f.sent_at);
-    const replies = events.filter((e) => {
-      if (e.conversation_id !== f.conversation_id) return false;
-      const at = Date.parse(e.created_at);
-      return at > sentAt && at - sentAt <= REVIEW_REPLY_WINDOW;
-    });
-    if (replies.some((e) => e.intent === "feedback_negative")) continue;
-    if (!replies.some((e) => e.intent === "feedback_positive")) continue;
+    const answered = (at: string) => {
+      const ms = Date.parse(at);
+      return ms > sentAt && ms - sentAt <= REVIEW_REPLY_WINDOW;
+    };
+
+    const scores = ratings
+      .filter((r) => r.conversation_id === f.conversation_id && answered(r.created_at))
+      .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
+    const replies = events.filter(
+      (e) => e.conversation_id === f.conversation_id && answered(e.created_at),
+    );
+
+    // The score they gave, else what the assistant made of their words.
+    const score = scores.at(-1)?.rating ?? null;
+    const unhappy =
+      score !== null ? score <= LOW_RATING : replies.some((e) => e.intent === "feedback_negative");
+    const answeredAtAll = score !== null || replies.some((e) => e.intent === "feedback_positive");
+    if (!answeredAtAll && !unhappy) continue;
+
     out.push({
       kind: "review_request",
       dedupe_key: `${f.id}:review_request`,
@@ -152,6 +195,9 @@ export function selectReviewRequests(
       patient_name: f.patient_name,
       service_label: f.service_label,
       starts_at: null,
+      ...(unhappy
+        ? { scheduled_for: new Date(now.getTime() + REVIEW_DELAY_AFTER_LOW).toISOString() }
+        : {}),
     });
   }
   return out;
@@ -210,10 +256,17 @@ export async function enqueueFollowupsAndRecalls(
         .in("conversation_id", conversationIds)
         .in("intent", ["feedback_positive", "feedback_negative"])
         .gte("created_at", windowStart);
+      const { data: ratings } = await db
+        .from("visit_ratings")
+        .select("conversation_id,rating,created_at")
+        .in("conversation_id", conversationIds)
+        .gte("created_at", windowStart);
       queue.push(
         ...selectReviewRequests(
           (followups ?? []) as SentFollowup[],
           (events ?? []) as FeedbackEvent[],
+          (ratings ?? []) as VisitRating[],
+          now,
         ),
       );
     }
@@ -223,7 +276,11 @@ export async function enqueueFollowupsAndRecalls(
   const { data } = await db
     .from("patient_notifications")
     .upsert(
-      queue.map((q) => ({ ...q, source: "schedule", scheduled_for: now.toISOString() })),
+      queue.map(({ scheduled_for, ...q }) => ({
+        ...q,
+        source: "schedule",
+        scheduled_for: scheduled_for ?? now.toISOString(),
+      })),
       { onConflict: "dedupe_key", ignoreDuplicates: true },
     )
     .select("id");

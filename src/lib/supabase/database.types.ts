@@ -1522,6 +1522,7 @@ export type Database = {
           quiet_hours_start: number
           recall_enabled: boolean
           reminder_lead_minutes: number
+          review_url: string
           timezone: string
           updated_at: string
         }
@@ -1533,6 +1534,7 @@ export type Database = {
           quiet_hours_start?: number
           recall_enabled?: boolean
           reminder_lead_minutes?: number
+          review_url?: string
           timezone?: string
           updated_at?: string
         }
@@ -1544,6 +1546,7 @@ export type Database = {
           quiet_hours_start?: number
           recall_enabled?: boolean
           reminder_lead_minutes?: number
+          review_url?: string
           timezone?: string
           updated_at?: string
         }
@@ -2653,6 +2656,73 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visit_ratings: {
+        Row: {
+          called_at: string | null
+          called_by: string | null
+          comment: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          message_id: string | null
+          needs_call: boolean
+          phone: string
+          phone_suffix: string | null
+          rating: number
+          reservation_id: string | null
+        }
+        Insert: {
+          called_at?: string | null
+          called_by?: string | null
+          comment?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          needs_call?: boolean
+          phone?: string
+          phone_suffix?: string | null
+          rating: number
+          reservation_id?: string | null
+        }
+        Update: {
+          called_at?: string | null
+          called_by?: string | null
+          comment?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          needs_call?: boolean
+          phone?: string
+          phone_suffix?: string | null
+          rating?: number
+          reservation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_ratings_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_ratings_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_ratings_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
             referencedColumns: ["id"]
           },
         ]

@@ -114,13 +114,17 @@ describe("selectReviewRequests", () => {
     assert.equal(out[0].dedupe_key, "n1:review_request");
   });
 
-  it("never asks an unhappy patient, even one who also said something nice", () => {
-    // "The filling is fine but I waited an hour" is not someone to send to Google.
+  it("asks an unhappy patient too, but only after the call they were promised", () => {
+    // "The filling is fine but I waited an hour" still gets the link — sending
+    // it only to happy patients is review gating, which Google's policy
+    // prohibits and which can get a clinic's reviews removed. What changes is
+    // the timing: not while they are still annoyed.
     const out = selectReviewRequests(
       [followup()],
       [event("feedback_positive", 2), event("feedback_negative", 3)],
     );
-    assert.equal(out.length, 0);
+    assert.equal(out.length, 1);
+    assert.ok(out[0].scheduled_for, "it should be delayed, not immediate");
   });
 
   it("ignores praise that came before the follow-up was sent", () => {
@@ -146,3 +150,69 @@ describe("selectReviewRequests", () => {
     );
   });
 });
+
+describe("selectReviewRequests — scored visits", () => {
+  const NOW = new Date("2026-09-14T12:00:00Z");
+  const followup = {
+    id: "f1",
+    reservation_id: "res-1",
+    conversation_id: "conv-1",
+    phone: "01005551234",
+    patient_name: "Ahmed",
+    service_label: "Cleaning",
+    sent_at: "2026-09-14T09:00:00Z",
+  };
+  const rating = (n: number, at = "2026-09-14T10:00:00Z") => ({
+    conversation_id: "conv-1",
+    rating: n,
+    created_at: at,
+  });
+
+  it("asks a happy patient straight away", () => {
+    const out = selectReviewRequests([followup], [], [rating(5)], NOW);
+    assert.equal(out.length, 1);
+    assert.equal(out[0].scheduled_for, undefined);
+  });
+
+  it("still asks an unhappy one, but after the call they were promised", () => {
+    // Withholding the link entirely is review gating, which Google prohibits.
+    const out = selectReviewRequests([followup], [], [rating(2)], NOW);
+    assert.equal(out.length, 1);
+    assert.equal(out[0].scheduled_for, "2026-09-16T12:00:00.000Z");
+  });
+
+  it("treats a 3 as unhappy and a 4 as happy", () => {
+    assert.ok(selectReviewRequests([followup], [], [rating(3)], NOW)[0].scheduled_for);
+    assert.equal(selectReviewRequests([followup], [], [rating(4)], NOW)[0].scheduled_for, undefined);
+  });
+
+  it("uses the last score when a patient corrects themselves", () => {
+    const out = selectReviewRequests(
+      [followup],
+      [],
+      [rating(5, "2026-09-14T10:00:00Z"), rating(2, "2026-09-14T10:05:00Z")],
+      NOW,
+    );
+    assert.ok(out[0].scheduled_for, "the later, lower score should win");
+  });
+
+  it("ignores a score given outside the reply window", () => {
+    const stale = rating(5, "2026-09-20T10:00:00Z");
+    assert.deepEqual(selectReviewRequests([followup], [], [stale], NOW), []);
+  });
+
+  it("falls back to sentiment for follow-ups answered before ratings existed", () => {
+    const positive = [{ conversation_id: "conv-1", intent: "feedback_positive", created_at: "2026-09-14T10:00:00Z" }];
+    assert.equal(selectReviewRequests([followup], positive, [], NOW).length, 1);
+
+    const negative = [{ conversation_id: "conv-1", intent: "feedback_negative", created_at: "2026-09-14T10:00:00Z" }];
+    const out = selectReviewRequests([followup], negative, [], NOW);
+    assert.equal(out.length, 1, "an unhappy patient is asked later, not never");
+    assert.ok(out[0].scheduled_for);
+  });
+
+  it("asks nobody who never answered", () => {
+    assert.deepEqual(selectReviewRequests([followup], [], [], NOW), []);
+  });
+});
+

@@ -108,6 +108,15 @@ export const autoReplyEnvelopeSchema = z.object({
    * choose them.
    */
   choices: z.array(z.string()).max(3).default([]).catch([]),
+  /**
+   * How the patient scored their visit, 1-5, when they were answering the
+   * follow-up that asked. Null for everything else — most messages are not a
+   * rating, and a number in "2 fillings please" is not a score.
+   *
+   * `.catch(null)` on purpose: a model that puts "great" here costs us the
+   * rating, not the reply.
+   */
+  rating: z.number().int().min(1).max(5).nullable().default(null).catch(null),
   offeredSlotIds: z
     .array(z.string())
     .max(20)

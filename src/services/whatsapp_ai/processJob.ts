@@ -21,6 +21,7 @@ import { loadUpcomingReservations } from "@/services/reservations/upcomingReserv
 import { pickPatientLanguage } from "@/services/patient_notifications/pickLanguage";
 import { insertOutboundMessage } from "@/services/whatsapp/mutations";
 import { sendWhatsappMessage } from "@/services/whatsapp/sendMessage";
+import { recordVisitRating } from "./visitRatings";
 import { runAutoReply } from "./runAutoReply";
 import {
   claimJob,
@@ -512,6 +513,18 @@ export async function processAutoReplyJob(
         await saveBookingState(db, conversation.id, next);
       },
       async record(event) {
+        // A score, when the patient gave one. Best-effort and after the fact:
+        // they have already been answered, and a rating is never worth failing
+        // a reply over.
+        await recordVisitRating(db, {
+          conversationId: conversation.id,
+          reservationId: reservations[0]?.id ?? null,
+          messageId: inbound.id,
+          phone: conversation.phone_number,
+          rating: event.envelope?.rating ?? null,
+          comment: inbound.body ?? "",
+        }).catch(() => false);
+
         await recordAiEvent(db, {
           conversationId: conversation.id,
           jobId,
