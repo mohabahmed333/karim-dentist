@@ -1492,6 +1492,39 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_marketing_consent: {
+        Row: {
+          consented_at: string
+          created_at: string
+          evidence: string
+          phone: string
+          phone_suffix: string
+          source: string
+          updated_at: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          consented_at?: string
+          created_at?: string
+          evidence?: string
+          phone: string
+          phone_suffix: string
+          source?: string
+          updated_at?: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          consented_at?: string
+          created_at?: string
+          evidence?: string
+          phone?: string
+          phone_suffix?: string
+          source?: string
+          updated_at?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: []
+      }
       patient_notification_optouts: {
         Row: {
           created_at: string

@@ -215,3 +215,26 @@ export async function isSlotOpen(db: ServiceClient, slotId: string): Promise<boo
     .maybeSingle();
   return Boolean(data && data.status === "open" && Date.parse(data.starts_at) > Date.now());
 }
+
+/**
+ * Has this patient agreed to marketing?
+ *
+ * Matched on the last eight digits like every other patient lookup here, and a
+ * withdrawn row counts as no. Any error is also no: the cost of a false no is a
+ * message that waits, and of a false yes is a restricted WhatsApp number.
+ */
+export async function hasMarketingConsent(
+  db: ServiceClient,
+  phone: string,
+): Promise<boolean> {
+  const suffix = phoneSuffixForLookup(phone);
+  if (!suffix) return false;
+  const { data, error } = await db
+    .from("patient_marketing_consent")
+    .select("phone_suffix")
+    .eq("phone_suffix", suffix)
+    .is("withdrawn_at", null)
+    .maybeSingle();
+  return !error && Boolean(data);
+}
+

@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
-import {
-  foldArabicDigits,
-  parseAmount,
-  receiptExtractionSchema,
-} from "./receiptSchema.ts";
+import { parseAmount, receiptExtractionSchema } from "./receiptSchema.ts";
+// @ts-expect-error -- Node strip-types needs the extension.
+import { foldArabicDigits } from "@/lib/text/arabicDigits.ts";
 
 describe("foldArabicDigits", () => {
   it("folds both Arabic digit ranges", () => {
@@ -63,14 +61,15 @@ describe("receiptExtractionSchema", () => {
       senderName: "Ahmed Ali",
       recipientName: "The Dental Lounge",
       recipientHandle: "clinic@instapay",
-      transferredAt: "2026-09-13T09:30:00Z",
+      transferredAt: "2026-09-13T09:30:00",
       channel: "instapay",
       confidence: 0.93,
       suspiciousText: "",
     });
     assert.equal(parsed.amount, 1500);
     assert.equal(parsed.reference, "REF123");
-    assert.equal(parsed.transferredAt, "2026-09-13T09:30:00.000Z");
+    // 09:30 on the receipt is 09:30 in Cairo, which is 06:30 UTC in summer.
+    assert.equal(parsed.transferredAt, "2026-09-13T06:30:00.000Z");
     assert.equal(parsed.channel, "instapay");
   });
 
@@ -122,7 +121,34 @@ describe("receiptExtractionSchema", () => {
   });
 
   it("reads an Arabic-digit timestamp", () => {
-    const parsed = receiptExtractionSchema.parse({ transferredAt: "٢٠٢٦-٠٩-١٣T٠٩:٣٠:٠٠Z" });
-    assert.equal(parsed.transferredAt, "2026-09-13T09:30:00.000Z");
+    const parsed = receiptExtractionSchema.parse({ transferredAt: "٢٠٢٦-٠٩-١٣T٠٩:٣٠:٠٠" });
+    assert.equal(parsed.transferredAt, "2026-09-13T06:30:00.000Z");
+  });
+
+  /**
+   * A banking app prints the phone's clock, never UTC, so a "Z" in the
+   * extraction was appended by the model to a time it did not convert. Believed,
+   * it puts an afternoon transfer three hours into the future and every honest
+   * receipt fails the "not from the future" check.
+   */
+  it("does not believe a UTC marker the model invented", () => {
+    const parsed = receiptExtractionSchema.parse({ transferredAt: "2026-09-13T14:41:00Z" });
+    assert.equal(parsed.transferredAt, "2026-09-13T11:41:00.000Z");
+  });
+
+  /** The format an Egyptian banking app actually prints. */
+  it("reads a day-first date with an Arabic meridiem", () => {
+    const parsed = receiptExtractionSchema.parse({ transferredAt: "١٣/٠٩/٢٠٢٦ ٢:٤١ م" });
+    assert.equal(parsed.transferredAt, "2026-09-13T11:41:00.000Z");
+  });
+
+  /** A date it cannot be sure of costs the field, and the receipt goes to staff. */
+  it("keeps the raw text when the date cannot be read", () => {
+    const parsed = receiptExtractionSchema.parse({
+      transferredAt: "13 Sep 11:45",
+      rawTimestampText: "13 Sep 11:45",
+    });
+    assert.equal(parsed.transferredAt, null);
+    assert.equal(parsed.rawTimestampText, "13 Sep 11:45");
   });
 });

@@ -174,3 +174,35 @@ describe("evaluateDispatchPolicy — holding back", () => {
     assert.equal(out.reason, "quiet_hours");
   });
 });
+
+describe("evaluateDispatchPolicy — marketing consent", () => {
+  const marketing = (kind: string, consent: boolean | null | undefined) =>
+    decide({ row: row({ kind }), marketingConsent: consent });
+
+  for (const kind of ["recall_6m", "review_request", "broadcast"]) {
+    it(`refuses ${kind} without consent`, () => {
+      // A restricted number takes the confirmations and reminders with it.
+      assert.deepEqual(marketing(kind, false), {
+        action: "skip",
+        reason: "no_marketing_consent",
+      });
+      assert.equal(marketing(kind, null).reason, "no_marketing_consent");
+      assert.equal(marketing(kind, undefined).reason, "no_marketing_consent");
+    });
+
+    it(`allows ${kind} once they have agreed`, () => {
+      assert.notEqual(marketing(kind, true).reason, "no_marketing_consent");
+    });
+  }
+
+  for (const kind of ["confirmation", "reminder_24h", "cancellation", "reschedule", "followup", "waitlist_offer"]) {
+    it(`never asks for consent on ${kind}, which the patient set in motion`, () => {
+      assert.notEqual(marketing(kind, false).reason, "no_marketing_consent");
+    });
+  }
+
+  it("skips rather than defers — consent does not arrive by waiting", () => {
+    assert.equal(marketing("broadcast", false).action, "skip");
+  });
+});
+

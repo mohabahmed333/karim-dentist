@@ -43,12 +43,27 @@ export type DispatchPolicyInput = {
   hasTransport: boolean;
   /** How many notifications this patient has already received in 24h. */
   sentLast24h: number;
+  /**
+   * Whether this patient has agreed to marketing. Only consulted for kinds Meta
+   * classifies as MARKETING; null means it was not looked up, which is treated
+   * as "no" for those kinds.
+   */
+  marketingConsent?: boolean | null;
 };
 
 /** A queue that has not drained in this long has been broken, not busy. */
 const STALE_AFTER_MS = 6 * 60 * 60 * 1000;
 const NO_TRANSPORT_RETRY_MS = 15 * 60 * 1000;
 const RATE_LIMIT_RETRY_MS = 60 * 60 * 1000;
+
+/**
+ * Kinds Meta treats as MARKETING rather than UTILITY.
+ *
+ * A confirmation or a reminder is something the patient set in motion. A recall
+ * six months later, a review request, and anything a campaign sends are the
+ * clinic choosing to make contact, and need opt-in.
+ */
+export const MARKETING_KINDS = new Set(["recall_6m", "review_request", "broadcast"]);
 
 export function evaluateDispatchPolicy(
   input: DispatchPolicyInput,
@@ -72,6 +87,14 @@ export function evaluateDispatchPolicy(
   // Applied to every kind, not just marketing. A patient who said stop meant
   // stop; the clinic can still phone them.
   if (input.optedOut) return { action: "skip", reason: "opted_out" };
+
+  // Meta separates messages a patient asked for from messages selling to them,
+  // and sending the second without opt-in is how a number gets restricted —
+  // which would take the confirmations and reminders down with it. Checked
+  // early and skipped, never deferred: consent does not arrive by waiting.
+  if (MARKETING_KINDS.has(row.kind) && input.marketingConsent !== true) {
+    return { action: "skip", reason: "no_marketing_consent" };
+  }
 
   // The bot has already said this in its own words, in the patient's own
   // thread. A template repeating it reads as a system glitch.

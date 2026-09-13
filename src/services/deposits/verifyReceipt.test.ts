@@ -18,7 +18,9 @@ const good = (over: Record<string, unknown> = {}) =>
     senderName: "Ahmed Ali",
     recipientName: "The Dental Lounge",
     recipientHandle: "clinic@instapay",
-    transferredAt: "2026-09-13T11:45:00Z",
+    // Written as a receipt prints it: the clinic's wall clock, no zone.
+    // 14:45 Cairo is 11:45 UTC, a quarter of an hour before "now".
+    transferredAt: "2026-09-13T14:45:00",
     channel: "instapay",
     confidence: 0.95,
     suspiciousText: "",
@@ -244,24 +246,27 @@ describe("verifyReceipt — when the transfer happened", () => {
   });
 
   it("reviews a receipt dated in the future", () => {
-    const out = verifyReceipt(input({ extracted: good({ transferredAt: "2026-09-13T13:00:00Z" }) }));
+    // 18:00 Cairo is 15:00 UTC — three hours after "now".
+    const out = verifyReceipt(input({ extracted: good({ transferredAt: "2026-09-13T18:00:00" }) }));
     assert.deepEqual(out, { verdict: "review", reason: "timestamp_future" });
   });
 
   it("allows a few minutes of clock skew", () => {
-    const out = verifyReceipt(input({ extracted: good({ transferredAt: "2026-09-13T12:05:00Z" }) }));
+    // 15:05 Cairo is 12:05 UTC: five minutes ahead, inside the tolerance.
+    const out = verifyReceipt(input({ extracted: good({ transferredAt: "2026-09-13T15:05:00" }) }));
     assert.equal(out.verdict, "confirm");
   });
 
   it("reviews a receipt far older than the booking", () => {
     // A transfer from last month against a booking made half an hour ago is a
     // recycled screenshot, not a payment for this appointment.
-    const out = verifyReceipt(input({ extracted: good({ transferredAt: "2026-08-01T10:00:00Z" }) }));
+    const out = verifyReceipt(input({ extracted: good({ transferredAt: "2026-08-01T13:00:00" }) }));
     assert.deepEqual(out, { verdict: "review", reason: "receipt_too_old" });
   });
 
   it("accepts a receipt just inside the age limit", () => {
-    const out = verifyReceipt(input({ extracted: good({ transferredAt: "2026-09-11T12:00:00Z" }) }));
+    // Booked 13 Sep 11:30 UTC, 48h limit: 15:00 Cairo on the 11th is 12:00 UTC.
+    const out = verifyReceipt(input({ extracted: good({ transferredAt: "2026-09-11T15:00:00" }) }));
     assert.equal(out.verdict, "confirm");
   });
 });

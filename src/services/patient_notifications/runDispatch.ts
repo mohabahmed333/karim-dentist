@@ -22,6 +22,7 @@ import {
   countSentLast24h,
   findDue,
   finish,
+  hasMarketingConsent,
   isOptedOut,
   isSlotOpen,
   loadSettings,
@@ -128,6 +129,7 @@ export async function runDispatch(
           clinicName: clinic.name,
           hasTransport,
           isOptedOut: (phone) => isOptedOut(db, phone),
+      hasMarketingConsent: (phone) => hasMarketingConsent(db, phone),
           countSentLast24h: (phone) => countSentLast24h(db, phone, now),
           async lastInboundBody(phone) {
             const suffix = phoneSuffixForLookup(phone);

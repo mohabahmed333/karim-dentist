@@ -11,7 +11,11 @@
  */
 
 import type { TemplateSendInput } from "@/services/whatsapp/sendKapso";
-import { evaluateDispatchPolicy, type DispatchSettings } from "./dispatchPolicy";
+import {
+  evaluateDispatchPolicy,
+  MARKETING_KINDS,
+  type DispatchSettings,
+} from "./dispatchPolicy";
 import { pickPatientLanguage } from "./pickLanguage";
 import type { DueNotification, FinishPatch } from "./store";
 import { buildTemplateForKind } from "./templateParams";
@@ -28,6 +32,8 @@ export type DispatchDeps = {
   clinicName: string;
   hasTransport: boolean;
   isOptedOut: (phone: string) => Promise<boolean>;
+  /** Marketing kinds only; see the policy for why it is not asked otherwise. */
+  hasMarketingConsent?: (phone: string) => Promise<boolean>;
   countSentLast24h: (phone: string) => Promise<number>;
   /** Newest inbound text from this patient, for choosing a language. */
   lastInboundBody: (phone: string) => Promise<string | null>;
@@ -60,9 +66,14 @@ export async function dispatchNotification(
   const now = deps.now();
 
   try {
-    const [optedOut, sentLast24h] = await Promise.all([
+    const [optedOut, sentLast24h, marketingConsent] = await Promise.all([
       deps.isOptedOut(row.phone),
       deps.countSentLast24h(row.phone),
+      // Only for the kinds that need it: every other message is something the
+      // patient set in motion, and a lookup per row is not free.
+      MARKETING_KINDS.has(row.kind) && deps.hasMarketingConsent
+        ? deps.hasMarketingConsent(row.phone)
+        : Promise.resolve(null),
     ]);
 
     const decision = evaluateDispatchPolicy({
@@ -72,6 +83,7 @@ export async function dispatchNotification(
       optedOut,
       hasTransport: deps.hasTransport,
       sentLast24h,
+      marketingConsent,
     });
 
     if (decision.action === "defer") {
