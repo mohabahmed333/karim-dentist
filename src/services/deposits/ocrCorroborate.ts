@@ -17,7 +17,8 @@
  * ignore the warning.
  */
 
-import { foldArabicDigits, type ReceiptExtraction } from "./receiptSchema";
+import { foldArabicDigits } from "@/lib/text/arabicDigits";
+import type { ReceiptExtraction } from "./receiptSchema";
 
 /**
  * The shortest run of consecutive digits that counts as "we read a number".

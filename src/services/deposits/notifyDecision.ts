@@ -8,7 +8,10 @@ type ServiceClient = ReturnType<typeof createServiceClient>;
 
 export type NotifyResult =
   | { sent: true }
-  | { sent: false; reason: "no_conversation" | "not_found" | "send_failed" };
+  | {
+      sent: false;
+      reason: "no_conversation" | "not_found" | "send_failed" | "lookup_failed";
+    };
 
 /** Injectable so the decision can be tested without Kapso or a network. */
 export type SendDeposit = (input: {
@@ -50,6 +53,22 @@ export async function notifyDepositConfirmed(
   db: ServiceClient,
   requestId: string,
   send: SendDeposit = realSend,
+): Promise<NotifyResult> {
+  try {
+    return await sendConfirmation(db, requestId, send);
+  } catch (err) {
+    // Every failure below is reported, never raised: the confirmation is
+    // already committed, and a lookup that times out must not tell the staff
+    // member their confirmation failed when it did not.
+    console.error("deposit confirmation failed", err);
+    return { sent: false, reason: "lookup_failed" };
+  }
+}
+
+async function sendConfirmation(
+  db: ServiceClient,
+  requestId: string,
+  send: SendDeposit,
 ): Promise<NotifyResult> {
   const { data: request } = await db
     .from("deposit_requests")

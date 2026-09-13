@@ -20,7 +20,8 @@
  */
 
 import type { Corroboration } from "./ocrCorroborate";
-import { foldArabicDigits, type ReceiptExtraction } from "./receiptSchema";
+import { foldArabicDigits } from "@/lib/text/arabicDigits";
+import type { ReceiptExtraction } from "./receiptSchema";
 
 /** Clock skew between a bank's server and ours; not an attack surface. */
 const FUTURE_TOLERANCE_MS = 15 * 60 * 1000;

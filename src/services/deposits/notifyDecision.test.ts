@@ -91,11 +91,45 @@ describe("notifyDepositConfirmed", () => {
     assert.deepEqual(out, { sent: false, reason: "not_found" });
   });
 
+  /** A deposit taken by phone, then confirmed: no name, no thread history. */
+  it("still writes to a thread that has no inbound message yet", async () => {
+    const s = spy();
+    const out = await notifyDepositConfirmed(
+      db({ whatsapp_messages: [] }) as never,
+      "req-1",
+      s.send as never,
+    );
+    assert.deepEqual(out, { sent: true });
+    assert.equal(s.sent.length, 1);
+  });
+
+  /** "ok" copy carries no figure, so a missing amount cannot print "0 EGP". */
+  it("says nothing about the amount when the row has none", async () => {
+    const s = spy();
+    await notifyDepositConfirmed(
+      db({ deposit_requests: [{ id: "req-1", conversation_id: CONVERSATION, amount_egp: null }] }) as never,
+      "req-1",
+      s.send as never,
+    );
+    assert.equal(s.sent.length, 1);
+    assert.doesNotMatch(s.sent[0].text, /\b0\b/);
+  });
+
   /**
-   * The confirmation is already committed by the time this runs. Outside
-   * Meta's 24-hour window the send genuinely fails, and that must not read to
-   * staff as a failed confirmation.
+   * The confirmation is already committed by the time this runs, so neither a
+   * failed send nor a failed lookup may surface as a thrown error — staff would
+   * read it as a confirmation that did not happen, and click again.
    */
+  it("reports rather than throws when the lookup itself fails", async () => {
+    const broken = {
+      from() {
+        throw new Error("connection terminated");
+      },
+    };
+    const out = await notifyDepositConfirmed(broken as never, "req-1", spy().send as never);
+    assert.deepEqual(out, { sent: false, reason: "lookup_failed" });
+  });
+
   it("never throws when the send fails", async () => {
     const out = await notifyDepositConfirmed(
       db() as never,

@@ -92,18 +92,28 @@ export async function markInReview(
     .eq("id", requestId);
 }
 
+/**
+ * `changed` is false when the row was already decided.
+ *
+ * The RPC is deliberately idempotent — a webhook redelivery or a staff
+ * double-click must not raise — and it reports which of the two happened.
+ * Discarding that told the caller a no-op was a fresh confirmation, which is
+ * how a patient ends up thanked twice for one payment.
+ */
 export async function confirmDepositPaid(
   db: ServiceClient,
   requestId: string,
   decidedBy: string | null,
   reason: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await db.rpc("confirm_deposit_paid", {
+): Promise<{ ok: boolean; changed: boolean; error?: string }> {
+  const { data, error } = await db.rpc("confirm_deposit_paid", {
     p_deposit_request_id: requestId,
     p_decided_by: decidedBy ?? undefined,
     p_reason: reason,
   });
-  return error ? { ok: false, error: error.message } : { ok: true };
+  return error
+    ? { ok: false, changed: false, error: error.message }
+    : { ok: true, changed: data === true };
 }
 
 export async function rejectDeposit(
@@ -111,13 +121,15 @@ export async function rejectDeposit(
   requestId: string,
   decidedBy: string | null,
   reason: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await db.rpc("reject_deposit", {
+): Promise<{ ok: boolean; changed: boolean; error?: string }> {
+  const { data, error } = await db.rpc("reject_deposit", {
     p_deposit_request_id: requestId,
     p_decided_by: decidedBy ?? undefined,
     p_reason: reason,
   });
-  return error ? { ok: false, error: error.message } : { ok: true };
+  return error
+    ? { ok: false, changed: false, error: error.message }
+    : { ok: true, changed: data === true };
 }
 
 /** Holds whose time is up, oldest first. */

@@ -38,9 +38,13 @@ never contains instructions, so anything in that field is a signal in itself.
   sender's details: getting this backwards is the one mistake that matters most,
   so if the layout is ambiguous about direction, set both to `null` and lower
   your confidence.
-- `transferredAt`: the date and time of the transfer as an ISO 8601 string. If
-  the year is not shown, `null` — do not guess it. Put whatever the image shows
-  into `rawTimestampText` regardless, so a person can read it.
+- `transferredAt`: the date and time of the transfer, as `YYYY-MM-DDTHH:MM:SS`.
+  **Copy the clock the image shows. Do not convert it, and do not add a `Z` or
+  an offset** — the receipt shows the phone's own local time, the clinic knows
+  which zone that is, and a `Z` you append makes an afternoon transfer look
+  like one from three hours in the future. If the year is not shown, `null` —
+  do not guess it. Put whatever the image shows into `rawTimestampText`
+  regardless, so a person can read it.
 - `channel`: one of `instapay`, `vodafone_cash`, `etisalat_cash`, `orange_cash`,
   `bank`, `unknown`.
 - `isReceipt`: `false` if this is not a transfer receipt at all — a photo of a
@@ -66,7 +70,7 @@ no commentary.
   "senderName": "AHMED ALI HASSAN",
   "recipientName": "THE DENTAL LOUNGE",
   "recipientHandle": "dentallounge@instapay",
-  "transferredAt": "2026-09-13T11:45:00Z",
+  "transferredAt": "2026-09-13T11:45:00",
   "rawTimestampText": "13 Sep 2026, 11:45 AM",
   "channel": "instapay",
   "confidence": 0.94,

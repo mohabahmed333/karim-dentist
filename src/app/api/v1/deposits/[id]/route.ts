@@ -47,10 +47,17 @@ export async function PATCH(
   // automatic path had always replied. Reported rather than thrown: the
   // decision is already committed, so a messaging failure must not read as a
   // failed confirmation, but staff do need to know the patient was not told.
+  //
+  // Only a decision that actually moved the row sends anything. The RPC is
+  // idempotent, so a double-click succeeds twice; without this the patient is
+  // thanked twice for one payment.
   const notified =
-    parsed.data.action === "confirm"
+    parsed.data.action === "confirm" && result.changed
       ? await notifyDepositConfirmed(service, id)
-      : ({ sent: false, reason: "not_applicable" } as const);
+      : ({
+          sent: false,
+          reason: result.changed ? "not_applicable" : "already_decided",
+        } as const);
 
   return NextResponse.json({ ok: true, notified });
 }

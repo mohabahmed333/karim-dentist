@@ -14,18 +14,8 @@
  */
 
 import { z } from "zod";
-import { parseClinicLocalTimestamp } from "@/services/patient_notifications/formatWhen";
-
-/** ٠١٢٣٤٥٦٧٨٩ and ۰۱۲۳۴۵۶۷۸۹ both appear on Egyptian banking apps. */
-const ARABIC_DIGITS = /[٠-٩۰-۹]/g;
-
-export function foldArabicDigits(value: string): string {
-  return value.replace(ARABIC_DIGITS, (d) => {
-    const code = d.charCodeAt(0);
-    const base = code >= 0x06f0 ? 0x06f0 : 0x0660;
-    return String(code - base);
-  });
-}
+import { foldArabicDigits } from "@/lib/text/arabicDigits";
+import { parseClinicLocalTimestamp } from "@/services/patient_notifications/parseClinicLocalTimestamp";
 
 /**
  * A money amount as a receipt prints it.
@@ -90,7 +80,7 @@ const timestamp = z
   .unknown()
   .transform((v) => {
     if (typeof v !== "string" || !v.trim()) return null;
-    return parseClinicLocalTimestamp(foldArabicDigits(v.trim()));
+    return parseClinicLocalTimestamp(v, { trustNamedZone: false });
   })
   .catch(null);
 
