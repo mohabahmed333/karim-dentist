@@ -293,3 +293,57 @@ describe("verifyReceipt — manual mode", () => {
     assert.deepEqual(out, { verdict: "reject", reason: "amount_short" });
   });
 });
+
+describe("verifyReceipt — the second reader", () => {
+  it("confirms when OCR found what the model reported", () => {
+    const out = verifyReceipt(
+      input({ corroboration: { checked: true, missing: [] } }),
+    );
+    assert.equal(out.verdict, "confirm");
+  });
+
+  it("holds a receipt whose amount OCR could not find anywhere", () => {
+    // Not a forgery check — a hallucination check. A number the second reader
+    // cannot see is a number that may not be on the image at all.
+    const out = verifyReceipt(
+      input({ corroboration: { checked: true, missing: ["amount"] } }),
+    );
+    assert.deepEqual(out, { verdict: "review", reason: "ocr_amount_mismatch" });
+  });
+
+  it("holds a receipt whose reference OCR could not find", () => {
+    const out = verifyReceipt(
+      input({ corroboration: { checked: true, missing: ["reference"] } }),
+    );
+    assert.deepEqual(out, { verdict: "review", reason: "ocr_reference_mismatch" });
+  });
+
+  it("reports the amount first when both are missing", () => {
+    const out = verifyReceipt(
+      input({ corroboration: { checked: true, missing: ["amount", "reference"] } }),
+    );
+    assert.equal(out.reason, "ocr_amount_mismatch");
+  });
+
+  it("changes nothing when the second reader abstained", () => {
+    for (const reason of ["unavailable", "unreadable"]) {
+      const out = verifyReceipt(input({ corroboration: { checked: false, reason } }));
+      assert.equal(out.verdict, "confirm", reason);
+    }
+  });
+
+  it("changes nothing when no second reading was taken at all", () => {
+    assert.equal(verifyReceipt(input()).verdict, "confirm");
+  });
+
+  it("does not rescue a receipt that already failed on its own merits", () => {
+    // Corroboration is a veto, never a vote in favour.
+    const out = verifyReceipt(
+      input({
+        extracted: good({ amount: 50 }),
+        corroboration: { checked: true, missing: [] },
+      }),
+    );
+    assert.deepEqual(out, { verdict: "reject", reason: "amount_short" });
+  });
+});

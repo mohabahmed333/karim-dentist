@@ -19,6 +19,7 @@
  * Replays first, so a flawless-looking duplicate cannot talk its way past.
  */
 
+import type { Corroboration } from "./ocrCorroborate";
 import { foldArabicDigits, type ReceiptExtraction } from "./receiptSchema";
 
 /** Clock skew between a bank's server and ours; not an attack surface. */
@@ -42,6 +43,11 @@ export type VerifyInput = {
   request: { createdAt: string };
   /** Looked up by the caller, because this function touches no database. */
   seen: { imageUsed: boolean; referenceUsed: boolean };
+  /**
+   * A second, independent reading of the same image, when one was taken.
+   * Absent or abstaining changes nothing: it can only ever add a doubt.
+   */
+  corroboration?: Corroboration;
   autoConfirm: boolean;
   now: Date;
 };
@@ -152,7 +158,16 @@ export function verifyReceipt(input: VerifyInput): Verdict {
   // can never be accepted automatically however good it looks.
   if (r.reference === null) return review("reference_unreadable");
 
-  // 11. The clinic has not handed over the decision yet.
+  // 11. A second reader could not find what the model reported. This is the one
+  // check aimed at the model rather than the patient: OCR cannot spot a forgery,
+  // but it can spot a number that is not physically printed on the image.
+  const corroboration = input.corroboration;
+  if (corroboration?.checked) {
+    if (corroboration.missing.includes("amount")) return review("ocr_amount_mismatch");
+    if (corroboration.missing.includes("reference")) return review("ocr_reference_mismatch");
+  }
+
+  // 12. The clinic has not handed over the decision yet.
   if (!input.autoConfirm) return review("manual_review_mode");
 
   return { verdict: "confirm", reason: "ok" };

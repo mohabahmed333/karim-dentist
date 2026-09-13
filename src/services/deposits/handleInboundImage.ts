@@ -16,6 +16,8 @@ import { randomUUID } from "node:crypto";
 import type { Json } from "@/lib/supabase/database.types";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { fetchReceiptImage, ReceiptImageError } from "./fetchReceiptImage";
+import { corroborate } from "./ocrCorroborate";
+import { readImageText } from "./runOcr";
 import { readReceipt, ReceiptReadError } from "./readReceipt";
 import { receiptExtractionSchema, type ReceiptExtraction } from "./receiptSchema";
 import { receiptOutcomeMessage, type Language } from "./receiptMessages";
@@ -45,6 +47,8 @@ export type HandleDeps = {
   db: ServiceClient;
   fetchImage?: typeof fetchReceiptImage;
   read?: typeof readReceipt;
+  /** The second reader. Injected so tests need no WASM. */
+  ocr?: typeof readImageText;
   now?: () => Date;
   env?: Record<string, string | undefined>;
 };
@@ -155,6 +159,33 @@ export async function handleInboundImage(
     autoConfirm: settings.auto_confirm,
     now,
   });
+
+  // 3b. Only now, and only if this is about to confirm on its own, is a second
+  //     reading worth three seconds: it can veto, never approve, so running it
+  //     on a receipt already bound for the staff queue would change nothing.
+  if (verdict.verdict === "confirm" && settings.ocr_cross_check) {
+    const text = await (deps.ocr ?? readImageText)(image.bytes).catch(() => null);
+    const corroboration = corroborate(text, extraction);
+    if (corroboration.checked && corroboration.missing.length > 0) {
+      verdict = verifyReceipt({
+        extracted: extraction,
+        required: {
+          amountEgp,
+          toleranceEgp: Number(settings.amount_tolerance_egp),
+          minConfidence: Number(settings.min_confidence),
+          receiptMaxAgeHours: settings.receipt_max_age_hours,
+          instapayHandle: settings.instapay_handle,
+          walletNumber: settings.wallet_number,
+          recipientNames: settings.recipient_names ?? [],
+        },
+        request: { createdAt: request.created_at },
+        seen: { imageUsed: false, referenceUsed: false },
+        corroboration,
+        autoConfirm: settings.auto_confirm,
+        now,
+      });
+    }
+  }
 
   // 4. Write it down with the verdict it earned. `verdict` is immutable after
   //    insert — two partial unique indexes are defined over it — so it has to be

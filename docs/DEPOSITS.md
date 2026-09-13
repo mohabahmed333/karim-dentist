@@ -65,6 +65,37 @@ we cannot be certain about becomes `review`, which moves the deposit to
 looks at `awaiting_receipt`. A patient whose receipt we failed to read waits for
 a human, indefinitely, rather than losing their appointment to a timer.
 
+## The second reader (optional)
+
+With **"read every receipt a second time"** on, Tesseract — open-source OCR,
+running locally, no API — reads the image independently and the receipt is only
+confirmed automatically if the amount and reference the AI reported are actually
+printed on it.
+
+**What it catches:** the model inventing a field. That is the failure that would
+otherwise confirm an appointment nobody paid for.
+
+**What it does not catch: forgery.** A faked screenshot has perfectly consistent
+text, so both readers agree and both are wrong. This is a hallucination check,
+not a fraud check, and it should not change how much you trust a receipt.
+
+Three things shape how it works, all measured rather than assumed:
+
+- **It only compares digits and Latin alphanumerics.** On a real Arabic receipt
+  Tesseract returns `"Bosley Jl"` for `"فودافون كاش"` while reading `200.00`,
+  `01001234567` and `VF987654321` perfectly. Names are never compared.
+- **It abstains rather than guessing.** On a receipt printed with Arabic-Indic
+  digits, `٢٠٠` comes back as `"Yeo"` — so when no run of four or more digits is
+  found, it says nothing. Flagging what we simply could not read would send every
+  such receipt to the queue and teach staff to ignore the warning.
+- **It can only veto.** It runs at one moment: when a receipt is about to be
+  confirmed automatically. It never rescues a receipt that failed on its own
+  merits, and it never runs on one already bound for the queue.
+
+Costs: about three seconds of cold start per receipt, and `tesseract.js` brings
+~45 MB of WASM into the deployment whether or not the setting is on. Off by
+default for that reason.
+
 ## Turning it on
 
 Settings → Deposits:

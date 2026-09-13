@@ -236,14 +236,24 @@ try {
     const outcome = await sendReceipt(conversationId, "/receipt-good.png");
     const receipt = await latestReceipt(held.deposit_request_id);
     const deposit = await depositStatus(held.deposit_request_id);
-    const expected = cfg.auto_confirm ? "paid" : "in_review";
+
+    // A real image read by a FAKED model is the one combination where the
+    // second reader must object: the fake invents a reference number, and
+    // Tesseract cannot find it on the actual receipt. That is the whole point
+    // of the cross-check, so here it is the expected outcome rather than a
+    // failure.
+    const crossCheckShouldVeto =
+      Boolean(real) && process.env.E2E_FAKE_GROQ === "1" && cfg.ocr_cross_check;
+    const expected = crossCheckShouldVeto || !cfg.auto_confirm ? "in_review" : "paid";
 
     check(
       deposit?.status === expected,
-      `a good receipt lands ${expected}`,
+      crossCheckShouldVeto
+        ? "the second reader vetoes a reference that is not on the image"
+        : `a good receipt lands ${expected}`,
       `got ${deposit?.status} (${receipt?.verdict}/${receipt?.verdict_reason}), job=${outcome}`,
     );
-    if (cfg.auto_confirm) {
+    if (cfg.auto_confirm && !crossCheckShouldVeto) {
       check(
         (await reservationStatus(held.reservation_id)) === "confirmed",
         "paying confirms the appointment",

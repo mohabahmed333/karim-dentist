@@ -16,6 +16,7 @@ const patchSchema = z.object({
   recipient_names: z.array(z.string().trim().min(1).max(200)).max(10).optional(),
   hold_minutes: z.number().int().min(5).max(240).optional(),
   auto_confirm: z.boolean().optional(),
+  ocr_cross_check: z.boolean().optional(),
   min_confidence: z.number().min(0).max(1).optional(),
   amount_tolerance_egp: z.number().min(0).max(10_000).optional(),
   receipt_max_age_hours: z.number().int().min(1).max(720).optional(),

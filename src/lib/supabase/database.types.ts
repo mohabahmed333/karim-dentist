@@ -886,6 +886,7 @@ export type Database = {
           id: string
           instapay_handle: string
           min_confidence: number
+          ocr_cross_check: boolean
           receipt_max_age_hours: number
           /** How the clinic's own name prints on a receipt. */
           recipient_names: string[]
@@ -902,6 +903,7 @@ export type Database = {
           id?: string
           instapay_handle?: string
           min_confidence?: number
+          ocr_cross_check?: boolean
           receipt_max_age_hours?: number
           recipient_names?: string[]
           updated_at?: string
@@ -917,6 +919,7 @@ export type Database = {
           id?: string
           instapay_handle?: string
           min_confidence?: number
+          ocr_cross_check?: boolean
           receipt_max_age_hours?: number
           recipient_names?: string[]
           updated_at?: string
