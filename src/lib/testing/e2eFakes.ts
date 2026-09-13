@@ -15,15 +15,78 @@ export const fakeKapsoEnabled = () => process.env.E2E_FAKE_KAPSO === "1";
  * Canned auto-responder envelopes, keyed off what the patient said, so specs
  * can drive send-vs-draft without a model.
  */
-export function fakeGroqReply(
-  messages: { role: string; content: string }[],
-): string {
+type FakeContentPart = { type?: string; text?: string; image_url?: { url?: string } };
+type FakeMessage = { role: string; content: string | FakeContentPart[] };
+
+/** The text of a message, whether it arrived as a string or as content parts. */
+function flattenContent(content: string | FakeContentPart[] | undefined): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((part) => part?.type === "text")
+    .map((part) => part.text ?? "")
+    .join(" ");
+}
+
+/** The first image in a message, or "" when it is a text-only call. */
+function imageUrlOf(content: string | FakeContentPart[] | undefined): string {
+  if (!Array.isArray(content)) return "";
+  return content.find((part) => part?.type === "image_url")?.image_url?.url ?? "";
+}
+
+/**
+ * Canned receipt extractions, chosen by the fixture the spec sent.
+ *
+ * The fake cannot know what the clinic is asking for, so the amounts here are
+ * fixed and the spec sets the clinic's deposit to match. Naming the case in the
+ * fixture path keeps each scenario readable from the spec alone.
+ */
+export function fakeReceiptExtraction(imageUrl: string): string {
+  if (/not-a-receipt/.test(imageUrl)) {
+    return JSON.stringify({ isReceipt: false, confidence: 0.9 });
+  }
+  if (/short/.test(imageUrl)) {
+    return JSON.stringify({
+      isReceipt: true,
+      amount: 50,
+      currency: "EGP",
+      reference: "E2ESHORT001",
+      senderName: "E2E Patient",
+      recipientHandle: "clinic@instapay",
+      transferredAt: new Date().toISOString(),
+      channel: "instapay",
+      confidence: 0.95,
+    });
+  }
+  if (/unreadable/.test(imageUrl)) {
+    return JSON.stringify({ isReceipt: true, amount: null, reference: null, confidence: 0.2 });
+  }
+  return JSON.stringify({
+    isReceipt: true,
+    amount: 200,
+    currency: "EGP",
+    reference: "E2EGOOD001",
+    senderName: "E2E Patient",
+    recipientHandle: "clinic@instapay",
+    transferredAt: new Date().toISOString(),
+    channel: "instapay",
+    confidence: 0.96,
+  });
+}
+
+export function fakeGroqReply(messages: FakeMessage[]): string {
   const lastUser = [...messages].reverse().find((m) => m.role === "user");
+
+  // An image in the call means the receipt reader, not the autoresponder.
+  const imageUrl = imageUrlOf(lastUser?.content);
+  if (imageUrl) return fakeReceiptExtraction(imageUrl);
+
+  const raw = flattenContent(lastUser?.content);
   let text = "";
   try {
-    text = String(JSON.parse(lastUser?.content ?? "{}").text ?? "");
+    text = String(JSON.parse(raw || "{}").text ?? "");
   } catch {
-    text = lastUser?.content ?? "";
+    text = raw;
   }
   const lower = text.toLowerCase();
 

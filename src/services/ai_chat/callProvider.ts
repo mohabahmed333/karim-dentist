@@ -1,8 +1,21 @@
 import { PROVIDERS, type ProviderId } from "./providers";
 
+/**
+ * One piece of a multimodal message.
+ *
+ * All three providers speak the OpenAI content-part shape, so an image rides
+ * along as a part rather than needing its own request format. `url` takes a
+ * `data:` URI as readily as an http one — and should, for anything private:
+ * handing a provider a URL puts whatever is behind it into their fetch logs.
+ */
+export type AiContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
 export type AiMessage = {
   role: "system" | "user" | "assistant";
-  content: string;
+  /** A plain string for text-only calls; parts when an image is involved. */
+  content: string | AiContentPart[];
 };
 
 /**
@@ -190,11 +203,20 @@ export async function callProvider(input: ProviderCallInput): Promise<ProviderRe
   }
 
   const payload = (await response.json().catch(() => null)) as {
-    choices?: { message?: { content?: string } }[];
+    choices?: { message?: { content?: string }; finish_reason?: string }[];
     usage?: Record<string, unknown>;
   } | null;
-  const content = payload?.choices?.[0]?.message?.content?.trim();
-  if (!content) throw fail("returned an empty completion");
+  const choice = payload?.choices?.[0];
+  const content = choice?.message?.content?.trim();
+  if (!content) {
+    // Say why it was empty. A reasoning model that spends its whole budget
+    // thinking answers 200 with no content and `finish_reason: "length"`,
+    // which is a token-budget bug and reads nothing like the generic case.
+    const why = choice?.finish_reason;
+    throw fail(
+      why ? `returned an empty completion (finish_reason: ${why})` : "returned an empty completion",
+    );
+  }
   return { content, usage: readUsage(payload?.usage) };
 }
 
