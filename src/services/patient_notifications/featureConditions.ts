@@ -82,7 +82,8 @@ export const FIX = {
   scheduler: "In the Supabase SQL editor, create the two Vault secrets, then run supabase/scripts/schedule_notifications_dispatch.sql once.",
   whatsapp: "Add KAPSO_API_KEY and KAPSO_PHONE_NUMBER_ID in Vercel (Production), then redeploy.",
   serviceRole: "Add SUPABASE_SERVICE_ROLE_KEY in Vercel (Production), then redeploy.",
-  noTemplate: "Open this row for the exact text to submit, paste it into Meta Business Manager, then add the approved name to PATIENT_TEMPLATES in templates.ts.",
+  noTemplate:
+    "Settings \u2192 WhatsApp templates lists every template and whether Meta has it. Open this row for the exact text to submit, paste it into Meta Business Manager, then add the approved name to PATIENT_TEMPLATES in templates.ts.",
   businessAccount: "Set KAPSO_BUSINESS_ACCOUNT_ID to the clinic's own WhatsApp Business Account ID.",
   aiOn: "Settings → WhatsApp AI: set the assistant to Drafts or Replies.",
   groq: "Add GEMINI_API_KEY in Vercel (Production) — or MISTRAL_API_KEY, GROQ_API_KEY — then redeploy.",
