@@ -22,11 +22,13 @@ const args = process.argv.slice(2);
 const allowRealSend = args.includes("--allow-real-send");
 const positional = args.filter((a) => !a.startsWith("--"));
 const phone = positional[0];
-const text = positional[1];
+const text = positional[1] ?? "";
+const imageUrl = args.find((a) => a.startsWith("--image="))?.slice("--image=".length) ?? "";
 
-if (!phone || !text) {
+// An image needs no words; a text message is nothing without them.
+if (!phone || (!text && !imageUrl)) {
   console.error(
-    'Usage: node --env-file=.env.local scripts/simulate-inbound.mjs "<phone>" "<message>" [--allow-real-send]',
+    'Usage: node --env-file=.env.local scripts/simulate-inbound.mjs "<phone>" "<message>" [--image=<url>] [--allow-real-send]',
   );
   process.exit(1);
 }
@@ -86,15 +88,32 @@ if (settings.mode === "auto" && !kapsoFaked && !allowRealSend) {
 }
 
 const wamid = `wamid.sim.${Date.now()}`;
+const message = {
+  id: wamid,
+  from: phone,
+  timestamp: String(Math.floor(Date.now() / 1000)),
+  kapso: { direction: "inbound", status: "received" },
+};
+
+if (imageUrl) {
+  // The shape Kapso really sends: both `link` and `url`, plus its own sha256.
+  // Ours is computed from the bytes we fetch, so this one is only a pre-check.
+  message.type = "image";
+  message.image = {
+    id: `media.sim.${Date.now()}`,
+    link: imageUrl,
+    url: imageUrl,
+    mime_type: "image/jpeg",
+    sha256: "",
+    ...(text ? { caption: text } : {}),
+  };
+} else {
+  message.type = "text";
+  message.text = { body: text };
+}
+
 const body = JSON.stringify({
-  message: {
-    id: wamid,
-    from: phone,
-    type: "text",
-    text: { body: text },
-    timestamp: String(Math.floor(Date.now() / 1000)),
-    kapso: { direction: "inbound", status: "received" },
-  },
+  message,
   conversation: { phone_number: phone, contact_name: "Simulated patient" },
 });
 
@@ -102,7 +121,7 @@ const signature = createHmac("sha256", SECRET).update(body).digest("hex");
 
 console.log(`\n  mode=${settings.mode}  booking_writes=${settings.allow_booking_writes}`);
 console.log(`  kapso=${kapsoFaked ? "faked" : "LIVE"}\n`);
-console.log(`  → ${phone}: "${text}"`);
+console.log(imageUrl ? `  → ${phone}: [image] ${imageUrl}` : `  → ${phone}: "${text}"`);
 
 const res = await fetch(`${BASE}/api/v1/whatsapp/webhook`, {
   method: "POST",
@@ -164,7 +183,10 @@ const { data: latest } = await db
   .from("whatsapp_messages")
   .select("body, status, sender_kind")
   .eq("conversation_id", conversation.id)
-  .eq("sender_kind", "ai")
+  .eq("direction", "outbound")
+  // Not just 'ai': a deposit receipt is answered as 'system', deliberately, so
+  // it does not spend the assistant's reply budget.
+  .in("sender_kind", ["ai", "system"])
   .order("wa_timestamp", { ascending: false })
   .limit(1)
   .maybeSingle();
@@ -185,6 +207,37 @@ if (event.injection_flags?.length) {
 }
 console.log(`  latency     ${event.latency_ms ?? "-"}ms`);
 if (latest) {
-  console.log(`\n  reply (${latest.status}):\n    ${latest.body.replace(/\n/g, "\n    ")}`);
+  console.log(
+    `\n  reply (${latest.status}, sent as ${latest.sender_kind}):\n    ${latest.body.replace(/\n/g, "\n    ")}`,
+  );
+}
+
+// A deposit decision is not an AI decision, so show the deposit itself too.
+if (event.reason?.startsWith("deposit_")) {
+  const { data: request } = await db
+    .from("deposit_requests")
+    .select("id, status, amount_egp, expires_at, decision_reason")
+    .eq("conversation_id", conversation.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (request) {
+    console.log(`\n  deposit     ${request.status}  (${request.decision_reason || "-"})`);
+    const { data: receipts } = await db
+      .from("deposit_receipts")
+      .select("amount_egp, reference, recipient_handle, confidence, verdict, verdict_reason")
+      .eq("deposit_request_id", request.id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const receipt = receipts?.[0];
+    if (receipt) {
+      console.log(
+        `  read        ${receipt.amount_egp ?? "-"} EGP  ref ${receipt.reference ?? "-"}  to ${receipt.recipient_handle ?? "-"}`,
+      );
+      console.log(
+        `  verdict     ${receipt.verdict} (${receipt.verdict_reason})  confidence ${receipt.confidence ?? "-"}`,
+      );
+    }
+  }
 }
 console.log("");

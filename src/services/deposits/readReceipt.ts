@@ -13,6 +13,7 @@
  */
 
 import { readFile } from "node:fs/promises";
+import { fakeGroqEnabled } from "@/lib/testing/e2eFakes";
 import path from "node:path";
 import { aiChat, resolveVisionChain, visionChainString, type AiMessage } from "@/services/ai_chat";
 import { receiptExtractionSchema, type ReceiptExtraction } from "./receiptSchema";
@@ -97,7 +98,10 @@ export async function readReceipt(
   const env = deps.env ?? process.env;
   const chat = deps.chat ?? aiChat;
 
-  if (resolveVisionChain(env).length === 0) {
+  // Skipped when the model is faked: aiChat short-circuits before it resolves a
+  // chain, so the E2E suite needs no vision key — and without this exemption the
+  // whole deposit flow is untestable in CI, which is how this was found.
+  if (!fakeGroqEnabled() && resolveVisionChain(env).length === 0) {
     throw new ReceiptReadError("no_vision_model");
   }
 

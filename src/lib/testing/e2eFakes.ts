@@ -35,22 +35,59 @@ function imageUrlOf(content: string | FakeContentPart[] | undefined): string {
 }
 
 /**
+ * The scenario a fixture asks for, read out of the image itself.
+ *
+ * Not from the URL: by the time an image reaches a model it is a base64 data
+ * URI, and a filename-based switch silently returns the same answer for every
+ * fixture. So a fixture declares itself in its own bytes — append
+ * `E2E-SCENARIO:short` to the file and it is a short payment.
+ */
+function decodeImage(image: string): string {
+  const base64 = image.startsWith("data:") ? image.slice(image.indexOf(",") + 1) : "";
+  return base64 ? Buffer.from(base64, "base64").toString("latin1") : image;
+}
+
+function scenarioOf(decoded: string): string {
+  return /E2E-SCENARIO:([a-z-]+)/.exec(decoded)?.[1] ?? "good";
+}
+
+/**
+ * A short tag unique to these exact bytes, used for the reference number.
+ *
+ * It has to vary between runs: a transaction reference is single-use for real,
+ * enforced by a unique index, so a fixed one makes the suite pass once and fail
+ * for ever after. Hashing the bytes gets that for free, because a fixture with a
+ * per-run nonce in it hashes differently each time. No node:crypto here — this
+ * module is reachable from code that also bundles for the browser.
+ */
+function bytesTag(decoded: string): string {
+  let hash = 5381;
+  for (let i = 0; i < decoded.length; i += 1) {
+    hash = ((hash << 5) + hash + decoded.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash).toString(36).toUpperCase();
+}
+
+/**
  * Canned receipt extractions, chosen by the fixture the spec sent.
  *
  * The fake cannot know what the clinic is asking for, so the amounts here are
- * fixed and the spec sets the clinic's deposit to match. Naming the case in the
- * fixture path keeps each scenario readable from the spec alone.
+ * fixed and the spec sets the clinic's deposit to match.
  */
 export function fakeReceiptExtraction(imageUrl: string): string {
-  if (/not-a-receipt/.test(imageUrl)) {
+  const decoded = decodeImage(imageUrl);
+  const scenario = scenarioOf(decoded);
+  const tag = bytesTag(decoded);
+
+  if (scenario === "not-a-receipt") {
     return JSON.stringify({ isReceipt: false, confidence: 0.9 });
   }
-  if (/short/.test(imageUrl)) {
+  if (scenario === "short") {
     return JSON.stringify({
       isReceipt: true,
       amount: 50,
       currency: "EGP",
-      reference: "E2ESHORT001",
+      reference: `E2ESHORT${tag}`,
       senderName: "E2E Patient",
       recipientHandle: "clinic@instapay",
       transferredAt: new Date().toISOString(),
@@ -58,14 +95,14 @@ export function fakeReceiptExtraction(imageUrl: string): string {
       confidence: 0.95,
     });
   }
-  if (/unreadable/.test(imageUrl)) {
+  if (scenario === "unreadable") {
     return JSON.stringify({ isReceipt: true, amount: null, reference: null, confidence: 0.2 });
   }
   return JSON.stringify({
     isReceipt: true,
     amount: 200,
     currency: "EGP",
-    reference: "E2EGOOD001",
+    reference: `E2EGOOD${tag}`,
     senderName: "E2E Patient",
     recipientHandle: "clinic@instapay",
     transferredAt: new Date().toISOString(),

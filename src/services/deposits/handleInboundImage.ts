@@ -137,42 +137,9 @@ export async function handleInboundImage(
     });
   }
 
-  // 3. Write it down, and let the database settle any replay.
-  const written = await insertReceipt(db, {
-    id: randomUUID(),
-    deposit_request_id: request.id,
-    message_id: inbound.messageId,
-    image_sha256: image.sha256,
-    image_url: inbound.mediaUrl,
-    extracted: extraction as unknown as Json,
-    amount_egp: extraction.amount,
-    reference: extraction.reference,
-    sender_name: extraction.senderName,
-    recipient_name: extraction.recipientName,
-    recipient_handle: extraction.recipientHandle,
-    transferred_at: extraction.transferredAt,
-    confidence: extraction.confidence,
-    verdict: "review",
-    verdict_reason: "pending",
-    model,
-    prompt_version: promptVersion,
-    latency_ms: latencyMs,
-  });
-
-  if (!written.ok && written.duplicate) {
-    const reason =
-      written.duplicate === "reference" ? "duplicate_reference" : "duplicate_image";
-    await rejectDeposit(db, request.id, null, reason);
-    return {
-      handled: true,
-      outcome: "rejected",
-      reason,
-      replyText: receiptOutcomeMessage({ reason, language, amountEgp }),
-    };
-  }
-
-  // 4. The decision, in pure code.
-  const verdict = verifyReceipt({
+  // 3. The decision, in pure code. Replay is not asked about here: the database
+  //    settles that on insert below, which is the only place that can.
+  let verdict = verifyReceipt({
     extracted: extraction,
     required: {
       amountEgp,
@@ -188,6 +155,51 @@ export async function handleInboundImage(
     autoConfirm: settings.auto_confirm,
     now,
   });
+
+  // 4. Write it down with the verdict it earned. `verdict` is immutable after
+  //    insert — two partial unique indexes are defined over it — so it has to be
+  //    computed first rather than patched afterwards.
+  const row = {
+    deposit_request_id: request.id,
+    message_id: inbound.messageId,
+    image_sha256: image.sha256,
+    image_url: inbound.mediaUrl,
+    extracted: extraction as unknown as Json,
+    amount_egp: extraction.amount,
+    reference: extraction.reference,
+    sender_name: extraction.senderName,
+    recipient_name: extraction.recipientName,
+    recipient_handle: extraction.recipientHandle,
+    transferred_at: extraction.transferredAt,
+    confidence: extraction.confidence,
+    model,
+    prompt_version: promptVersion,
+    latency_ms: latencyMs,
+  };
+
+  const written = await insertReceipt(db, {
+    id: randomUUID(),
+    ...row,
+    verdict: verdict.verdict,
+    verdict_reason: verdict.reason,
+  });
+
+  if (!written.ok && written.duplicate) {
+    // These bytes, or that reference, are already spent. The database found it,
+    // not us, which is what makes it safe against two webhooks arriving at once.
+    verdict = {
+      verdict: "reject",
+      reason: written.duplicate === "reference" ? "duplicate_reference" : "duplicate_image",
+    };
+    // Now storable: a 'reject' row sits outside both unique indexes, so the
+    // attempt is still on the record for whoever has to explain it later.
+    await insertReceipt(db, {
+      id: randomUUID(),
+      ...row,
+      verdict: verdict.verdict,
+      verdict_reason: verdict.reason,
+    });
+  }
 
   const replyText = receiptOutcomeMessage({
     reason: verdict.reason,
