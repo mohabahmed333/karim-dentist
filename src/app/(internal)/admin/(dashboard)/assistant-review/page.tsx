@@ -1,5 +1,6 @@
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
 import { AssistantReviewQueue } from "@/features/admin/components/AssistantReviewQueue";
+import { VisitRatingsCard } from "@/features/admin/components/VisitRatingsCard";
 import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
 import { requirePagePermission } from "@/lib/auth/pageGuard";
 
@@ -13,6 +14,8 @@ export default async function AdminAssistantReviewPage() {
         titleKey="admin.pages.assistantReview.title"
         descriptionKey="admin.pages.assistantReview.description"
       />
+      {/* Low scores are a call to make, and staff are already here. */}
+      <VisitRatingsCard />
       <AssistantReviewQueue />
     </AdminPageMotion>
   );

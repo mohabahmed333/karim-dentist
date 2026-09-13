@@ -103,6 +103,7 @@ export function NotificationSettingsForm() {
           max_per_patient_per_day: settings.max_per_patient_per_day,
           reminder_lead_minutes: settings.reminder_lead_minutes,
           recall_enabled: settings.recall_enabled,
+          review_url: settings.review_url ?? "",
         }),
       });
       const body = (await res.json()) as { settings?: PatientNotificationSettings; error?: string; blocking?: string[] };

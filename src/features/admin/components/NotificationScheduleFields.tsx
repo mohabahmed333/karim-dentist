@@ -5,7 +5,7 @@ import type { PatientNotificationSettings } from "@/services/patient_notificatio
 
 type Editable = Pick<
   PatientNotificationSettings,
-  "quiet_hours_start" | "quiet_hours_end" | "max_per_patient_per_day" | "reminder_lead_minutes" | "recall_enabled" | "timezone"
+  "quiet_hours_start" | "quiet_hours_end" | "max_per_patient_per_day" | "reminder_lead_minutes" | "recall_enabled" | "review_url" | "timezone"
 >;
 
 type Props = {
@@ -98,6 +98,22 @@ export function NotificationScheduleFields({ settings, onChange }: Props) {
             className="mt-1 size-4"
             checked={settings.recall_enabled}
             onChange={(e) => onChange({ recall_enabled: e.target.checked })}
+          />
+        </label>
+
+        <label className="mt-3 block">
+          <span className="text-sm">Review link</span>
+          <span className="mb-1 block text-xs text-[var(--admin-muted)]">
+            Where happy patients are sent. Everyone who rates a visit gets it —
+            withholding it from unhappy patients is against Google&apos;s policy —
+            but a low score waits two days, until after the call they were promised.
+          </span>
+          <input
+            type="url"
+            className="h-9 w-full rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] px-3 text-sm outline-none"
+            placeholder="https://g.page/r/..."
+            value={settings.review_url ?? ""}
+            onChange={(e) => onChange({ review_url: e.target.value })}
           />
         </label>
       </div>

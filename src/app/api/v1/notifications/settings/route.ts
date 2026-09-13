@@ -14,6 +14,7 @@ const patchSchema = z.object({
   max_per_patient_per_day: z.number().int().min(0).max(20).optional(),
   reminder_lead_minutes: z.number().int().min(60).max(10080).optional(),
   recall_enabled: z.boolean().optional(),
+  review_url: z.string().trim().max(500).optional(),
 });
 
 async function loadSettings(service: ReturnType<typeof createServiceClient>) {
