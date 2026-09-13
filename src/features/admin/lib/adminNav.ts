@@ -132,6 +132,10 @@ export const adminRailItems: AdminRailItem[] = [
     labelKey: "admin.nav.settings",
     icon: Settings,
     permission: "settings.view",
+    children: [
+      { href: "/admin/settings/accounts", labelKey: "admin.nav.accounts", permission: "accounts.view" },
+      { href: "/admin/settings/roles", labelKey: "admin.nav.roles", permission: "roles.view" },
+    ],
   },
 ];
 
@@ -174,6 +178,8 @@ export const adminNavSections: AdminNavSection[] = [
       { href: "/admin/usage", labelKey: "admin.nav.usage", permission: "usage.view" },
       { href: "/admin/assist-analytics", labelKey: "admin.nav.assistAnalytics", permission: "assist-analytics.view" },
       { href: "/admin/settings", labelKey: "admin.nav.settings", permission: "settings.view" },
+      { href: "/admin/settings/accounts", labelKey: "admin.nav.accounts", permission: "accounts.view" },
+      { href: "/admin/settings/roles", labelKey: "admin.nav.roles", permission: "roles.view" },
     ],
   },
 ];
@@ -242,6 +248,8 @@ export const adminPagePermissions: Record<string, string> = {
   "/admin/usage": "usage.view",
   "/admin/assist-analytics": "assist-analytics.view",
   "/admin/settings": "settings.view",
+  "/admin/settings/accounts": "accounts.view",
+  "/admin/settings/roles": "roles.view",
 };
 
 /** English fallbacks for non-React contexts */
