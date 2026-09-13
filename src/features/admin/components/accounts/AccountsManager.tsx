@@ -17,7 +17,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -240,17 +239,18 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
             />
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="icon"
               onClick={handleCopyPassword}
               aria-label="Copy password"
+              className="shrink-0 border border-border"
             >
               <Copy className="size-4" />
             </Button>
           </div>
-          <DialogFooter>
+          <div className="flex justify-end pt-2">
             <Button onClick={() => setCreatedAccount(null)}>Done</Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
