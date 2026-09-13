@@ -83,6 +83,64 @@ Settings → Deposits:
 an image**, so a deploy holding only `GROQ_API_KEY` has models but no eyes.
 Settings → Patient notifications lists all of this live under "Deposits".
 
+## Validating it
+
+### Without a bank, a model, or a browser
+
+```bash
+supabase start
+node --experimental-strip-types --import ./scripts/test-loader.mjs \
+  --env-file=.env.e2e scripts/deposit-smoke.mjs
+```
+
+Fourteen checks against a real local Postgres: a held booking says nothing, a
+good receipt confirms and queues exactly one confirmation, the same screenshot
+cannot be spent twice even by a different patient, an underpayment is refused,
+and a lapsed hold frees the slot *and* offers it to the waitlist. It refuses to
+run against anything but localhost, because it creates reservations and cancels
+them. Safe to run repeatedly.
+
+It needs deposits switched on in the local database:
+
+```sql
+update deposit_settings set enabled = true, amount_egp = 200,
+  instapay_handle = 'clinic@instapay', recipient_names = array['Dental Lounge'];
+```
+
+### What a real model makes of a real receipt
+
+The above fakes the reader. The thing worth checking with your own eyes is
+whether a vision model can actually read an Egyptian receipt — so point it at
+one, with the fake off:
+
+```bash
+node --experimental-strip-types --import ./scripts/test-loader.mjs \
+  --env-file=.env.e2e --env-file=.env.local \
+  scripts/deposit-smoke.mjs --receipt=./some-real-receipt.jpg
+```
+
+It prints the amount, reference and confidence it read. Try a blurry one, a
+cropped one, and one in Arabic. If the amounts come back right and the
+confidence is honest, `auto_confirm` is worth switching on; if not, leave it off
+and work the queue.
+
+### The whole way round, over real WhatsApp
+
+```bash
+E2E_FAKE_KAPSO=1 yarn dev            # terminal 1, fake transport
+node --env-file=.env.local scripts/simulate-inbound.mjs \
+  "+201001234567" "" --image=https://example.test/receipt.jpg
+```
+
+Prints the decision, the deposit status, and what was read off the receipt.
+Drop `E2E_FAKE_KAPSO` only when the number is genuinely yours — the reply is a
+real WhatsApp message.
+
+For the real article: switch deposits on in production, book a slot from your own
+phone through the bot, transfer the deposit to the clinic's own account, and send
+the screenshot. That is the only test that proves Kapso delivers the image, the
+URL is fetchable from Vercel, and the model reads your bank's layout.
+
 ## Things that will bite you
 
 - **A held booking says nothing to the patient.** That is deliberate: the
