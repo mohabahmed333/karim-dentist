@@ -148,6 +148,11 @@ export const DECISION_SCENARIOS: DecisionScenario[] = [
   { id: "booking-false-confirmation-ar", group: "booking", patient: "١١ سبتمبر الساعه ١٠ ونص مناسب",
     model: env({ language: "ar", intent: "booking_request", confidence: 0.97, reply: reply("تمام، حجزت لك موعد 11 سبتمبر الساعة 10:30.") }),
     expect: { action: "draft", reason: "false_confirmation" } },
+  // The model dropped the hamza — "تم التاكيد" rather than "تم التأكيد" — which
+  // used to walk straight past the one guard built to catch exactly this claim.
+  { id: "booking-false-confirmation-ar-no-hamza", group: "booking", patient: "الاحد الساعه عشره مناسب",
+    model: env({ language: "ar", intent: "booking_request", confidence: 0.97, reply: reply("تمام، موعدك موكد يوم الاحد الساعة 10.") }),
+    expect: { action: "draft", reason: "false_confirmation" } },
   { id: "booking-claim-with-real-action", group: "booking", patient: "yes book it",
     model: env({ intent: "booking_request", confidence: 0.95, reply: reply("I've booked you for Sunday at 10:30."), actions: [{ kind: "booking.book_slot", slotId: SLOT_OFFERED }] }),
     expect: { action: "auto_send" }, allowBookingWrites: true },

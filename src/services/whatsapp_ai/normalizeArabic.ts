@@ -27,6 +27,13 @@ export function normalizeArabic(text: string): string {
     .replace(/ـ/g, "")
     // أ / إ / آ / ٱ all read as the same letter to a patient typing casually.
     .replace(/[آأإٱ]/g, "ا")
+    // ؤ (hamza on waw) and ئ (hamza on yeh) get the same treatment — "مؤكد"
+    // written "موكد" is exactly this module's reason to exist, and it is not
+    // only patients who drop a hamza: this same fold is what makes the
+    // false-confirmation guard in replyGuards.ts catch a model that wrote
+    // "تم التاكيد" instead of the "correctly" spelled "تم التأكيد".
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
     // ى (alef maqsura) and ي are interchanged constantly in casual typing —
     // "علي" / "على" is the same confusion the other way round.
     .replace(/ى/g, "ي")

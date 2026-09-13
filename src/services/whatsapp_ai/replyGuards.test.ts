@@ -154,3 +154,27 @@ describe("claimsCompletedBooking", () => {
     }
   });
 });
+
+describe("claimsCompletedBooking — hamza-dropped spelling", () => {
+  /**
+   * The actual gap this closed: a model writing "تم التاكيد" instead of "تم
+   * التأكيد" walked straight past the guard built specifically to stop a false
+   * confirmation reaching a patient — the guard is only as good as the
+   * spellings it recognises, and a model is as prone to dropping a hamza as a
+   * patient typing one.
+   */
+  it("catches a completed claim spelled without the hamza", () => {
+    for (const text of [
+      "تمام، تم التاكيد.",
+      "موعدك موكد.",
+      "تم الالغاء بنجاح.",
+      "الغينا الحجز.",
+    ]) {
+      assert.equal(claimsCompletedBooking(text), true, text);
+    }
+  });
+
+  it("still reads a hamza-dropped offer as an offer, not a claim", () => {
+    assert.equal(claimsCompletedBooking("تحب اكد الحجز؟"), false);
+  });
+});

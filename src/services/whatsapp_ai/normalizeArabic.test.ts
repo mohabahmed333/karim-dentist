@@ -46,3 +46,19 @@ describe("normalizeArabic", () => {
     assert.equal(normalizeArabic(""), "");
   });
 });
+
+describe("normalizeArabic — waw-hamza and yeh-hamza", () => {
+  /** The actual gap: the false-confirmation guard missed "تم التاكيد". */
+  it("folds hamza on waw, so مؤكد reads the same as موكد", () => {
+    assert.equal(normalizeArabic("مؤكد"), normalizeArabic("موكد"));
+    assert.equal(normalizeArabic("مؤكد"), "موكد");
+  });
+
+  it("folds hamza on yeh to a bare yeh", () => {
+    assert.equal(normalizeArabic("مسئول"), normalizeArabic("مسيول"));
+  });
+
+  it("leaves the alef-hamza fold working alongside the new ones", () => {
+    assert.equal(normalizeArabic("تم التأكيد"), normalizeArabic("تم التاكيد"));
+  });
+});

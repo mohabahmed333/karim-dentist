@@ -1,3 +1,5 @@
+import { normalizeArabic } from "./normalizeArabic";
+
 const UUID =
   /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 
@@ -64,6 +66,12 @@ export function isSendableReply(reply: string): boolean {
  * English. Deliberately narrow: each requires a completed-action verb, not the
  * mere presence of "book" or "confirm".
  *
+ * Every Arabic pattern is written against normalizeArabic()'s output, not the
+ * "correctly spelled" form — this guard reads the *model's* generated text,
+ * and a model is exactly as prone to writing "تم التاكيد" as a patient is to
+ * typing it. A pattern tuned to only the hamza-carrying spelling would let a
+ * false confirmation straight through the one guard built to stop it.
+ *
  * No \b in the Arabic patterns: JS word boundaries are ASCII-only, so they
  * never match beside an Arabic letter and silently disable the rule. The same
  * mistake already cost us a working injection heuristic once.
@@ -74,15 +82,15 @@ const COMPLETION_CLAIMS: RegExp[] = [
   /حجزنا\s+لك/,
   /تم\s+(ال)?حجز/,
   // Arabic — cancelled
-  /تم\s+(ال)?إلغاء/,
-  /ألغينا/,
+  /تم\s+(ال)?الغاء/,
+  /الغينا/,
   // Arabic — rescheduled / changed
   /تم\s+(ال)?تغيير/,
   /تم\s+(ال)?نقل/,
   /غيرنا\s+لك/,
   // Arabic — confirmed state
-  /موعدك\s+(مؤكد|تم\s+تأكيده)/,
-  /تم\s+(ال)?تأكيد/,
+  /موعدك\s+(موكد|تم\s+تاكيده)/,
+  /تم\s+(ال)?تاكيد/,
   // English — booked
   /\b(i('ve| have)?\s+)?booked\s+(you|your)\b/i,
   /\byou('re| are)\s+booked\b/i,
@@ -106,8 +114,8 @@ const OFFER_MARKERS: RegExp[] = [
   /\bplease\s+confirm\b/i,
   /هل\s+تريد/,
   /تحب/,
-  /تريد\s+أن\s+أحجز/,
-  /(من\s+فضلك\s+)?أكد/,
+  /تريد\s+ان\s+احجز/,
+  /(من\s+فضلك\s+)?اكد/,
 ];
 
 /**
@@ -122,6 +130,7 @@ const OFFER_MARKERS: RegExp[] = [
  * assistant has to be able to hold a booking conversation.
  */
 export function claimsCompletedBooking(reply: string): boolean {
-  if (OFFER_MARKERS.some((re) => re.test(reply))) return false;
-  return COMPLETION_CLAIMS.some((re) => re.test(reply));
+  const probe = normalizeArabic(reply);
+  if (OFFER_MARKERS.some((re) => re.test(probe))) return false;
+  return COMPLETION_CLAIMS.some((re) => re.test(probe));
 }
