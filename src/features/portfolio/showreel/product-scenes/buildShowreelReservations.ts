@@ -8,6 +8,7 @@ export function buildShowreelReservations(): Reservation[] {
   return RESERVATION_FIXTURES.map((row) => ({
     id: row.id,
     deposit_hold: false,
+    doctor_id: null,
     patient_name: row.patientName,
     phone: row.phone,
     phone_suffix: phoneSuffixForLookup(row.phone) ?? "",

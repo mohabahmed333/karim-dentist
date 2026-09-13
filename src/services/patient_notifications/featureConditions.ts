@@ -54,6 +54,8 @@ export type FeatureFacts = {
   marketingConsentCount: number | null;
   /** A review destination of the clinic's own, not the map link. */
   reviewUrl: boolean;
+  /** Per-feature off switches. Absent means on. */
+  featureSwitches: Record<string, boolean | undefined>;
   /** False when the deposit migrations have not been applied. */
   depositTablesPresent: boolean;
   deposits: {
@@ -89,6 +91,7 @@ export const FIX = {
   bookingWrites: "Settings → WhatsApp AI: allow the assistant to book and cancel appointments.",
   marketingConsent: "Record each patient's agreement to marketing messages in patient_marketing_consent. Nothing marketing-classed is sent to anyone without a row.",
   reviewUrl: "Settings → Patient notifications: paste the clinic's review link.",
+  featureSwitch: "Switch this feature back on with the toggle on this row.",
   depositsOn: "Settings → Deposits: switch deposits on, then Save.",
   depositAmount: "Settings → Deposits: set the deposit amount above zero.",
   depositDestination: "Settings → Deposits: add the clinic's InstaPay handle or wallet number.",
@@ -206,6 +209,24 @@ export function marketingConsent(f: FeatureFacts): Condition {
       ? "Nobody has agreed yet, so every one of these is skipped as no_marketing_consent. Sending without consent is what gets a WhatsApp number restricted — which would take confirmations and reminders down with it."
       : "Each patient needs their own agreement on record; anyone without one is skipped.",
     FIX.marketingConsent,
+  );
+}
+
+/**
+ * The feature's own on/off switch.
+ *
+ * Listed first among its conditions, because when it is off nothing else about
+ * that feature matters — and a checklist that says "everything is ready" while
+ * a switch quietly stops it is worse than no checklist.
+ */
+export function featureSwitch(f: FeatureFacts, key: string): Condition {
+  const on = f.featureSwitches[key] !== false;
+  return c(
+    `switch_${key}`,
+    "Switched on",
+    on,
+    "Turned off here, so nothing else about this feature is consulted.",
+    FIX.featureSwitch,
   );
 }
 

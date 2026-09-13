@@ -8,7 +8,10 @@ import {
   patientKeyFromReservation,
   patientProfilePath,
 } from "@/services/reservations/patientHistory";
-import { formatReservationWhen, statusBadgeClass } from "@/services/reservations/stats";
+import {
+  formatReservationWhen,
+  statusBadgeClass,
+} from "@/services/reservations/stats";
 import type { Reservation } from "@/services/reservations/types";
 import { phoneSuffixForLookup } from "@/services/reservations/phoneSuffix";
 
@@ -32,6 +35,7 @@ export function PatientHistorySnippet({
   const probe: Reservation = {
     id: excludeId ?? "probe",
     deposit_hold: false,
+    doctor_id: null,
     patient_name: patientName,
     phone,
     phone_suffix: phoneSuffixForLookup(phone) ?? "",

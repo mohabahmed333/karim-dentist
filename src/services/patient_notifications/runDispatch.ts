@@ -10,6 +10,7 @@ import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import { clinicContactFromSettings } from "@/lib/clinic/whatsappClinicContact";
 import { sweepExpiredHolds } from "@/services/deposits/sweepExpiredHolds";
 import { releaseStaleWaitlistOffers } from "@/services/waitlist/releaseStaleOffers";
+import { loadFeatureSwitches } from "./featureSwitches";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { phoneSuffixForLookup } from "@/services/reservations/phoneSuffix";
 import { sendWhatsappMessage } from "@/services/whatsapp/sendMessage";
@@ -50,6 +51,8 @@ export async function runDispatch(
   now: Date = new Date(),
 ): Promise<{ claimed: number; swept: number; outcomes: DispatchOutcome[] }> {
   const swept = await sweepExpiredLeases(db, now);
+  // Once per tick rather than once per row: it is a dozen booleans.
+  const featureSwitches = await loadFeatureSwitches(db);
   const settings = await loadSettings(db);
 
   // Time-driven messages have no triggering row, so they are found by a scan.
@@ -130,6 +133,7 @@ export async function runDispatch(
           hasTransport,
           isOptedOut: (phone) => isOptedOut(db, phone),
       hasMarketingConsent: (phone) => hasMarketingConsent(db, phone),
+      featureSwitches,
           countSentLast24h: (phone) => countSentLast24h(db, phone, now),
           async lastInboundBody(phone) {
             const suffix = phoneSuffixForLookup(phone);

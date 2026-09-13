@@ -46,9 +46,7 @@ export function useReservationEditor(initial: Reservation[]) {
   const [pending, setPending] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  function reservationsUrl(
-    patch: Record<string, string | null>,
-  ): string {
+  function reservationsUrl(patch: Record<string, string | null>): string {
     const params = new URLSearchParams(searchParams.toString());
     for (const [key, value] of Object.entries(patch)) {
       if (value === null) params.delete(key);
@@ -100,9 +98,7 @@ export function useReservationEditor(initial: Reservation[]) {
     const date = searchParams.get("date");
 
     let group =
-      (encoded
-        ? getPatientGroup(groups, decodePatientKey(encoded))
-        : null) ??
+      (encoded ? getPatientGroup(groups, decodePatientKey(encoded)) : null) ??
       (phoneParam ? findPatientGroupByPhone(groups, phoneParam) : null);
 
     if (group) {
@@ -147,9 +143,7 @@ export function useReservationEditor(initial: Reservation[]) {
     if (!row) return;
     setSelectedId(id);
     setForm(reservationToForm(row));
-    router.replace(
-      reservationsUrl({ selected: id, new: null }),
-    );
+    router.replace(reservationsUrl({ selected: id, new: null }));
   }
 
   function openNew(dateIso?: string) {
@@ -221,6 +215,7 @@ export function useReservationEditor(initial: Reservation[]) {
       const row: Reservation = {
         id: crypto.randomUUID(),
         deposit_hold: false,
+        doctor_id: null,
         patient_name: form.patient_name || "New patient",
         phone: form.phone,
         phone_suffix: phoneSuffixForLookup(form.phone) ?? "",
@@ -281,6 +276,7 @@ export function useReservationEditor(initial: Reservation[]) {
           await bookOpenSlotMatchingStartsAt({
             startsAtIso: createPayload.starts_at,
             reservationId: row.id,
+            doctorId: row.doctor_id,
           });
         }
         upsertItem(row);
@@ -321,9 +317,7 @@ export function useReservationEditor(initial: Reservation[]) {
             if (!res.ok) throw new Error("send failed");
             toast.success("Confirmation sent on WhatsApp");
           } catch {
-            toast.error(
-              "Reservation saved, but WhatsApp confirmation failed",
-            );
+            toast.error("Reservation saved, but WhatsApp confirmation failed");
           }
           router.push("/admin/support");
           return true;
@@ -347,6 +341,7 @@ export function useReservationEditor(initial: Reservation[]) {
           await bookOpenSlotMatchingStartsAt({
             startsAtIso: payload.starts_at,
             reservationId: row.id,
+            doctorId: row.doctor_id,
           });
         }
         upsertItem(row);

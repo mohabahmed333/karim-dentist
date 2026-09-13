@@ -12,6 +12,7 @@ import {
   assistantOn,
   databaseUpdated,
   depositsConfigured,
+  featureSwitch,
   marketingConsent,
   sendPipeline,
   templateCondition,
@@ -53,7 +54,8 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       key: "confirmations",
       title: "Booking confirmations",
       summary: "The patient gets a WhatsApp message as soon as an appointment is booked, from any source.",
-      conditions: [...pipeline, templateCondition("confirmation", f)],
+      conditions: [
+        featureSwitch(f, "confirmations"),...pipeline, templateCondition("confirmation", f)],
     },
     {
       key: "deposits",
@@ -89,6 +91,7 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       title: "Day-before reminders",
       summary: "The patient is reminded the day before, in their own language.",
       conditions: [
+        featureSwitch(f, "reminders"),
         ...pipeline,
         templateCondition("reminder_24h", f),
         {
@@ -104,25 +107,29 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       key: "cancellations",
       title: "Cancellation notices",
       summary: "The patient is told when staff cancel their appointment.",
-      conditions: [...pipeline, templateCondition("cancellation", f)],
+      conditions: [
+        featureSwitch(f, "cancellations"),...pipeline, templateCondition("cancellation", f)],
     },
     {
       key: "reschedules",
       title: "Reschedule notices",
       summary: "The patient is told when their appointment moves.",
-      conditions: [...pipeline, templateCondition("reschedule", f)],
+      conditions: [
+        featureSwitch(f, "reschedules"),...pipeline, templateCondition("reschedule", f)],
     },
     {
       key: "cancel_by_reply",
       title: "Cancel by replying to a reminder",
       summary: "A patient answers a reminder with “cancel” / “الغاء” and the slot is freed.",
-      conditions: [templateCondition("reminder_24h", f), ...assistantActs(f)],
+      conditions: [
+        featureSwitch(f, "cancel_by_reply"),templateCondition("reminder_24h", f), ...assistantActs(f)],
     },
     {
       key: "waitlist",
       title: "Waitlist offers",
       summary: "A cancelled slot is offered to the three longest-waiting patients; the first to accept books it.",
       conditions: [
+        featureSwitch(f, "waitlist"),
         ...pipeline,
         templateCondition("waitlist_offer", f),
         ...assistantActs(f),
@@ -133,6 +140,7 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       title: "Post-visit follow-ups",
       summary: "The day after a visit, the patient is asked how they are feeling.",
       conditions: [
+        featureSwitch(f, "followups"),
         ...pipeline,
         templateCondition("followup", f),
         manual("mark_completed", "Staff mark visits as completed",
@@ -145,6 +153,7 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       title: "Six-month check-up recalls",
       summary: "A patient whose last visit was over six months ago, with nothing booked, is invited back.",
       conditions: [
+        featureSwitch(f, "recalls"),
         ...pipeline,
         templateCondition("recall_6m", f),
         {
@@ -163,6 +172,7 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       summary:
         "A patient who rates their visit is asked for a review. A low score waits two days first, so the call they were promised comes before the ask — withholding the link entirely is review gating, which Google prohibits.",
       conditions: [
+        featureSwitch(f, "reviews"),
         ...pipeline,
         templateCondition("followup", f),
         templateCondition("review_request", f),
@@ -196,6 +206,7 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       title: "Voice notes answered",
       summary: "A patient's voice message is transcribed and answered like text.",
       conditions: [
+        featureSwitch(f, "voice_notes"),
         ...assistantOn(f),
         manual("transcription", "WhatsApp provider transcribes audio",
           "Kapso provides the transcript. A note whose transcript has not arrived, or is only music, is not answered.",
@@ -207,6 +218,7 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       title: "Clinic knowledge answers",
       summary: "The assistant answers prices, policies and aftercare from facts staff have written.",
       conditions: [
+        featureSwitch(f, "knowledge"),
         databaseUpdated(f, "The knowledge table does not exist yet, so there is nothing to search."),
         ...assistantOn(f),
         {
@@ -223,6 +235,7 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       title: "Learning from staff corrections",
       summary: "Drafts staff rewrote before sending are collected for review.",
       conditions: [
+        featureSwitch(f, "review_queue"),
         databaseUpdated(f, "Corrections are saved to a table that does not exist yet. Saving fails quietly so a send is never blocked — which means nothing is collected."),
         ...assistantOn(f),
       ],
@@ -232,6 +245,7 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       title: "STOP opt-outs",
       summary: "A patient who texts STOP or إيقاف receives no more clinic-initiated messages.",
       conditions: [
+        featureSwitch(f, "stop"),
         {
           key: "migrations",
           label: "Database updated with the notification tables",

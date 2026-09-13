@@ -165,6 +165,23 @@ export function NotificationSettingsForm() {
             refreshing={refreshing}
             checkedAt={checkedAt}
             onRefresh={() => void refresh()}
+            onToggleFeature={async (key, enabled) => {
+              try {
+                const res = await fetch("/api/v1/notifications/features", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ feature: key, enabled }),
+                });
+                if (!res.ok) throw new Error("Could not change the switch");
+                // Re-check rather than patch locally: the switch changes what
+                // else is true about the feature, and guessing at that is how
+                // a checklist starts lying.
+                await refresh();
+                toast.success(enabled ? "Feature switched on" : "Feature switched off");
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Could not change the switch");
+              }
+            }}
           />
         </TooltipProvider>
       </div>

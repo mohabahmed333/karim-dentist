@@ -206,3 +206,28 @@ describe("evaluateDispatchPolicy — marketing consent", () => {
   });
 });
 
+describe("evaluateDispatchPolicy — the per-feature switch", () => {
+  it("stops a message whose feature is switched off", () => {
+    // The point of the switch: everything else can be perfect and it still
+    // does not send.
+    assert.deepEqual(decide({ featureEnabled: false }), {
+      action: "skip",
+      reason: "feature_off",
+    });
+  });
+
+  it("skips rather than defers, so switching back on releases no backlog", () => {
+    assert.equal(decide({ featureEnabled: false }).action, "skip");
+  });
+
+  it("changes nothing when the feature is on, or unknown", () => {
+    assert.notEqual(decide({ featureEnabled: true }).reason, "feature_off");
+    assert.notEqual(decide({}).reason, "feature_off");
+  });
+
+  it("still refuses when the whole system is off, before any feature is asked", () => {
+    const out = decide({ settings: settings({ mode: "off" }), featureEnabled: true });
+    assert.equal(out.reason, "mode_off");
+  });
+});
+

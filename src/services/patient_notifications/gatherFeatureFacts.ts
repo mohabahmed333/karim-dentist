@@ -11,6 +11,7 @@ import { hasAnyAiKey, resolveVisionChain } from "@/services/ai_chat";
 import { loadAiSettings } from "@/services/whatsapp_ai/store";
 import type { AiMode, FeatureFacts } from "./featureConditions";
 import { approvedTemplateNames, cronScheduled, hasKapsoConfig } from "./gatherReadiness";
+import { loadFeatureSwitches } from "./featureSwitches";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
@@ -22,7 +23,7 @@ export async function gatherFeatureFacts(
   // Meta for the template list once rather than twice.
   known: { approvedTemplateNames?: string[] | null; cronScheduled?: boolean | null } = {},
 ): Promise<FeatureFacts> {
-  const [templates, scheduled, settings, ai, knowledge, site, consent, deposits] = await Promise.all([
+  const [templates, scheduled, settings, ai, knowledge, site, featureSwitches, consent, deposits] = await Promise.all([
     known.approvedTemplateNames !== undefined
       ? Promise.resolve(known.approvedTemplateNames)
       : approvedTemplateNames(),
@@ -39,6 +40,7 @@ export async function gatherFeatureFacts(
       .eq("is_published", true)
       .is("deleted_at", null),
     db.from("site_settings").select("contact_map_url").limit(1).maybeSingle(),
+    loadFeatureSwitches(db).catch(() => ({})),
     db
       .from("patient_marketing_consent")
       .select("phone_suffix", { count: "exact", head: true })
@@ -78,6 +80,7 @@ export async function gatherFeatureFacts(
     clinicMapUrl: present(site.data?.contact_map_url ?? undefined),
     marketingConsentCount: consent.error ? null : (consent.count ?? 0),
     reviewUrl: present(settings.data?.review_url ?? undefined),
+    featureSwitches,
     depositTablesPresent: !deposits.error,
     deposits: deposits.data
       ? {

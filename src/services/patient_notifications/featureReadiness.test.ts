@@ -27,6 +27,7 @@ const ready = (over: Record<string, unknown> = {}) => ({
   clinicMapUrl: true,
   marketingConsentCount: 12,
   reviewUrl: true,
+  featureSwitches: {},
   depositTablesPresent: true,
   deposits: {
     enabled: true,
@@ -228,3 +229,34 @@ describe("evaluateFeatures — deposits", () => {
     assert.equal(feature(ready(), "deposits_auto").state, "check");
   });
 });
+
+describe("evaluateFeatures — the per-feature switch", () => {
+  it("blocks a feature that is switched off, however ready it is", () => {
+    const facts = ready({ featureSwitches: { confirmations: false } });
+    assert.equal(feature(facts, "confirmations").state, "blocked");
+    assert.ok(unmet(facts, "confirmations").includes("switch_confirmations"));
+  });
+
+  it("switches off exactly one feature, not its neighbours", () => {
+    const facts = ready({ featureSwitches: { reminders: false } });
+    assert.equal(feature(facts, "confirmations").state, "working");
+    assert.equal(feature(facts, "reminders").state, "blocked");
+  });
+
+  it("treats an absent switch as on, so a missing row silences nothing", () => {
+    assert.equal(feature(ready({ featureSwitches: {} }), "confirmations").state, "working");
+  });
+
+  it("gives every switchable feature a switch", () => {
+    const facts = ready();
+    for (const key of [
+      "confirmations", "reminders", "cancellations", "reschedules", "waitlist",
+      "followups", "recalls", "reviews", "cancel_by_reply", "voice_notes",
+      "knowledge", "review_queue", "stop",
+    ]) {
+      const keys = feature(facts, key).conditions.map((c: { key: string }) => c.key);
+      assert.ok(keys.includes(`switch_${key}`), `${key} has no switch`);
+    }
+  });
+});
+

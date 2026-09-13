@@ -251,6 +251,7 @@ export type Database = {
       appointment_slots: {
         Row: {
           created_at: string
+          doctor_id: string | null
           ends_at: string
           id: string
           reservation_id: string | null
@@ -260,6 +261,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          doctor_id?: string | null
           ends_at: string
           id?: string
           reservation_id?: string | null
@@ -269,6 +271,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          doctor_id?: string | null
           ends_at?: string
           id?: string
           reservation_id?: string | null
@@ -277,6 +280,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "appointment_slots_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "appointment_slots_reservation_id_fkey"
             columns: ["reservation_id"]
@@ -927,6 +937,44 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_hours: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          is_bookable: boolean
+          open_weekdays: number[]
+          slot_minutes: number
+          time_windows: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          is_bookable?: boolean
+          open_weekdays?: number[]
+          slot_minutes?: number
+          time_windows?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          is_bookable?: boolean
+          open_weekdays?: number[]
+          slot_minutes?: number
+          time_windows?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_hours_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       experience_entries: {
         Row: {
           created_at: string
@@ -1315,6 +1363,24 @@ export type Database = {
           media_url?: string | null
           media_url_desktop?: string | null
           media_url_mobile?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notification_feature_switches: {
+        Row: {
+          enabled: boolean
+          feature_key: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          feature_key: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          feature_key?: string
           updated_at?: string
         }
         Relationships: []
@@ -2136,6 +2202,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           deposit_hold: boolean
+          doctor_id: string | null
           email: string | null
           id: string
           notes: string
@@ -2152,6 +2219,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deposit_hold?: boolean
+          doctor_id?: string | null
           email?: string | null
           id?: string
           notes?: string
@@ -2168,6 +2236,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deposit_hold?: boolean
+          doctor_id?: string | null
           email?: string | null
           id?: string
           notes?: string
@@ -2181,6 +2250,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reservations_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reservations_service_id_fkey"
             columns: ["service_id"]
@@ -2230,6 +2306,7 @@ export type Database = {
           description: string | null
           id: string
           is_admin_role: boolean
+          is_doctor: boolean
           is_system: boolean
           key: string
           name: string
@@ -2241,6 +2318,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_admin_role?: boolean
+          is_doctor?: boolean
           is_system?: boolean
           key: string
           name: string
@@ -2252,6 +2330,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_admin_role?: boolean
+          is_doctor?: boolean
           is_system?: boolean
           key?: string
           name?: string

@@ -11,6 +11,7 @@
  */
 
 import type { TemplateSendInput } from "@/services/whatsapp/sendKapso";
+import { isKindOn, type FeatureSwitches } from "./featureSwitches";
 import {
   evaluateDispatchPolicy,
   MARKETING_KINDS,
@@ -34,6 +35,8 @@ export type DispatchDeps = {
   isOptedOut: (phone: string) => Promise<boolean>;
   /** Marketing kinds only; see the policy for why it is not asked otherwise. */
   hasMarketingConsent?: (phone: string) => Promise<boolean>;
+  /** Per-feature switches, loaded once per tick. */
+  featureSwitches?: FeatureSwitches;
   countSentLast24h: (phone: string) => Promise<number>;
   /** Newest inbound text from this patient, for choosing a language. */
   lastInboundBody: (phone: string) => Promise<string | null>;
@@ -84,6 +87,7 @@ export async function dispatchNotification(
       hasTransport: deps.hasTransport,
       sentLast24h,
       marketingConsent,
+      featureEnabled: isKindOn(deps.featureSwitches ?? {}, row.kind),
     });
 
     if (decision.action === "defer") {

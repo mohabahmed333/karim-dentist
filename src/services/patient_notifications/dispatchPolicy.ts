@@ -49,6 +49,11 @@ export type DispatchPolicyInput = {
    * as "no" for those kinds.
    */
   marketingConsent?: boolean | null;
+  /**
+   * Whether this row's own feature is switched on. Defaults to true, so a
+   * missing switch never silences a clinic.
+   */
+  featureEnabled?: boolean;
 };
 
 /** A queue that has not drained in this long has been broken, not busy. */
@@ -73,6 +78,13 @@ export function evaluateDispatchPolicy(
   // Kill switch. Skipped rather than left pending, so that turning the system
   // on later does not fire a backlog of stale messages at every patient at once.
   if (settings.mode === "off") return { action: "skip", reason: "mode_off" };
+
+  // This feature's own switch. Everything else here answers "can this run";
+  // this answers "do we want it", and a no overrides every yes. Skipped for the
+  // same reason mode_off is: switching it back on must not release a backlog.
+  if (input.featureEnabled === false) {
+    return { action: "skip", reason: "feature_off" };
+  }
 
   // Missing credentials are an operator problem that is usually fixed within
   // minutes, so hold rather than discard.

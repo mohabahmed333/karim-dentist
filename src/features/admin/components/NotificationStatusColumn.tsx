@@ -15,6 +15,8 @@ type Props = {
   refreshing: boolean;
   checkedAt: Date | null;
   onRefresh: () => void;
+  /** Flip a feature's own switch, then re-check so the row reflects it. */
+  onToggleFeature?: (key: string, enabled: boolean) => Promise<void>;
 };
 
 /** "14:05" — when the status was last checked, in the viewer's own clock format. */
@@ -45,6 +47,7 @@ export function NotificationStatusColumn({
   refreshing,
   checkedAt,
   onRefresh,
+  onToggleFeature,
 }: Props) {
   const features = readiness?.features ?? [];
   const queue = readiness ? queueSummary(readiness.queue) : "";
@@ -78,7 +81,7 @@ export function NotificationStatusColumn({
       ) : features.length ? (
         <>
           <NotificationRootCauses features={features} />
-          <FeatureReadinessList features={features} />
+          <FeatureReadinessList features={features} onToggle={onToggleFeature} />
         </>
       ) : (
         <div className="space-y-2">

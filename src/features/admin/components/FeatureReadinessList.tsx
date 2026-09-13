@@ -19,6 +19,8 @@ export type FeatureCondition = {
 
 export type FeatureStatus = {
   key: string;
+  /** Absent for features with no switch of their own, like deposits. */
+  switchable?: boolean;
   title: string;
   summary: string;
   state: "working" | "blocked" | "check";
@@ -47,8 +49,30 @@ function featureFix(feature: FeatureStatus): string {
  * and opening each by default is what made this tab a long scroll. The boxes are
  * ticked by the server and read-only — the way to tick one is to fix its cause.
  */
-export function FeatureReadinessList({ features }: { features: FeatureStatus[] }) {
+export function FeatureReadinessList({
+  features,
+  onToggle,
+}: {
+  features: FeatureStatus[];
+  /** Flip a feature's own switch. Absent hides the toggles entirely. */
+  onToggle?: (key: string, enabled: boolean) => Promise<void>;
+}) {
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
+
+  /** The switch condition is the feature's own on/off, not a prerequisite. */
+  const switchOf = (feature: FeatureStatus) =>
+    feature.conditions.find((c) => c.key === `switch_${feature.key}`);
+
+  async function toggle(feature: FeatureStatus, next: boolean) {
+    if (!onToggle) return;
+    setPending(feature.key);
+    try {
+      await onToggle(feature.key, next);
+    } finally {
+      setPending(null);
+    }
+  }
   const working = features.filter((f) => f.state === "working").length;
 
   return (
@@ -86,6 +110,19 @@ export function FeatureReadinessList({ features }: { features: FeatureStatus[] }
                   className={`size-4 shrink-0 text-[var(--admin-muted)] transition-transform ${open ? "rotate-90" : ""}`}
                 />
               </button>
+              {onToggle && switchOf(feature) ? (
+                // On the row itself, because "we do not want this" is a
+                // different question from "why can this not run", and the
+                // answer to the first should not be three clicks deep.
+                <span className="pl-1">
+                  <Checkbox
+                    aria-label={`Switch ${feature.title} on or off`}
+                    checked={switchOf(feature)!.met === true}
+                    disabled={pending === feature.key}
+                    onCheckedChange={(next) => void toggle(feature, next === true)}
+                  />
+                </span>
+              ) : null}
               <span className="pr-3">
                 <HelpTip label={`To make “${feature.title}” work`} text={featureFix(feature)} />
               </span>
