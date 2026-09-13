@@ -31,7 +31,7 @@ import {
 import {
   rescheduleReservation,
   softDeleteReservation,
-} from "@/services/reservations/mutations";
+} from "@/services/reservations/actions";
 import {
   formatReservationWhen,
   statusBadgeClass,

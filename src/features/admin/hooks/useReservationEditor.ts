@@ -11,7 +11,7 @@ import {
   createReservation,
   softDeleteReservation,
   updateReservation,
-} from "@/services/reservations/mutations";
+} from "@/services/reservations/actions";
 import {
   bookAppointmentSlot,
   bookOpenSlotMatchingStartsAt,

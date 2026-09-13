@@ -5,4 +5,4 @@ export * from "./timeline";
 export * from "./patientHistory";
 export * from "./listFilters";
 export * from "./queries";
-export * from "./mutations";
+export * from "./actions";

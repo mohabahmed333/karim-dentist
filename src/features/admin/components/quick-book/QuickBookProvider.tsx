@@ -15,7 +15,7 @@ import {
 import {
   createReservation,
   updateReservation,
-} from "@/services/reservations/mutations";
+} from "@/services/reservations/actions";
 import {
   decodePatientKey,
   findPatientGroupByPhone,

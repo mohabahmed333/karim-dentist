@@ -1,11 +1,16 @@
-import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
+import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { shiftStartsAtToDate } from "./timeline";
 import type { Reservation, ReservationInsert, ReservationUpdate } from "./types";
 
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createBrowserClient>;
+
 export async function createReservation(
+  supabase: AnySupabase,
   payload: ReservationInsert,
 ): Promise<Reservation> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("reservations")
     .insert(payload)
@@ -16,10 +21,10 @@ export async function createReservation(
 }
 
 export async function updateReservation(
+  supabase: AnySupabase,
   id: string,
   payload: ReservationUpdate,
 ): Promise<Reservation> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("reservations")
     .update({ ...payload, updated_at: new Date().toISOString() })
@@ -31,15 +36,18 @@ export async function updateReservation(
 }
 
 export async function rescheduleReservation(
+  supabase: AnySupabase,
   reservation: Reservation,
   targetDate: string,
 ): Promise<Reservation> {
   const starts_at = shiftStartsAtToDate(reservation.starts_at, targetDate);
-  return updateReservation(reservation.id, { starts_at });
+  return updateReservation(supabase, reservation.id, { starts_at });
 }
 
-export async function softDeleteReservation(id: string): Promise<void> {
-  const supabase = createClient();
+export async function softDeleteReservation(
+  supabase: AnySupabase,
+  id: string,
+): Promise<void> {
   const { error } = await supabase
     .from("reservations")
     .update({ deleted_at: new Date().toISOString() })

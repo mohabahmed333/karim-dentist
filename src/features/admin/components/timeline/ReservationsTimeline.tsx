@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, LayoutGrid, Plus } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import type { Reservation } from "@/services/reservations/types";
-import { rescheduleReservation } from "@/services/reservations/mutations";
+import { rescheduleReservation } from "@/services/reservations/actions";
 import {
   bookOpenSlotMatchingStartsAt,
   releaseAppointmentSlot,

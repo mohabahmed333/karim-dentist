@@ -28,7 +28,7 @@ import type { PatientAiContextPayload } from "./patientAiContext";
 import {
   createReservation,
   updateReservation,
-} from "@/services/reservations/mutations";
+} from "@/services/reservations/actions";
 import {
   bookOpenSlotMatchingStartsAt,
   releaseAppointmentSlot,

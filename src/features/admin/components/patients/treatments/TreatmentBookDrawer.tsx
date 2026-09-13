@@ -16,7 +16,7 @@ import {
 import {
   createReservation,
   updateReservation,
-} from "@/services/reservations/mutations";
+} from "@/services/reservations/actions";
 import type { Reservation } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
