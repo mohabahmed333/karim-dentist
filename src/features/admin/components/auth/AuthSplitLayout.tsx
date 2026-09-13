@@ -24,20 +24,25 @@ export function AuthSplitLayout({ children, brand, headline, tagline }: Props) {
         </div>
       </div>
       <div
-        className="relative hidden overflow-hidden lg:flex lg:w-1/2 lg:items-center lg:justify-center"
+        className="relative hidden overflow-hidden lg:block lg:w-1/2"
         style={{
           background:
             "linear-gradient(135deg, var(--admin-primary, #5e6ad2), var(--admin-secondary, #3b82f6))",
         }}
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.18),transparent_45%)]" />
-        <div className="relative z-10 flex w-full max-w-xl flex-col gap-14 px-10">
-          <div className="max-w-sm">
-            <h2 className="text-4xl font-semibold leading-tight text-white">
-              {headline}
-            </h2>
-            <p className="mt-3 text-base text-white/80">{tagline}</p>
-          </div>
+        {/* soft light bloom, echoing the brand deck's backdrop */}
+        <div className="pointer-events-none absolute -start-32 -top-40 size-[34rem] rounded-full bg-white/[0.07]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(255,255,255,0.16),transparent_55%)]" />
+
+        <div className="relative z-10 max-w-md px-14 pt-16">
+          <h2 className="text-4xl font-semibold leading-tight text-white">
+            {headline}
+          </h2>
+          <p className="mt-3 text-base text-white/75">{tagline}</p>
+        </div>
+
+        {/* bleeds off the right and bottom edges, as in the reference */}
+        <div className="absolute start-[30%] top-[30%] w-[88%]">
           <AuthDashboardMockup />
         </div>
       </div>
