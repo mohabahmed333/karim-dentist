@@ -21,11 +21,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Role } from "@/services/roles/queries";
+import { AdminUserAvatar } from "@/features/admin/components/AdminUserAvatar";
 
 type Account = {
   id: string;
   email: string | null;
   display_name: string | null;
+  avatar_url: string | null;
   role_id: string | null;
   role_key: string | null;
   role_name: string | null;
@@ -180,7 +182,19 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
         <TableBody>
           {accounts.map((account) => (
             <TableRow key={account.id}>
-              <TableCell>{account.display_name ?? "—"}</TableCell>
+              <TableCell>
+                <span className="flex items-center gap-2">
+                  <AdminUserAvatar
+                    name={account.display_name}
+                    email={account.email}
+                    avatarUrl={account.avatar_url}
+                    size="sm"
+                  />
+                  <span className="truncate">
+                    {account.display_name ?? "—"}
+                  </span>
+                </span>
+              </TableCell>
               <TableCell>{account.email ?? "—"}</TableCell>
               <TableCell>
                 <select

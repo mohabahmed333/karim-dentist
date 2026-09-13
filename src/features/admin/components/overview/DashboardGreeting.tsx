@@ -6,33 +6,35 @@ import {
 } from "@/features/admin/lib/dashboardModel";
 import { useTranslations } from "@/lib/i18n";
 import type { Reservation } from "@/services/reservations/types";
+import { AdminUserAvatar } from "@/features/admin/components/AdminUserAvatar";
 
 type Props = {
   email: string | null;
   displayName: string;
   reservations: Reservation[];
+  /** Profile photo, when the user has set one. */
+  avatarUrl?: string | null;
 };
 
 export function DashboardGreeting({
   email,
   displayName,
   reservations,
+  avatarUrl = null,
 }: Props) {
   const t = useTranslations();
   const hour = new Date().getHours();
   const greeting = t(greetingKeyForHour(hour));
   const nextLine = nextAppointmentLine(reservations);
-  const initial = displayName.charAt(0).toUpperCase() || "D";
 
   return (
     <header className="flex items-start gap-3">
-      <div
-        className="flex size-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold text-white"
-        style={{ background: "var(--admin-primary)" }}
-        aria-hidden
-      >
-        {initial}
-      </div>
+      <AdminUserAvatar
+        name={displayName}
+        email={email}
+        avatarUrl={avatarUrl}
+        size="lg"
+      />
       <div className="min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--admin-text)] sm:text-3xl">
           {greeting}, {displayName}

@@ -6,6 +6,7 @@ export type StaffAccount = {
   id: string;
   email: string | null;
   display_name: string | null;
+  avatar_url: string | null;
   role_id: string | null;
   role_key: string | null;
   role_name: string | null;
@@ -19,7 +20,7 @@ export async function listAccounts(
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, display_name, role_id, deleted_at, created_at, roles(key, name)",
+      "id, display_name, avatar_url, role_id, deleted_at, created_at, roles(key, name)",
     )
     .order("created_at", { ascending: true });
   if (error) throw error;
@@ -28,6 +29,7 @@ export async function listAccounts(
     id: row.id,
     email: null,
     display_name: row.display_name,
+    avatar_url: row.avatar_url,
     role_id: row.role_id,
     role_key: row.roles?.key ?? null,
     role_name: row.roles?.name ?? null,

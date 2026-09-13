@@ -93,6 +93,27 @@ export const adminEn = {
   "admin.nav.messagingGroup": "Messaging",
   "admin.pages.outbox.title": "Patient messages",
   "admin.pages.outbox.description": "Every WhatsApp message the clinic queued for a patient, what happened to it, and who asked not to be messaged.",
+  "admin.pages.profile.title": "My profile",
+  "admin.pages.profile.description":
+    "Your name, photo and contact details, as other staff see them.",
+  "admin.profile.displayName": "Display name",
+  "admin.profile.jobTitle": "Job title",
+  "admin.profile.phone": "Phone",
+  "admin.profile.email": "Email",
+  "admin.profile.role": "Role",
+  "admin.profile.memberSince": "Member since",
+  "admin.profile.uploadPhoto": "Upload photo",
+  "admin.profile.uploading": "Uploading…",
+  "admin.profile.removePhoto": "Remove",
+  "admin.profile.photoHint": "PNG, JPG or WebP. Shown as a circle.",
+  "admin.profile.readOnlyHint":
+    "Email and role are managed by an admin from Staff accounts.",
+  "admin.profile.save": "Save profile",
+  "admin.profile.success": "Profile saved",
+  "admin.profile.uploadError": "Could not upload that image.",
+  "admin.profile.error": "Something went wrong. Please try again.",
+  "admin.nav.profile": "My profile",
+
   "admin.pages.changePassword.title": "Change password",
   "admin.pages.changePassword.description":
     "Update the password you use to sign in to the clinic workspace.",

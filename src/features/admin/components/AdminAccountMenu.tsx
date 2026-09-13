@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, CircleUser, KeyRound, LogOut } from "lucide-react";
+import { Check, ChevronDown, KeyRound, LogOut, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   AdminDropdownMenu,
@@ -12,8 +12,10 @@ import {
   AdminDropdownMenuTrigger,
 } from "@/features/admin/ui";
 import { useAdminLogout } from "@/features/admin/hooks/useAdminLogout";
+import { useCurrentProfile } from "@/features/admin/hooks/useCurrentProfile";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { AdminUserAvatar } from "./AdminUserAvatar";
 
 type Props = { compact?: boolean };
 
@@ -22,6 +24,8 @@ export function AdminAccountMenu({ compact = false }: Props) {
   const router = useRouter();
   const { locale, setLocale } = useLocale();
   const { logout, pending } = useAdminLogout();
+  const profile = useCurrentProfile();
+  const label = profile?.name || profile?.email || t("admin.settings.account");
 
   return (
     <AdminDropdownMenu>
@@ -33,14 +37,17 @@ export function AdminAccountMenu({ compact = false }: Props) {
         )}
         aria-label={t("admin.settings.account")}
       >
-        <CircleUser className="size-3.5 shrink-0" aria-hidden />
+        <AdminUserAvatar
+          name={profile?.name}
+          email={profile?.email}
+          avatarUrl={profile?.avatarUrl}
+          size={compact ? "sm" : "xs"}
+        />
         {compact ? (
-          <span className="sr-only">{t("admin.settings.account")}</span>
+          <span className="sr-only">{label}</span>
         ) : (
           <>
-            <span className="min-w-0 flex-1 truncate text-start">
-              {t("admin.settings.account")}
-            </span>
+            <span className="min-w-0 flex-1 truncate text-start">{label}</span>
             <ChevronDown className="size-3.5 shrink-0 opacity-70" aria-hidden />
           </>
         )}
@@ -48,8 +55,46 @@ export function AdminAccountMenu({ compact = false }: Props) {
       <AdminDropdownMenuContent
         side={compact ? "right" : "top"}
         align={compact ? "end" : "start"}
-        className="min-w-44 w-auto"
+        className="min-w-52 w-auto"
       >
+        {profile ? (
+          <>
+            <div className="flex items-center gap-2.5 px-3 py-2">
+              <AdminUserAvatar
+                name={profile.name}
+                email={profile.email}
+                avatarUrl={profile.avatarUrl}
+                size="md"
+              />
+              <div className="min-w-0">
+                {profile.name ? (
+                  <p className="truncate text-[13px] font-medium text-[var(--admin-text)]">
+                    {profile.name}
+                  </p>
+                ) : null}
+                {profile.email ? (
+                  <p className="truncate text-xs text-[var(--admin-muted)]">
+                    {profile.email}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+            <AdminDropdownMenuSeparator />
+          </>
+        ) : null}
+        <AdminDropdownMenuItem
+          onClick={() => router.push("/admin/account/profile")}
+        >
+          <UserRound aria-hidden />
+          {t("admin.nav.profile")}
+        </AdminDropdownMenuItem>
+        <AdminDropdownMenuItem
+          onClick={() => router.push("/admin/account/password")}
+        >
+          <KeyRound aria-hidden />
+          {t("admin.nav.changePassword")}
+        </AdminDropdownMenuItem>
+        <AdminDropdownMenuSeparator />
         <AdminDropdownMenuGroup>
           <AdminDropdownMenuLabel>{t("admin.language")}</AdminDropdownMenuLabel>
           <AdminDropdownMenuItem onClick={() => setLocale("en")}>
@@ -67,13 +112,6 @@ export function AdminAccountMenu({ compact = false }: Props) {
             {t("admin.language.arabic")}
           </AdminDropdownMenuItem>
         </AdminDropdownMenuGroup>
-        <AdminDropdownMenuSeparator />
-        <AdminDropdownMenuItem
-          onClick={() => router.push("/admin/account/password")}
-        >
-          <KeyRound aria-hidden />
-          {t("admin.nav.changePassword")}
-        </AdminDropdownMenuItem>
         <AdminDropdownMenuSeparator />
         <AdminDropdownMenuItem
           variant="destructive"

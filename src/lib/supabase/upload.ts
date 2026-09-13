@@ -9,7 +9,9 @@ export type StorageBucket =
   | "about"
   | "projects"
   | "clients"
-  | "patient-records";
+  | "patient-records"
+  /** Staff photos. Writes are restricted to a folder named after the uid. */
+  | "avatars";
 
 export async function uploadPublicMedia(
   bucket: StorageBucket,

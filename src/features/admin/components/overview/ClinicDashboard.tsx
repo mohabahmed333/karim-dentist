@@ -45,6 +45,8 @@ import type { AdminDemoClinical } from "@/features/admin/lib/adminDemoClinical";
 type Props = {
   email: string | null;
   displayName: string;
+  /** Profile photo, when the user has set one. */
+  avatarUrl?: string | null;
   reservations: Reservation[];
   coverageFrom: string;
   coverageTo: string;
@@ -64,6 +66,7 @@ type Props = {
 export function ClinicDashboard({
   email,
   displayName,
+  avatarUrl = null,
   reservations,
   coverageFrom,
   coverageTo,
@@ -110,6 +113,7 @@ export function ClinicDashboard({
           <DashboardGreeting
             email={email}
             displayName={displayName}
+            avatarUrl={avatarUrl}
             reservations={reservations}
           />
           <div className="flex flex-col items-stretch gap-2 sm:items-end">

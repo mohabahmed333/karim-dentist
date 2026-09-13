@@ -61,7 +61,16 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
   ]);
 
   const email = auth.user?.email ?? null;
-  const displayName = firstNameFromEmail(email);
+  // Prefer the name the user set on their profile; fall back to guessing it
+  // from the email's local part as before.
+  const { data: profile } = auth.user
+    ? await supabase
+        .from("profiles")
+        .select("display_name, avatar_url")
+        .eq("id", auth.user.id)
+        .maybeSingle()
+    : { data: null };
+  const displayName = profile?.display_name?.trim() || firstNameFromEmail(email);
   const publishedCount = servicesRes.data?.length ?? 0;
   const stats = buildReservationStats(reservations);
   const unreadChats = conversations.reduce(
@@ -77,6 +86,7 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
     <ClinicDashboard
       email={email}
       displayName={displayName}
+      avatarUrl={profile?.avatar_url ?? null}
       reservations={reservations}
       coverageFrom={coverage.from}
       coverageTo={coverage.to}

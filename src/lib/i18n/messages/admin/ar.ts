@@ -95,6 +95,27 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.nav.messagingGroup": "المراسلة",
   "admin.pages.outbox.title": "رسائل المرضى",
   "admin.pages.outbox.description": "كل رسالة واتساب جدولتها العيادة لمريض، وما حدث لها، ومن طلب عدم مراسلته.",
+  "admin.pages.profile.title": "ملفي الشخصي",
+  "admin.pages.profile.description":
+    "اسمك وصورتك وبيانات التواصل كما يراها بقية الفريق.",
+  "admin.profile.displayName": "الاسم الظاهر",
+  "admin.profile.jobTitle": "المسمى الوظيفي",
+  "admin.profile.phone": "الهاتف",
+  "admin.profile.email": "البريد الإلكتروني",
+  "admin.profile.role": "الدور",
+  "admin.profile.memberSince": "عضو منذ",
+  "admin.profile.uploadPhoto": "رفع صورة",
+  "admin.profile.uploading": "جارٍ الرفع…",
+  "admin.profile.removePhoto": "إزالة",
+  "admin.profile.photoHint": "PNG أو JPG أو WebP. تظهر داخل دائرة.",
+  "admin.profile.readOnlyHint":
+    "البريد الإلكتروني والدور يديرهما المسؤول من حسابات الموظفين.",
+  "admin.profile.save": "حفظ الملف",
+  "admin.profile.success": "تم حفظ الملف الشخصي",
+  "admin.profile.uploadError": "تعذّر رفع هذه الصورة.",
+  "admin.profile.error": "حدث خطأ ما. الرجاء المحاولة مرة أخرى.",
+  "admin.nav.profile": "ملفي الشخصي",
+
   "admin.pages.changePassword.title": "تغيير كلمة المرور",
   "admin.pages.changePassword.description":
     "حدّث كلمة المرور التي تستخدمها لتسجيل الدخول إلى مساحة العيادة.",
