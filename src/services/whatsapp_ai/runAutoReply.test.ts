@@ -35,7 +35,6 @@ function harness(overrides: Record<string, unknown> = {}) {
       slots: [{ id: SLOT_A, starts_at: "2026-09-13T14:00:00.000Z" }],
       clinic: { name: "The Dental Lounge" },
       services: [],
-      patient: { name: "Ali", known: true },
       reservations: [
         {
           id: RES_MINE,

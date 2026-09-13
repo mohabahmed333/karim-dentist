@@ -45,7 +45,6 @@ export type BuildPromptInput = {
     medicalInfo?: string;
     slotStartsAt?: string;
   };
-  patient: { name?: string | null; known: boolean };
   reservations: PatientReservation[];
   /** Oldest first. Patient turns are sanitized and JSON-wrapped. */
   history: PromptTurn[];
@@ -199,9 +198,13 @@ export function buildAutoReplyPrompt(input: BuildPromptInput): BuiltPrompt {
     "",
     reservationBlock(input.reservations),
     "",
-    input.patient.known && input.patient.name
-      ? `Patient name: ${input.patient.name}`
-      : "Patient name: (unknown — ask if you need it to book)",
+    // WhatsApp's own display name is never treated as the patient's name —
+    // it is self-set, often a nickname or someone else's (a parent booking
+    // for a child, a shared phone), and not something the patient told the
+    // clinic. The only name the assistant may use is one the patient actually
+    // typed in this conversation, which shows up below once given.
+    "Patient name: not yet given by the patient in this conversation. Do not " +
+      "assume WhatsApp's display name is correct — ask them directly.",
     "",
     collectedBlock(input.collected),
     "",

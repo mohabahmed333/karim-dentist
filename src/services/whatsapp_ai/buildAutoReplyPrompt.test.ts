@@ -21,7 +21,6 @@ function build(overrides: Record<string, unknown> = {}) {
       timezone: "Africa/Cairo",
     },
     services: [{ title: "Cleaning", price: "800 EGP" }],
-    patient: { name: "Ali", known: true },
     reservations: [],
     history: [{ role: "user", content: "what time do you open?" }],
     ...overrides,
@@ -255,5 +254,32 @@ describe("buildAutoReplyPrompt — age and medical info in Already collected", (
     const system = build({ collected: { service: "Cleaning" } }).system;
     assert.doesNotMatch(system, /"age"/);
     assert.doesNotMatch(system, /"medicalInfo"/);
+  });
+});
+
+describe("buildAutoReplyPrompt — the patient's name is never assumed", () => {
+  /**
+   * The actual policy: a WhatsApp display name is self-chosen, often a
+   * nickname, and not infrequently someone else's — a parent booking for a
+   * child on a shared phone. It must never be handed to the model as an
+   * already-confirmed fact, however this build() call is overridden.
+   */
+  it("always tells the model to ask, whatever else is passed in", () => {
+    const system = build().system;
+    assert.match(system, /Patient name: not yet given by the patient/i);
+    assert.match(system, /ask them directly/i);
+  });
+
+  it("never states a name as a settled fact outside the collected block", () => {
+    const system = build({ collected: { patientName: "Ahmed Hassan" } }).system;
+    // The name is allowed to appear once — inside "Already collected", where
+    // the patient actually gave it — never in a separate "Patient name: X" line.
+    const outsideCollected = system.split("Already collected")[0];
+    assert.doesNotMatch(outsideCollected, /Patient name: Ahmed Hassan/);
+  });
+
+  it("surfaces a name the patient actually gave, via collected only", () => {
+    const system = build({ collected: { patientName: "Ahmed Hassan" } }).system;
+    assert.match(system, /"patientName":"Ahmed Hassan"/);
   });
 });

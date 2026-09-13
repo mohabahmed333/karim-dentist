@@ -363,15 +363,15 @@ export async function processAutoReplyJob(
             title_ar: (s.title_ar as string) || null,
           })),
         knowledge,
-        patient: {
-          name: conversation.contact_name,
-          // patient_key is never written, so this was permanently false and the
-          // prompt told the model the name was unknown even with a WhatsApp
-          // profile name in hand — one reason it kept asking for it.
-          known: Boolean(conversation.patient_key || conversation.contact_name),
-        },
-        // Exactly the fields the prompt used before: patient_name is loaded for
-        // quick replies and must not start appearing in the model's context.
+        // No patient-name field is passed here on purpose. WhatsApp's own
+        // display name used to be treated as the patient's real name once
+        // patient_key or contact_name was set — but a profile name is
+        // self-chosen, often a nickname, and not infrequently someone else's
+        // (a parent booking for a child on a shared phone). The clinic wants
+        // the patient's name confirmed by the patient, every booking, not
+        // inferred from WhatsApp metadata; buildAutoReplyPrompt now always
+        // asks, and the only way a name becomes settled is `collected` once
+        // the patient actually gives one in the conversation.
         reservations: reservations.map(({ id, service_label, starts_at, status }) => ({
           id,
           service_label,

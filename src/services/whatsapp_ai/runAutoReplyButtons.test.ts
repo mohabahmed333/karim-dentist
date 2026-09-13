@@ -52,7 +52,6 @@ function harness(options: {
       slots: [{ id: SLOT_A, starts_at: "2026-09-13T07:30:00.000Z" }],
       clinic: { name: "The Dental Lounge" },
       services: [{ title: "Dental implants", title_ar: "زراعة الأسنان" }],
-      patient: { name: "Ali", known: true },
       reservations: [],
       history: [{ role: "user" as const, content: inboundText }],
     },
