@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { AdminInput } from "@/features/admin/ui";
 import { AuthSplitLayout } from "@/features/admin/components/auth/AuthSplitLayout";
+import { AuthBrandLockup } from "@/features/admin/components/auth/AuthBrandLockup";
 
 export function ForgotPasswordForm() {
   const t = useTranslations();
@@ -43,13 +44,9 @@ export function ForgotPasswordForm() {
 
   return (
     <AuthSplitLayout
-      headline={t("admin.brand")}
-      tagline={t("admin.clinicWorkspace")}
-      brand={
-        <p className="text-sm font-semibold tracking-tight text-neutral-900">
-          {t("admin.brand")}
-        </p>
-      }
+      brandName={t("admin.brand")}
+      headline={t("admin.clinicWorkspace")}
+      brand={<AuthBrandLockup name={t("admin.brand")} />}
     >
       <div className="space-y-6">
         <div>

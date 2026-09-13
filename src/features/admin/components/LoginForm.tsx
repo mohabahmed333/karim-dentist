@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { AdminInput } from "@/features/admin/ui";
 import { AuthSplitLayout } from "@/features/admin/components/auth/AuthSplitLayout";
+import { AuthBrandLockup } from "@/features/admin/components/auth/AuthBrandLockup";
 
 export function LoginForm() {
   const router = useRouter();
@@ -47,16 +48,9 @@ export function LoginForm() {
 
   return (
     <AuthSplitLayout
-      headline={t("admin.brand")}
-      tagline={t("admin.clinicWorkspace")}
-      brand={
-        <div>
-          <p className="text-sm font-semibold tracking-tight text-neutral-900">
-            {t("admin.brand")}
-          </p>
-          <p className="text-xs text-neutral-500">{t("admin.clinicWorkspace")}</p>
-        </div>
-      }
+      brandName={t("admin.brand")}
+      headline={t("admin.clinicWorkspace")}
+      brand={<AuthBrandLockup name={t("admin.brand")} />}
     >
       <div
         className={cn(
