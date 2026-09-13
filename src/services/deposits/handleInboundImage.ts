@@ -132,7 +132,12 @@ export async function handleInboundImage(
     promptVersion = read.promptVersion;
     latencyMs = read.latencyMs;
   } catch (err) {
-    const reason = err instanceof ReceiptReadError ? err.reason : "extraction_failed";
+    // Keep the provider's own words: "extraction_failed" alone left a receipt
+    // in the queue with no way to tell a timeout from a refusal from a missing
+    // key, which is exactly the question staff need answered.
+    const base = err instanceof ReceiptReadError ? err.reason : "extraction_failed";
+    const detail = err instanceof Error ? err.message : "";
+    const reason = detail && detail !== base ? `${base}: ${detail}`.slice(0, 300) : base;
     return finishReview(deps, request.id, reason, language, amountEgp, {
       messageId: inbound.messageId,
       extraction: emptyExtraction(),

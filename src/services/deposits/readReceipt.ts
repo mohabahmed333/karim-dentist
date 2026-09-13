@@ -21,9 +21,17 @@ import { receiptExtractionSchema, type ReceiptExtraction } from "./receiptSchema
 /** Generous on purpose: a reasoning model that runs out of budget returns
  * nothing at all, which is indistinguishable from finding nothing. */
 const MAX_TOKENS = 900;
-const TIMEOUT_MS = 12_000;
-/** Comfortably inside the webhook route's 60s ceiling. */
-const DEADLINE_MS = 25_000;
+const TIMEOUT_MS = 18_000;
+/**
+ * Room for the chain to actually reach a model that works.
+ *
+ * The deadline is split across attempts, so a tight one starves the last
+ * candidate. Measured on a real receipt: the first two models failed over and
+ * the third answered in 8.5s — which a 25s deadline across three models cut
+ * off, turning a readable receipt into "extraction_failed". Still inside the
+ * webhook route's 60s ceiling with the image fetch on top.
+ */
+const DEADLINE_MS = 36_000;
 
 const PROMPT_PATH = "prompts/deposit-receipt.md";
 const FALLBACK_PROMPT = `Transcribe this Egyptian bank or wallet transfer receipt.

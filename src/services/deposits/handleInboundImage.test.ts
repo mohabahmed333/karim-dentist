@@ -271,3 +271,35 @@ describe("handleInboundImage — the verdict is the verifier's", () => {
     assert.equal(out.reason, "recipient_mismatch");
   });
 });
+
+describe("handleInboundImage — why a reading failed", () => {
+  it("records the provider's own words, not just 'extraction_failed'", async () => {
+    // A queue full of bare "extraction_failed" cannot tell a timeout from a
+    // missing key, which is the only question worth asking about it.
+    const { db, fake } = deps({
+      read: (async () => {
+        const { ReceiptReadError } = await import("./readReceipt.ts");
+        throw new ReceiptReadError(
+          "extraction_failed",
+          "AI deadline reached after 3 model(s): 503; rate limited; timed out",
+        );
+      }) as never,
+    });
+    const out = await handleInboundImage(db, inbound());
+    assert.equal(out.outcome, "review");
+    assert.match(out.reason, /^extraction_failed: /);
+    assert.match(out.reason, /deadline reached/);
+    assert.equal(fake.insertsTo("deposit_receipts")[0].values.verdict, "unreadable");
+  });
+
+  it("does not repeat itself when the error says nothing extra", async () => {
+    const { db } = deps({
+      read: (async () => {
+        const { ReceiptReadError } = await import("./readReceipt.ts");
+        throw new ReceiptReadError("no_vision_model");
+      }) as never,
+    });
+    assert.equal((await handleInboundImage(db, inbound())).reason, "no_vision_model");
+  });
+});
+
