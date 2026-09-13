@@ -19,6 +19,7 @@ import { formatReservationWhen } from "@/services/reservations/stats";
 import type { ReservationFormValues } from "@/services/reservations/schemas";
 import type { Reservation } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
+import type { DoctorProfile } from "@/services/profiles";
 import { ReservationServiceLabel } from "@/features/admin/components/ReservationServiceLabel";
 
 export type BookingSaveMode = "new" | "replace";
@@ -27,6 +28,7 @@ type Props = {
   open: boolean;
   values: ReservationFormValues;
   services: Service[];
+  doctors?: DoctorProfile[];
   reservations: Reservation[];
   pending: boolean;
   onOpenChange: (open: boolean) => void;
@@ -42,6 +44,7 @@ export function ReservationFormDialog({
   open,
   values,
   services,
+  doctors,
   reservations,
   pending,
   onOpenChange,
@@ -105,6 +108,7 @@ export function ReservationFormDialog({
           <ReservationFormFields
             values={values}
             services={services}
+            doctors={doctors}
             pending={pending}
             onChange={onChange}
           />

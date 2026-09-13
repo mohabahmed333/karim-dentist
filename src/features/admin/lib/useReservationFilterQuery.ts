@@ -70,6 +70,7 @@ export function useReservationFilterQuery(
       to: null,
       status: "all",
       service: "all",
+      doctor: "all",
       q: "",
       compare: "previous_period",
       cohort: "all",

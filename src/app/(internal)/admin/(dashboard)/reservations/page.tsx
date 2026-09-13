@@ -12,6 +12,7 @@ import {
   listReservationsPageServer,
   listReservationsServer,
 } from "@/services/reservations/queries";
+import { listDoctors } from "@/services/profiles";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export default async function AdminReservationsPage({
     to: filters.to,
     status: filters.status,
     serviceIds: filters.serviceIds,
+    doctorId: filters.doctorId,
     q: "",
     sort: "starts_at" as const,
     dir: "asc" as const,
@@ -40,15 +42,17 @@ export default async function AdminReservationsPage({
     limit: 8,
   };
 
-  const [calendarReservations, tablePage, services] = await Promise.all([
-    listReservationsServer(supabase, calendarFilters),
-    listReservationsPageServer(supabase, filters),
-    supabase
-      .from("services")
-      .select("*")
-      .is("deleted_at", null)
-      .order("sort_order", { ascending: true }),
-  ]);
+  const [calendarReservations, tablePage, services, doctors] =
+    await Promise.all([
+      listReservationsServer(supabase, calendarFilters),
+      listReservationsPageServer(supabase, filters),
+      supabase
+        .from("services")
+        .select("*")
+        .is("deleted_at", null)
+        .order("sort_order", { ascending: true }),
+      listDoctors(supabase),
+    ]);
 
   return (
     <Suspense fallback={<ReservationsPageSkeleton />}>
@@ -57,6 +61,7 @@ export default async function AdminReservationsPage({
         tableRows={tablePage.items}
         tableTotal={tablePage.total}
         services={services.data ?? []}
+        doctors={doctors}
       />
     </Suspense>
   );

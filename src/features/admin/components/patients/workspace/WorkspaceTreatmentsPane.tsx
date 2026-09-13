@@ -325,6 +325,7 @@ export function WorkspaceTreatmentsPane({
           await bookOpenSlotMatchingStartsAt({
             startsAtIso,
             reservationId: reservation.id,
+            doctorId: reservation.doctor_id,
           });
           await chart.afterBooked(treatmentId, reservation);
         }}

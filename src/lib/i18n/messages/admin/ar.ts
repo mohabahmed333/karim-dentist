@@ -331,6 +331,9 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.reservations.noAppointmentsNextThreeDays": "لا توجد مواعيد خلال الأيام الثلاثة القادمة",
   "admin.reservations.patient": "المريض",
   "admin.reservations.service": "الخدمة",
+  "admin.reservations.doctor": "الطبيب",
+  "admin.reservations.anyDoctor": "أي طبيب",
+  "admin.reservations.allDoctors": "كل الأطباء",
   "admin.reservations.date": "التاريخ",
   "admin.reservations.time": "الوقت",
   "admin.reservations.status": "الحالة",
@@ -415,6 +418,8 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.settings.whatsappAi": "ذكاء واتساب الاصطناعي",
   "admin.settings.notifications": "تنبيهات المرضى",
   "admin.settings.deposits": "المقدم",
+  "admin.settings.templates": "قوالب واتساب",
+  "admin.settings.doctors": "الأطباء",
   "admin.settings.description":
     "ساعات العيادة وسمة اللوحة وعلامة الموقع وأسعار العلاجات.",
   "admin.settings.account": "الحساب",

@@ -329,6 +329,9 @@ export const adminEn = {
   "admin.reservations.noAppointmentsNextThreeDays": "No appointments in the next 3 days",
   "admin.reservations.patient": "Patient",
   "admin.reservations.service": "Service",
+  "admin.reservations.doctor": "Doctor",
+  "admin.reservations.anyDoctor": "Any doctor",
+  "admin.reservations.allDoctors": "All doctors",
   "admin.reservations.date": "Date",
   "admin.reservations.time": "Time",
   "admin.reservations.status": "Status",
@@ -413,6 +416,8 @@ export const adminEn = {
   "admin.settings.whatsappAi": "WhatsApp AI",
   "admin.settings.notifications": "Patient notifications",
   "admin.settings.deposits": "Deposits",
+  "admin.settings.templates": "WhatsApp templates",
+  "admin.settings.doctors": "Doctors",
   "admin.settings.description":
     "Clinic hours, dashboard theme, site brand, and treatment prices.",
   "admin.settings.account": "Account",

@@ -10,6 +10,7 @@ import {
 } from "@/features/admin/lib/reservationFilters";
 import { parseServiceFilter } from "@/features/admin/lib/serviceFilter";
 import type { Service } from "@/services/services/types";
+import type { DoctorProfile } from "@/services/profiles";
 import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 import type { useReservationFilterQuery } from "@/features/admin/lib/useReservationFilterQuery";
 import {
@@ -37,6 +38,7 @@ function datePillLabel(
 export function buildReservationFilterPills(
   query: Query,
   services: Service[],
+  doctors: DoctorProfile[],
   flags: { showCompare: boolean; showCohort: boolean },
   t: T,
   locale: string = "en",
@@ -83,6 +85,16 @@ export function buildReservationFilterPills(
           id: "service",
           label: `${t("admin.reservations.service")} · ${serviceLabel}`,
           onClear: () => void setFilters({ service: "all" }),
+        }
+      : null,
+    filters.doctor && filters.doctor !== "all"
+      ? {
+          id: "doctor",
+          label: `${t("admin.reservations.doctor")} · ${
+            doctors.find((d) => d.id === filters.doctor)?.display_name ??
+            t("admin.reservations.doctor")
+          }`,
+          onClear: () => void setFilters({ doctor: "all" }),
         }
       : null,
     filters.q.trim()

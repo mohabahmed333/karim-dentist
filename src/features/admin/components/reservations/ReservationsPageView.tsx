@@ -44,6 +44,7 @@ import {
 } from "@/services/reservations/timeline";
 import type { Reservation } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
+import type { DoctorProfile } from "@/services/profiles";
 import {
   calendarDayBookingBlockReason,
   localTodayIso,
@@ -61,6 +62,7 @@ type Props = {
   tableRows: Reservation[];
   tableTotal: number;
   services: Service[];
+  doctors?: DoctorProfile[];
 };
 
 export function ReservationsPageView({
@@ -68,6 +70,7 @@ export function ReservationsPageView({
   tableRows,
   tableTotal,
   services,
+  doctors = [],
 }: Props) {
   const t = useTranslations();
   const { locale } = useLocale();
@@ -224,6 +227,7 @@ export function ReservationsPageView({
       await bookOpenSlotMatchingStartsAt({
         startsAtIso: updated.starts_at,
         reservationId: updated.id,
+        doctorId: updated.doctor_id,
       });
       editor.upsertItem(updated);
       setSelectedDayIso(targetDate);
@@ -280,6 +284,7 @@ export function ReservationsPageView({
         <div className="flex flex-wrap items-center gap-2">
           <AdminReservationFilters
             services={services}
+            doctors={doctors}
             onPendingChange={setFiltering}
           />
         </div>
@@ -422,6 +427,20 @@ export function ReservationsPageView({
                     />
                   ),
                 },
+                ...(doctors.length > 0
+                  ? [
+                      {
+                        key: "doctor",
+                        header: t("admin.reservations.doctor"),
+                        sortValue: (r: Reservation) =>
+                          doctors.find((d) => d.id === r.doctor_id)
+                            ?.display_name ?? "",
+                        cell: (r: Reservation) =>
+                          doctors.find((d) => d.id === r.doctor_id)
+                            ?.display_name ?? "—",
+                      },
+                    ]
+                  : []),
                 {
                   key: "when",
                   header: t("admin.reservations.when"),
@@ -450,6 +469,7 @@ export function ReservationsPageView({
         open={createOpen}
         values={editor.form}
         services={services}
+        doctors={doctors}
         reservations={editor.items}
         pending={editor.pending}
         onOpenChange={onCreateOpenChange}
@@ -466,6 +486,7 @@ export function ReservationsPageView({
             : null
         }
         services={services}
+        doctors={doctors}
         reservations={editor.items}
         selectedId={editId ?? ""}
         pending={editor.pending}

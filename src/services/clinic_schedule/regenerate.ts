@@ -70,3 +70,81 @@ export async function regenerateOpenSlotsWithClient(
   }
   return rows.length;
 }
+
+/**
+ * Rebuild one doctor's upcoming open slots from their hours; keep booked
+ * rows, and leave every other doctor's slots untouched.
+ *
+ * Both the cancel and the booked-starts lookup are scoped to `doctorId` —
+ * regenerating one doctor must never touch another doctor's availability.
+ * That scoping is the entire difference from `regenerateOpenSlotsWithClient`
+ * (which still drives the legacy, doctor-less `clinic_hours` singleton).
+ */
+export async function regenerateDoctorOpenSlotsWithClient(
+  supabase: SupabaseClient,
+  doctorId: string,
+  hours: {
+    open_weekdays: number[];
+    time_windows: string[];
+    slot_minutes: number;
+  },
+  horizonDays: number,
+): Promise<number> {
+  const now = new Date();
+  const expanded = expandClinicSlots({
+    openWeekdays: hours.open_weekdays,
+    timeWindows: hours.time_windows,
+    slotMinutes: hours.slot_minutes,
+    horizonDays,
+    from: now,
+  });
+
+  const { error: cancelError } = await supabase
+    .from("appointment_slots")
+    .update({ status: "cancelled", updated_at: now.toISOString() })
+    .eq("status", "open")
+    .eq("doctor_id", doctorId)
+    .gte("starts_at", now.toISOString());
+  if (cancelError) throw new Error(errorMessage(cancelError));
+
+  const { data: booked, error: bookedError } = await supabase
+    .from("appointment_slots")
+    .select("starts_at")
+    .eq("status", "booked")
+    .eq("doctor_id", doctorId)
+    .gte("starts_at", now.toISOString());
+  if (bookedError) throw new Error(errorMessage(bookedError));
+
+  const bookedStarts = new Set((booked ?? []).map((r) => r.starts_at));
+
+  const byStart = new Map<
+    string,
+    { starts_at: string; ends_at: string; status: "open"; doctor_id: string }
+  >();
+  for (const slot of expanded) {
+    const starts_at = slot.startsAt.toISOString();
+    if (bookedStarts.has(starts_at)) continue;
+    if (byStart.has(starts_at)) continue;
+    byStart.set(starts_at, {
+      starts_at,
+      ends_at: slot.endsAt.toISOString(),
+      status: "open",
+      doctor_id: doctorId,
+    });
+  }
+  const rows = [...byStart.values()].sort((a, b) =>
+    a.starts_at.localeCompare(b.starts_at),
+  );
+
+  if (rows.length === 0) return 0;
+
+  const chunkSize = 100;
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    const { error: insertError } = await supabase
+      .from("appointment_slots")
+      .insert(chunk);
+    if (insertError) throw new Error(errorMessage(insertError));
+  }
+  return rows.length;
+}

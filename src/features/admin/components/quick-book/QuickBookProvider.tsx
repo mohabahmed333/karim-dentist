@@ -154,6 +154,7 @@ export function QuickBookProvider({ children }: Props) {
         starts_at: buildStartsAt(parsed.data.date, parsed.data.time),
         notes: parsed.data.notes ?? "",
         status: parsed.data.status,
+        doctor_id: parsed.data.doctor_id ?? null,
       };
 
       let row: Reservation;
@@ -171,6 +172,7 @@ export function QuickBookProvider({ children }: Props) {
           await bookOpenSlotMatchingStartsAt({
             startsAtIso: payload.starts_at,
             reservationId: row.id,
+            doctorId: row.doctor_id,
           });
         }
         setReservations((prev) =>
@@ -188,6 +190,7 @@ export function QuickBookProvider({ children }: Props) {
           await bookOpenSlotMatchingStartsAt({
             startsAtIso: payload.starts_at,
             reservationId: row.id,
+            doctorId: row.doctor_id,
           });
         }
         setReservations((prev) => [...prev, row]);

@@ -75,6 +75,7 @@ export const reservationFilterParsers = {
   to: parseAsString,
   status: parseAsStringLiteral(FILTER_STATUS_VALUES).withDefault("all"),
   service: parseAsString.withDefault("all"),
+  doctor: parseAsString.withDefault("all"),
   q: parseAsString.withDefault(""),
   compare: parseAsStringLiteral(COMPARE_VALUES).withDefault("previous_period"),
   cohort: parseAsStringLiteral(PATIENT_COHORT_VALUES).withDefault("all"),
@@ -94,6 +95,7 @@ export function resolveReservationFilters(
     to: string | null;
     status: FilterStatus;
     service: string;
+    doctor?: string;
     q: string;
     sort?: string;
     dir?: "asc" | "desc";
@@ -111,6 +113,7 @@ export function resolveReservationFilters(
     to: from <= to ? to : from,
     status: raw.status,
     serviceIds: parseServiceFilter(raw.service),
+    doctorId: raw.doctor && raw.doctor.trim() ? raw.doctor.trim() : "all",
     q: raw.q.trim(),
     sort: (RESERVATION_SORT_VALUES as readonly string[]).includes(raw.sort ?? "")
       ? (raw.sort as ReservationSortKey)

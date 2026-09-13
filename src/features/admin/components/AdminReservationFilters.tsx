@@ -10,10 +10,12 @@ import {
   FilterMenuTrigger,
 } from "@/components/ui/filter-menu";
 import type { Service } from "@/services/services/types";
+import type { DoctorProfile } from "@/services/profiles";
 import { useLocale, useTranslations } from "@/lib/i18n";
 
 type Props = {
   services: Service[];
+  doctors?: DoctorProfile[];
   showCompare?: boolean;
   showCohort?: boolean;
   onPendingChange?: (pending: boolean) => void;
@@ -21,6 +23,7 @@ type Props = {
 
 export function AdminReservationFilters({
   services,
+  doctors = [],
   showCompare = false,
   showCohort = false,
   onPendingChange,
@@ -31,6 +34,7 @@ export function AdminReservationFilters({
   const fields = buildReservationFilterFields(
     query,
     services,
+    doctors,
     { showCompare, showCohort },
     t,
     locale,
@@ -38,6 +42,7 @@ export function AdminReservationFilters({
   const pills = buildReservationFilterPills(
     query,
     services,
+    doctors,
     { showCompare, showCohort },
     t,
     locale,

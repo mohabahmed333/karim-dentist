@@ -113,6 +113,29 @@ export function RolesManager({
     }
   }
 
+  async function toggleIsDoctor(checked: boolean) {
+    if (!selectedRoleId) return;
+    setRoles((prev) =>
+      prev.map((role) =>
+        role.id === selectedRoleId ? { ...role, is_doctor: checked } : role,
+      ),
+    );
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/v1/admin/roles/${selectedRoleId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDoctor: checked }),
+      });
+      if (!res.ok) throw new Error("Update failed");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Update failed");
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleDeleteRole() {
     if (!selectedRoleId) return;
     setBusy(true);
@@ -188,6 +211,16 @@ export function RolesManager({
                   {selectedRole.description}
                 </p>
               ) : null}
+              <label className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox
+                  checked={selectedRole.is_doctor}
+                  disabled={busy}
+                  onCheckedChange={(checked) =>
+                    void toggleIsDoctor(checked === true)
+                  }
+                />
+                Doctor role — grants a doctor picker + own hours
+              </label>
             </div>
             {!selectedRole.is_system && (
               <Button

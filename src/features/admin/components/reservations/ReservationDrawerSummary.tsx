@@ -7,6 +7,7 @@ import {
 import type { ReservationFormValues } from "@/services/reservations/schemas";
 import type { Reservation } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
+import type { DoctorProfile } from "@/services/profiles";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { resolveServiceLabel } from "@/features/admin/lib/serviceDisplayName";
 
@@ -14,6 +15,7 @@ type Props = {
   values: ReservationFormValues;
   reservation?: Reservation | null;
   services?: Service[];
+  doctors?: DoctorProfile[];
 };
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -51,6 +53,7 @@ export function ReservationDrawerSummary({
   values,
   reservation,
   services = [],
+  doctors = [],
 }: Props) {
   const t = useTranslations();
   const { locale } = useLocale();
@@ -64,6 +67,10 @@ export function ReservationDrawerSummary({
     services,
     consultationLabel: t("admin.chat.generalConsultation"),
   });
+  const doctorId = values.doctor_id ?? reservation?.doctor_id ?? null;
+  const doctorLabel = doctorId
+    ? (doctors.find((d) => d.id === doctorId)?.display_name ?? "")
+    : "";
 
   return (
     <dl className="space-y-4">
@@ -71,6 +78,9 @@ export function ReservationDrawerSummary({
       <Row label={t("admin.reservations.phone")} value={values.phone} />
       <Row label={t("admin.reservations.email")} value={values.email ?? ""} />
       <Row label={t("admin.reservations.service")} value={serviceLabel} />
+      {doctors.length > 0 ? (
+        <Row label={t("admin.reservations.doctor")} value={doctorLabel} />
+      ) : null}
       <Row label={t("admin.reservations.when")} value={when} />
       <div className="grid gap-0.5">
         <dt className="text-[11px] font-medium uppercase tracking-wide text-[var(--admin-muted)]">

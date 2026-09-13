@@ -17,6 +17,7 @@ export type AppointmentSlot = {
   ends_at: string;
   status: AppointmentSlotStatus;
   reservation_id: string | null;
+  doctor_id: string | null;
   created_at: string;
   updated_at: string;
 };

@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("appointment_slots")
-    .select("id, starts_at, ends_at, status")
+    .select("id, starts_at, ends_at, status, doctor_id")
     .in("status", ["open", "booked"])
     .gte("starts_at", from)
     .lte("starts_at", to)

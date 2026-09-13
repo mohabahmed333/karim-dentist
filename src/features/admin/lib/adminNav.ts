@@ -139,6 +139,8 @@ export const adminRailItems: AdminRailItem[] = [
       { href: "/admin/settings/whatsapp-ai", labelKey: "admin.settings.whatsappAi", permission: "settings.view" },
       { href: "/admin/settings/patient-notifications", labelKey: "admin.settings.notifications", permission: "settings.view" },
       { href: "/admin/settings/deposits", labelKey: "admin.settings.deposits", permission: "settings.view" },
+      { href: "/admin/settings/templates", labelKey: "admin.settings.templates", permission: "settings.view" },
+      { href: "/admin/settings/doctors", labelKey: "admin.settings.doctors", permission: "settings.view" },
       { href: "/admin/settings/accounts", labelKey: "admin.nav.accounts", permission: "accounts.view" },
       { href: "/admin/settings/roles", labelKey: "admin.nav.roles", permission: "roles.view" },
     ],
@@ -201,6 +203,8 @@ export const adminNavSections: AdminNavSection[] = [
           { href: "/admin/settings/whatsapp-ai", labelKey: "admin.settings.whatsappAi", permission: "settings.view" },
           { href: "/admin/settings/patient-notifications", labelKey: "admin.settings.notifications", permission: "settings.view" },
           { href: "/admin/settings/deposits", labelKey: "admin.settings.deposits", permission: "settings.view" },
+      { href: "/admin/settings/templates", labelKey: "admin.settings.templates", permission: "settings.view" },
+          { href: "/admin/settings/doctors", labelKey: "admin.settings.doctors", permission: "settings.view" },
           { href: "/admin/settings/accounts", labelKey: "admin.nav.accounts", permission: "accounts.view" },
           { href: "/admin/settings/roles", labelKey: "admin.nav.roles", permission: "roles.view" },
         ],
@@ -244,6 +248,8 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin/settings/whatsapp-ai": "admin.settings.whatsappAi",
   "/admin/settings/patient-notifications": "admin.settings.notifications",
   "/admin/settings/deposits": "admin.settings.deposits",
+  "/admin/settings/templates": "admin.settings.templates",
+  "/admin/settings/doctors": "admin.settings.doctors",
   // No adminPagePermissions entries on purpose: your own profile and password
   // are not privileged, so they stay visible to every role.
   "/admin/account/profile": "admin.nav.profile",
@@ -291,6 +297,8 @@ export const adminPagePermissions: Record<string, string> = {
   "/admin/settings/whatsapp-ai": "settings.view",
   "/admin/settings/patient-notifications": "settings.view",
   "/admin/settings/deposits": "settings.view",
+  "/admin/settings/templates": "settings.view",
+  "/admin/settings/doctors": "settings.view",
   "/admin/settings/accounts": "accounts.view",
   "/admin/settings/roles": "roles.view",
 };

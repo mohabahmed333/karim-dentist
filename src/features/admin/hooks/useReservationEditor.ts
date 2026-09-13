@@ -251,6 +251,7 @@ export function useReservationEditor(initial: Reservation[]) {
         starts_at: buildStartsAt(parsed.data.date, parsed.data.time),
         notes: parsed.data.notes ?? "",
         status: parsed.data.status,
+        doctor_id: parsed.data.doctor_id ?? null,
       };
       if (selectedId === "new") {
         const matched = findPatientGroupByPhone(

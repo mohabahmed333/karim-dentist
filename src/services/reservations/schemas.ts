@@ -10,6 +10,7 @@ export const reservationFormSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date is required"),
   time: z.string().min(1, "Time is required"),
   slot_id: z.string().uuid().nullable().optional(),
+  doctor_id: z.string().uuid().nullable().optional(),
   notes: z.string().optional(),
   status: z.enum(RESERVATION_STATUSES),
 });

@@ -3,7 +3,9 @@ import {
   Briefcase,
   CalendarDays,
   CircleDot,
+  Stethoscope,
 } from "lucide-react";
+import type { DoctorProfile } from "@/services/profiles";
 import type { FilterField } from "@/components/ui/filter-menu";
 import { FilterMenuDatePanel } from "@/features/admin/components/FilterMenuDatePanel";
 import {
@@ -36,6 +38,7 @@ type T = (key: AdminMessageKey) => string;
 export function buildReservationFilterFields(
   query: Query,
   services: Service[],
+  doctors: DoctorProfile[],
   flags: { showCompare: boolean; showCohort: boolean },
   t: T,
   locale: Locale,
@@ -124,6 +127,30 @@ export function buildReservationFilterFields(
       },
     },
   ];
+
+  if (doctors.length > 0) {
+    const doctorId = filters.doctor ?? "all";
+    fields.push({
+      id: "doctor",
+      kind: "choice",
+      label: t("admin.reservations.doctor"),
+      hint:
+        doctorId === "all"
+          ? undefined
+          : (doctors.find((d) => d.id === doctorId)?.display_name ??
+            t("admin.reservations.doctor")),
+      icon: Stethoscope,
+      value: doctorId,
+      options: [
+        { id: "all", label: t("admin.reservations.allDoctors") },
+        ...doctors.map((doctor) => ({
+          id: doctor.id,
+          label: doctor.display_name ?? doctor.id,
+        })),
+      ],
+      onSelect: (id) => void setFilters({ doctor: id }),
+    });
+  }
 
   return appendOptionalReservationFields(fields, query, flags, t);
 }

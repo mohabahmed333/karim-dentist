@@ -23,3 +23,25 @@ export async function listStaffProfiles(
   if (error) throw error;
   return data ?? [];
 }
+
+export type DoctorProfile = {
+  id: string;
+  display_name: string | null;
+};
+
+/** Staff accounts whose role is flagged `is_doctor` — the assignable doctors. */
+export async function listDoctors(
+  supabase: AnySupabase,
+): Promise<DoctorProfile[]> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, display_name, roles!inner(is_doctor)")
+    .eq("roles.is_doctor", true)
+    .is("deleted_at", null)
+    .order("display_name", { ascending: true, nullsFirst: false });
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    display_name: row.display_name,
+  }));
+}

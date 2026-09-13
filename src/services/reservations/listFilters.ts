@@ -42,6 +42,8 @@ export type ReservationListFilters = {
   status: FilterStatus;
   /** Empty = all services. */
   serviceIds: string[];
+  /** "all" = every doctor (and legacy doctor-less reservations). */
+  doctorId: string;
   q: string;
   sort: ReservationSortKey;
   dir: "asc" | "desc";

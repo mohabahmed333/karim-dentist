@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReservationFormValues } from "@/services/reservations/schemas";
 import { RESERVATION_STATUSES } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
+import type { DoctorProfile } from "@/services/profiles";
 import {
   getClinicHours,
   listOpenAppointmentSlots,
@@ -24,11 +25,17 @@ import {
 type Props = {
   values: ReservationFormValues;
   services: Service[];
+  doctors?: DoctorProfile[];
   pending: boolean;
   onChange: (values: ReservationFormValues) => void;
 };
 
-type SlotDto = { id: string; starts_at: string; ends_at?: string };
+type SlotDto = {
+  id: string;
+  starts_at: string;
+  ends_at?: string;
+  doctor_id?: string | null;
+};
 
 function dayKey(iso: string): string {
   const d = new Date(iso);
@@ -104,6 +111,7 @@ async function loadOpenSlots(): Promise<SlotDto[]> {
 export function ReservationFormFields({
   values,
   services,
+  doctors = [],
   pending,
   onChange,
 }: Props) {
@@ -141,9 +149,20 @@ export function ReservationFormFields({
     };
   }, []);
 
+  // "Any doctor" (values.doctor_id unset) shows every slot, unfiltered —
+  // the pre-multi-doctor behaviour. Picking a doctor narrows to their slots
+  // only, since availability now differs doctor to doctor.
+  const doctorSlots = useMemo(
+    () =>
+      values.doctor_id
+        ? slots.filter((s) => s.doctor_id === values.doctor_id)
+        : slots,
+    [slots, values.doctor_id],
+  );
+
   const dates = useMemo(() => {
     const byDay = new Map<string, string>();
-    for (const slot of slots) {
+    for (const slot of doctorSlots) {
       const day = dayKey(slot.starts_at);
       if (!byDay.has(day)) byDay.set(day, formatDayLabel(slot.starts_at));
     }
@@ -153,11 +172,11 @@ export function ReservationFormFields({
     return [...byDay.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([value, label]) => ({ value, label }));
-  }, [slots, values.date]);
+  }, [doctorSlots, values.date]);
 
   const daySlots = useMemo(
-    () => slots.filter((s) => dayKey(s.starts_at) === values.date),
-    [slots, values.date],
+    () => doctorSlots.filter((s) => dayKey(s.starts_at) === values.date),
+    [doctorSlots, values.date],
   );
 
   function patch(partial: Partial<ReservationFormValues>) {
@@ -186,6 +205,20 @@ export function ReservationFormFields({
       slot_id: slot.id,
       date: dayKey(slot.starts_at),
       time: timeKey(slot.starts_at),
+      // The slot is authoritative for who this booking is with.
+      doctor_id: slot.doctor_id ?? null,
+    });
+  }
+
+  function onDoctorChange(doctorId: string) {
+    // Availability differs per doctor now, so a previously picked date/time
+    // may not exist for the new doctor — clear it and let the slot list
+    // re-narrow instead of silently keeping a mismatched selection.
+    patch({
+      doctor_id: doctorId || null,
+      date: "",
+      time: "",
+      slot_id: null,
     });
   }
 
@@ -255,6 +288,24 @@ export function ReservationFormFields({
             onChange={onServiceChange}
           />
         </label>
+        {doctors.length > 0 ? (
+          <label className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="doctor">{t("admin.reservations.doctor")}</Label>
+            <AdminNativeSelect
+              id="doctor"
+              value={values.doctor_id ?? ""}
+              disabled={pending}
+              onChange={(event) => onDoctorChange(event.target.value)}
+            >
+              <option value="">{t("admin.reservations.anyDoctor")}</option>
+              {doctors.map((doctor) => (
+                <option key={doctor.id} value={doctor.id}>
+                  {doctor.display_name ?? doctor.id}
+                </option>
+              ))}
+            </AdminNativeSelect>
+          </label>
+        ) : null}
         <label className="grid gap-2">
           <Label htmlFor="date">{t("admin.reservations.date")}</Label>
           <AdminNativeSelect
@@ -360,6 +411,7 @@ export function emptyReservationForm(): ReservationFormValues {
     date: "",
     time: "",
     slot_id: null,
+    doctor_id: null,
     notes: "",
     status: "pending",
   };
@@ -381,6 +433,7 @@ export function reservationToForm(
     date,
     time: `${hours}:${minutes}`,
     slot_id: null,
+    doctor_id: reservation.doctor_id ?? null,
     notes: reservation.notes,
     status: reservation.status,
   };

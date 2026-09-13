@@ -215,6 +215,7 @@ export function ReservationsTimeline({
       await bookOpenSlotMatchingStartsAt({
         startsAtIso: updated.starts_at,
         reservationId: updated.id,
+        doctorId: updated.doctor_id,
       });
       setItems((prev) =>
         prev.map((row) => (row.id === updated.id ? updated : row)),

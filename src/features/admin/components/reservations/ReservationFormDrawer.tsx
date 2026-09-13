@@ -18,6 +18,7 @@ import { useTranslations } from "@/lib/i18n";
 import type { ReservationFormValues } from "@/services/reservations/schemas";
 import type { Reservation } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
+import type { DoctorProfile } from "@/services/profiles";
 import { cn } from "@/lib/utils";
 
 type Mode = "view" | "edit";
@@ -27,6 +28,7 @@ type Props = {
   values: ReservationFormValues;
   reservation?: Reservation | null;
   services: Service[];
+  doctors?: DoctorProfile[];
   reservations: Reservation[];
   selectedId: string;
   pending: boolean;
@@ -42,6 +44,7 @@ export function ReservationFormDrawer({
   values,
   reservation,
   services,
+  doctors,
   reservations,
   selectedId,
   pending,
@@ -125,11 +128,13 @@ export function ReservationFormDrawer({
                   <ReservationDrawerSummary
                     values={values}
                     reservation={reservation}
+                    doctors={doctors}
                   />
                 ) : (
                   <ReservationFormFields
                     values={values}
                     services={services}
+                    doctors={doctors}
                     pending={pending}
                     onChange={onChange}
                   />

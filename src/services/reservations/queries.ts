@@ -59,6 +59,9 @@ function applyReservationFilters(
   if (filters?.serviceIds && filters.serviceIds.length > 0) {
     query = query.in("service_id", filters.serviceIds);
   }
+  if (filters?.doctorId && filters.doctorId !== "all") {
+    query = query.eq("doctor_id", filters.doctorId);
+  }
   if (filters?.q) {
     const safe = sanitizeIlike(filters.q);
     if (safe) {
