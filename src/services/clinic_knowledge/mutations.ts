@@ -1,14 +1,19 @@
-import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
+import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type {
   ClinicKnowledge,
   ClinicKnowledgeInsert,
   ClinicKnowledgeUpdate,
 } from "./types";
 
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createBrowserClient>;
+
 export async function createClinicKnowledge(
+  supabase: AnySupabase,
   payload: ClinicKnowledgeInsert,
 ): Promise<ClinicKnowledge> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("clinic_knowledge")
     .insert(payload)
@@ -19,10 +24,10 @@ export async function createClinicKnowledge(
 }
 
 export async function updateClinicKnowledge(
+  supabase: AnySupabase,
   id: string,
   payload: ClinicKnowledgeUpdate,
 ): Promise<ClinicKnowledge> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("clinic_knowledge")
     .update({ ...payload, updated_at: new Date().toISOString() })
@@ -34,8 +39,10 @@ export async function updateClinicKnowledge(
 }
 
 /** Soft delete, so an entry the assistant once quoted can be recovered. */
-export async function softDeleteClinicKnowledge(id: string): Promise<void> {
-  const supabase = createClient();
+export async function softDeleteClinicKnowledge(
+  supabase: AnySupabase,
+  id: string,
+): Promise<void> {
   const { error } = await supabase
     .from("clinic_knowledge")
     .update({ deleted_at: new Date().toISOString() })

@@ -1,4 +1,4 @@
-export * from "./mutations";
+export * from "./actions";
 export * from "./queries";
 export { searchClinicKnowledge, selectRelevant } from "./search";
 export type {

@@ -16,4 +16,4 @@ export {
 export type { ToothSurfaceUpsert } from "./schemas";
 export type { PatientToothSurface } from "./types";
 export { listToothSurfaces } from "./queries";
-export { upsertToothSurfaces } from "./mutations";
+export { upsertToothSurfaces } from "./actions";

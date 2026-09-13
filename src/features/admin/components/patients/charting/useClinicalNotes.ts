@@ -4,14 +4,12 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   buildClinicalNote,
+  createPatientClinicalNote,
+  listPatientClinicalNotes,
   type ClinicalNote,
   type ClinicalNoteCategory,
   type NoteTarget,
 } from "@/services/clinical_notes";
-import {
-  createPatientClinicalNote,
-  listPatientClinicalNotes,
-} from "@/services/clinical_notes/mutations";
 import { ADMIN_OPEN_CLINICAL_NOTE_EVENT } from "@/features/admin/lib/adminShellEvents";
 
 function rowToNote(row: {

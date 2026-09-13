@@ -1,12 +1,17 @@
-import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
+import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { PatientProfileUpsertValues } from "./schemas";
 import type { PatientProfile } from "./types";
 
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createBrowserClient>;
+
 export async function upsertPatientProfile(
+  supabase: AnySupabase,
   patientKey: string,
   input: PatientProfileUpsertValues,
 ): Promise<PatientProfile> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("patient_profiles")
     .upsert(

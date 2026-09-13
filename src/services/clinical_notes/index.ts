@@ -9,8 +9,6 @@ export {
   buildClinicalNote,
   noteHeaderLabel,
 } from "./types";
-export {
-  createPatientClinicalNote,
-  listPatientClinicalNotes,
-} from "./mutations";
+export { listPatientClinicalNotes } from "./mutations";
+export { createPatientClinicalNote } from "./actions";
 export type { PatientClinicalNoteRow } from "./mutations";

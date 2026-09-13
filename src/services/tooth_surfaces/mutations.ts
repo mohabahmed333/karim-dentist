@@ -1,13 +1,18 @@
-import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
+import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { toothSurfaceUpsertSchema } from "./schemas";
 import type { PatientToothSurface } from "./types";
 
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createBrowserClient>;
+
 export async function upsertToothSurfaces(
+  supabase: AnySupabase,
   patientKey: string,
   input: unknown,
 ): Promise<PatientToothSurface> {
   const parsed = toothSurfaceUpsertSchema.parse(input);
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("patient_tooth_surfaces")
     .upsert(

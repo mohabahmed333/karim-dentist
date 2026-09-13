@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/database.types";
 import {
   clinicalNoteInsertSchema,
@@ -6,6 +7,10 @@ import {
 } from "@/services/admin_ai/clinicalPayloads";
 
 export type PatientClinicalNoteRow = Tables<"patient_clinical_notes">;
+
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createClient>;
 
 export async function listPatientClinicalNotes(
   patientKey: string,
@@ -21,10 +26,10 @@ export async function listPatientClinicalNotes(
 }
 
 export async function createPatientClinicalNote(
+  supabase: AnySupabase,
   input: ClinicalNoteInsert,
 ): Promise<PatientClinicalNoteRow> {
   const parsed = clinicalNoteInsertSchema.parse(input);
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("patient_clinical_notes")
     .insert(parsed)
