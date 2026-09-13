@@ -65,3 +65,7 @@ supabase/.temp
 
 # Local E2E env (contains only the well-known local Supabase demo keys)
 .env.e2e
+
+# Downloaded at runtime by tesseract.js if a cache path is not set
+*.traineddata
+*.traineddata.gz

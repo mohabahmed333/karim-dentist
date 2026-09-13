@@ -12,8 +12,20 @@
  * automatically.
  */
 
+import { tmpdir } from "node:os";
+
 /** Generous enough for a cold WASM start, short enough to stay inside the job. */
 const TIMEOUT_MS = 20_000;
+
+/**
+ * Where Tesseract may write the ~5MB language file it downloads on first use.
+ *
+ * It defaults to the working directory, which is read-only on Vercel — so
+ * without this the download fails, every call returns null, and the cross-check
+ * silently does nothing in production while working perfectly in development.
+ * It also stops a stray eng.traineddata appearing in the repo root locally.
+ */
+const CACHE_PATH = tmpdir();
 
 type TesseractWorker = {
   recognize: (image: Buffer) => Promise<{ data: { text?: string } }>;
@@ -31,11 +43,15 @@ export async function readImageText(bytes: Uint8Array): Promise<string | null> {
   let worker: TesseractWorker | null = null;
   try {
     const { createWorker } = (await import("tesseract.js")) as unknown as {
-      createWorker: (lang: string) => Promise<TesseractWorker>;
+      createWorker: (
+        lang: string,
+        oem?: number,
+        options?: { cachePath?: string },
+      ) => Promise<TesseractWorker>;
     };
 
     const started = await Promise.race([
-      createWorker("eng"),
+      createWorker("eng", undefined, { cachePath: CACHE_PATH }),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), TIMEOUT_MS)),
     ]);
     if (!started) return null;

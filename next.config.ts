@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Hide the Next.js “N” badge in local development (errors still surface).
   devIndicators: false,
+  // Tesseract ships a large WASM core and loads it by path at runtime. Bundling
+  // it into the serverless function breaks that resolution, so it is kept as a
+  // plain node_modules dependency. Used only by the optional deposit
+  // cross-check, which degrades to "no second opinion" if it cannot load.
+  serverExternalPackages: ["tesseract.js"],
   async redirects() {
     // Legacy agency-era pages. They were unlinked from the dental nav but
     // still indexable, still branded "Imagineer", and would otherwise
