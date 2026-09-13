@@ -94,6 +94,21 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.nav.messagingGroup": "المراسلة",
   "admin.pages.outbox.title": "رسائل المرضى",
   "admin.pages.outbox.description": "كل رسالة واتساب جدولتها العيادة لمريض، وما حدث لها، ومن طلب عدم مراسلته.",
+  "admin.pages.changePassword.title": "تغيير كلمة المرور",
+  "admin.pages.changePassword.description":
+    "حدّث كلمة المرور التي تستخدمها لتسجيل الدخول إلى مساحة العيادة.",
+  "admin.changePassword.current": "كلمة المرور الحالية",
+  "admin.changePassword.new": "كلمة المرور الجديدة",
+  "admin.changePassword.confirm": "تأكيد كلمة المرور الجديدة",
+  "admin.changePassword.submit": "تحديث كلمة المرور",
+  "admin.changePassword.success": "تم تحديث كلمة المرور",
+  "admin.changePassword.wrongCurrent": "كلمة المرور الحالية غير صحيحة",
+  "admin.changePassword.mismatch": "كلمتا المرور الجديدتان غير متطابقتين",
+  "admin.changePassword.sameAsCurrent":
+    "يجب أن تختلف كلمة المرور الجديدة عن الحالية",
+  "admin.changePassword.error": "حدث خطأ ما. الرجاء المحاولة مرة أخرى.",
+  "admin.nav.changePassword": "تغيير كلمة المرور",
+
   "admin.pages.waitlist.title": "قائمة الانتظار",
   "admin.pages.waitlist.description": "المرضى المنتظرون لموعد أقرب. أي موعد يُلغى يُعرض على أقدم المنتظرين الذين يناسبهم التوقيت.",
   "admin.pages.assistantReview.title": "مراجعة المساعد",
@@ -378,6 +393,8 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.settings.theme.secondary": "ثانوي",
   "admin.settings.theme.canvas": "خلفية الصفحة",
   "admin.settings.theme.panel": "خلفية المحتوى",
+  "admin.settings.theme.groupBrand": "ألوان العلامة",
+  "admin.settings.theme.groupBackground": "ألوان الخلفية",
   "admin.settings.theme.example": "مثال",
   "admin.settings.theme.exampleHint":
     "الغلاف الخارجي = {canvas}. المنطقة خلف البطاقات = {panel}. البطاقات تبقى بيضاء.",

@@ -212,6 +212,9 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin/usage": "admin.nav.usage",
   "/admin/assist-analytics": "admin.nav.assistAnalytics",
   "/admin/settings": "admin.nav.settings",
+  // No adminPagePermissions entry on purpose: changing your own password is
+  // not privileged, so it stays visible to every role.
+  "/admin/account/password": "admin.nav.changePassword",
 };
 
 /**

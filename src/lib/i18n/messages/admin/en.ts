@@ -92,6 +92,21 @@ export const adminEn = {
   "admin.nav.messagingGroup": "Messaging",
   "admin.pages.outbox.title": "Patient messages",
   "admin.pages.outbox.description": "Every WhatsApp message the clinic queued for a patient, what happened to it, and who asked not to be messaged.",
+  "admin.pages.changePassword.title": "Change password",
+  "admin.pages.changePassword.description":
+    "Update the password you use to sign in to the clinic workspace.",
+  "admin.changePassword.current": "Current password",
+  "admin.changePassword.new": "New password",
+  "admin.changePassword.confirm": "Confirm new password",
+  "admin.changePassword.submit": "Update password",
+  "admin.changePassword.success": "Password updated",
+  "admin.changePassword.wrongCurrent": "Current password is incorrect",
+  "admin.changePassword.mismatch": "New passwords don't match",
+  "admin.changePassword.sameAsCurrent":
+    "New password must be different from the current one",
+  "admin.changePassword.error": "Something went wrong. Please try again.",
+  "admin.nav.changePassword": "Change password",
+
   "admin.pages.waitlist.title": "Waitlist",
   "admin.pages.waitlist.description": "Patients waiting for an earlier time. A cancelled slot is offered to the longest-waiting patients whose window fits.",
   "admin.pages.assistantReview.title": "Assistant review",
@@ -376,6 +391,8 @@ export const adminEn = {
   "admin.settings.theme.secondary": "Secondary",
   "admin.settings.theme.canvas": "Page background",
   "admin.settings.theme.panel": "Content background",
+  "admin.settings.theme.groupBrand": "Brand colors",
+  "admin.settings.theme.groupBackground": "Background colors",
   "admin.settings.theme.example": "Example",
   "admin.settings.theme.exampleHint":
     "Outer shell = {canvas}. Area behind cards = {panel}. Cards stay white.",

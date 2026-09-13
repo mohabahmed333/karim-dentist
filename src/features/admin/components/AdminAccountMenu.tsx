@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, ChevronDown, CircleUser, LogOut } from "lucide-react";
+import { Check, ChevronDown, CircleUser, KeyRound, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   AdminDropdownMenu,
   AdminDropdownMenuContent,
@@ -18,6 +19,7 @@ type Props = { compact?: boolean };
 
 export function AdminAccountMenu({ compact = false }: Props) {
   const t = useTranslations();
+  const router = useRouter();
   const { locale, setLocale } = useLocale();
   const { logout, pending } = useAdminLogout();
 
@@ -65,6 +67,13 @@ export function AdminAccountMenu({ compact = false }: Props) {
             {t("admin.language.arabic")}
           </AdminDropdownMenuItem>
         </AdminDropdownMenuGroup>
+        <AdminDropdownMenuSeparator />
+        <AdminDropdownMenuItem
+          onClick={() => router.push("/admin/account/password")}
+        >
+          <KeyRound aria-hidden />
+          {t("admin.nav.changePassword")}
+        </AdminDropdownMenuItem>
         <AdminDropdownMenuSeparator />
         <AdminDropdownMenuItem
           variant="destructive"
