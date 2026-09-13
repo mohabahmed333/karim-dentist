@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +13,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Role } from "@/services/roles/queries";
 
 type Account = {
@@ -40,6 +49,9 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
   const [roleId, setRoleId] = useState(roles[0]?.id ?? "");
   const [tempPassword, setTempPassword] = useState(randomTempPassword());
   const [busy, setBusy] = useState(false);
+  const [createdAccount, setCreatedAccount] = useState<
+    { email: string; password: string } | null
+  >(null);
 
   async function refresh() {
     const res = await fetch("/api/v1/admin/accounts");
@@ -64,7 +76,7 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Create failed");
       }
-      toast.success(`Account created. Temp password: ${tempPassword}`);
+      setCreatedAccount({ email, password: tempPassword });
       setEmail("");
       setDisplayName("");
       setTempPassword(randomTempPassword());
@@ -73,6 +85,16 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
       toast.error(error instanceof Error ? error.message : "Create failed");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleCopyPassword() {
+    if (!createdAccount) return;
+    try {
+      await navigator.clipboard.writeText(createdAccount.password);
+      toast.success("Password copied");
+    } catch {
+      toast.error("Couldn't copy — select and copy it manually");
     }
   }
 
@@ -194,6 +216,43 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
           ))}
         </TableBody>
       </Table>
+
+      <Dialog
+        open={createdAccount !== null}
+        onOpenChange={(open) => {
+          if (!open) setCreatedAccount(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Account created</DialogTitle>
+            <DialogDescription>
+              Share this temporary password with {createdAccount?.email} —
+              it won&apos;t be shown again.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2">
+            <Input
+              readOnly
+              value={createdAccount?.password ?? ""}
+              onFocus={(e) => e.currentTarget.select()}
+              className="font-mono"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={handleCopyPassword}
+              aria-label="Copy password"
+            >
+              <Copy className="size-4" />
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setCreatedAccount(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
