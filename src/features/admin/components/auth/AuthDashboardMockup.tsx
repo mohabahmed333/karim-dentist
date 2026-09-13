@@ -1,29 +1,23 @@
-import { CalendarDays, CircleCheck, Clock3 } from "lucide-react";
+import { CalendarDays, CircleCheck, MessageSquareText } from "lucide-react";
 
 const NAV_ITEMS = ["Overview", "Reservations", "Patients", "Support", "Messaging"];
 
 const KPIS = [
-  { label: "Today's reservations", value: "18", trend: "+12%", up: true, Icon: CalendarDays, wrap: "bg-[#0F766E]" },
-  { label: "Open conversations", value: "6", trend: "-8%", up: false, Icon: Clock3, wrap: "bg-[#EA580C]" },
-  { label: "Avg. reply time", value: "3m", trend: "+4%", up: true, Icon: CircleCheck, wrap: "bg-[#5e6ad2]" },
+  { label: "Pending bookings", tag: "review", tagClass: "text-[#EA580C]", value: "2", Icon: MessageSquareText, wrap: "bg-[#EA580C]" },
+  { label: "Today's chair time", tag: "today", tagClass: "text-neutral-400", value: "1", Icon: CalendarDays, wrap: "bg-[#3B82F6]" },
+  { label: "Confirmed this week", tag: "", tagClass: "", value: "1", Icon: CircleCheck, wrap: "bg-[#16A34A]" },
 ];
 
-const RESERVATIONS = [
-  { name: "Sara Adel", detail: "Cleaning · 10:30 AM", status: "confirmed" },
-  { name: "Omar Khaled", detail: "Filling · 11:15 AM", status: "pending" },
-  { name: "Nour Hassan", detail: "Check-up · 1:00 PM", status: "confirmed" },
+const SCHEDULE = [
+  { time: "11:00 AM", title: "General consultation", patient: "Nour El-Sayed" },
+  { time: "02:00 PM", title: "General consultation", patient: "Youssef Adel" },
 ];
-
-const STATUS_CLASS: Record<string, string> = {
-  confirmed: "bg-[#DCFCE7] text-[#16A34A]",
-  pending: "bg-[#FEF3C7] text-[#B45309]",
-};
 
 /**
  * Purely illustrative — plain HTML/CSS, no real data or generated image.
- * Mirrors the real admin dashboard's own visual language (DashboardKpiCard,
- * UpcomingReservationsCard) so this reads as this product's actual design,
- * not a generic stock mockup.
+ * Modeled directly on the real /admin overview screen (greeting header,
+ * DashboardKpiCard-style tiles, Day Schedule strip) so this reads as this
+ * product's actual design, not a generic mockup.
  */
 export function AuthDashboardMockup() {
   return (
@@ -40,12 +34,12 @@ export function AuthDashboardMockup() {
         }}
       >
         <div className="flex">
-          <div className="w-32 shrink-0 border-e border-black/5 bg-[#f7f8f8] p-3">
-            <div className="mb-3 h-3 w-16 rounded-full bg-[#5e6ad2]/70" />
+          <div className="w-28 shrink-0 border-e border-black/5 bg-[#f7f8f8] p-3">
+            <div className="mb-3 h-3 w-14 rounded-full bg-[#5e6ad2]/70" />
             {NAV_ITEMS.map((item, index) => (
               <div
                 key={item}
-                className={`mb-1.5 truncate rounded-md px-2 py-1.5 text-[10px] font-medium ${
+                className={`mb-1.5 truncate rounded-md px-2 py-1.5 text-[9px] font-medium ${
                   index === 0 ? "bg-[#5e6ad2]/10 text-[#5e6ad2]" : "text-neutral-500"
                 }`}
               >
@@ -54,63 +48,72 @@ export function AuthDashboardMockup() {
             ))}
           </div>
           <div className="flex-1 p-4">
-            <div className="mb-3 h-2.5 w-24 rounded-full bg-neutral-200" />
+            <div className="mb-3 flex items-center gap-2">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#5e6ad2] text-[10px] font-semibold text-white">
+                K
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-[11px] font-semibold text-neutral-800">
+                  Good afternoon, Karim
+                </p>
+                <p className="truncate text-[8px] text-neutral-500">
+                  Next: Youssef Adel · today at 2:00 PM
+                </p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-3 gap-2">
-              {KPIS.map(({ label, value, trend, up, Icon, wrap }) => (
+              {KPIS.map(({ label, tag, tagClass, value, Icon, wrap }) => (
                 <article
                   key={label}
-                  className="flex min-h-[4.5rem] flex-col justify-between rounded-lg border border-black/5 bg-[#f7f8f8] p-2.5"
+                  className="rounded-lg border border-black/5 bg-white p-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
                 >
                   <div className="flex items-start justify-between gap-1">
-                    <div className="min-w-0">
-                      <p className="text-base font-semibold text-neutral-800">
-                        {value}
-                      </p>
-                      <p className="truncate text-[9px] leading-tight text-neutral-500">
-                        {label}
-                      </p>
-                    </div>
+                    <p className="truncate text-[8px] text-neutral-500">{label}</p>
+                    {tag ? (
+                      <span className={`shrink-0 text-[7px] font-medium ${tagClass}`}>
+                        {tag}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-1.5 flex items-end justify-between">
+                    <p className="text-base font-semibold leading-none text-neutral-800">
+                      {value}
+                    </p>
                     <span
                       className={`inline-flex size-5 shrink-0 items-center justify-center rounded-md text-white ${wrap}`}
                     >
                       <Icon className="size-2.5" />
                     </span>
                   </div>
-                  <p
-                    className={`text-[9px] font-medium ${up ? "text-[#16A34A]" : "text-[#DC2626]"}`}
-                  >
-                    {trend}
-                  </p>
                 </article>
               ))}
             </div>
-            <div className="mt-3 space-y-1.5">
-              {RESERVATIONS.map((row) => (
-                <div
-                  key={row.name}
-                  className="flex items-center gap-2 rounded-lg border border-black/5 p-2"
-                >
-                  <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#5e6ad2]/10 text-[9px] font-semibold text-[#5e6ad2]">
-                    {row.name
-                      .split(" ")
-                      .map((part) => part[0])
-                      .join("")}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[10px] font-medium text-neutral-800">
-                      {row.name}
-                    </p>
-                    <p className="truncate text-[9px] text-neutral-500">
-                      {row.detail}
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-medium capitalize ${STATUS_CLASS[row.status]}`}
+
+            <div className="mt-3 rounded-lg border border-black/5 p-2.5">
+              <p className="mb-2 text-[9px] font-semibold text-neutral-700">
+                Day Schedule
+              </p>
+              <div className="space-y-1.5">
+                {SCHEDULE.map((row) => (
+                  <div
+                    key={row.time}
+                    className="flex items-center gap-2 rounded-md bg-[#5e6ad2]/8 px-2 py-1.5"
                   >
-                    {row.status}
-                  </span>
-                </div>
-              ))}
+                    <span className="w-12 shrink-0 text-[8px] text-neutral-500">
+                      {row.time}
+                    </span>
+                    <div className="min-w-0 flex-1 border-s-2 border-[#5e6ad2] ps-2">
+                      <p className="truncate text-[9px] font-medium text-neutral-800">
+                        {row.title}
+                      </p>
+                      <p className="truncate text-[8px] text-neutral-500">
+                        {row.patient}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
