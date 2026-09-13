@@ -7,7 +7,15 @@ describe("settings tab in the URL", () => {
   it("names every tab with a readable slug", () => {
     assert.deepEqual(
       [...SETTINGS_TABS],
-      ["dashboard", "clinic-hours", "site", "clinic-prices", "whatsapp-ai", "patient-notifications"],
+      [
+        "dashboard",
+        "clinic-hours",
+        "site",
+        "clinic-prices",
+        "whatsapp-ai",
+        "patient-notifications",
+        "deposits",
+      ],
     );
     assert.equal(DEFAULT_SETTINGS_TAB, "dashboard");
   });

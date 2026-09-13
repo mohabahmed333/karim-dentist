@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChartingFeesEditor } from "./ChartingFeesEditor";
 import { ClinicHoursEditor } from "./ClinicHoursEditor";
+import { DepositSettingsForm } from "./DepositSettingsForm";
 import { NotificationSettingsForm } from "./NotificationSettingsForm";
 import { SettingsDashboardForm } from "./SettingsDashboardForm";
 import { SettingsSiteForm } from "./SettingsSiteForm";
@@ -77,6 +78,14 @@ export function SettingsEditor({ settings }: Props) {
         >
           {t("admin.settings.notifications")}
         </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={tab === "deposits" ? "default" : "outline"}
+          onClick={() => void setTab("deposits")}
+        >
+          {t("admin.settings.deposits")}
+        </Button>
       </div>
       {tab === "dashboard" ? (
         <Card className="max-w-4xl gap-0 p-6">
@@ -97,6 +106,10 @@ export function SettingsEditor({ settings }: Props) {
       ) : tab === "patient-notifications" ? (
         <Card className="max-w-6xl gap-0 p-6">
           <NotificationSettingsForm />
+        </Card>
+      ) : tab === "deposits" ? (
+        <Card className="max-w-3xl gap-0 p-6">
+          <DepositSettingsForm />
         </Card>
       ) : (
         <Card className="w-full max-w-none gap-0 p-6">

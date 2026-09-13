@@ -87,6 +87,7 @@ export const adminEn = {
   "admin.nav.faq": "FAQ",
   "admin.nav.knowledge": "Clinic knowledge",
   "admin.nav.assistantReview": "Assistant review",
+  "admin.nav.deposits": "Deposits",
   "admin.nav.waitlist": "Waitlist",
   "admin.nav.outbox": "Patient messages",
   "admin.nav.messagingGroup": "Messaging",
@@ -109,6 +110,8 @@ export const adminEn = {
 
   "admin.pages.waitlist.title": "Waitlist",
   "admin.pages.waitlist.description": "Patients waiting for an earlier time. A cancelled slot is offered to the longest-waiting patients whose window fits.",
+  "admin.pages.deposits.title": "Deposits",
+  "admin.pages.deposits.description": "Receipts a patient sent for a deposit. Anything the assistant was unsure about waits here, with the slot still held.",
   "admin.pages.assistantReview.title": "Assistant review",
   "admin.pages.assistantReview.description": "Drafts your team rewrote before sending. Each one shows where the WhatsApp assistant needs more to go on.",
   "admin.pages.knowledge.title": "Clinic knowledge",
@@ -376,6 +379,7 @@ export const adminEn = {
   "admin.settings.brand": "Site",
   "admin.settings.whatsappAi": "WhatsApp AI",
   "admin.settings.notifications": "Patient notifications",
+  "admin.settings.deposits": "Deposits",
   "admin.settings.description":
     "Clinic hours, dashboard theme, site brand, and treatment prices.",
   "admin.settings.account": "Account",

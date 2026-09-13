@@ -31,6 +31,11 @@ export type FeatureFacts = {
     kapsoWebhookSecret: boolean;
     serviceRole: boolean;
     aiKey: boolean;
+    /**
+     * A key for a model that can read an image — not the same question as
+     * `aiKey`. A deploy holding only GROQ_API_KEY has models but no eyes.
+     */
+    visionKey: boolean;
   };
   /** False when the production database has not had the migrations applied. */
   notificationTablesPresent: boolean;
@@ -45,6 +50,15 @@ export type FeatureFacts = {
   ai: { mode: AiMode; allowBookingWrites: boolean } | null;
   publishedKnowledge: number | null;
   clinicMapUrl: boolean;
+  /** False when the deposit migrations have not been applied. */
+  depositTablesPresent: boolean;
+  deposits: {
+    enabled: boolean;
+    autoConfirm: boolean;
+    amountEgp: number;
+    hasDestination: boolean;
+    recipientNames: number;
+  } | null;
 };
 
 const c = (key: string, label: string, met: boolean | null, why: string, fix: string): Condition => ({
@@ -69,6 +83,13 @@ export const FIX = {
   webhook: "Add KAPSO_WEBHOOK_SECRET in Vercel, and point the Kapso webhook at /api/v1/whatsapp/webhook.",
   aiAuto: "Settings → WhatsApp AI: set the assistant to Replies.",
   bookingWrites: "Settings → WhatsApp AI: allow the assistant to book and cancel appointments.",
+  depositsOn: "Settings → Deposits: switch deposits on, then Save.",
+  depositAmount: "Settings → Deposits: set the deposit amount above zero.",
+  depositDestination: "Settings → Deposits: add the clinic's InstaPay handle or wallet number.",
+  depositRecipientNames: "Settings → Deposits: add the clinic's account name exactly as it prints on a receipt, in Arabic too if that is how it appears.",
+  visionKey: "Add GEMINI_API_KEY in Vercel (Production), then redeploy. Groq has no model that can read an image.",
+  depositAutoConfirm: "Settings → Deposits: switch on \"confirm clean receipts automatically\" once the queue shows the readings are right.",
+  watchQueue: "Nothing can check this: someone has to open /admin/deposits often enough that a held slot is not lost while it waits.",
 } as const;
 
 /** Everything any outbound message needs, before its own template. */
@@ -133,6 +154,33 @@ export function templateCondition(kind: string, f: FeatureFacts): Condition {
  */
 export function databaseUpdated(f: FeatureFacts, why: string): Condition {
   return c("migrations", "Database updated with the new tables", f.notificationTablesPresent, why, FIX.migrations);
+}
+
+/**
+ * What a deposit needs before a single patient can be asked for one.
+ *
+ * The recipient-names condition looks fussy and is the most important of them:
+ * with nothing to match against, every receipt fails the recipient check and
+ * lands in the staff queue, so the feature appears to work and quietly does
+ * none of the work it was turned on for.
+ */
+export function depositsConfigured(f: FeatureFacts): Condition[] {
+  return [
+    c("deposit_migrations", "Database updated with the deposit tables", f.depositTablesPresent,
+      "Nothing can be held or recorded at all.", FIX.migrations),
+    c("deposits_on", "Deposits switched on", Boolean(f.deposits?.enabled),
+      "Bookings are taken as they always were, with no deposit asked for.", FIX.depositsOn),
+    c("deposit_amount", "A deposit amount is set", (f.deposits?.amountEgp ?? 0) > 0,
+      "With no amount there is nothing to ask for, so the slot is booked normally.", FIX.depositAmount),
+    c("deposit_destination", "Somewhere to send the money", Boolean(f.deposits?.hasDestination),
+      "Without an InstaPay handle or wallet number the patient would be asked to transfer to nothing, so the booking is taken normally instead.", FIX.depositDestination),
+    c("deposit_recipient_names", "The clinic's account name, as it prints on a receipt",
+      (f.deposits?.recipientNames ?? 0) > 0,
+      "Every receipt then fails the check on who was paid and waits for staff — the feature looks like it is working while collecting nothing automatically.",
+      FIX.depositRecipientNames),
+    c("vision_key", "A model that can read an image", f.env.visionKey,
+      "Receipts are queued for staff with no reading at all; only Gemini can see here.", FIX.visionKey),
+  ];
 }
 
 export function assistantOn(f: FeatureFacts): Condition[] {

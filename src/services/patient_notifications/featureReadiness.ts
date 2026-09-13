@@ -7,10 +7,11 @@
  */
 
 import {
+  FIX,
   assistantActs,
   assistantOn,
   databaseUpdated,
-  FIX,
+  depositsConfigured,
   sendPipeline,
   templateCondition,
   type Condition,
@@ -52,6 +53,35 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
       title: "Booking confirmations",
       summary: "The patient gets a WhatsApp message as soon as an appointment is booked, from any source.",
       conditions: [...pipeline, templateCondition("confirmation", f)],
+    },
+    {
+      key: "deposits",
+      title: "Deposits before a booking is confirmed",
+      summary:
+        "A slot booked over WhatsApp is only held until the patient sends a receipt for the deposit. Unpaid holds are released and offered to the waitlist.",
+      conditions: [...depositsConfigured(f), ...assistantActs(f)],
+    },
+    {
+      key: "deposits_auto",
+      title: "Confirming a deposit without staff",
+      summary:
+        "A receipt that passes every check confirms the appointment on its own; anything unclear waits for a person.",
+      conditions: [
+        ...depositsConfigured(f),
+        {
+          key: "deposit_auto_confirm",
+          label: "Clean receipts confirm automatically",
+          met: f.deposits === null ? null : f.deposits.autoConfirm,
+          why: "Every receipt waits for staff instead, so a patient is not confirmed until someone opens the queue.",
+          fix: FIX.depositAutoConfirm,
+        },
+        manual(
+          "watch_deposits_queue",
+          "Someone watches the deposits queue",
+          "A receipt we could not read waits indefinitely: its hold is deliberately frozen so the patient does not lose the slot, which also means nothing releases it until a person looks.",
+          FIX.watchQueue,
+        ),
+      ],
     },
     {
       key: "reminders",

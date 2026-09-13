@@ -89,6 +89,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.nav.faq": "الأسئلة الشائعة",
   "admin.nav.knowledge": "معلومات العيادة",
   "admin.nav.assistantReview": "مراجعة المساعد",
+  "admin.nav.deposits": "المقدمات",
   "admin.nav.waitlist": "قائمة الانتظار",
   "admin.nav.outbox": "رسائل المرضى",
   "admin.nav.messagingGroup": "المراسلة",
@@ -111,6 +112,8 @@ export const adminAr: Record<AdminMessageKey, string> = {
 
   "admin.pages.waitlist.title": "قائمة الانتظار",
   "admin.pages.waitlist.description": "المرضى المنتظرون لموعد أقرب. أي موعد يُلغى يُعرض على أقدم المنتظرين الذين يناسبهم التوقيت.",
+  "admin.pages.deposits.title": "المقدمات",
+  "admin.pages.deposits.description": "إيصالات التحويل اللي بعتها المرضى. أي إيصال المساعد مش متأكد منه بيستنى هنا، والميعاد لسه محفوظ.",
   "admin.pages.assistantReview.title": "مراجعة المساعد",
   "admin.pages.assistantReview.description": "المسودات التي عدّلها الفريق قبل الإرسال. كل واحدة توضح أين يحتاج المساعد لمعلومات أكثر.",
   "admin.pages.knowledge.title": "معلومات العيادة",
@@ -378,6 +381,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.settings.brand": "الموقع",
   "admin.settings.whatsappAi": "ذكاء واتساب الاصطناعي",
   "admin.settings.notifications": "تنبيهات المرضى",
+  "admin.settings.deposits": "المقدم",
   "admin.settings.description":
     "ساعات العيادة وسمة اللوحة وعلامة الموقع وأسعار العلاجات.",
   "admin.settings.account": "الحساب",

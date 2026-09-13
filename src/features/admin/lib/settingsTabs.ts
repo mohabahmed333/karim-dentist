@@ -13,6 +13,7 @@ export const SETTINGS_TABS = [
   "clinic-prices",
   "whatsapp-ai",
   "patient-notifications",
+  "deposits",
 ] as const;
 
 export type SettingsTab = (typeof SETTINGS_TABS)[number];

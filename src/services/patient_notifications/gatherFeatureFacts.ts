@@ -7,7 +7,7 @@
  */
 
 import type { createServiceClient } from "@/lib/supabase/service";
-import { hasAnyAiKey } from "@/services/ai_chat";
+import { hasAnyAiKey, resolveVisionChain } from "@/services/ai_chat";
 import { loadAiSettings } from "@/services/whatsapp_ai/store";
 import type { AiMode, FeatureFacts } from "./featureConditions";
 import { approvedTemplateNames, cronScheduled, hasKapsoConfig } from "./gatherReadiness";
@@ -22,7 +22,7 @@ export async function gatherFeatureFacts(
   // Meta for the template list once rather than twice.
   known: { approvedTemplateNames?: string[] | null; cronScheduled?: boolean | null } = {},
 ): Promise<FeatureFacts> {
-  const [templates, scheduled, settings, ai, knowledge, site] = await Promise.all([
+  const [templates, scheduled, settings, ai, knowledge, site, deposits] = await Promise.all([
     known.approvedTemplateNames !== undefined
       ? Promise.resolve(known.approvedTemplateNames)
       : approvedTemplateNames(),
@@ -39,6 +39,11 @@ export async function gatherFeatureFacts(
       .eq("is_published", true)
       .is("deleted_at", null),
     db.from("site_settings").select("contact_map_url").limit(1).maybeSingle(),
+    db
+      .from("deposit_settings")
+      .select("enabled,auto_confirm,amount_egp,instapay_handle,wallet_number,recipient_names")
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   return {
@@ -49,6 +54,8 @@ export async function gatherFeatureFacts(
       serviceRole: present(process.env.SUPABASE_SERVICE_ROLE_KEY),
       // Any provider in the chain will do — the assistant only needs one.
       aiKey: hasAnyAiKey(),
+      // Reading a receipt is a different question: most of the chain is blind.
+      visionKey: resolveVisionChain().length > 0,
     },
     // Any error reading the settings table is treated as "not migrated": a
     // conservative false beats telling staff a feature works when it cannot.
@@ -65,5 +72,16 @@ export async function gatherFeatureFacts(
     ai: ai ? { mode: ai.mode as AiMode, allowBookingWrites: ai.allow_booking_writes } : null,
     publishedKnowledge: knowledge.error ? null : (knowledge.count ?? 0),
     clinicMapUrl: present(site.data?.contact_map_url ?? undefined),
+    depositTablesPresent: !deposits.error,
+    deposits: deposits.data
+      ? {
+          enabled: deposits.data.enabled,
+          autoConfirm: deposits.data.auto_confirm,
+          amountEgp: Number(deposits.data.amount_egp),
+          hasDestination:
+            present(deposits.data.instapay_handle) || present(deposits.data.wallet_number),
+          recipientNames: (deposits.data.recipient_names ?? []).filter((n) => n.trim()).length,
+        }
+      : null,
   };
 }

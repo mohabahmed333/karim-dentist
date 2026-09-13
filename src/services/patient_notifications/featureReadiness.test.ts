@@ -10,7 +10,14 @@ import { buildTemplateForKind } from "./templateParams.ts";
 const ALL_APPROVED = ["appoinment_en", "appoinment_ar", "reminder_en", "reminder_ar"];
 
 const ready = (over: Record<string, unknown> = {}) => ({
-  env: { cronSecret: true, kapso: true, kapsoWebhookSecret: true, serviceRole: true, aiKey: true },
+  env: {
+    cronSecret: true,
+    kapso: true,
+    kapsoWebhookSecret: true,
+    serviceRole: true,
+    aiKey: true,
+    visionKey: true,
+  },
   notificationTablesPresent: true,
   notifications: { mode: "send", recallEnabled: true, reminderLeadMinutes: 1440 },
   cronScheduled: true,
@@ -18,6 +25,14 @@ const ready = (over: Record<string, unknown> = {}) => ({
   ai: { mode: "auto", allowBookingWrites: true },
   publishedKnowledge: 5,
   clinicMapUrl: true,
+  depositTablesPresent: true,
+  deposits: {
+    enabled: true,
+    autoConfirm: true,
+    amountEgp: 200,
+    hasDestination: true,
+    recipientNames: 1,
+  },
   ...over,
 });
 
@@ -136,5 +151,59 @@ describe("evaluateFeatures", () => {
     for (const kind of new Set(PATIENT_TEMPLATES.map((t: { kind: string }) => t.kind))) {
       assert.notEqual(buildTemplateForKind(kind, input), null, `${kind} is listed but has no builder`);
     }
+  });
+});
+
+describe("evaluateFeatures — deposits", () => {
+  it("works once configured, and needs the assistant able to book", () => {
+    assert.equal(feature(ready(), "deposits").state, "working");
+    assert.deepEqual(unmet(ready({ ai: { mode: "draft_only", allowBookingWrites: true } }), "deposits"), [
+      "ai_auto",
+    ]);
+  });
+
+  it("blocks with nothing to match a receipt's recipient against", () => {
+    // The quiet failure this condition exists for: everything else is fine, so
+    // the feature looks healthy while collecting nothing automatically.
+    const facts = ready({
+      deposits: { enabled: true, autoConfirm: true, amountEgp: 200, hasDestination: true, recipientNames: 0 },
+    });
+    assert.deepEqual(unmet(facts, "deposits"), ["deposit_recipient_names"]);
+  });
+
+  it("blocks when no model can read an image, even with an AI key set", () => {
+    const facts = ready({
+      env: { cronSecret: true, kapso: true, kapsoWebhookSecret: true, serviceRole: true, aiKey: true, visionKey: false },
+    });
+    assert.deepEqual(unmet(facts, "deposits"), ["vision_key"]);
+  });
+
+  it("blocks on an amount of zero and on having nowhere to send it", () => {
+    const facts = ready({
+      deposits: { enabled: true, autoConfirm: true, amountEgp: 0, hasDestination: false, recipientNames: 1 },
+    });
+    assert.deepEqual(unmet(facts, "deposits"), ["deposit_amount", "deposit_destination"]);
+  });
+
+  it("reports the tables missing on a database without the migrations", () => {
+    const facts = ready({ depositTablesPresent: false, deposits: null });
+    assert.ok(unmet(facts, "deposits").includes("deposit_migrations"));
+  });
+
+  it("separates automatic confirmation from the feature itself", () => {
+    const facts = ready({
+      deposits: { enabled: true, autoConfirm: false, amountEgp: 200, hasDestination: true, recipientNames: 1 },
+    });
+    // Collecting deposits still works; only confirming without staff does not.
+    assert.equal(feature(facts, "deposits").state, "working");
+    assert.deepEqual(unmet(facts, "deposits_auto"), ["deposit_auto_confirm"]);
+  });
+
+  it("always asks someone to confirm they watch the queue", () => {
+    // Nothing can verify this, and a frozen hold waits forever without it.
+    const conditions = feature(ready(), "deposits_auto").conditions;
+    const manual = conditions.filter((c: { met: boolean | null }) => c.met === null);
+    assert.deepEqual(manual.map((c: { key: string }) => c.key), ["watch_deposits_queue"]);
+    assert.equal(feature(ready(), "deposits_auto").state, "check");
   });
 });
