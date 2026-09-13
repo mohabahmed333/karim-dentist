@@ -718,6 +718,212 @@ export type Database = {
           },
         ]
       }
+      deposit_receipts: {
+        Row: {
+          amount_egp: number | null
+          confidence: number | null
+          created_at: string
+          deposit_request_id: string
+          extracted: Json
+          id: string
+          image_sha256: string
+          image_url: string
+          latency_ms: number | null
+          message_id: string
+          model: string
+          prompt_version: string
+          recipient_handle: string | null
+          recipient_name: string | null
+          reference: string | null
+          sender_name: string | null
+          transferred_at: string | null
+          /** Immutable after insert: a partial unique index depends on it. */
+          verdict: string
+          verdict_reason: string
+        }
+        Insert: {
+          amount_egp?: number | null
+          confidence?: number | null
+          created_at?: string
+          deposit_request_id: string
+          extracted?: Json
+          id?: string
+          image_sha256?: string
+          image_url?: string
+          latency_ms?: number | null
+          message_id: string
+          model?: string
+          prompt_version?: string
+          recipient_handle?: string | null
+          recipient_name?: string | null
+          reference?: string | null
+          sender_name?: string | null
+          transferred_at?: string | null
+          verdict: string
+          verdict_reason?: string
+        }
+        Update: {
+          amount_egp?: number | null
+          confidence?: number | null
+          created_at?: string
+          deposit_request_id?: string
+          extracted?: Json
+          id?: string
+          image_sha256?: string
+          image_url?: string
+          latency_ms?: number | null
+          message_id?: string
+          model?: string
+          prompt_version?: string
+          recipient_handle?: string | null
+          recipient_name?: string | null
+          reference?: string | null
+          sender_name?: string | null
+          transferred_at?: string | null
+          verdict?: string
+          verdict_reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposit_receipts_deposit_request_id_fkey"
+            columns: ["deposit_request_id"]
+            isOneToOne: false
+            referencedRelation: "deposit_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deposit_receipts_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deposit_requests: {
+        Row: {
+          amount_egp: number
+          conversation_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string
+          /** Absolute, set once when the hold is taken. */
+          expires_at: string
+          id: string
+          phone: string
+          reservation_id: string
+          /** What the patient was actually told to pay, and where. */
+          settings_snapshot: Json
+          slot_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_egp: number
+          conversation_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string
+          expires_at: string
+          id?: string
+          phone: string
+          reservation_id: string
+          settings_snapshot?: Json
+          slot_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_egp?: number
+          conversation_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          reservation_id?: string
+          settings_snapshot?: Json
+          slot_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposit_requests_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deposit_requests_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: true
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deposit_requests_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deposit_settings: {
+        Row: {
+          amount_egp: number
+          amount_tolerance_egp: number
+          auto_confirm: boolean
+          currency: string
+          enabled: boolean
+          hold_minutes: number
+          id: string
+          instapay_handle: string
+          min_confidence: number
+          receipt_max_age_hours: number
+          /** How the clinic's own name prints on a receipt. */
+          recipient_names: string[]
+          updated_at: string
+          wallet_number: string
+        }
+        Insert: {
+          amount_egp?: number
+          amount_tolerance_egp?: number
+          auto_confirm?: boolean
+          currency?: string
+          enabled?: boolean
+          hold_minutes?: number
+          id?: string
+          instapay_handle?: string
+          min_confidence?: number
+          receipt_max_age_hours?: number
+          recipient_names?: string[]
+          updated_at?: string
+          wallet_number?: string
+        }
+        Update: {
+          amount_egp?: number
+          amount_tolerance_egp?: number
+          auto_confirm?: boolean
+          currency?: string
+          enabled?: boolean
+          hold_minutes?: number
+          id?: string
+          instapay_handle?: string
+          min_confidence?: number
+          receipt_max_age_hours?: number
+          recipient_names?: string[]
+          updated_at?: string
+          wallet_number?: string
+        }
+        Relationships: []
+      }
       experience_entries: {
         Row: {
           created_at: string
@@ -1881,6 +2087,7 @@ export type Database = {
         Row: {
           created_at: string
           deleted_at: string | null
+          deposit_hold: boolean
           email: string | null
           id: string
           notes: string
@@ -1896,6 +2103,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deleted_at?: string | null
+          deposit_hold?: boolean
           email?: string | null
           id?: string
           notes?: string
@@ -1911,6 +2119,7 @@ export type Database = {
         Update: {
           created_at?: string
           deleted_at?: string | null
+          deposit_hold?: boolean
           email?: string | null
           id?: string
           notes?: string
@@ -2941,6 +3150,23 @@ export type Database = {
         }
         Returns: string
       }
+      book_slot_with_deposit_hold: {
+        Args: {
+          p_amount_egp?: number
+          p_conversation_id?: string
+          p_email?: string
+          p_hold_minutes?: number
+          p_notes?: string
+          p_patient_name: string
+          p_phone: string
+          p_service_id?: string
+          p_service_label?: string
+          p_settings?: Json
+          p_slot_id: string
+        }
+        /** { reservation_id, deposit_request_id, expires_at } */
+        Returns: Json
+      }
       cancel_reservation_and_release_slot: {
         Args: { p_phone?: string; p_reservation_id: string }
         Returns: string
@@ -2952,6 +3178,14 @@ export type Database = {
           p_max_requests: number
           p_window_seconds: number
         }
+        Returns: boolean
+      }
+      confirm_deposit_paid: {
+        Args: { p_decided_by?: string; p_deposit_request_id: string; p_reason?: string }
+        Returns: boolean
+      }
+      expire_deposit_hold: {
+        Args: { p_deposit_request_id: string }
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
@@ -2968,6 +3202,10 @@ export type Database = {
         Returns: undefined
       }
       record_canned_reply_use: { Args: { p_id: string }; Returns: undefined }
+      reject_deposit: {
+        Args: { p_decided_by?: string; p_deposit_request_id: string; p_reason?: string }
+        Returns: boolean
+      }
       reschedule_reservation_to_slot: {
         Args: { p_phone?: string; p_reservation_id: string; p_slot_id: string }
         Returns: string

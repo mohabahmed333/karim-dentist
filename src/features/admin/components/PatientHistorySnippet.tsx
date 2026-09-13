@@ -31,6 +31,7 @@ export function PatientHistorySnippet({
 
   const probe: Reservation = {
     id: excludeId ?? "probe",
+    deposit_hold: false,
     patient_name: patientName,
     phone,
     phone_suffix: phoneSuffixForLookup(phone) ?? "",

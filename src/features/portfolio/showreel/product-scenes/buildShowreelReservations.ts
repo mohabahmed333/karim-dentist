@@ -7,6 +7,7 @@ export function buildShowreelReservations(): Reservation[] {
   const now = new Date().toISOString();
   return RESERVATION_FIXTURES.map((row) => ({
     id: row.id,
+    deposit_hold: false,
     patient_name: row.patientName,
     phone: row.phone,
     phone_suffix: phoneSuffixForLookup(row.phone) ?? "",

@@ -220,6 +220,7 @@ export function useReservationEditor(initial: Reservation[]) {
         : now;
       const row: Reservation = {
         id: crypto.randomUUID(),
+        deposit_hold: false,
         patient_name: form.patient_name || "New patient",
         phone: form.phone,
         phone_suffix: phoneSuffixForLookup(form.phone) ?? "",
