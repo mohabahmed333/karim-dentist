@@ -146,18 +146,29 @@ export async function cancelReservationAndReleaseSlot(input: {
   if (error) throw error;
 }
 
-/** Book the open slot whose starts_at matches (admin schedule sync). */
+/**
+ * Book the open slot whose starts_at matches (admin schedule sync).
+ *
+ * `doctorId` scopes the match once more than one doctor exists — starts_at
+ * alone is no longer unique clinic-wide, only per doctor. Pass the doctor the
+ * reservation already carries (drag-reschedule keeps the same doctor); pass
+ * `null` to match a legacy, doctor-less slot.
+ */
 export async function bookOpenSlotMatchingStartsAt(input: {
   startsAtIso: string;
   reservationId: string;
+  doctorId?: string | null;
 }): Promise<AppointmentSlot | null> {
   const supabase = createClient();
-  const { data: slot, error: findError } = await supabase
+  let query = supabase
     .from("appointment_slots")
     .select("*")
     .eq("status", "open")
-    .eq("starts_at", input.startsAtIso)
-    .maybeSingle();
+    .eq("starts_at", input.startsAtIso);
+  query = input.doctorId
+    ? query.eq("doctor_id", input.doctorId)
+    : query.is("doctor_id", null);
+  const { data: slot, error: findError } = await query.maybeSingle();
   if (findError) throw findError;
   if (!slot) return null;
   return bookAppointmentSlot({
