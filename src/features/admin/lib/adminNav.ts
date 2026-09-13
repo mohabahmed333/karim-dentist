@@ -159,6 +159,9 @@ export const adminNavSections: AdminNavSection[] = [
         defaultOpen: true,
         items: [
           { href: "/admin/waitlist", labelKey: "admin.nav.waitlist", permission: "waitlist.view" },
+          // A deposit belongs to a booking, and the page gates on the same
+          // permission the reservations list does.
+          { href: "/admin/deposits", labelKey: "admin.nav.deposits", permission: "reservations.view" },
         ],
       },
       { href: "/admin/patients", labelKey: "admin.nav.patients", permission: "patients.view" },
