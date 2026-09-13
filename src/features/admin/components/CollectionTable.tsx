@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowDownUp,
   Columns3,
@@ -729,40 +730,50 @@ export function CollectionTable<T>({
         </div>
       ) : null}
 
-      {showSelection && selectedRows.length > 0 ? (
-        <div className="pointer-events-none sticky bottom-3 z-20 flex justify-center px-3 pb-1">
-          <div className="pointer-events-auto flex max-w-full items-stretch overflow-hidden rounded-full bg-[#1A1A1A] text-[12px] font-medium text-white shadow-[0_10px_30px_rgba(0,0,0,0.28)]">
-            <span className="whitespace-nowrap px-4 py-2.5">
-              {t("admin.table.selected")
-                .replace("{count}", String(selectedRows.length))
-                .replace(
-                  "{entity}",
-                  bulkEntityLabel ?? t("admin.table.items"),
-                )}
-            </span>
-            {(bulkActions ?? []).map((action) => (
-              <button
-                key={action.id}
-                type="button"
-                onClick={() => void action.onClick(selectedRows)}
-                className={cn(
-                  "whitespace-nowrap border-s border-white/15 px-4 py-2.5 transition hover:bg-white/10",
-                  action.tone === "danger" && "text-red-300 hover:bg-red-500/20",
-                )}
-              >
-                {action.label}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setSelected(new Set())}
-              className="whitespace-nowrap border-s border-white/15 px-4 py-2.5 text-white/70 transition hover:bg-white/10 hover:text-white"
-            >
-              {t("admin.table.clearSelection")}
-            </button>
-          </div>
-        </div>
-      ) : null}
+      {/* Pinned to the bottom of the screen and portaled out of the table, whose
+          framed wrapper is overflow-hidden and would clip it. Nothing to
+          mismatch on hydration: selection starts empty, so the bar can only
+          appear once someone has ticked a checkbox. */}
+      {typeof document !== "undefined" &&
+      showSelection &&
+      selectedRows.length > 0
+        ? createPortal(
+            <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[80] flex justify-center px-3">
+              <div className="pointer-events-auto flex max-w-full items-stretch overflow-hidden rounded-lg bg-[#1A1A1A] text-[12px] font-medium text-white shadow-[0_10px_30px_rgba(0,0,0,0.28)]">
+                <span className="whitespace-nowrap px-4 py-2.5">
+                  {t("admin.table.selected")
+                    .replace("{count}", String(selectedRows.length))
+                    .replace(
+                      "{entity}",
+                      bulkEntityLabel ?? t("admin.table.items"),
+                    )}
+                </span>
+                {(bulkActions ?? []).map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    onClick={() => void action.onClick(selectedRows)}
+                    className={cn(
+                      "whitespace-nowrap border-s border-white/15 px-4 py-2.5 transition hover:bg-white/10",
+                      action.tone === "danger" &&
+                        "text-red-300 hover:bg-red-500/20",
+                    )}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setSelected(new Set())}
+                  className="whitespace-nowrap border-s border-white/15 px-4 py-2.5 text-white/70 transition hover:bg-white/10 hover:text-white"
+                >
+                  {t("admin.table.clearSelection")}
+                </button>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
