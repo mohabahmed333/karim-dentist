@@ -23,7 +23,7 @@ export function AuthDashboardMockup() {
         <div
           className="relative rounded-[2.6rem] bg-[#111114] p-4 ring-1 ring-white/25"
           style={{
-            transform: "rotateX(2deg) rotateY(-16deg) rotateZ(34deg)",
+            transform: "rotateX(12deg) rotateY(-3deg) rotateZ(34deg)",
             transformOrigin: "left center",
           }}
         >
