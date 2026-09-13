@@ -10,6 +10,7 @@ import {
   upsertMessageFromKapso,
 } from "./mutations";
 import { kapsoMessageBody, isUnsupportedKapsoType } from "./messageMedia";
+import { storeAdReferral } from "./storeAdReferral";
 import type { createServiceClient } from "@/lib/supabase/service";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
@@ -118,6 +119,12 @@ async function handleMessageEvent(
     },
   );
   const stored = await upsertMessageFromKapso(supabase, conv.id, message, direction);
+
+  // Where this conversation came from, if the first message says. Almost
+  // always absent; see storeAdReferral for why it is attempted anyway.
+  if (direction === "inbound") {
+    await storeAdReferral(supabase, conv.id, stored?.id ?? null, message).catch(() => false);
+  }
 
   if (direction !== "inbound") return null;
   if (!stored) return null;

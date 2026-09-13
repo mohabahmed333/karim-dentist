@@ -2727,6 +2727,63 @@ export type Database = {
           },
         ]
       }
+      whatsapp_ad_referrals: {
+        Row: {
+          body: string | null
+          conversation_id: string
+          created_at: string
+          ctwa_clid: string | null
+          headline: string | null
+          id: string
+          media_url: string | null
+          message_id: string | null
+          source_id: string | null
+          source_type: string | null
+          source_url: string | null
+        }
+        Insert: {
+          body?: string | null
+          conversation_id: string
+          created_at?: string
+          ctwa_clid?: string | null
+          headline?: string | null
+          id?: string
+          media_url?: string | null
+          message_id?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          source_url?: string | null
+        }
+        Update: {
+          body?: string | null
+          conversation_id?: string
+          created_at?: string
+          ctwa_clid?: string | null
+          headline?: string | null
+          id?: string
+          media_url?: string | null
+          message_id?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          source_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_ad_referrals_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_ad_referrals_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_ai_events: {
         Row: {
           confidence: number | null
