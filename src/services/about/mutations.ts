@@ -1,11 +1,16 @@
-import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
+import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { About, AboutUpdate } from "./types";
 
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createBrowserClient>;
+
 export async function updateAbout(
+  supabase: AnySupabase,
   id: string,
   payload: AboutUpdate,
 ): Promise<About> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("about")
     .update({ ...payload, updated_at: new Date().toISOString() })
@@ -16,8 +21,10 @@ export async function updateAbout(
   return data;
 }
 
-export async function createAbout(payload: AboutUpdate): Promise<About> {
-  const supabase = createClient();
+export async function createAbout(
+  supabase: AnySupabase,
+  payload: AboutUpdate,
+): Promise<About> {
   const { data, error } = await supabase
     .from("about")
     .insert({
@@ -36,9 +43,10 @@ export async function createAbout(payload: AboutUpdate): Promise<About> {
 }
 
 export async function upsertAbout(
+  supabase: AnySupabase,
   existing: About | null,
   payload: AboutUpdate,
 ): Promise<About> {
-  if (existing) return updateAbout(existing.id, payload);
-  return createAbout(payload);
+  if (existing) return updateAbout(supabase, existing.id, payload);
+  return createAbout(supabase, payload);
 }

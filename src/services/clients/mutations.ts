@@ -1,8 +1,15 @@
-import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
+import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { Client, ClientInsert, ClientUpdate } from "./types";
 
-export async function createClientRow(payload: ClientInsert): Promise<Client> {
-  const supabase = createClient();
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createBrowserClient>;
+
+export async function createClientRow(
+  supabase: AnySupabase,
+  payload: ClientInsert,
+): Promise<Client> {
   const { data, error } = await supabase
     .from("clients")
     .insert(payload)
@@ -13,10 +20,10 @@ export async function createClientRow(payload: ClientInsert): Promise<Client> {
 }
 
 export async function updateClient(
+  supabase: AnySupabase,
   id: string,
   payload: ClientUpdate,
 ): Promise<Client> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("clients")
     .update({ ...payload, updated_at: new Date().toISOString() })
@@ -27,8 +34,10 @@ export async function updateClient(
   return data;
 }
 
-export async function softDeleteClient(id: string): Promise<void> {
-  const supabase = createClient();
+export async function softDeleteClient(
+  supabase: AnySupabase,
+  id: string,
+): Promise<void> {
   const { error } = await supabase
     .from("clients")
     .update({ deleted_at: new Date().toISOString() })

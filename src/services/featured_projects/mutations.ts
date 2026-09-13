@@ -1,12 +1,17 @@
-import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
+import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { FeaturedInsert, FeaturedProject, FeaturedUpdate } from "./types";
 import { resolveFeaturedUniqueSlug } from "./queries";
 import { isBlankSlug } from "@/services/case_studies/slug";
 
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createBrowserClient>;
+
 export async function createFeatured(
+  supabase: AnySupabase,
   payload: FeaturedInsert,
 ): Promise<FeaturedProject> {
-  const supabase = createClient();
   const slug = isBlankSlug(payload.slug)
     ? await resolveFeaturedUniqueSlug(payload.title)
     : payload.slug;
@@ -20,10 +25,10 @@ export async function createFeatured(
 }
 
 export async function updateFeatured(
+  supabase: AnySupabase,
   id: string,
   payload: FeaturedUpdate,
 ): Promise<FeaturedProject> {
-  const supabase = createClient();
   const next: FeaturedUpdate = {
     ...payload,
     updated_at: new Date().toISOString(),
@@ -49,8 +54,10 @@ export async function updateFeatured(
   return data;
 }
 
-export async function softDeleteFeatured(id: string): Promise<void> {
-  const supabase = createClient();
+export async function softDeleteFeatured(
+  supabase: AnySupabase,
+  id: string,
+): Promise<void> {
   const { error } = await supabase
     .from("featured_projects")
     .update({ deleted_at: new Date().toISOString() })

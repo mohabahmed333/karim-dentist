@@ -1,3 +1,3 @@
 export * from "./queries";
-export * from "./mutations";
+export * from "./actions";
 export type { Client, ClientInsert, ClientUpdate } from "./types";

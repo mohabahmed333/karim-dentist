@@ -1,10 +1,17 @@
-import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
+import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { Service, ServiceInsert, ServiceUpdate } from "./types";
 import { resolveUniqueSlug } from "./queries";
 import { isBlankSlug } from "./slug";
 
-export async function createService(payload: ServiceInsert): Promise<Service> {
-  const supabase = createClient();
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createBrowserClient>;
+
+export async function createService(
+  supabase: AnySupabase,
+  payload: ServiceInsert,
+): Promise<Service> {
   const slug = isBlankSlug(payload.slug)
     ? await resolveUniqueSlug(payload.title)
     : payload.slug;
@@ -18,10 +25,10 @@ export async function createService(payload: ServiceInsert): Promise<Service> {
 }
 
 export async function updateService(
+  supabase: AnySupabase,
   id: string,
   payload: ServiceUpdate,
 ): Promise<Service> {
-  const supabase = createClient();
   const next: ServiceUpdate = {
     ...payload,
     updated_at: new Date().toISOString(),
@@ -47,8 +54,10 @@ export async function updateService(
   return data;
 }
 
-export async function softDeleteService(id: string): Promise<void> {
-  const supabase = createClient();
+export async function softDeleteService(
+  supabase: AnySupabase,
+  id: string,
+): Promise<void> {
   const { error } = await supabase
     .from("services")
     .update({ deleted_at: new Date().toISOString() })

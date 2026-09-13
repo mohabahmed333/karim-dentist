@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
+import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type {
   Tables,
   TablesInsert,
@@ -9,10 +10,14 @@ export type SocialLink = Tables<"social_links">;
 export type SocialLinkInsert = TablesInsert<"social_links">;
 export type SocialLinkUpdate = TablesUpdate<"social_links">;
 
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createBrowserClient>;
+
 export async function createSocialLink(
+  supabase: AnySupabase,
   payload: SocialLinkInsert,
 ): Promise<SocialLink> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("social_links")
     .insert(payload)
@@ -23,10 +28,10 @@ export async function createSocialLink(
 }
 
 export async function updateSocialLink(
+  supabase: AnySupabase,
   id: string,
   payload: SocialLinkUpdate,
 ): Promise<SocialLink> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("social_links")
     .update({ ...payload, updated_at: new Date().toISOString() })
@@ -37,8 +42,10 @@ export async function updateSocialLink(
   return data;
 }
 
-export async function softDeleteSocialLink(id: string): Promise<void> {
-  const supabase = createClient();
+export async function softDeleteSocialLink(
+  supabase: AnySupabase,
+  id: string,
+): Promise<void> {
   const { error } = await supabase
     .from("social_links")
     .update({ deleted_at: new Date().toISOString() })

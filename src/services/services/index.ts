@@ -1,4 +1,4 @@
-export * from "./mutations";
+export * from "./actions";
 export * from "./queries";
 export {
   slugifyTitle,

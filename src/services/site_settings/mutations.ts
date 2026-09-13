@@ -1,11 +1,16 @@
-import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
+import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { SiteSettings, SiteSettingsUpdate } from "./types";
 
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createBrowserClient>;
+
 export async function updateSettings(
+  supabase: AnySupabase,
   id: string,
   payload: SiteSettingsUpdate,
 ): Promise<SiteSettings> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("site_settings")
     .update({ ...payload, updated_at: new Date().toISOString() })
@@ -17,9 +22,9 @@ export async function updateSettings(
 }
 
 export async function createSettings(
+  supabase: AnySupabase,
   payload: SiteSettingsUpdate,
 ): Promise<SiteSettings> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("site_settings")
     .insert({
@@ -88,9 +93,10 @@ export async function createSettings(
 }
 
 export async function upsertSettings(
+  supabase: AnySupabase,
   existing: SiteSettings | null,
   payload: SiteSettingsUpdate,
 ): Promise<SiteSettings> {
-  if (existing) return updateSettings(existing.id, payload);
-  return createSettings(payload);
+  if (existing) return updateSettings(supabase, existing.id, payload);
+  return createSettings(supabase, payload);
 }

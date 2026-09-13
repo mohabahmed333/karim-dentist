@@ -1,10 +1,15 @@
-import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
+import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { FooterLink, FooterLinkInsert, FooterLinkUpdate } from "./types";
 
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createBrowserClient>;
+
 export async function createFooterLink(
+  supabase: AnySupabase,
   payload: FooterLinkInsert,
 ): Promise<FooterLink> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("footer_links")
     .insert(payload)
@@ -15,10 +20,10 @@ export async function createFooterLink(
 }
 
 export async function updateFooterLink(
+  supabase: AnySupabase,
   id: string,
   payload: FooterLinkUpdate,
 ): Promise<FooterLink> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("footer_links")
     .update({ ...payload, updated_at: new Date().toISOString() })
@@ -29,8 +34,10 @@ export async function updateFooterLink(
   return data;
 }
 
-export async function softDeleteFooterLink(id: string): Promise<void> {
-  const supabase = createClient();
+export async function softDeleteFooterLink(
+  supabase: AnySupabase,
+  id: string,
+): Promise<void> {
   const { error } = await supabase
     .from("footer_links")
     .update({ deleted_at: new Date().toISOString() })
