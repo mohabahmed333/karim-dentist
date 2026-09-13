@@ -143,7 +143,7 @@ describe("replyUi", () => {
     language: "en" as const,
     offeredSlots: one,
     services,
-    askingService: false,
+    needs: [] as string[],
     canBook: true,
     willExecuteAction: false,
   };
@@ -173,26 +173,54 @@ describe("replyUi", () => {
   });
 
   it("offers the service list when it is asking which service", () => {
-    const ui = replyUi({ ...base, offeredSlots: [], askingService: true });
+    const ui = replyUi({ ...base, offeredSlots: [], needs: ["service"] });
     assert.equal(ui?.kind, "list");
     assert.equal(ui!.kind === "list" ? ui!.rows[ui!.rows.length - 1].id : "", NOT_SURE_ID);
   });
 
-  /** Times are the thing that matters; a service question can wait. */
-  it("prefers offering times over asking which service", () => {
-    const ui = replyUi({ ...base, askingService: true });
-    assert.equal(ui?.kind, "buttons");
+  /**
+   * This used to assert the opposite — that a time outranked a service
+   * question — and a real conversation showed why that was wrong: asked
+   * "which service?", the patient was shown the two appointment times,
+   * because the ranking had no idea what the sentence above it said.
+   * Whatever is tappable has to answer the question that was actually asked.
+   */
+  it("shows services, not times, when the question asked was about service", () => {
+    const ui = replyUi({ ...base, needs: ["service"] });
+    assert.equal(ui?.kind, "list");
   });
 
   it("does not ask again for a service already settled", () => {
     const ui = replyUi({
       ...base,
       offeredSlots: [],
-      askingService: true,
+      needs: ["service"],
       pendingService: "Dental implants",
     });
     assert.equal(ui, null);
   });
+
+  /**
+   * The rule this exists for: there is no button for a name. Anything
+   * tappable beside the question gets tapped instead of answered, and the
+   * answer never arrives.
+   */
+  for (const field of ["patient_name", "age", "medical_info"]) {
+    it(`shows nothing tappable while waiting for ${field}, even with times on offer`, () => {
+      assert.equal(replyUi({ ...base, needs: [field] }), null);
+    });
+
+    it(`shows nothing tappable while waiting for ${field}, even mid-confirmation`, () => {
+      assert.equal(replyUi({ ...base, needs: [field], pendingSlotId: chosen }), null);
+    });
+
+    it(`shows nothing tappable while waiting for ${field}, even with choices offered`, () => {
+      assert.equal(
+        replyUi({ ...base, needs: [field], choices: ["نعم", "لا"] }),
+        null,
+      );
+    });
+  }
 });
 
 describe("choiceButtons — the model's own suggested answers", () => {
@@ -233,7 +261,7 @@ describe("replyUi — where choices sit in the order of preference", () => {
     language: "ar" as const,
     offeredSlots: [],
     services,
-    askingService: false,
+    needs: [] as string[],
     canBook: true,
     willExecuteAction: false,
   };

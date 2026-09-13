@@ -119,7 +119,16 @@ export const autoReplyEnvelopeSchema = z.object({
       ),
     ),
   needs: z
-    .array(z.enum(["patient_name", "service", "slot", "reservation_id"]))
+    .array(
+      z.enum([
+        "patient_name",
+        "age",
+        "medical_info",
+        "service",
+        "slot",
+        "reservation_id",
+      ]),
+    )
     .max(4)
     .default([])
     .catch([]),

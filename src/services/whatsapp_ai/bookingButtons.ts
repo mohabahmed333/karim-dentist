@@ -181,12 +181,22 @@ export function choiceButtons(choices: string[]): ReplyButton[] {
 }
 
 /**
+ * Answers the patient must type out. There is no tappable form of a name, an
+ * age, or a list of medications, so nothing tappable may accompany the
+ * question — a button beside "what is your name?" is an invitation to answer
+ * a different question than the one asked, and the name never arrives.
+ */
+const TYPED_ANSWER_FIELDS = new Set(["patient_name", "age", "medical_info"]);
+
+/**
  * What the patient can tap on this reply, if anything.
  *
- * Kept pure and in one place so the order of preference can be read at a
- * glance: a booking under way needs nothing, a chosen time needs confirming,
- * offered times are worth more than anything else, and only then is it worth
- * asking which service — as taps, never as an open question.
+ * The governing rule: whatever is tappable must answer the question actually
+ * being asked. That is why this reads `needs` — the model's own statement of
+ * what it is waiting for — rather than ranking the structural offers by
+ * importance. Ranking them produced a real mismatch: asked "which service?",
+ * the patient was shown the two appointment times, because a time outranked
+ * a service in a fixed order that had no idea what the sentence above it said.
  */
 export function replyUi(input: {
   language: BodyLanguage;
@@ -198,8 +208,8 @@ export function replyUi(input: {
   pendingSlotId?: string;
   /** A service they already named — settled, so never asked again. */
   pendingService?: string;
-  /** The model is asking which service they want. */
-  askingService: boolean;
+  /** What the model says it is still waiting on. Decides what may be tapped. */
+  needs?: readonly string[];
   /** Short answers the model proposed for the question it just asked. */
   choices?: string[];
   canBook: boolean;
@@ -209,16 +219,15 @@ export function replyUi(input: {
   // The booking is happening now; anything tappable would invite a second one.
   if (input.willExecuteAction) return null;
 
-  if (input.pendingSlotId) {
-    // Never offer to confirm what we are not allowed to write. A confirm button
-    // that cannot book is a lie the patient taps.
-    return input.canBook ? { kind: "buttons", buttons: confirmButtons(input.language) } : null;
-  }
+  const needs = input.needs ?? [];
 
-  const slots = slotButtons(input.offeredSlots, input.language);
-  if (slots.length > 0) return { kind: "buttons", buttons: slots };
+  // The question needs typing out. Show nothing: a stale set of time buttons
+  // under "what is your name?" is answered by tapping a time, and the name is
+  // never given.
+  if (needs.some((need) => TYPED_ANSWER_FIELDS.has(need))) return null;
 
-  if (input.askingService && !input.pendingService) {
+  // Asked which service, show services — even when times are also on offer.
+  if (needs.includes("service") && !input.pendingService) {
     const rows = serviceRows(input.services, input.language);
     if (rows.length === 0) return null;
     return {
@@ -227,6 +236,15 @@ export function replyUi(input: {
       rows,
     };
   }
+
+  if (input.pendingSlotId) {
+    // Never offer to confirm what we are not allowed to write. A confirm button
+    // that cannot book is a lie the patient taps.
+    return input.canBook ? { kind: "buttons", buttons: confirmButtons(input.language) } : null;
+  }
+
+  const slots = slotButtons(input.offeredSlots, input.language);
+  if (slots.length > 0) return { kind: "buttons", buttons: slots };
 
   // Nothing structural to offer, but the reply may still be a question with a
   // few short answers — "move it or add another?", "morning or evening?".
