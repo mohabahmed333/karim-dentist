@@ -354,6 +354,48 @@ try {
     );
   }
 
+  // 6 — moving a hold that has not been paid for.
+  {
+    const phone = uniquePhone();
+    const conversationId = await newConversation(phone);
+    const held = await bookWithHold(await openSlot(), phone, conversationId, cfg);
+    const laterSlot = await openSlot();
+
+    const { error } = await db.rpc("reschedule_reservation_to_slot", {
+      p_reservation_id: held.reservation_id,
+      p_slot_id: laterSlot,
+      p_phone: phone,
+    });
+    check(!error, "an unpaid hold can be moved", error?.message ?? "");
+
+    // The patient was never told they had this appointment, so there is
+    // nothing to tell them has moved — and no reminder to arm for it.
+    check(
+      (await countNotifications(held.reservation_id, "reschedule")) === 0,
+      "moving an unpaid hold announces nothing",
+    );
+    check(
+      (await countNotifications(held.reservation_id, "reminder_24h")) === 0,
+      "and arms no reminder",
+    );
+
+    // The question worth asking: does it demand paying twice?
+    const { data: requests } = await db
+      .from("deposit_requests")
+      .select("id,status,slot_id")
+      .eq("reservation_id", held.reservation_id);
+    const open = requests ?? [];
+    check(
+      open.length === 1 && open[0].status === "awaiting_receipt",
+      "and does not ask for a second deposit",
+      `${open.length} request(s)`,
+    );
+    check(
+      open[0]?.slot_id === laterSlot,
+      "the deposit follows the booking to its new slot",
+    );
+  }
+
   console.log(failures === 0 ? "\n  all checks passed\n" : `\n  ${failures} check(s) failed\n`);
 } catch (err) {
   console.error(`\n  ${err instanceof Error ? err.message : err}\n`);
