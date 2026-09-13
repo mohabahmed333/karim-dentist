@@ -980,7 +980,7 @@ export function SupportInboxView({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 w-full flex-1 overflow-hidden bg-white font-sans text-[#111827]",
+        "flex h-full min-h-0 w-full flex-1 overflow-hidden bg-[var(--admin-panel)] font-sans text-[var(--admin-text)]",
         compact && "relative",
       )}
     >
@@ -1032,7 +1032,7 @@ export function SupportInboxView({
           ) : isAiChat ? (
             <motion.div
               key="compact-thread-ai"
-              className="absolute inset-0 flex min-h-0 min-w-0 flex-col bg-white"
+              className="absolute inset-0 flex min-h-0 min-w-0 flex-col bg-[var(--admin-panel)]"
               custom={paneDir}
               variants={paneVariants}
               initial="enter"
@@ -1068,7 +1068,7 @@ export function SupportInboxView({
           ) : (
             <motion.div
               key="compact-thread"
-              className="absolute inset-0 flex min-h-0 min-w-0 flex-col bg-white"
+              className="absolute inset-0 flex min-h-0 min-w-0 flex-col bg-[var(--admin-panel)]"
               custom={paneDir}
               variants={paneVariants}
               initial="enter"
@@ -1193,7 +1193,7 @@ export function SupportInboxView({
           {listLoading ? (
             <SupportChatColumnSkeleton />
           ) : isAiChat ? (
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--admin-panel)]">
               <ReceptionChat
                 key={
                   assistPatient
@@ -1322,7 +1322,7 @@ export function SupportInboxView({
               </AnimatePresence>
             </>
           ) : (
-            <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-white px-6 text-center text-sm text-[#6B7280]">
+            <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-[var(--admin-panel)] px-6 text-center text-sm text-[var(--admin-muted)]">
               {emptyFilterCopy}
             </div>
           )}

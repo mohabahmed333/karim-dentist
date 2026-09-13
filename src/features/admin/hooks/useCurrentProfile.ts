@@ -1,52 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useEffect } from "react";
+import { useAdminProfileStore, type CurrentProfile } from "@/features/admin/stores/adminProfileStore";
 
-export type CurrentProfile = {
-  name: string | null;
-  email: string | null;
-  avatarUrl: string | null;
-};
+export type { CurrentProfile };
 
 /**
- * The signed-in user's name/photo for the admin chrome.
- *
- * Resolved client-side rather than threaded down from the dashboard layout so
- * the account menu stays self-contained — the alternative is passing a user
- * prop through AdminShell and every nav component that renders the menu.
+ * The signed-in user's name/photo for the admin chrome, backed by the shared
+ * profile store — every mount reads the same fetched-once record and updates
+ * together the moment ProfileForm saves a change, with no event wiring.
  */
 export function useCurrentProfile(): CurrentProfile | null {
-  const [profile, setProfile] = useState<CurrentProfile | null>(null);
+  const profile = useAdminProfileStore((state) => state.profile);
+  const ensureFetched = useAdminProfileStore((state) => state.ensureFetched);
 
   useEffect(() => {
-    let alive = true;
-    const supabase = createClient();
-
-    void (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!alive || !user) return;
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("display_name, avatar_url")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (!alive) return;
-
-      setProfile({
-        name: data?.display_name ?? null,
-        email: user.email ?? null,
-        avatarUrl: data?.avatar_url ?? null,
-      });
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
+    ensureFetched();
+  }, [ensureFetched]);
 
   return profile;
 }

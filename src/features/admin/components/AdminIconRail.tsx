@@ -27,7 +27,7 @@ function railButtonClass(active: boolean) {
   return cn(
     "flex size-7 items-center justify-center rounded-md transition-colors",
     active
-      ? "bg-[var(--admin-active)] text-[var(--admin-primary)]"
+      ? "bg-[var(--admin-active)] text-[var(--admin-primary-contrast)]"
       : "text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]",
   );
 }

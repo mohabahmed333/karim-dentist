@@ -170,6 +170,13 @@ html:has(.customize-shell.dark),
      without this, a black/near-black accent color makes active nav text
      disappear into the dark background. */
   --admin-primary-contrast: color-mix(in srgb, var(--admin-primary) 55%, white);
+  /* Tooltips are a near-black bubble by default, which has nothing to separate it
+     from the dark canvas — swap in the panel surface plus a border. The inner
+     fallback covers the first paint, before AdminShell's effect has put
+     --admin-panel on <html> for portaled content. */
+  --tooltip-bg: var(--admin-panel, #202124);
+  --tooltip-fg: var(--admin-text);
+  --tooltip-border: var(--admin-border);
 }
 
 .admin-shell.dark {
