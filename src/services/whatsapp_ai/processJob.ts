@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { hasVisibleServiceTitle } from "@/features/portfolio/lib/serviceKindGroups";
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import { clinicContactFromSettings } from "@/lib/clinic/whatsappClinicContact";
 import type { createServiceClient } from "@/lib/supabase/service";
@@ -166,13 +167,18 @@ export async function processAutoReplyJob(
         .select("contact_phone, contact_address, contact_clinic_name")
         .limit(1)
         .maybeSingle(),
-      // deleted_at matters: without it the model was shown soft-deleted agency
-      // leftovers ("Brand", "Campaign") beside the real dental services.
+      // Same filter, same order as the public website's own services query
+      // (src/services/portfolio/queries.ts) — deleted_at matters, without it
+      // the model was shown soft-deleted agency leftovers ("Brand",
+      // "Campaign") beside the real dental services. Ordered by sort_order so
+      // the assistant lists services the same way the site does, not in
+      // whatever order the database happens to return them.
       db
         .from("services")
         .select("title,title_ar")
         .eq("is_published", true)
         .is("deleted_at", null)
+        .order("sort_order")
         .limit(30),
       db
         .from("whatsapp_messages")
@@ -273,10 +279,11 @@ export async function processAutoReplyJob(
           time_windows: string[];
           timezone: string | null;
         } | null,
-        // A placeholder row is worse than a shorter list: the model will try to
-        // offer "Untitled" as a service.
+        // The same predicate the public website uses to decide a title is
+        // real rather than a placeholder — imported, not re-derived, so this
+        // list can never quietly drift from what the site itself shows.
         services: (serviceRows ?? [])
-          .filter((s) => !/^(untitled|بدون عنوان)$/i.test(String(s.title).trim()))
+          .filter((s) => hasVisibleServiceTitle(s.title as string))
           .map((s) => ({
             title: s.title as string,
             title_ar: (s.title_ar as string) || null,

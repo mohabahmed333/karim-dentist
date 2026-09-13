@@ -7,6 +7,7 @@ import {
   LIST_ROW_LIMIT,
   LIST_ROW_TITLE_LIMIT,
 } from "@/services/whatsapp/interactiveButtons";
+import { hasVisibleServiceTitle } from "@/features/portfolio/lib/serviceKindGroups";
 import type { BodyLanguage } from "@/services/patient_notifications/templates";
 import { stripInternalIds } from "./replyGuards";
 
@@ -101,8 +102,6 @@ export const NOT_SURE_ID = "service:not_sure";
 /** What "I am not sure" books. The same label the booking RPC defaults to. */
 export const GENERAL_CONSULTATION = "General consultation";
 
-const UNTITLED = /^(untitled|بدون عنوان)$/i;
-
 /**
  * The clinic's services as list rows, ending with a way out.
  *
@@ -125,7 +124,7 @@ export function serviceRows(
   for (const service of services) {
     if (rows.length >= LIST_ROW_LIMIT - 1) break;
     const name = (language === "ar" ? service.title_ar || service.title : service.title).trim();
-    if (!name || UNTITLED.test(name)) continue;
+    if (!hasVisibleServiceTitle(name)) continue;
     const title = name.length <= LIST_ROW_TITLE_LIMIT ? name : name.slice(0, LIST_ROW_TITLE_LIMIT).trim();
     if (taken.has(title)) continue;
     taken.add(title);
