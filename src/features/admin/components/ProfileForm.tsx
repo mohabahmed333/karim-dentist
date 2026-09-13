@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Pencil, Upload, UserRound } from "lucide-react";
 import { updateMyProfile } from "@/services/profiles/actions";
+import { useAdminProfileStore } from "@/features/admin/stores/adminProfileStore";
 import type { ServedPatient } from "@/services/profiles/servedPatients";
 import { patientProfilePath } from "@/services/reservations/patientHistory";
 import { uploadPublicMedia } from "@/lib/supabase/upload";
@@ -16,6 +17,7 @@ import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { AdminInput } from "@/features/admin/ui";
 import { AdminUserAvatar } from "./AdminUserAvatar";
+import { LocalizedAdminPageHeader } from "./LocalizedAdminPageHeader";
 import {
   ProfileBadge,
   ProfileDetailCard,
@@ -60,6 +62,7 @@ export function ProfileForm({
   initial,
 }: Props) {
   const t = useTranslations();
+  const updateProfileStore = useAdminProfileStore((state) => state.update);
   const fileRef = useRef<HTMLInputElement>(null);
   const [values, setValues] = useState(initial);
   const [editing, setEditing] = useState(false);
@@ -115,6 +118,10 @@ export function ProfileForm({
         avatarUrl: next.avatar_url,
       });
       setEditing(false);
+      updateProfileStore({
+        name: next.display_name,
+        avatarUrl: next.avatar_url,
+      });
       toast.success(t("admin.profile.success"));
     } catch {
       setError(t("admin.profile.error"));
@@ -127,6 +134,43 @@ export function ProfileForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
+      {/* The page's action, beside the title, as on every other admin page.
+          Inside the form on purpose, so Save stays a plain submit button. */}
+      <LocalizedAdminPageHeader
+        titleKey="admin.pages.profile.title"
+        descriptionKey="admin.pages.profile.description"
+        actions={
+          editing ? (
+            <div className="flex items-center gap-2">
+              <Button type="submit" disabled={pending || uploading}>
+                {pending ? t("admin.loading") : t("admin.profile.save")}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={pending}
+                onClick={() => {
+                  setValues(initial);
+                  setEditing(false);
+                  setError(null);
+                }}
+              >
+                {t("admin.profile.cancel")}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEditing(true)}
+            >
+              <Pencil aria-hidden />
+              {t("admin.profile.edit")}
+            </Button>
+          )
+        }
+      />
+
       {/* Hero */}
       <section className="relative overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)]">
         <div
@@ -196,22 +240,7 @@ export function ProfileForm({
       </section>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <ProfileDetailCard
-          title={t("admin.profile.personalDetails")}
-          action={
-            editing ? null : (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setEditing(true)}
-              >
-                <Pencil aria-hidden />
-                {t("admin.profile.edit")}
-              </Button>
-            )
-          }
-        >
+        <ProfileDetailCard title={t("admin.profile.personalDetails")}>
           <ProfileDetailRow label={t("admin.profile.displayName")}>
             {editing ? (
               <AdminInput
@@ -256,7 +285,11 @@ export function ProfileForm({
 
         <ProfileDetailCard title={t("admin.profile.accountDetails")}>
           <ProfileDetailRow label={t("admin.profile.role")}>
-            {roleName ? <ProfileBadge tone="accent">{roleName}</ProfileBadge> : "—"}
+            {roleName ? (
+              <ProfileBadge tone="accent">{roleName}</ProfileBadge>
+            ) : (
+              "—"
+            )}
           </ProfileDetailRow>
           <ProfileDetailRow label={t("admin.profile.status")}>
             <ProfileBadge tone={isActive ? "positive" : "neutral"}>
@@ -283,11 +316,7 @@ export function ProfileForm({
 
         <ProfileDetailCard
           title={t("admin.profile.patients")}
-          action={
-            <ProfileBadge>
-              {String(patients.length)}
-            </ProfileBadge>
-          }
+          action={<ProfileBadge>{String(patients.length)}</ProfileBadge>}
         >
           {patients.length === 0 ? (
             <p className="py-4 text-[13px] text-[var(--admin-muted)]">
@@ -322,25 +351,6 @@ export function ProfileForm({
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      {editing ? (
-        <div className="flex items-center gap-2">
-          <Button type="submit" disabled={pending || uploading}>
-            {pending ? t("admin.loading") : t("admin.profile.save")}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={pending}
-            onClick={() => {
-              setValues(initial);
-              setEditing(false);
-              setError(null);
-            }}
-          >
-            {t("admin.profile.cancel")}
-          </Button>
-        </div>
-      ) : null}
     </form>
   );
 }

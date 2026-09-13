@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { DepositSettings } from "@/services/deposits/store";
-import { AdminSkeleton } from "./AdminSkeleton";
+import { DepositSettingsSkeleton } from "./DepositSettingsSkeleton";
 import { LocalizedAdminPageHeader } from "./LocalizedAdminPageHeader";
 import { HelpTip } from "./HelpTip";
 import {
@@ -160,30 +160,50 @@ export function DepositSettingsForm() {
     }
   }
 
-  if (loading) return <AdminSkeleton className="h-72 w-full rounded-lg" />;
-  if (!settings) {
+  // The title and the save button need nothing from the server, so they are
+  // drawn immediately and only the values are skeletons. Rendering the header
+  // after the fetch made the page appear to load twice.
+  const header = (
+    <LocalizedAdminPageHeader
+      titleKey="admin.settings.deposits"
+      actions={
+        <Button
+          type="button"
+          onClick={() => void onSave()}
+          disabled={pending || !settings}
+        >
+          {pending ? t("admin.saving") : t("admin.saveChanges")}
+        </Button>
+      }
+    />
+  );
+
+  if (loading) {
     return (
-      <p className="text-sm text-[var(--admin-muted)]">
-        Deposit settings are unavailable — the database may not have the deposit
-        tables yet. Run <code>supabase db push --linked</code>.
-      </p>
+      <div className="space-y-6">
+        {header}
+        <DepositSettingsSkeleton />
+      </div>
     );
   }
 
-  const saveButton = (
-    <Button type="button" onClick={() => void onSave()} disabled={pending}>
-      {pending ? t("admin.saving") : t("admin.saveChanges")}
-    </Button>
-  );
+  if (!settings) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <p className="max-w-3xl text-sm text-[var(--admin-muted)]">
+          Deposit settings are unavailable — the database may not have the
+          deposit tables yet. Run <code>supabase db push --linked</code>.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* The primary action sits beside the title, as it does on every editor
           page — reachable without scrolling past the whole form to find it. */}
-      <LocalizedAdminPageHeader
-        titleKey="admin.settings.deposits"
-        actions={saveButton}
-      />
+      {header}
 
       {/* The header spans the page, so the save action lands on the page's
           right edge rather than the card's. The fields stay in a narrow

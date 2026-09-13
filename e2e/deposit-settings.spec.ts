@@ -65,3 +65,27 @@ test.describe("deposit settings — the amount field", () => {
     await expect(hold).toHaveValue("45");
   });
 });
+
+test.describe("deposit settings — while it loads", () => {
+  test("shows the title and a skeleton, not an empty page", async ({ page }) => {
+    // Hold the response so the loading state is observable at all.
+    await page.route("**/api/v1/deposits/settings", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await route.continue();
+    });
+    await page.goto("/admin/settings/deposits", { waitUntil: "commit" });
+
+    // The title and the button need nothing from the server, so they are there
+    // immediately — rendering them after the fetch made the page load twice.
+    await expect(page.getByRole("heading", { name: "Deposits" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /save/i })).toBeDisabled();
+    // Scoped by its own label: the admin shell has busy regions of its own.
+    await expect(page.getByText("Loading deposit settings…")).toBeAttached();
+
+    // And the real form replaces it once the values arrive.
+    await expect(page.getByLabel("Deposit amount (EGP)")).toBeVisible();
+    await expect(page.getByText("Loading deposit settings…")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /save/i })).toBeEnabled();
+  });
+});
+
