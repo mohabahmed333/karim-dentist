@@ -98,6 +98,18 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.pages.profile.title": "ملفي الشخصي",
   "admin.pages.profile.description":
     "اسمك وصورتك وبيانات التواصل كما يراها بقية الفريق.",
+  "admin.profile.personalDetails": "البيانات الشخصية",
+  "admin.profile.accountDetails": "تفاصيل الحساب",
+  "admin.profile.status": "حالة الحساب",
+  "admin.profile.statusActive": "نشط",
+  "admin.profile.statusDeactivated": "معطّل",
+  "admin.profile.lastUpdated": "آخر تحديث",
+  "admin.profile.password": "كلمة المرور",
+  "admin.profile.patients": "المرضى الذين تخدمهم",
+  "admin.profile.patientsEmpty":
+    "لا يوجد مرضى بعد. يظهرون هنا عند إسناد محادثة واتساب إليك، أو عند كتابتك ملاحظة سريرية أو روشتة أو طلب تحاليل.",
+  "admin.profile.edit": "تعديل",
+  "admin.profile.cancel": "إلغاء",
   "admin.profile.displayName": "الاسم الظاهر",
   "admin.profile.jobTitle": "المسمى الوظيفي",
   "admin.profile.phone": "الهاتف",

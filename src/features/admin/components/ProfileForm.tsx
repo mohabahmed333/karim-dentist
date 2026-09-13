@@ -1,9 +1,12 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Pencil, Upload, UserRound } from "lucide-react";
 import { updateMyProfile } from "@/services/profiles/actions";
+import type { ServedPatient } from "@/services/profiles/servedPatients";
+import { patientProfilePath } from "@/services/reservations/patientHistory";
 import { uploadPublicMedia } from "@/lib/supabase/upload";
 import {
   IMAGE_FILE_ACCEPT,
@@ -11,9 +14,13 @@ import {
 } from "@/lib/supabase/uploadHelpers";
 import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { AdminInput } from "@/features/admin/ui";
 import { AdminUserAvatar } from "./AdminUserAvatar";
+import {
+  ProfileBadge,
+  ProfileDetailCard,
+  ProfileDetailRow,
+} from "./profile/ProfileDetailCard";
 
 export type ProfileFormValues = {
   displayName: string | null;
@@ -27,6 +34,9 @@ type Props = {
   email: string | null;
   roleName: string | null;
   memberSince: string | null;
+  lastUpdated: string | null;
+  isActive: boolean;
+  patients: ServedPatient[];
   initial: ProfileFormValues;
 };
 
@@ -44,12 +54,15 @@ export function ProfileForm({
   email,
   roleName,
   memberSince,
+  lastUpdated,
+  isActive,
+  patients,
   initial,
 }: Props) {
   const t = useTranslations();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [avatarUrl, setAvatarUrl] = useState(initial.avatarUrl);
-  const [displayName, setDisplayName] = useState(initial.displayName ?? "");
+  const [values, setValues] = useState(initial);
+  const [editing, setEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +76,7 @@ export function ProfileForm({
       // Folder must be the uid: the storage policy only allows writes inside
       // a folder named after the signed-in user.
       const url = await uploadPublicMedia("avatars", prepared, userId);
-      setAvatarUrl(url);
+      setValues((prev) => ({ ...prev, avatarUrl: url }));
     } catch (uploadError) {
       setError(
         uploadError instanceof Error
@@ -86,13 +99,22 @@ export function ProfileForm({
       return value ? value : null;
     };
 
+    const next = {
+      display_name: trimmed("displayName"),
+      phone: trimmed("phone"),
+      job_title: trimmed("jobTitle"),
+      avatar_url: values.avatarUrl,
+    };
+
     try {
-      await updateMyProfile({
-        display_name: trimmed("displayName"),
-        phone: trimmed("phone"),
-        job_title: trimmed("jobTitle"),
-        avatar_url: avatarUrl,
+      await updateMyProfile(next);
+      setValues({
+        displayName: next.display_name,
+        phone: next.phone,
+        jobTitle: next.job_title,
+        avatarUrl: next.avatar_url,
       });
+      setEditing(false);
       toast.success(t("admin.profile.success"));
     } catch {
       setError(t("admin.profile.error"));
@@ -101,122 +123,224 @@ export function ProfileForm({
     }
   }
 
+  const displayName = values.displayName?.trim() || null;
+
   return (
-    <form
-      className="max-w-lg space-y-5 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-4"
-      onSubmit={onSubmit}
-    >
-      <div className="flex items-center gap-4">
-        <AdminUserAvatar
-          name={displayName || null}
-          email={email}
-          avatarUrl={avatarUrl}
-          size="xl"
+    <form onSubmit={onSubmit} className="space-y-5">
+      {/* Hero */}
+      <section className="relative overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)]">
+        <div
+          className="absolute inset-x-0 top-0 h-32"
+          style={{
+            backgroundImage:
+              "linear-gradient(var(--admin-border) 1px, transparent 1px), linear-gradient(90deg, var(--admin-border) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+            opacity: 0.35,
+          }}
+          aria-hidden
         />
-        <div className="space-y-2">
-          <input
-            ref={fileRef}
-            type="file"
-            accept={IMAGE_FILE_ACCEPT}
-            className="hidden"
-            onChange={(event) => void onPickFile(event.target.files?.[0])}
+        <div className="relative flex flex-col items-center gap-3 px-6 py-10">
+          <AdminUserAvatar
+            name={displayName}
+            email={email}
+            avatarUrl={values.avatarUrl}
+            size="xl"
+            className="ring-4 ring-[var(--admin-panel)]"
           />
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={uploading}
-              onClick={() => fileRef.current?.click()}
-            >
-              <Upload aria-hidden />
-              {uploading
-                ? t("admin.profile.uploading")
-                : t("admin.profile.uploadPhoto")}
-            </Button>
-            {avatarUrl ? (
+          {editing ? (
+            <>
+              <input
+                ref={fileRef}
+                type="file"
+                accept={IMAGE_FILE_ACCEPT}
+                className="hidden"
+                onChange={(event) => void onPickFile(event.target.files?.[0])}
+              />
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <Upload aria-hidden />
+                  {uploading
+                    ? t("admin.profile.uploading")
+                    : t("admin.profile.uploadPhoto")}
+                </Button>
+                {values.avatarUrl ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={uploading}
+                    onClick={() =>
+                      setValues((prev) => ({ ...prev, avatarUrl: null }))
+                    }
+                  >
+                    {t("admin.profile.removePhoto")}
+                  </Button>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-semibold tracking-tight text-[var(--admin-text)]">
+                {displayName ?? email ?? "—"}
+              </h1>
+              <p className="text-[13px] text-[var(--admin-muted)]">{email}</p>
+            </>
+          )}
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <ProfileDetailCard
+          title={t("admin.profile.personalDetails")}
+          action={
+            editing ? null : (
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                disabled={uploading}
-                onClick={() => setAvatarUrl(null)}
+                onClick={() => setEditing(true)}
               >
-                {t("admin.profile.removePhoto")}
+                <Pencil aria-hidden />
+                {t("admin.profile.edit")}
               </Button>
-            ) : null}
-          </div>
-          <p className="text-xs text-[var(--admin-muted)]">
-            {t("admin.profile.photoHint")}
-          </p>
-        </div>
-      </div>
+            )
+          }
+        >
+          <ProfileDetailRow label={t("admin.profile.displayName")}>
+            {editing ? (
+              <AdminInput
+                name="displayName"
+                defaultValue={values.displayName ?? ""}
+                maxLength={80}
+                aria-label={t("admin.profile.displayName")}
+              />
+            ) : (
+              (displayName ?? "—")
+            )}
+          </ProfileDetailRow>
+          <ProfileDetailRow label={t("admin.profile.jobTitle")}>
+            {editing ? (
+              <AdminInput
+                name="jobTitle"
+                defaultValue={values.jobTitle ?? ""}
+                maxLength={80}
+                aria-label={t("admin.profile.jobTitle")}
+              />
+            ) : (
+              (values.jobTitle ?? "—")
+            )}
+          </ProfileDetailRow>
+          <ProfileDetailRow label={t("admin.profile.phone")}>
+            {editing ? (
+              <AdminInput
+                name="phone"
+                type="tel"
+                defaultValue={values.phone ?? ""}
+                maxLength={40}
+                aria-label={t("admin.profile.phone")}
+              />
+            ) : (
+              (values.phone ?? "—")
+            )}
+          </ProfileDetailRow>
+          <ProfileDetailRow label={t("admin.profile.email")}>
+            {email ?? "—"}
+          </ProfileDetailRow>
+        </ProfileDetailCard>
 
-      <div className="space-y-2">
-        <Label htmlFor="displayName">{t("admin.profile.displayName")}</Label>
-        <AdminInput
-          id="displayName"
-          name="displayName"
-          value={displayName}
-          onChange={(event) => setDisplayName(event.target.value)}
-          maxLength={80}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="jobTitle">{t("admin.profile.jobTitle")}</Label>
-          <AdminInput
-            id="jobTitle"
-            name="jobTitle"
-            defaultValue={initial.jobTitle ?? ""}
-            maxLength={80}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone">{t("admin.profile.phone")}</Label>
-          <AdminInput
-            id="phone"
-            name="phone"
-            type="tel"
-            defaultValue={initial.phone ?? ""}
-            maxLength={40}
-          />
-        </div>
-      </div>
-
-      <dl className="grid grid-cols-1 gap-3 border-t border-[var(--admin-border)] pt-4 text-sm sm:grid-cols-3">
-        <div>
-          <dt className="text-xs text-[var(--admin-muted)]">
-            {t("admin.profile.email")}
-          </dt>
-          <dd className="truncate text-[var(--admin-text)]">{email ?? "—"}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-[var(--admin-muted)]">
-            {t("admin.profile.role")}
-          </dt>
-          <dd className="truncate text-[var(--admin-text)]">
-            {roleName ?? "—"}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs text-[var(--admin-muted)]">
-            {t("admin.profile.memberSince")}
-          </dt>
-          <dd className="truncate text-[var(--admin-text)]">
+        <ProfileDetailCard title={t("admin.profile.accountDetails")}>
+          <ProfileDetailRow label={t("admin.profile.role")}>
+            {roleName ? <ProfileBadge tone="accent">{roleName}</ProfileBadge> : "—"}
+          </ProfileDetailRow>
+          <ProfileDetailRow label={t("admin.profile.status")}>
+            <ProfileBadge tone={isActive ? "positive" : "neutral"}>
+              {isActive
+                ? t("admin.profile.statusActive")
+                : t("admin.profile.statusDeactivated")}
+            </ProfileBadge>
+          </ProfileDetailRow>
+          <ProfileDetailRow label={t("admin.profile.memberSince")}>
             {formatDate(memberSince)}
-          </dd>
-        </div>
-      </dl>
-      <p className="text-xs text-[var(--admin-muted)]">
-        {t("admin.profile.readOnlyHint")}
-      </p>
+          </ProfileDetailRow>
+          <ProfileDetailRow label={t("admin.profile.lastUpdated")}>
+            {formatDate(lastUpdated)}
+          </ProfileDetailRow>
+          <ProfileDetailRow label={t("admin.profile.password")}>
+            <Link
+              href="/admin/account/password"
+              className="text-[var(--admin-primary,#5e6ad2)] hover:underline"
+            >
+              {t("admin.nav.changePassword")}
+            </Link>
+          </ProfileDetailRow>
+        </ProfileDetailCard>
+
+        <ProfileDetailCard
+          title={t("admin.profile.patients")}
+          action={
+            <ProfileBadge>
+              {String(patients.length)}
+            </ProfileBadge>
+          }
+        >
+          {patients.length === 0 ? (
+            <p className="py-4 text-[13px] text-[var(--admin-muted)]">
+              {t("admin.profile.patientsEmpty")}
+            </p>
+          ) : (
+            patients.map((patient) => (
+              <ProfileDetailRow
+                key={patient.patientKey}
+                label={patient.name ?? patient.patientKey}
+              >
+                <span className="flex items-center justify-end gap-2">
+                  {patient.phone ? (
+                    <span className="text-[var(--admin-muted)]">
+                      {patient.phone}
+                    </span>
+                  ) : null}
+                  <Link
+                    href={patientProfilePath(patient.patientKey)}
+                    className="text-[var(--admin-primary,#5e6ad2)] hover:underline"
+                  >
+                    <UserRound className="inline size-3.5" aria-hidden />
+                    <span className="sr-only">
+                      {patient.name ?? patient.patientKey}
+                    </span>
+                  </Link>
+                </span>
+              </ProfileDetailRow>
+            ))
+          )}
+        </ProfileDetailCard>
+      </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <Button type="submit" disabled={pending || uploading}>
-        {pending ? t("admin.loading") : t("admin.profile.save")}
-      </Button>
+      {editing ? (
+        <div className="flex items-center gap-2">
+          <Button type="submit" disabled={pending || uploading}>
+            {pending ? t("admin.loading") : t("admin.profile.save")}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={pending}
+            onClick={() => {
+              setValues(initial);
+              setEditing(false);
+              setError(null);
+            }}
+          >
+            {t("admin.profile.cancel")}
+          </Button>
+        </div>
+      ) : null}
     </form>
   );
 }

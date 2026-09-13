@@ -96,6 +96,18 @@ export const adminEn = {
   "admin.pages.profile.title": "My profile",
   "admin.pages.profile.description":
     "Your name, photo and contact details, as other staff see them.",
+  "admin.profile.personalDetails": "Personal details",
+  "admin.profile.accountDetails": "Account details",
+  "admin.profile.status": "Account status",
+  "admin.profile.statusActive": "Active",
+  "admin.profile.statusDeactivated": "Deactivated",
+  "admin.profile.lastUpdated": "Last updated",
+  "admin.profile.password": "Password",
+  "admin.profile.patients": "Patients served",
+  "admin.profile.patientsEmpty":
+    "No patients yet. They appear here once a WhatsApp conversation is assigned to you, or you write a clinical note, prescription or lab order.",
+  "admin.profile.edit": "Edit",
+  "admin.profile.cancel": "Cancel",
   "admin.profile.displayName": "Display name",
   "admin.profile.jobTitle": "Job title",
   "admin.profile.phone": "Phone",

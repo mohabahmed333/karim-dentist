@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { listServedPatients } from "@/services/profiles/servedPatients";
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
-import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
 import { ProfileForm } from "@/features/admin/components/ProfileForm";
 
 export const dynamic = "force-dynamic";
@@ -18,23 +18,27 @@ export default async function AdminProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/admin/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, phone, job_title, avatar_url, created_at, roles(name)")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: profile }, patients] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select(
+        "display_name, phone, job_title, avatar_url, created_at, updated_at, deleted_at, roles(name)",
+      )
+      .eq("id", user.id)
+      .maybeSingle(),
+    listServedPatients(supabase, user.id).catch(() => []),
+  ]);
 
   return (
     <AdminPageMotion className="space-y-4">
-      <LocalizedAdminPageHeader
-        titleKey="admin.pages.profile.title"
-        descriptionKey="admin.pages.profile.description"
-      />
       <ProfileForm
         userId={user.id}
         email={user.email ?? null}
         roleName={profile?.roles?.name ?? null}
         memberSince={profile?.created_at ?? null}
+        lastUpdated={profile?.updated_at ?? null}
+        isActive={!profile?.deleted_at}
+        patients={patients}
         initial={{
           displayName: profile?.display_name ?? null,
           phone: profile?.phone ?? null,
