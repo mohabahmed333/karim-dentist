@@ -1,11 +1,16 @@
-import { createClient } from "@/lib/supabase/client";
+import type { createClient as createServerClient } from "@/lib/supabase/server";
+import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { ClinicCdtFee } from "./types";
 
+type AnySupabase =
+  | Awaited<ReturnType<typeof createServerClient>>
+  | ReturnType<typeof createBrowserClient>;
+
 export async function upsertClinicCdtFee(
+  supabase: AnySupabase,
   code: string,
   feeEgp: number,
 ): Promise<ClinicCdtFee> {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("clinic_cdt_fees")
     .upsert(
@@ -22,8 +27,10 @@ export async function upsertClinicCdtFee(
   return data;
 }
 
-export async function deleteClinicCdtFee(code: string): Promise<void> {
-  const supabase = createClient();
+export async function deleteClinicCdtFee(
+  supabase: AnySupabase,
+  code: string,
+): Promise<void> {
   const { error } = await supabase
     .from("clinic_cdt_fees")
     .delete()
@@ -32,9 +39,9 @@ export async function deleteClinicCdtFee(code: string): Promise<void> {
 }
 
 export async function saveClinicFeeSchedule(
+  supabase: AnySupabase,
   fees: ReadonlyArray<{ code: string; fee_egp: number }>,
 ): Promise<void> {
-  const supabase = createClient();
   const now = new Date().toISOString();
   const { error } = await supabase.from("clinic_cdt_fees").upsert(
     fees.map((row) => ({
@@ -48,9 +55,9 @@ export async function saveClinicFeeSchedule(
 }
 
 export async function saveClinicTreatmentPresets(
+  supabase: AnySupabase,
   presets: ReadonlyArray<{ slot: number; code: string; label: string }>,
 ): Promise<void> {
-  const supabase = createClient();
   const now = new Date().toISOString();
   const { error } = await supabase.from("clinic_treatment_presets").upsert(
     presets.map((row) => ({

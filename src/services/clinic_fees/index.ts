@@ -13,4 +13,4 @@ export {
   upsertClinicCdtFee,
   saveClinicFeeSchedule,
   saveClinicTreatmentPresets,
-} from "./mutations";
+} from "./actions";
