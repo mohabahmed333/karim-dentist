@@ -3201,6 +3201,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      offer_slot_to_waitlist: {
+        Args: { p_slot_id: string }
+        Returns: number
+      }
       patient_notifications_cron_scheduled: { Args: never; Returns: boolean }
       record_ai_usage: {
         Args: {
@@ -3217,6 +3221,10 @@ export type Database = {
       reject_deposit: {
         Args: { p_decided_by?: string; p_deposit_request_id: string; p_reason?: string }
         Returns: boolean
+      }
+      release_stale_waitlist_offers: {
+        Args: { p_max_age?: string }
+        Returns: number
       }
       reschedule_reservation_to_slot: {
         Args: { p_phone?: string | null; p_reservation_id: string; p_slot_id: string }

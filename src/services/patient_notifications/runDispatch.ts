@@ -9,6 +9,7 @@
 import { createKapsoClient, getKapsoConfig } from "@/lib/kapso/client";
 import { clinicContactFromSettings } from "@/lib/clinic/whatsappClinicContact";
 import { sweepExpiredHolds } from "@/services/deposits/sweepExpiredHolds";
+import { releaseStaleWaitlistOffers } from "@/services/waitlist/releaseStaleOffers";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { phoneSuffixForLookup } from "@/services/reservations/phoneSuffix";
 import { sendWhatsappMessage } from "@/services/whatsapp/sendMessage";
@@ -87,6 +88,11 @@ export async function runDispatch(
       });
     },
   }).catch(() => ({ expired: 0, notified: 0 }));
+
+  // Offers nobody answered go back on the market, and the slot is offered to
+  // the next people in line. Same tick, same reasoning as the holds above: it
+  // is booking bookkeeping, not a message, so it runs whatever the mode.
+  await releaseStaleWaitlistOffers(db).catch(() => 0);
 
   const [{ data: settingsRow }, due] = await Promise.all([
     db
