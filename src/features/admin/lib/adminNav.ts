@@ -296,8 +296,11 @@ function filterAdminNavGroup(
   const items = group.items.filter((item) =>
     isPermitted(item.permission, permissions),
   );
-  const ownPermitted = isPermitted(group.permission, permissions);
-  if (!ownPermitted && items.length === 0) return null;
+  // Only a group with its own link is worth showing empty — a pure
+  // toggle/container group (no href) with no visible children is just an
+  // empty expander, so hide it rather than leave a dead-end in the sidebar.
+  const hasOwnLink = Boolean(group.href) && isPermitted(group.permission, permissions);
+  if (!hasOwnLink && items.length === 0) return null;
   return { ...group, items };
 }
 
