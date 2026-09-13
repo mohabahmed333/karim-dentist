@@ -4,7 +4,6 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { LanguageSwitcher } from "@/features/portfolio/components/dental/LanguageSwitcher";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -51,14 +50,11 @@ export function LoginForm() {
       headline={t("admin.brand")}
       tagline={t("admin.clinicWorkspace")}
       brand={
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <p className="text-sm font-semibold tracking-tight text-neutral-900">
-              {t("admin.brand")}
-            </p>
-            <p className="text-xs text-neutral-500">{t("admin.clinicWorkspace")}</p>
-          </div>
-          <LanguageSwitcher />
+        <div>
+          <p className="text-sm font-semibold tracking-tight text-neutral-900">
+            {t("admin.brand")}
+          </p>
+          <p className="text-xs text-neutral-500">{t("admin.clinicWorkspace")}</p>
         </div>
       }
     >

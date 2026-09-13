@@ -16,7 +16,7 @@ type Props = {
  */
 export function AuthSplitLayout({ children, brand, headline, tagline }: Props) {
   return (
-    <div className="flex min-h-screen w-full bg-white">
+    <div className="admin-shell flex min-h-screen w-full bg-white">
       <div className="flex w-full flex-col justify-center px-6 py-12 sm:px-12 lg:w-1/2 lg:px-20 xl:px-28">
         <div className="mx-auto w-full max-w-sm">
           <div className="mb-10">{brand}</div>
