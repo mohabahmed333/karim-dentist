@@ -48,7 +48,10 @@ describe("evaluateReadiness", () => {
     const out = evaluateReadiness(
       facts({ approvedTemplateNames: ["appoinment_en", "reminder_ar"] }),
     );
-    assert.equal(out.canSend, false);
+    // Still named, but no longer a reason to keep the whole system off: each
+    // feature carries its own template condition and refuses on its own behalf.
+    assert.equal(out.canSend, true);
+    assert.equal(out.blocking.includes("templates"), false);
     const detail = out.checks.find((c: { key: string }) => c.key === "templates")?.detail ?? "";
     // Named explicitly: they are immutable in Meta and two are misspelled on
     // purpose, so "some templates are missing" would not be actionable.
@@ -57,13 +60,31 @@ describe("evaluateReadiness", () => {
     assert.doesNotMatch(detail, /appoinment_en/);
   });
 
-  it("treats 'we could not check' as blocking, not as fine", () => {
-    // Enabling sends while unable to confirm the templates exist is exactly the
-    // case where every single message fails at the provider.
+  it("says so when it could not check, without holding the system hostage", () => {
+    // It used to block. Refusing to let a clinic switch on because a check was
+    // unavailable is a worse failure than letting them try: an unconfirmed
+    // template cannot send a wrong message, only no message, and the queue says
+    // which. The feature's own row still reports it.
     const out = evaluateReadiness(facts({ approvedTemplateNames: null }));
     assert.equal(statusOf(out, "templates"), "unknown");
-    assert.equal(out.canSend, false);
-    assert.deepEqual(out.blocking, ["templates"]);
+    assert.equal(out.canSend, true);
+    assert.deepEqual(out.blocking, []);
+  });
+
+  it("still refuses when the pipeline itself is missing, not merely unproven", () => {
+    // The distinction that makes the above safe: "missing" is a fact, and
+    // without these nothing sends at all, whatever any feature wants.
+    for (const key of ["cron_secret", "whatsapp_transport", "service_role"]) {
+      const broken = evaluateReadiness(
+        facts({
+          hasCronSecret: key !== "cron_secret",
+          hasKapso: key !== "whatsapp_transport",
+          hasServiceRole: key !== "service_role",
+        }),
+      );
+      assert.equal(broken.canSend, false, key);
+      assert.ok(broken.blocking.includes(key), key);
+    }
   });
 
   it("blocks when nothing is scheduled to drain the queue", () => {

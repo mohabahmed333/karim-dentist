@@ -53,7 +53,7 @@ function templateCheck(approved: string[] | null): ReadinessCheck {
     return {
       key: "templates",
       status: "unknown",
-      required: true,
+      required: false,
       detail:
         "Could not ask Meta which templates are approved — set KAPSO_BUSINESS_ACCOUNT_ID.",
     };
@@ -63,14 +63,14 @@ function templateCheck(approved: string[] | null): ReadinessCheck {
     return {
       key: "templates",
       status: "ok",
-      required: true,
+      required: false,
       detail: `All ${required.length} templates approved.`,
     };
   }
   return {
     key: "templates",
     status: "missing",
-    required: true,
+    required: false,
     // Named explicitly: these are immutable in Meta and easy to mistype, and
     // two of them are deliberately misspelled.
     detail: `Not approved yet: ${missing.join(", ")}.`,
@@ -130,10 +130,23 @@ export function evaluateReadiness(facts: ReadinessFacts): Readiness {
     },
   ];
 
-  // `unknown` blocks too. Turning on sends when we cannot confirm the templates
-  // exist is exactly the case where every message fails at the provider.
+  /**
+   * Only what stops *everything* blocks the Send switch.
+   *
+   * Templates used to block it, which meant one unapproved template kept every
+   * other feature off — a clinic with confirmations approved could not send
+   * confirmations because follow-ups were not. Each feature now carries its own
+   * template condition and its own switch, so it refuses on its own behalf and
+   * the rest carry on. What remains here is the pipeline: no key, no scheduler,
+   * no transport and nothing sends at all.
+   *
+   * `unknown` does not block either. It means we could not check — pg_cron may
+   * not be readable, Meta may not have answered — and refusing to let a clinic
+   * turn the system on because a check was unavailable is a worse failure than
+   * letting them try and reading the outcome in the queue.
+   */
   const blocking = checks
-    .filter((c) => c.required && c.status !== "ok")
+    .filter((c) => c.required && c.status === "missing")
     .map((c) => c.key);
 
   return { checks, canSend: blocking.length === 0, blocking };
