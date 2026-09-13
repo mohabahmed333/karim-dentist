@@ -25,6 +25,8 @@ const ready = (over: Record<string, unknown> = {}) => ({
   ai: { mode: "auto", allowBookingWrites: true },
   publishedKnowledge: 5,
   clinicMapUrl: true,
+  marketingConsentCount: 12,
+  reviewUrl: true,
   depositTablesPresent: true,
   deposits: {
     enabled: true,
@@ -95,9 +97,28 @@ describe("evaluateFeatures", () => {
     assert.ok(unmet(facts, "recalls").includes("recall_switch"));
   });
 
-  it("asks for a human check on marketing consent rather than assuming it", () => {
-    const consent = feature(ready(), "recalls").conditions.find((c: { key: string }) => c.key === "consent")!;
-    assert.equal(consent.met, null);
+  it("checks marketing consent for real, now that it is recorded", () => {
+    // It used to be a "confirm this yourself" note because nothing stored
+    // consent. It is a table and a hard gate in the dispatcher now, so the
+    // checklist has to answer the same question the dispatcher asks.
+    for (const key of ["recalls", "reviews"]) {
+      assert.deepEqual(unmet(ready({ marketingConsentCount: 0 }), key).includes("marketing_consent"), true, key);
+      assert.equal(unmet(ready(), key).includes("marketing_consent"), false, key);
+    }
+  });
+
+  it("says to check by hand only when consent could not be counted", () => {
+    const condition = feature(ready({ marketingConsentCount: null }), "recalls").conditions.find(
+      (c: { key: string }) => c.key === "marketing_consent",
+    )!;
+    assert.equal(condition.met, null);
+  });
+
+  it("blocks review requests with nowhere to send anyone", () => {
+    // Alongside the two templates still waiting on Meta, which are their own
+    // blockers and not what this asserts.
+    assert.equal(unmet(ready({ reviewUrl: false }), "reviews").includes("review_url"), true);
+    assert.equal(unmet(ready(), "reviews").includes("review_url"), false);
   });
 
   it("blocks knowledge answers when nothing is published", () => {

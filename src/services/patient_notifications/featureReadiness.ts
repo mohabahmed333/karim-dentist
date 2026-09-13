@@ -12,6 +12,7 @@ import {
   assistantOn,
   databaseUpdated,
   depositsConfigured,
+  marketingConsent,
   sendPipeline,
   templateCondition,
   type Condition,
@@ -153,15 +154,14 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
           why: "These are marketing messages with their own switch, off by default.",
           fix: "Turn on “Recalls and review requests” in this tab, then Save.",
         },
-        manual("consent", "Patients have agreed to marketing messages",
-          "Meta requires consent for marketing templates. This cannot be checked automatically.",
-          "Collect each patient's agreement to marketing messages before switching recalls on."),
+        marketingConsent(f),
       ],
     },
     {
       key: "reviews",
       title: "Review requests",
-      summary: "A patient who replies happily to their follow-up is asked for a review. Unhappy patients never are.",
+      summary:
+        "A patient who rates their visit is asked for a review. A low score waits two days first, so the call they were promised comes before the ask — withholding the link entirely is review gating, which Google prohibits.",
       conditions: [
         ...pipeline,
         templateCondition("followup", f),
@@ -172,6 +172,14 @@ export function evaluateFeatures(f: FeatureFacts): Feature[] {
           met: Boolean(f.notifications?.recallEnabled),
           why: "Review requests share the marketing switch.",
           fix: "Turn on “Recalls and review requests” in this tab, then Save.",
+        },
+        marketingConsent(f),
+        {
+          key: "review_url",
+          label: "Review link set",
+          met: f.reviewUrl,
+          why: "There is nowhere to send a patient who wants to leave one, so the message would arrive without a link.",
+          fix: FIX.reviewUrl,
         },
         ...assistantOn(f),
         {

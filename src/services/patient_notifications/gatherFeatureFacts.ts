@@ -22,14 +22,14 @@ export async function gatherFeatureFacts(
   // Meta for the template list once rather than twice.
   known: { approvedTemplateNames?: string[] | null; cronScheduled?: boolean | null } = {},
 ): Promise<FeatureFacts> {
-  const [templates, scheduled, settings, ai, knowledge, site, deposits] = await Promise.all([
+  const [templates, scheduled, settings, ai, knowledge, site, consent, deposits] = await Promise.all([
     known.approvedTemplateNames !== undefined
       ? Promise.resolve(known.approvedTemplateNames)
       : approvedTemplateNames(),
     known.cronScheduled !== undefined ? Promise.resolve(known.cronScheduled) : cronScheduled(db),
     db
       .from("patient_notification_settings")
-      .select("mode,recall_enabled,reminder_lead_minutes")
+      .select("mode,recall_enabled,reminder_lead_minutes,review_url")
       .limit(1)
       .maybeSingle(),
     loadAiSettings(db).catch(() => null),
@@ -39,6 +39,10 @@ export async function gatherFeatureFacts(
       .eq("is_published", true)
       .is("deleted_at", null),
     db.from("site_settings").select("contact_map_url").limit(1).maybeSingle(),
+    db
+      .from("patient_marketing_consent")
+      .select("phone_suffix", { count: "exact", head: true })
+      .is("withdrawn_at", null),
     db
       .from("deposit_settings")
       .select("enabled,auto_confirm,amount_egp,instapay_handle,wallet_number,recipient_names")
@@ -72,6 +76,8 @@ export async function gatherFeatureFacts(
     ai: ai ? { mode: ai.mode as AiMode, allowBookingWrites: ai.allow_booking_writes } : null,
     publishedKnowledge: knowledge.error ? null : (knowledge.count ?? 0),
     clinicMapUrl: present(site.data?.contact_map_url ?? undefined),
+    marketingConsentCount: consent.error ? null : (consent.count ?? 0),
+    reviewUrl: present(settings.data?.review_url ?? undefined),
     depositTablesPresent: !deposits.error,
     deposits: deposits.data
       ? {

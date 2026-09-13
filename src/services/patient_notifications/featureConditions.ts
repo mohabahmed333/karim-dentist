@@ -50,6 +50,10 @@ export type FeatureFacts = {
   ai: { mode: AiMode; allowBookingWrites: boolean } | null;
   publishedKnowledge: number | null;
   clinicMapUrl: boolean;
+  /** Patients who have agreed to marketing, or null when it could not be counted. */
+  marketingConsentCount: number | null;
+  /** A review destination of the clinic's own, not the map link. */
+  reviewUrl: boolean;
   /** False when the deposit migrations have not been applied. */
   depositTablesPresent: boolean;
   deposits: {
@@ -83,6 +87,8 @@ export const FIX = {
   webhook: "Add KAPSO_WEBHOOK_SECRET in Vercel, and point the Kapso webhook at /api/v1/whatsapp/webhook.",
   aiAuto: "Settings → WhatsApp AI: set the assistant to Replies.",
   bookingWrites: "Settings → WhatsApp AI: allow the assistant to book and cancel appointments.",
+  marketingConsent: "Record each patient's agreement to marketing messages in patient_marketing_consent. Nothing marketing-classed is sent to anyone without a row.",
+  reviewUrl: "Settings → Patient notifications: paste the clinic's review link.",
   depositsOn: "Settings → Deposits: switch deposits on, then Save.",
   depositAmount: "Settings → Deposits: set the deposit amount above zero.",
   depositDestination: "Settings → Deposits: add the clinic's InstaPay handle or wallet number.",
@@ -181,6 +187,26 @@ export function depositsConfigured(f: FeatureFacts): Condition[] {
     c("vision_key", "A model that can read an image", f.env.visionKey,
       "Receipts are queued for staff with no reading at all; only Gemini can see here.", FIX.visionKey),
   ];
+}
+
+/**
+ * The consent gate, as the dispatcher actually applies it.
+ *
+ * Used to be a "check this yourself" note because nothing recorded consent.
+ * It is a table now, so this is a real count — and a real blocker: recalls,
+ * review requests and broadcasts are skipped outright for anyone without a row.
+ */
+export function marketingConsent(f: FeatureFacts): Condition {
+  const count = f.marketingConsentCount;
+  return c(
+    "marketing_consent",
+    "Patients have agreed to marketing messages",
+    count === null ? null : count > 0,
+    count === 0
+      ? "Nobody has agreed yet, so every one of these is skipped as no_marketing_consent. Sending without consent is what gets a WhatsApp number restricted — which would take confirmations and reminders down with it."
+      : "Each patient needs their own agreement on record; anyone without one is skipped.",
+    FIX.marketingConsent,
+  );
 }
 
 export function assistantOn(f: FeatureFacts): Condition[] {
