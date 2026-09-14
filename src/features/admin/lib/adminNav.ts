@@ -22,6 +22,8 @@ export type AdminNavItem = {
   badge?: number;
   /** Permission key required to see/use this item. Omit to always show it. */
   permission?: string;
+  /** Only rendered at depth 0 (a top-level item/group directly under a section). */
+  icon?: LucideIcon;
 };
 
 export type AdminNavGroup = {
@@ -31,7 +33,10 @@ export type AdminNavGroup = {
   href?: string;
   /** Permission key required to see/use the group's own link, if it has one. */
   permission?: string;
-  items: AdminNavItem[];
+  /** Only rendered at depth 0. Sub-groups (depth > 0) don't carry one. */
+  icon?: LucideIcon;
+  /** A child can be a plain item or a further sub-group — one level deeper than today, discriminated the same way `AdminNavSectionEntry` is (`isAdminNavGroup`). */
+  items: AdminNavSectionEntry[];
   defaultOpen?: boolean;
 };
 
@@ -423,12 +428,19 @@ function filterAdminNavGroup(
   group: AdminNavGroup,
   permissions: Set<string> | null,
 ): AdminNavGroup | null {
-  const items = group.items.filter((item) =>
-    isPermitted(item.permission, permissions),
-  );
+  const items: AdminNavSectionEntry[] = [];
+  for (const entry of group.items) {
+    if (isAdminNavGroup(entry)) {
+      const filtered = filterAdminNavGroup(entry, permissions);
+      if (filtered) items.push(filtered);
+    } else if (isPermitted(entry.permission, permissions)) {
+      items.push(entry);
+    }
+  }
   // Only a group with its own link is worth showing empty — a pure
   // toggle/container group (no href) with no visible children is just an
-  // empty expander, so hide it rather than leave a dead-end in the sidebar.
+  // empty expander, so hide it rather than leave a dead-end in the sidebar,
+  // at every depth (a sub-group collapses the same way a top-level one does).
   const hasOwnLink = Boolean(group.href) && isPermitted(group.permission, permissions);
   if (!hasOwnLink && items.length === 0) return null;
   return { ...group, items };
