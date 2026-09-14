@@ -188,6 +188,7 @@ export const adminNavSections: AdminNavSection[] = [
       { href: "/admin/customize", labelKey: "admin.nav.customize", permission: "customize.view" },
       { href: "/admin/usage", labelKey: "admin.nav.usage", permission: "usage.view" },
       { href: "/admin/assist-analytics", labelKey: "admin.nav.assistAnalytics", permission: "assist-analytics.view" },
+      { href: "/admin/ai-actions", labelKey: "admin.nav.aiActions", permission: "ai-actions.view" },
     ],
     groups: [
       {
@@ -241,6 +242,7 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin/customize": "admin.nav.customize",
   "/admin/usage": "admin.nav.usage",
   "/admin/assist-analytics": "admin.nav.assistAnalytics",
+  "/admin/ai-actions": "admin.nav.aiActions",
   "/admin/settings": "admin.nav.settings",
   "/admin/settings/clinic-hours": "admin.settings.hours",
   "/admin/settings/site": "admin.settings.brand",
@@ -290,6 +292,7 @@ export const adminPagePermissions: Record<string, string> = {
   "/admin/customize": "customize.view",
   "/admin/usage": "usage.view",
   "/admin/assist-analytics": "assist-analytics.view",
+  "/admin/ai-actions": "ai-actions.view",
   "/admin/settings": "settings.view",
   "/admin/settings/clinic-hours": "settings.view",
   "/admin/settings/site": "settings.view",

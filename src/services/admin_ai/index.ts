@@ -4,6 +4,7 @@ export * from "./fieldAllowlist";
 export * from "./diff";
 export * from "./registry";
 export * from "./proposals";
+export * from "./listProposals";
 export * from "./clinicalPayloads";
 export * from "./writeKinds";
 export * from "./actionCatalog";
