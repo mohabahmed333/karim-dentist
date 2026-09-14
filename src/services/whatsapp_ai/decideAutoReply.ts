@@ -120,12 +120,34 @@ export function decideAutoReply(input: DecideInput): ReplyDecision {
   // From here on the model wants to write.
   if (!input.allowBookingWrites) return draft("booking_writes_disabled");
 
+  const cleared: AutoReplyEnvelope["actions"] = [];
+
   for (const action of envelope.actions) {
     if (action.kind === "booking.book_slot") {
       // Only a slot the server itself offered this turn. Otherwise a guessed
       // or injected uuid could book over something else.
       if (!action.slotId || !input.offeredSlotIds.includes(action.slotId)) {
         return draft("slot_not_offered");
+      }
+
+      // Moving an appointment is a move, not a second booking.
+      //
+      // The assistant reaches a new time through the same flow either way —
+      // offer times, confirm, book — so it emits `book_slot` for a move as
+      // readily as for a first booking. Run as written, that leaves the
+      // patient holding two appointments and asked for a second deposit on an
+      // appointment they have already paid for. The reschedule RPC moves the
+      // booking they already have, and never asks for money.
+      if (envelope.intent === "booking_reschedule" && input.ownReservationIds.length > 0) {
+        // Which appointment to move is not something to guess at: moving the
+        // wrong one frees a time the patient still expects to keep.
+        if (input.ownReservationIds.length > 1) return draft("ambiguous_reservation");
+        cleared.push({
+          ...action,
+          kind: "booking.reschedule",
+          reservationId: input.ownReservationIds[0],
+        });
+        continue;
       }
     }
     if (action.kind === "booking.reschedule") {
@@ -156,7 +178,8 @@ export function decideAutoReply(input: DecideInput): ReplyDecision {
         return draft("ambiguous_reservation");
       }
     }
+    cleared.push(action);
   }
 
-  return { action: "auto_send", reason: "action", actions: envelope.actions };
+  return { action: "auto_send", reason: "action", actions: cleared };
 }
