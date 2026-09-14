@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   AdminSelect,
@@ -11,6 +13,8 @@ import {
   AdminSelectTrigger,
   AdminSelectValue,
 } from "@/features/admin/ui";
+import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
+import { ConfirmDeleteDialog } from "@/features/admin/components/ConfirmDeleteDialog";
 import {
   SettingsSaveRow,
   SettingsSectionGroup,
@@ -96,13 +100,17 @@ type Props = {
   initialHours: Record<string, DoctorHours>;
 };
 
-export function DoctorsManager({ doctors, initialHours }: Props) {
+export function DoctorsManager({
+  doctors: initialDoctors,
+  initialHours,
+}: Props) {
+  const [doctors, setDoctors] = useState(initialDoctors);
   const [hoursByDoctor, setHoursByDoctor] =
     useState<Record<string, DoctorHours>>(initialHours);
-  const [selectedId, setSelectedId] = useState(doctors[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState(initialDoctors[0]?.id ?? "");
   const [forms, setForms] = useState<Record<string, FormState>>(() => {
     const out: Record<string, FormState> = {};
-    for (const doctor of doctors) {
+    for (const doctor of initialDoctors) {
       out[doctor.id] = initialHours[doctor.id]
         ? formFromHours(initialHours[doctor.id])
         : defaultForm();
@@ -111,6 +119,8 @@ export function DoctorsManager({ doctors, initialHours }: Props) {
   });
   const [pending, setPending] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
 
   const selectedDoctor = doctors.find((d) => d.id === selectedId);
   const form = forms[selectedId] ?? defaultForm();
@@ -157,8 +167,6 @@ export function DoctorsManager({ doctors, initialHours }: Props) {
     patchForm({ time_windows: next });
   }
 
-  const grouped = useMemo(() => doctors, [doctors]);
-
   async function onSave() {
     if (!selectedId) return;
     const parsed = doctorHoursUpsertSchema.safeParse(form);
@@ -192,57 +200,134 @@ export function DoctorsManager({ doctors, initialHours }: Props) {
     }
   }
 
+  /**
+   * Deactivates the doctor's staff account (soft-delete via the existing
+   * accounts endpoint) rather than deleting anything — their past
+   * reservations and clinical notes still need doctor_id to resolve, and
+   * this matches how every other staff account is removed in the app.
+   */
+  async function onRemoveDoctor() {
+    if (!selectedId) return;
+    setRemoving(true);
+    try {
+      const res = await fetch(`/api/v1/admin/accounts/${selectedId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleted: true }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "Remove failed");
+      }
+      const removedId = selectedId;
+      setDoctors((prev) => prev.filter((d) => d.id !== removedId));
+      setHoursByDoctor((prev) => {
+        const next = { ...prev };
+        delete next[removedId];
+        return next;
+      });
+      setForms((prev) => {
+        const next = { ...prev };
+        delete next[removedId];
+        return next;
+      });
+      setSelectedId((prev) =>
+        prev === removedId
+          ? (doctors.find((d) => d.id !== removedId)?.id ?? "")
+          : prev,
+      );
+      setRemoveConfirmOpen(false);
+      toast.success("Doctor removed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Remove failed");
+    } finally {
+      setRemoving(false);
+    }
+  }
+
+  const header = (
+    <LocalizedAdminPageHeader
+      titleKey="admin.settings.doctors"
+      actions={
+        <Button
+          type="button"
+          disabled={pending || !selectedId}
+          onClick={() => void onSave()}
+        >
+          {pending ? "Saving…" : "Save hours"}
+        </Button>
+      }
+    />
+  );
+
   if (doctors.length === 0) {
     return (
-      <div className="rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-6 text-sm text-[var(--admin-muted)]">
-        No staff accounts are marked as doctors yet. Give an account the
-        Doctor role (or flag another role as a doctor role) in Roles, then
-        come back here to set their hours.
+      <div className="space-y-4">
+        {header}
+        <Card className="max-w-3xl gap-0 p-6 text-sm text-[var(--admin-muted)]">
+          No staff accounts are marked as doctors yet. Give an account the
+          Doctor role (or flag another role as a doctor role) in Roles, then
+          come back here to set their hours.
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
-      <div className="space-y-1">
-        {grouped.map((doctor) => (
-          <button
-            key={doctor.id}
-            type="button"
-            onClick={() => setSelectedId(doctor.id)}
-            className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${
-              doctor.id === selectedId
-                ? "bg-[var(--admin-hover)] font-medium text-[var(--admin-text)]"
-                : "text-[var(--admin-muted)] hover:bg-[var(--admin-hover)]/60"
-            }`}
-          >
-            <span className="truncate">
-              {doctor.display_name ?? "Unnamed"}
-            </span>
-            {!hoursByDoctor[doctor.id] ? (
-              <span className="ml-2 shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
-                No hours
+    <div className="space-y-4">
+      {header}
+      <Card className="grid max-w-3xl grid-cols-1 gap-6 p-6 lg:grid-cols-[220px_1fr]">
+        <div className="space-y-1">
+          {doctors.map((doctor) => (
+            <button
+              key={doctor.id}
+              type="button"
+              onClick={() => setSelectedId(doctor.id)}
+              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${
+                doctor.id === selectedId
+                  ? "bg-[var(--admin-hover)] font-medium text-[var(--admin-text)]"
+                  : "text-[var(--admin-muted)] hover:bg-[var(--admin-hover)]/60"
+              }`}
+            >
+              <span className="truncate">
+                {doctor.display_name ?? "Unnamed"}
               </span>
-            ) : null}
-          </button>
-        ))}
-      </div>
+              {!hoursByDoctor[doctor.id] ? (
+                <span className="ml-2 shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                  No hours
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </div>
 
-      {selectedDoctor ? (
-        <div className="space-y-6">
+        {selectedDoctor ? (
+          <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-[var(--admin-text)]">
               {selectedDoctor.display_name ?? "Unnamed"}
             </h2>
-            <label className="flex items-center gap-2 text-xs text-[var(--admin-muted)]">
-              <Checkbox
-                checked={form.is_bookable}
-                onCheckedChange={(checked) =>
-                  patchForm({ is_bookable: checked === true })
-                }
-              />
-              Bookable
-            </label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-xs text-[var(--admin-muted)]">
+                <Checkbox
+                  checked={form.is_bookable}
+                  onCheckedChange={(checked) =>
+                    patchForm({ is_bookable: checked === true })
+                  }
+                />
+                Bookable
+              </label>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={removing}
+                onClick={() => setRemoveConfirmOpen(true)}
+              >
+                <Trash2 aria-hidden />
+                Remove doctor
+              </Button>
+            </div>
           </div>
 
           <SettingsSectionGroup title="Open days">
@@ -375,12 +460,19 @@ export function DoctorsManager({ doctors, initialHours }: Props) {
             >
               {regenerating ? "Regenerating…" : "Regenerate this doctor's slots"}
             </Button>
-            <Button type="button" disabled={pending} onClick={() => void onSave()}>
-              {pending ? "Saving…" : "Save hours"}
-            </Button>
           </SettingsSaveRow>
         </div>
       ) : null}
+      </Card>
+
+      <ConfirmDeleteDialog
+        open={removeConfirmOpen}
+        onOpenChange={setRemoveConfirmOpen}
+        pending={removing}
+        title="Remove this doctor?"
+        description={`${selectedDoctor?.display_name ?? "This doctor"}'s account will be deactivated — their past reservations and notes stay on record, and an admin can reactivate the account from Settings > Accounts.`}
+        onConfirm={() => void onRemoveDoctor()}
+      />
     </div>
   );
 }

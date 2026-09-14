@@ -1,7 +1,5 @@
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
-import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
 import { DoctorsManager } from "@/features/admin/components/doctors/DoctorsManager";
-import { Card } from "@/components/ui/card";
 import { requirePagePermission } from "@/lib/auth/pageGuard";
 import { createClient } from "@/lib/supabase/server";
 import { listDoctors } from "@/services/profiles";
@@ -29,10 +27,7 @@ export default async function AdminSettingsDoctorsPage() {
 
   return (
     <AdminPageMotion className="space-y-4">
-      <LocalizedAdminPageHeader titleKey="admin.settings.doctors" />
-      <Card className="max-w-3xl gap-0 p-6">
-        <DoctorsManager doctors={doctors} initialHours={initialHours} />
-      </Card>
+      <DoctorsManager doctors={doctors} initialHours={initialHours} />
     </AdminPageMotion>
   );
 }
