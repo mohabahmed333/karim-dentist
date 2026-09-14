@@ -270,6 +270,14 @@ export function replyUi(input: {
   pendingDoctorId?: string;
   /** Eligible doctors for the pending service, soonest-first — for the doctor chooser. */
   doctors?: ButtonDoctor[];
+  /**
+   * A reschedule seeds the reservation's own doctor as a default the patient
+   * never actually chose — so unlike an ordinary settled field, the model is
+   * allowed to reopen this one question (`needs` says so) even though
+   * pendingDoctorId is already set. See buildAutoReplyPrompt's reservation
+   * block, which tells the model exactly this.
+   */
+  allowDoctorReselect?: boolean;
   /** What the model says it is still waiting on. Decides what may be tapped. */
   needs?: readonly string[];
   /** Short answers the model proposed for the question it just asked. */
@@ -302,7 +310,11 @@ export function replyUi(input: {
   // Service → Doctor → Date/time: once the service is settled, the next
   // question is who — before any time is offered, same precedence rule as
   // the service branch above (needs decides, not a fixed ranking).
-  if (needs.includes("doctor") && input.pendingService && !input.pendingDoctorId) {
+  if (
+    needs.includes("doctor") &&
+    input.pendingService &&
+    (!input.pendingDoctorId || input.allowDoctorReselect)
+  ) {
     const rows = doctorRows(input.doctors ?? [], input.language);
     if (rows.length === 0) return null;
     return {

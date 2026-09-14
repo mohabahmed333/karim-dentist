@@ -749,6 +749,69 @@ describe("runAutoReply — doctor selection", () => {
     assert.equal(saved.at(-1)?.pending.doctorName, DOCTOR_A.name);
   });
 
+  it("reopens the doctor picker when a rescheduling patient asks to switch, even though the reservation's doctor was already seeded", async () => {
+    const h = harness({
+      prompt: {
+        basePrompt: "# Front desk",
+        slots: [{ id: SLOT_A, starts_at: "2026-09-13T14:00:00.000Z" }],
+        clinic: { name: "The Dental Lounge" },
+        services: [],
+        reservations: [
+          {
+            id: RES_MINE,
+            service_label: "Cleaning",
+            starts_at: "2026-09-14T10:00:00.000Z",
+            status: "confirmed",
+            doctor_id: DOCTOR_A.id,
+            doctor_name: DOCTOR_A.name,
+          },
+        ],
+        history: [{ role: "user" as const, content: "actually, can I see someone else?" }],
+      },
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_reschedule",
+          confidence: 0.9,
+          reply: "Sure — who would you like to see instead?",
+          needs: ["doctor"],
+          collected: { service: "Cleaning" },
+        });
+      },
+      async listEligibleDoctors() {
+        return [DOCTOR_A, DOCTOR_B];
+      },
+    });
+    const captured = withUi(h);
+    await runAutoReply(h.deps);
+    const ui = captured.ui() as { kind: string } | undefined;
+    assert.equal(ui?.kind, "list", "the seeded default must not block an explicit switch request");
+  });
+
+  it("does not reopen the doctor picker on a fresh booking once a doctor is settled", async () => {
+    const h = harness({
+      bookingState: {
+        step: "awaiting_slot",
+        pending: { service: "Cleaning", doctorId: DOCTOR_A.id, doctorName: DOCTOR_A.name },
+        expiresAt: null,
+      },
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_request",
+          confidence: 0.9,
+          reply: "When would you like to come in?",
+          needs: ["doctor"],
+        });
+      },
+      async listEligibleDoctors() {
+        return [DOCTOR_A, DOCTOR_B];
+      },
+    });
+    const captured = withUi(h);
+    await runAutoReply(h.deps);
+    const ui = captured.ui() as { kind: string } | undefined;
+    assert.notEqual(ui?.kind, "list", "a fresh booking's settled doctor is not reopened by a stray needs entry");
+  });
+
   it("does not crash and still replies when a service has zero eligible doctors", async () => {
     const h = harness({
       async chat() {

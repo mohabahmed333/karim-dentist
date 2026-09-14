@@ -341,6 +341,10 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
       pendingService: booking.pending.service,
       pendingDoctorId: booking.pending.doctorId,
       doctors: doctorsForReply,
+      // A reschedule seeds the reservation's own doctor without the patient
+      // ever picking it, so — unlike a fresh booking's settled choice — the
+      // model is trusted to reopen this one question via needs.
+      allowDoctorReselect: envelope.intent === "booking_reschedule",
       // What it says it is waiting for decides what may be tapped — including
       // showing nothing at all when the answer has to be typed out.
       needs: envelope.needs,

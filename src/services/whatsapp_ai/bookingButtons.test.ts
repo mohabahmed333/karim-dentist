@@ -290,6 +290,22 @@ describe("replyUi", () => {
     assert.notEqual(ui?.kind, "list");
   });
 
+  /**
+   * A reschedule seeds the reservation's own doctor as a default the patient
+   * never chose, so it must be reopenable — unlike an ordinary settled pick.
+   */
+  it("reopens the doctor picker on a reschedule, even though a doctor is already pending", () => {
+    const ui = replyUi({
+      ...base,
+      needs: ["doctor"],
+      pendingService: "Dental implants",
+      pendingDoctorId: doctors[0].id,
+      doctors,
+      allowDoctorReselect: true,
+    });
+    assert.equal(ui?.kind, "list");
+  });
+
   it("offers nothing tappable when no doctor is eligible for the settled service", () => {
     const ui = replyUi({
       ...base,
