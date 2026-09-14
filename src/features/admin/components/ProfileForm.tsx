@@ -134,6 +134,7 @@ export function ProfileForm({
       updateProfileStore({
         name: next.display_name,
         avatarUrl: next.avatar_url,
+        jobTitle: next.job_title,
       });
       toast.success(t("admin.profile.success"));
     } catch {

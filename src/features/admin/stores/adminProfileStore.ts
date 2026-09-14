@@ -7,6 +7,7 @@ export type CurrentProfile = {
   name: string | null;
   email: string | null;
   avatarUrl: string | null;
+  jobTitle: string | null;
 };
 
 type AdminProfileState = {
@@ -37,7 +38,7 @@ export const useAdminProfileStore = create<AdminProfileState>((set, get) => ({
       }
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url")
+        .select("display_name, avatar_url, job_title")
         .eq("id", user.id)
         .maybeSingle();
       set({
@@ -45,6 +46,7 @@ export const useAdminProfileStore = create<AdminProfileState>((set, get) => ({
           name: data?.display_name ?? null,
           email: user.email ?? null,
           avatarUrl: data?.avatar_url ?? null,
+          jobTitle: data?.job_title ?? null,
         },
         loading: false,
         fetched: true,

@@ -16,6 +16,11 @@ import { useCurrentProfile } from "@/features/admin/hooks/useCurrentProfile";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { AdminUserAvatar } from "./AdminUserAvatar";
+import {
+  PreviewCard,
+  PreviewCardContent,
+  PreviewCardTrigger,
+} from "@/components/ui/preview-card";
 
 type Props = { compact?: boolean };
 
@@ -27,31 +32,67 @@ export function AdminAccountMenu({ compact = false }: Props) {
   const profile = useCurrentProfile();
   const label = profile?.name || profile?.email || t("admin.settings.account");
 
+  const trigger = (
+    <AdminDropdownMenuTrigger
+      className={cn(
+        compact
+          ? "flex size-7 items-center justify-center rounded-md text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]"
+          : "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]",
+      )}
+      aria-label={t("admin.settings.account")}
+    >
+      <AdminUserAvatar
+        name={profile?.name}
+        email={profile?.email}
+        avatarUrl={profile?.avatarUrl}
+        size={compact ? "sm" : "xs"}
+      />
+      {compact ? (
+        <span className="sr-only">{label}</span>
+      ) : (
+        <>
+          <span className="min-w-0 flex-1 truncate text-start">{label}</span>
+          <ChevronDown className="size-3.5 shrink-0 opacity-70" aria-hidden />
+        </>
+      )}
+    </AdminDropdownMenuTrigger>
+  );
+
   return (
     <AdminDropdownMenu>
-      <AdminDropdownMenuTrigger
-        className={cn(
-          compact
-            ? "flex size-7 items-center justify-center rounded-md text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]"
-            : "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]",
-        )}
-        aria-label={t("admin.settings.account")}
-      >
-        <AdminUserAvatar
-          name={profile?.name}
-          email={profile?.email}
-          avatarUrl={profile?.avatarUrl}
-          size={compact ? "sm" : "xs"}
-        />
-        {compact ? (
-          <span className="sr-only">{label}</span>
-        ) : (
-          <>
-            <span className="min-w-0 flex-1 truncate text-start">{label}</span>
-            <ChevronDown className="size-3.5 shrink-0 opacity-70" aria-hidden />
-          </>
-        )}
-      </AdminDropdownMenuTrigger>
+      {compact && profile ? (
+        <PreviewCard>
+          <PreviewCardTrigger
+            delay={300}
+            closeDelay={100}
+            render={<span className="contents" />}
+          >
+            {trigger}
+          </PreviewCardTrigger>
+          <PreviewCardContent side="right" sideOffset={10} className="w-56 p-2.5">
+            <span className="flex items-center gap-2.5">
+              <AdminUserAvatar
+                name={profile.name}
+                email={profile.email}
+                avatarUrl={profile.avatarUrl}
+                size="md"
+              />
+              <span className="min-w-0">
+                {profile.name ? (
+                  <span className="block truncate text-[13px] font-semibold">
+                    {profile.name}
+                  </span>
+                ) : null}
+                <span className="block truncate text-[11px] text-[var(--admin-muted)]">
+                  {profile.jobTitle || profile.email}
+                </span>
+              </span>
+            </span>
+          </PreviewCardContent>
+        </PreviewCard>
+      ) : (
+        trigger
+      )}
       <AdminDropdownMenuContent
         side={compact ? "right" : "top"}
         align={compact ? "end" : "start"}
