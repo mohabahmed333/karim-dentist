@@ -32,6 +32,8 @@ import { isUpcomingReservation } from "@/services/reservations/stats";
 import type { Reservation } from "@/services/reservations/types";
 import { listPublishedServices } from "@/services/services/queries";
 import type { Service } from "@/services/services/types";
+import { createClient } from "@/lib/supabase/client";
+import { listDoctors, type DoctorProfile } from "@/services/profiles";
 import { QuickBookContext } from "./QuickBookContext";
 import type { QuickBookPrefill } from "./quickBookTypes";
 
@@ -59,18 +61,21 @@ export function QuickBookProvider({ children }: Props) {
   const [pending, setPending] = useState(false);
   const [waConversationId, setWaConversationId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [doctors, setDoctors] = useState<DoctorProfile[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [saveMode, setSaveMode] = useState<BookingSaveMode>("new");
   const [replaceTarget, setReplaceTarget] = useState<Reservation | null>(null);
 
   const loadCatalog = useCallback(async () => {
     try {
-      const [nextServices, nextReservations] = await Promise.all([
+      const [nextServices, nextReservations, nextDoctors] = await Promise.all([
         listPublishedServices(),
         listReservations(),
+        listDoctors(createClient()),
       ]);
       setServices(nextServices);
       setReservations(nextReservations);
+      setDoctors(nextDoctors);
       return nextReservations;
     } catch {
       toast.error("Could not load booking form");
@@ -252,6 +257,7 @@ export function QuickBookProvider({ children }: Props) {
         open={open}
         values={form}
         services={services}
+        doctors={doctors}
         reservations={reservations}
         pending={pending}
         replaceTarget={replaceTarget}
