@@ -8,10 +8,12 @@ import {
   reservationFormSchema,
 } from "@/services/reservations/schemas";
 import {
+  completeReservation,
   createReservation,
   softDeleteReservation,
   updateReservation,
 } from "@/services/reservations/actions";
+import { useConsumablesCheckout } from "@/features/admin/lib/useConsumablesCheckout";
 import {
   bookAppointmentSlot,
   bookOpenSlotMatchingStartsAt,
@@ -45,6 +47,7 @@ export function useReservationEditor(initial: Reservation[]) {
   const [form, setForm] = useState(emptyReservationForm());
   const [pending, setPending] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const checkout = useConsumablesCheckout();
 
   function reservationsUrl(patch: Record<string, string | null>): string {
     const params = new URLSearchParams(searchParams.toString());
@@ -363,6 +366,28 @@ export function useReservationEditor(initial: Reservation[]) {
 
   async function setStatus(status: Reservation["status"]) {
     if (!selectedId || selectedId === "new") return;
+
+    if (status === "completed") {
+      const current = items.find((item) => item.id === selectedId);
+      // Suspends here if the service has any variable-consumable recipe
+      // row, resolving null on cancel — nothing is marked complete and no
+      // inventory moves until the dialog is confirmed.
+      const usages = await checkout.requireCheckout(current?.service_id ?? null);
+      if (usages === null) return;
+      setPending(true);
+      try {
+        const row = await completeReservation(selectedId, usages);
+        setItems((prev) => prev.map((item) => (item.id === row.id ? row : item)));
+        setForm(reservationToForm(row));
+        toast.success("Marked completed");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Update failed");
+      } finally {
+        setPending(false);
+      }
+      return;
+    }
+
     setPending(true);
     try {
       const row = await updateReservation(selectedId, { status });
@@ -412,5 +437,6 @@ export function useReservationEditor(initial: Reservation[]) {
     saveReservation,
     setStatus,
     confirmDelete,
+    checkoutDialog: { ...checkout.dialogProps, pending },
   };
 }

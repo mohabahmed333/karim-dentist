@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { AdminReservationFilters } from "@/features/admin/components/AdminReservationFilters";
 import { CollectionTable } from "@/features/admin/components/CollectionTable";
 import { ConfirmDeleteDialog } from "@/features/admin/components/ConfirmDeleteDialog";
+import { ConsumablesCheckoutDialog } from "@/features/admin/components/inventory/ConsumablesCheckoutDialog";
 import { ReservationFormDialog } from "@/features/admin/components/reservations/ReservationFormDialog";
 import { ReservationFormDrawer } from "@/features/admin/components/reservations/ReservationFormDrawer";
 import { ReservationsPageSkeleton } from "@/features/admin/components/reservations/ReservationsPageSkeleton";
@@ -528,6 +529,8 @@ export function ReservationsPageView({
         pending={editor.pending}
         onConfirm={() => void editor.confirmDelete()}
       />
+
+      <ConsumablesCheckoutDialog {...editor.checkoutDialog} />
     </div>
   );
 }

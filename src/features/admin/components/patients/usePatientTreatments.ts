@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
+  completeTreatment,
   createPatientTreatment,
   deletePatientTreatment,
   deleteTreatmentAttachment,
@@ -17,6 +18,7 @@ import {
   type TreatmentItem,
   type TreatmentSeverity,
 } from "@/services/patient_treatments";
+import { useConsumablesCheckout } from "@/features/admin/lib/useConsumablesCheckout";
 import { cdtAddPayload } from "@/services/cdt";
 import type { Reservation } from "@/services/reservations/types";
 import type { PatientImaging } from "@/services/patient_imaging";
@@ -47,6 +49,7 @@ export function usePatientTreatments(
   const [bookId, setBookId] = useState<string | null>(null);
   const [bookMode, setBookMode] = useState<"book" | "replace">("book");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const checkout = useConsumablesCheckout();
 
   const items: TreatmentItem[] = useMemo(
     () => rows.map(toTreatmentItem),
@@ -95,13 +98,38 @@ export function usePatientTreatments(
       toast.error(parsed.error.issues[0]?.message ?? "Invalid treatment");
       return null;
     }
+    const prevRow = editorId && editorId !== "new" ? rows.find((r) => r.id === editorId) : null;
+    const completingNow = prevRow && prevRow.status !== "done" && parsed.data.status === "done";
+
+    let usages: Awaited<ReturnType<typeof checkout.requireCheckout>> = [];
+    if (completingNow) {
+      // Suspends here if the treatment's service has any variable-
+      // consumable recipe row, resolving null on cancel — the form save is
+      // aborted entirely rather than saving with status stuck at 'open'.
+      usages = await checkout.requireCheckout(prevRow?.service_id ?? null);
+      if (usages === null) return null;
+    }
+
     setPending(true);
     try {
       let row: PatientTreatmentRow;
       if (editorId === "new") {
         row = await createPatientTreatment(patientKey, parsed.data);
       } else if (editorId) {
-        const updated = await updatePatientTreatment(editorId, parsed.data);
+        let updated;
+        if (completingNow) {
+          // Save every other field first, keeping the prior status (the
+          // guard in updatePatientTreatment rejects a direct 'done' write),
+          // then complete separately so the recipe deduction is the last
+          // step and nothing else about this save is lost along the way.
+          await updatePatientTreatment(editorId, {
+            ...parsed.data,
+            status: prevRow!.status,
+          });
+          updated = await completeTreatment(editorId, usages);
+        } else {
+          updated = await updatePatientTreatment(editorId, parsed.data);
+        }
         const prev = rows.find((item) => item.id === updated.id);
         row = {
           ...prev,
@@ -347,5 +375,6 @@ export function usePatientTreatments(
     addCdtProcedure,
     updateFee,
     movePhase,
+    checkoutDialog: { ...checkout.dialogProps, pending },
   };
 }

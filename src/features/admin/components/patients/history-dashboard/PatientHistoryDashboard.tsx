@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ClinicalCanvasLtr } from "@/features/admin/components/ClinicalCanvasLtr";
 import { ConfirmDeleteDialog } from "@/features/admin/components/ConfirmDeleteDialog";
+import { ConsumablesCheckoutDialog } from "@/features/admin/components/inventory/ConsumablesCheckoutDialog";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 import type { PatientImaging } from "@/services/patient_imaging";
 import type { PatientToothNote } from "@/services/patient_tooth_notes";
@@ -88,6 +89,7 @@ export function PatientHistoryDashboard({
         active={viewFromPane(records)}
         onChange={(view) => setRecords(paneFromView(view))}
       />
+      <ConsumablesCheckoutDialog {...treatmentsChart.checkoutDialog} />
       <ConfirmDeleteDialog
         open={Boolean(imagingChart.deleteId)}
         onOpenChange={(open) => {

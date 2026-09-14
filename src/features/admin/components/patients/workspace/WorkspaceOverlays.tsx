@@ -1,6 +1,7 @@
 "use client";
 
 import { ConfirmDeleteDialog } from "@/features/admin/components/ConfirmDeleteDialog";
+import { ConsumablesCheckoutDialog } from "@/features/admin/components/inventory/ConsumablesCheckoutDialog";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 import type { Service } from "@/services/services/types";
 import { ClinicalNoteModal } from "../charting/ClinicalNoteModal";
@@ -43,6 +44,7 @@ export function WorkspaceOverlays({ group, services, w }: Props) {
         onClose={w.clinicalNotes.onClose}
         onSave={w.clinicalNotes.onSave}
       />
+      <ConsumablesCheckoutDialog {...chart.checkoutDialog} />
       <ConfirmDeleteDialog
         open={Boolean(chart.deleteId)}
         onOpenChange={(open) => {
