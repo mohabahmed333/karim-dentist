@@ -629,6 +629,7 @@ export const adminEn = {
   "admin.doctors.restrictedToMany": "Restricted to {count} doctors",
   "admin.doctors.priceOverridePlaceholder": "Clinic default: {default} — leave blank to use it",
   "admin.doctors.priceOverridePlaceholderNone": "Price this doctor charges (optional)",
+  "admin.doctors.priceOutOfRange": "{service}: price must be between {min} and {max} EGP, the clinic's own published range for this service.",
   "admin.doctors.openDays": "Open days",
   "admin.doctors.timeWindows": "Time windows",
   "admin.doctors.timeWindowsHint": "Choose From / To times from the lists — no typing.",
@@ -1140,10 +1141,10 @@ export const adminEn = {
 
 
   "admin.reservations.patientName": "Patient name",
-  "admin.reservations.searchExistingPatient": "Search for an existing patient…",
   "admin.reservations.linkedToPatient": "Linked to existing patient",
   "admin.reservations.unlinkPatient": "Unlink",
-  "admin.reservations.enterNewPatientInstead": "Enter a new patient instead",
+  "admin.reservations.searchingPatients": "Searching…",
+  "admin.reservations.noMatchingPatients": "No matching patients",
   "admin.reservations.openSlot": "Open slot",
 
 

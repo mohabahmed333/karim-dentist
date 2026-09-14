@@ -631,6 +631,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.doctors.restrictedToMany": "مقيّدة بـ {count} أطباء",
   "admin.doctors.priceOverridePlaceholder": "سعر العيادة الافتراضي: {default} — اتركه فارغًا لاستخدامه",
   "admin.doctors.priceOverridePlaceholderNone": "السعر الذي يتقاضاه هذا الطبيب (اختياري)",
+  "admin.doctors.priceOutOfRange": "{service}: يجب أن يكون السعر بين {min} و{max} جنيه، وهو النطاق المعلن من العيادة لهذه الخدمة.",
   "admin.doctors.openDays": "أيام العمل",
   "admin.doctors.timeWindows": "الفترات الزمنية",
   "admin.doctors.timeWindowsHint": "اختر وقتي البداية والنهاية من القوائم — بلا كتابة.",
@@ -1141,10 +1142,10 @@ export const adminAr: Record<AdminMessageKey, string> = {
 
 
   "admin.reservations.patientName": "اسم المريض",
-  "admin.reservations.searchExistingPatient": "ابحث عن مريض موجود…",
   "admin.reservations.linkedToPatient": "مرتبط بمريض موجود",
   "admin.reservations.unlinkPatient": "إلغاء الربط",
-  "admin.reservations.enterNewPatientInstead": "أدخل مريضًا جديدًا بدلاً من ذلك",
+  "admin.reservations.searchingPatients": "جارٍ البحث…",
+  "admin.reservations.noMatchingPatients": "لا يوجد مرضى مطابقون",
   "admin.reservations.openSlot": "موعد متاح",
 
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReservationFormValues } from "@/services/reservations/schemas";
 import { RESERVATION_STATUSES } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
@@ -92,7 +92,19 @@ export function ReservationFormFields({
   const [slots, setSlots] = useState<SlotDto[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [slotsError, setSlotsError] = useState<string | null>(null);
-  const [searching, setSearching] = useState(false);
+  const [nameDropdownOpen, setNameDropdownOpen] = useState(false);
+  const nameFieldRef = useRef<HTMLLabelElement>(null);
+
+  useEffect(() => {
+    if (!nameDropdownOpen) return;
+    function onDoc(event: MouseEvent) {
+      if (!nameFieldRef.current?.contains(event.target as Node)) {
+        setNameDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [nameDropdownOpen]);
 
   useEffect(() => {
     let alive = true;
@@ -164,7 +176,7 @@ export function ReservationFormFields({
       phone: patient.phone,
       email: patient.email ?? "",
     });
-    setSearching(false);
+    setNameDropdownOpen(false);
   }
 
   function onServiceChange(serviceValue: string) {
@@ -232,53 +244,39 @@ export function ReservationFormFields({
         </p>
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
-        {values.patient_id ? (
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-hover)]/30 px-3 py-2 sm:col-span-2">
-            <span className="text-xs text-[var(--admin-text)]">
-              {t("admin.reservations.linkedToPatient")}
-            </span>
-            <button
-              type="button"
-              className="text-xs font-medium text-[var(--admin-primary)] hover:underline"
-              disabled={pending}
-              onClick={() => patch({ patient_id: null })}
-            >
-              {t("admin.reservations.unlinkPatient")}
-            </button>
-          </div>
-        ) : searching ? (
-          <div className="grid gap-2 sm:col-span-2">
-            <PatientCombobox disabled={pending} onSelect={onPatientSelect} />
-            <button
-              type="button"
-              className="justify-self-start text-xs text-[var(--admin-muted)] hover:underline"
-              onClick={() => setSearching(false)}
-            >
-              {t("admin.reservations.enterNewPatientInstead")}
-            </button>
-          </div>
-        ) : (
-          <div className="sm:col-span-2">
-            <button
-              type="button"
-              data-showreel-action="reservation-search-existing-patient"
-              className="text-xs font-medium text-[var(--admin-primary)] hover:underline"
-              disabled={pending}
-              onClick={() => setSearching(true)}
-            >
-              {t("admin.reservations.searchExistingPatient")}
-            </button>
-          </div>
-        )}
-        <label className="grid gap-2">
+        <label ref={nameFieldRef} className="relative grid gap-2">
           <Label htmlFor="patient_name">{t("admin.reservations.patientName")}</Label>
           <AdminInput
             id="patient_name"
             data-showreel-action="reservation-patient-name"
+            autoComplete="off"
             value={values.patient_name}
             disabled={pending}
-            onChange={(event) => patch({ patient_name: event.target.value })}
+            onFocus={() => setNameDropdownOpen(true)}
+            onChange={(event) => {
+              patch({ patient_name: event.target.value, patient_id: null });
+              setNameDropdownOpen(true);
+            }}
           />
+          {values.patient_id ? (
+            <span className="text-[11px] text-[var(--admin-muted)]">
+              {t("admin.reservations.linkedToPatient")}{" "}
+              <button
+                type="button"
+                className="text-[var(--admin-primary)] hover:underline"
+                disabled={pending}
+                onClick={() => patch({ patient_id: null })}
+              >
+                {t("admin.reservations.unlinkPatient")}
+              </button>
+            </span>
+          ) : (
+            <PatientCombobox
+              query={values.patient_name}
+              open={nameDropdownOpen}
+              onSelect={onPatientSelect}
+            />
+          )}
         </label>
         <label className="grid gap-2">
           <Label htmlFor="phone">{t("admin.reservations.phone")}</Label>
