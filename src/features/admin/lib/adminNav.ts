@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
+  History,
   Home,
   Inbox,
   LayoutGrid,
@@ -90,6 +91,8 @@ export const adminRailItems: AdminRailItem[] = [
     permission: "reservations.view",
     children: [
       { href: "/admin/waitlist", labelKey: "admin.nav.waitlist", permission: "waitlist.view" },
+      // A deposit belongs to a booking, same permission as the reservations list.
+      { href: "/admin/deposits", labelKey: "admin.nav.deposits", permission: "reservations.view" },
     ],
   },
   {
@@ -132,6 +135,20 @@ export const adminRailItems: AdminRailItem[] = [
     labelKey: "admin.nav.usage",
     icon: Gauge,
     permission: "usage.view",
+    children: [
+      { href: "/admin/assist-analytics", labelKey: "admin.nav.assistAnalytics", permission: "assist-analytics.view" },
+    ],
+  },
+  {
+    id: "logs",
+    href: "/admin/system-log",
+    labelKey: "admin.nav.logs",
+    icon: History,
+    container: true,
+    children: [
+      { href: "/admin/system-log", labelKey: "admin.nav.systemLog", permission: "system-log.view" },
+      { href: "/admin/ai-actions", labelKey: "admin.nav.aiActions", permission: "ai-actions.view" },
+    ],
   },
   {
     id: "settings",
