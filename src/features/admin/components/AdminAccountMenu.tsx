@@ -62,11 +62,7 @@ export function AdminAccountMenu({ compact = false }: Props) {
     <AdminDropdownMenu>
       {compact && profile ? (
         <PreviewCard>
-          <PreviewCardTrigger
-            delay={300}
-            closeDelay={100}
-            render={<span className="contents" />}
-          >
+          <PreviewCardTrigger delay={300} closeDelay={100} render={<span />}>
             {trigger}
           </PreviewCardTrigger>
           <PreviewCardContent side="right" sideOffset={10} className="w-56 p-2.5">
