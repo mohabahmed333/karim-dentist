@@ -32,6 +32,12 @@ export type BuildPromptInput = {
   /** Whether the assistant is permitted to write bookings this turn. */
   canBook: boolean;
   services: { title: string; title_ar?: string | null; price?: string | null }[];
+  /**
+   * The booking deposit, when the clinic takes one. Server-supplied, so it is
+   * the one money figure the assistant may state — and the only honest answer
+   * it has to "how much?", since no service carries a price.
+   */
+  deposit?: { amountEgp: number; currency: string } | null;
   /** Clinic knowledge retrieved for this specific message. */
   knowledge?: { title: string; body: string }[];
   /**
@@ -56,6 +62,33 @@ export type BuiltPrompt = {
   /** Slot ids the model was actually shown — the allowlist for its reply. */
   offeredSlotIds: string[];
 };
+
+/**
+ * What the clinic takes up front, if anything.
+ *
+ * This is the only price in the assistant's world. A service row has no price
+ * column, so every fee figure it could produce would be invented — but the
+ * deposit is real, it is what the patient is asked for at the end of a booking
+ * anyway, and "how much?" deserves a better answer than silence.
+ *
+ * The wording matters: it is a deposit towards the visit, not the cost of it.
+ */
+function depositBlock(
+  deposit: { amountEgp: number; currency: string } | null,
+): string {
+  if (!deposit || !(deposit.amountEgp > 0)) {
+    return "Booking deposit: none. You have no price information at all — every question about cost goes to a colleague.";
+  }
+  return [
+    `Booking deposit: ${deposit.amountEgp} ${deposit.currency}, taken to confirm an appointment.`,
+    "This is the ONE money figure you may state, and only as a deposit —",
+    "never as the price of a treatment or of the visit. The full cost is",
+    "confirmed by a colleague.",
+    `Use the number exactly: ${deposit.amountEgp}. Write the currency the way a`,
+    "patient reads it in their own language — \"جنيه\" in Arabic, \"EGP\" in",
+    "English — never the two mixed.",
+  ].join("\n");
+}
 
 function slotBlock(slots: OfferedSlot[]): string {
   if (slots.length === 0) {
@@ -185,6 +218,8 @@ export function buildAutoReplyPrompt(input: BuildPromptInput): BuiltPrompt {
     formatClinicHours(input.hours),
     "",
     servicesBlock,
+    "",
+    depositBlock(input.deposit ?? null),
     "",
     knowledgeBlock(input.knowledge ?? []),
     "",

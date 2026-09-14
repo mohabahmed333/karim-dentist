@@ -219,6 +219,7 @@ export async function processAutoReplyJob(
       { data: recentEvents },
       knowledge,
       { data: heldSlotRows },
+      depositSettings,
     ] = await Promise.all([
       countRecentAiReplies(db, conversation.id),
       db
@@ -297,6 +298,9 @@ export async function processAutoReplyJob(
             .eq("status", "open")
             .gte("starts_at", nowIso)
         : Promise.resolve({ data: [] as { id: string; starts_at: string }[] }),
+      // Never lets a deposit lookup break a reply: no settings simply means
+      // the assistant has no price to quote.
+      loadDepositSettings(db).catch(() => null)
     ]);
 
     // Consecutive rough turns, newest first: a draft or a handoff means the
@@ -363,6 +367,16 @@ export async function processAutoReplyJob(
             title: s.title as string,
             title_ar: (s.title_ar as string) || null,
           })),
+        // The clinic's own deposit, so "how much?" has an honest answer instead
+        // of a dead end. It is the only money figure the assistant may state,
+        // and only as a deposit — the guard in runAutoReply enforces both.
+        deposit:
+          depositSettings?.enabled && Number(depositSettings.amount_egp) > 0
+            ? {
+                amountEgp: Number(depositSettings.amount_egp),
+                currency: depositSettings.currency || "EGP",
+              }
+            : null,
         knowledge,
         // No patient-name field is passed here on purpose. WhatsApp's own
         // display name used to be treated as the patient's real name once

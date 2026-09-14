@@ -333,7 +333,9 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
   // this is what makes that true. The deposit amount is unaffected — the server
   // composes it and appends it below, which is why it is checked here against
   // the model's own words rather than the outgoing text.
-  if (quotesMoney(envelope.reply)) {
+  // Reads the same figure the prompt was given, so the two can never disagree
+  // about which amount is allowed through.
+  if (quotesMoney(envelope.reply, { depositEgp: deps.prompt.deposit?.amountEgp ?? null })) {
     const { id } = await deps.draft(envelope.reply, "price_claim");
     await deps.record({
       decision: "draft",

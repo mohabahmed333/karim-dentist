@@ -210,6 +210,41 @@ describe("quotesMoney", () => {
       assert.equal(quotesMoney(reply), false));
   }
 
+  /**
+   * The booking deposit is the one figure the server itself put in the prompt,
+   * so repeating it is not inventing anything — as long as the reply calls it a
+   * deposit. "المقدم ٢٠٠ جنيه" is the answer we want; "الكشف ٢٠٠ جنيه" is the
+   * claim we are stopping, and the two differ by one word.
+   */
+  describe("the booking deposit, which the server supplied", () => {
+    const dep = { depositEgp: 200 };
+
+    for (const reply of [
+      "عشان نأكد الميعاد بناخد مقدم 200 جنيه، والزميل هيأكدلك التكلفة",
+      "عشان نأكد الميعاد بناخد مقدم ٢٠٠ جنيه",
+      "There is a deposit of 200 EGP to confirm the appointment",
+    ]) {
+      it(`allows "${reply}"`, () => assert.equal(quotesMoney(reply, dep), false));
+    }
+
+    it("refuses the same figure presented as the price of the visit", () => {
+      assert.equal(quotesMoney("الكشف بـ 200 جنيه", dep), true);
+    });
+
+    it("refuses a figure that is not the deposit", () => {
+      assert.equal(quotesMoney("المقدم 350 جنيه", dep), true);
+    });
+
+    it("refuses a total built around the deposit", () => {
+      assert.equal(quotesMoney("المقدم 200 جنيه والباقي 300 جنيه", dep), true);
+    });
+
+    it("refuses the deposit when the clinic takes none", () => {
+      assert.equal(quotesMoney("مقدم 200 جنيه", {}), true);
+      assert.equal(quotesMoney("مقدم 200 جنيه", { depositEgp: 0 }), true);
+    });
+  });
+
   /** Ordinary booking talk is full of numbers and none of them are prices. */
   for (const reply of [
     "ميعادك الأربعاء 16 سبتمبر الساعة 1:30 م",

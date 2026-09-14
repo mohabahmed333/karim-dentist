@@ -142,40 +142,80 @@ export function claimsCompletedBooking(reply: string): boolean {
  */
 const CURRENCY = "(?:جنيه(?:ات|ا|اً)?|ج\\s*\\.?\\s*م|EGP|E\\.?G\\.?P|LE|L\\.E|pounds?)";
 
-/** A figure sitting next to a currency, in either order: "200 جنيه", "EGP 200". */
-const PRICE_FIGURE = [
-  new RegExp(`\\d[\\d.,]*\\s*${CURRENCY}`, "i"),
-  new RegExp(`${CURRENCY}\\s*\\d`, "i"),
+/** A figure beside a currency, in either order: "200 جنيه", "EGP 200". */
+const PRICE_FIGURES = [
+  new RegExp(`(\\d[\\d.,]*)\\s*${CURRENCY}`, "gi"),
+  new RegExp(`${CURRENCY}\\s*(\\d[\\d.,]*)`, "gi"),
 ];
 
 /** Claiming something costs nothing is quoting a price of zero. */
 const FREE_CLAIMS = [/مجان/, /ببلاش/, /بدون\s*مقابل/, /free\s+of\s+charge/i, /\bno\s+charge\b/i];
 
 /**
+ * Words that make a figure a deposit rather than a fee.
+ *
+ * `normalizeArabic` has already folded the hamza and the ta marbuta, so
+ * "مُقدَّم", "مقدم" and "المقدم" all arrive here the same.
+ */
+const DEPOSIT_MARKERS = [/مقدم/, /عربون/, /\bdeposit\b/i];
+
+export type MoneyGuardOptions = {
+  /**
+   * The booking deposit the server itself supplied to the prompt, if any. The
+   * one figure the assistant is allowed to repeat.
+   */
+  depositEgp?: number | null;
+};
+
+function figuresIn(probe: string): number[] {
+  const found: number[] = [];
+  for (const re of PRICE_FIGURES) {
+    re.lastIndex = 0;
+    for (const match of probe.matchAll(re)) {
+      const n = Number(match[1].replace(/,/g, ""));
+      if (Number.isFinite(n)) found.push(n);
+    }
+  }
+  return found;
+}
+
+/**
  * Does this reply tell the patient what something costs?
  *
- * The clinic's prices are not in the assistant's context — there is no price on
- * a service row — so any figure it produces was invented, and a patient acts on
- * a quoted price. Money is the one subject where "a colleague will confirm" is
- * the right answer rather than a dead end.
+ * No service row carries a price, so a fee figure from the assistant was
+ * invented — and a patient acts on a quoted price. The prompt sends money
+ * questions to a person; this is what makes that true rather than hoped for.
  *
- * A figure beside a currency is refused even inside a question: "الكشف بـ 200
- * جنيه، تحب أحجز؟" has already told them the price. A claim that something is
- * free is refused only when it is asserted — asking "تقصد عرض مجاني؟" is the
- * clarifying question the prompt now asks for, and must stay allowed.
+ * The one exception is the booking deposit, because the server put it in the
+ * prompt itself. It is allowed through only when every figure in the reply is
+ * that exact amount *and* the reply calls it a deposit: "المقدم ٢٠٠ جنيه" is
+ * the answer we want, while "الكشف ٢٠٠ جنيه" is the claim we are stopping,
+ * and the two differ by one word.
  *
- * The deposit is not affected: its amount is composed by the server and
- * appended after this runs, precisely so it cannot be hallucinated.
+ * A figure is refused even inside a question — "الكشف بـ ٢٠٠ جنيه، تحب أحجز؟"
+ * has already told them the price. A claim that something is free is refused
+ * only when asserted; asking "تقصد عرض مجاني؟" is the clarifying question the
+ * prompt now asks for and must stay allowed.
  *
- * When the clinic publishes real prices, this guard has to learn to allow a
- * figure that appears verbatim in the context the server supplied. Until then
- * every figure is invented.
+ * The deposit instructions the server appends are not checked here at all —
+ * this reads the model's own words, before the append.
  */
-export function quotesMoney(reply: string): boolean {
+export function quotesMoney(reply: string, options: MoneyGuardOptions = {}): boolean {
   // `\d` is ASCII-only, so "٢٠٠ جنيه" would sail past an unfolded probe — the
   // same trap as `\b` beside an Arabic letter.
   const probe = foldArabicDigits(normalizeArabic(reply));
-  if (PRICE_FIGURE.some((re) => re.test(probe))) return true;
+
+  const figures = figuresIn(probe);
+  if (figures.length > 0) {
+    const deposit = options.depositEgp;
+    const quotesOnlyTheDeposit =
+      typeof deposit === "number" &&
+      deposit > 0 &&
+      figures.every((n) => n === deposit) &&
+      DEPOSIT_MARKERS.some((re) => re.test(probe));
+    if (!quotesOnlyTheDeposit) return true;
+  }
+
   const asks = OFFER_MARKERS.some((re) => re.test(probe));
   return !asks && FREE_CLAIMS.some((re) => re.test(probe));
 }
