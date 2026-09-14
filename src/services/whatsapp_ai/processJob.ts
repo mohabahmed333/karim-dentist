@@ -206,6 +206,15 @@ export async function processAutoReplyJob(
         ? (state.offered_slot_ids ?? [])
         : [];
 
+    // Read once, ahead of the parallel batch below, purely to scope the open
+    // slots query to whichever doctor the booking already settled on — the
+    // slot the patient taps is what decides the doctor on the RPC side (see
+    // runBotActions), so a slot outside this list would silently book the
+    // wrong doctor rather than the one they actually chose. Doctor-less
+    // (unset, or "no preference" not yet resolved) means every open slot, the
+    // same as before doctors existed.
+    const priorBookingState = readBookingState(state, new Date());
+
     const nowIso = new Date().toISOString();
     const [
       counts,
@@ -232,13 +241,17 @@ export async function processAutoReplyJob(
         .order("wa_timestamp", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      db
-        .from("appointment_slots")
-        .select("id,starts_at")
-        .eq("status", "open")
-        .gte("starts_at", nowIso)
-        .order("starts_at", { ascending: true })
-        .limit(SLOT_OFFER_LIMIT),
+      (() => {
+        let query = db
+          .from("appointment_slots")
+          .select("id,starts_at")
+          .eq("status", "open")
+          .gte("starts_at", nowIso);
+        if (priorBookingState.pending.doctorId) {
+          query = query.eq("doctor_id", priorBookingState.pending.doctorId);
+        }
+        return query.order("starts_at", { ascending: true }).limit(SLOT_OFFER_LIMIT);
+      })(),
       db
         .from("site_settings")
         .select("contact_phone, contact_address, contact_clinic_name")
@@ -557,7 +570,7 @@ export async function processAutoReplyJob(
       },
       // An expired or corrupt row reads as a fresh start, so an abandoned
       // booking from an hour ago is never resumed as if it were live.
-      bookingState: readBookingState(state, new Date()),
+      bookingState: priorBookingState,
       async saveBookingState(next) {
         await saveBookingState(db, conversation.id, next);
       },
