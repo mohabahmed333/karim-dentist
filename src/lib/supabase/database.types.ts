@@ -3508,6 +3508,10 @@ export type Database = {
         Args: { p_phone?: string | null; p_reservation_id: string; p_slot_id: string }
         Returns: string
       }
+      revert_system_action: {
+        Args: { p_log_id: string }
+        Returns: undefined
+      }
       search_clinic_knowledge: {
         Args: { p_limit?: number; p_query: string }
         Returns: {
