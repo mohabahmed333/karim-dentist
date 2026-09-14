@@ -3,6 +3,7 @@ import { RESERVATION_STATUSES } from "./types";
 
 export const reservationFormSchema = z.object({
   patient_name: z.string().trim().min(1, "Name is required"),
+  patient_id: z.string().uuid().nullable().optional(),
   phone: z.string().trim().min(1, "Phone is required"),
   email: z.string().trim().email("Invalid email").optional().or(z.literal("")),
   service_id: z.string().uuid().nullable().optional(),

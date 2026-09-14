@@ -375,6 +375,7 @@ export function ReservationFormFields({
 export function emptyReservationForm(): ReservationFormValues {
   return {
     patient_name: "",
+    patient_id: null,
     phone: "",
     email: "",
     service_id: null,
@@ -397,6 +398,7 @@ export function reservationToForm(
   const minutes = String(starts.getMinutes()).padStart(2, "0");
   return {
     patient_name: reservation.patient_name,
+    patient_id: reservation.patient_id,
     phone: reservation.phone,
     email: reservation.email ?? "",
     service_id: reservation.service_id,
