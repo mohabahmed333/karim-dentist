@@ -101,6 +101,12 @@ export function ReservationFormDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex shrink-0 items-center gap-2 px-4 pb-3">
+          <StepBadge index={1} label={t("admin.reservations.stepPatient")} active={step === "patient"} done={step === "details"} />
+          <div className="h-px flex-1 bg-[var(--admin-border)]" />
+          <StepBadge index={2} label={t("admin.reservations.stepDetails")} active={step === "details"} done={false} />
+        </div>
+
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
           {step === "patient" ? (
             <PatientPickerStep onPatientChosen={handlePatientChosen} />
@@ -159,6 +165,14 @@ export function ReservationFormDialog({
           <DialogFooter className="m-0 shrink-0 rounded-none border-[var(--admin-border)] bg-[var(--admin-hover)]/40 px-4 py-3">
             <Button
               type="button"
+              variant="ghost"
+              disabled={pending}
+              onClick={() => setStep("patient")}
+            >
+              {t("admin.reservations.backToPatient")}
+            </Button>
+            <Button
+              type="button"
               data-showreel-action="reservation-create"
               disabled={pending}
               onClick={onSave}
@@ -205,5 +219,44 @@ function ModeOption({
         {description}
       </span>
     </button>
+  );
+}
+
+function StepBadge({
+  index,
+  label,
+  active,
+  done,
+}: {
+  index: number;
+  label: string;
+  active: boolean;
+  done: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "flex items-center gap-1.5 rounded-full px-2 py-1 text-[11px] font-medium",
+        active
+          ? "bg-[var(--admin-primary)] text-white"
+          : done
+            ? "text-[var(--admin-text)]"
+            : "text-[var(--admin-muted)]",
+      )}
+    >
+      <span
+        className={cn(
+          "flex size-4 items-center justify-center rounded-full text-[10px]",
+          active
+            ? "bg-white/20"
+            : done
+              ? "bg-[var(--admin-primary)] text-white"
+              : "border border-[var(--admin-border)]",
+        )}
+      >
+        {index}
+      </span>
+      {label}
+    </span>
   );
 }
