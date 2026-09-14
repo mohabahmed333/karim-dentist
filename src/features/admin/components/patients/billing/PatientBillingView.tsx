@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,6 +20,9 @@ import type { LedgerEntryWithBalance } from "@/services/patient_billing/types";
 import { formatEgp } from "@/services/deposits/receiptMessages";
 import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
 import { extractSingleAmount, resolveServiceDoctorPrice } from "@/services/service_doctors/pricing";
+import { ProposeServicesForm } from "./ProposeServicesForm";
+import { PendingProposalsList } from "./PendingProposalsList";
+import type { PendingProposal } from "@/services/treatment_proposals/types";
 import { useLocale } from "@/lib/i18n";
 
 type FormState = {
@@ -45,6 +49,9 @@ type Props = {
   services: PriceableService[];
   doctors: PriceableDoctor[];
   serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
+  patientPhone: string;
+  canPropose: boolean;
+  pendingProposals: PendingProposal[];
 };
 
 export function PatientBillingView({
@@ -56,7 +63,11 @@ export function PatientBillingView({
   services,
   doctors,
   serviceDoctorMappings,
+  patientPhone,
+  canPropose,
+  pendingProposals,
 }: Props) {
+  const router = useRouter();
   const { locale } = useLocale();
   const [entries, setEntries] = useState(initialEntries);
   const [balance, setBalance] = useState(initialBalance);
@@ -157,6 +168,24 @@ export function PatientBillingView({
           {balance > 0 ? " owed" : balance < 0 ? " credit" : ""}
         </p>
       </Card>
+
+      <PendingProposalsList
+        proposals={pendingProposals}
+        doctors={doctors}
+        onDecided={() => router.refresh()}
+      />
+
+      {canPropose ? (
+        <ProposeServicesForm
+          patientKey={patientKey}
+          patientPhone={patientPhone}
+          patientName={displayName}
+          services={services}
+          doctors={doctors}
+          serviceDoctorMappings={serviceDoctorMappings}
+          onSent={() => router.refresh()}
+        />
+      ) : null}
 
       {canEdit ? (
         <Card className="max-w-3xl gap-3 bg-transparent p-6">
