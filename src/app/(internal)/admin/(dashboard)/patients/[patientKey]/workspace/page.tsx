@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PatientWorkspaceView } from "@/features/admin/components/patients/workspace/PatientWorkspaceView";
@@ -56,24 +55,18 @@ export default async function PatientWorkspacePage({ params }: Props) {
     ]);
 
   return (
-    <Suspense
-      fallback={
-        <p className="p-6 text-sm text-[#6b7280]">Loading workspace…</p>
-      }
-    >
-      <PatientWorkspaceView
-        group={group}
-        notes={notes}
-        imaging={imaging}
-        treatments={treatments}
-        services={servicesResult}
-        directory={directory}
-        doctors={doctors.map((d) => ({ id: d.id, display_name: d.display_name }))}
-        serviceDoctorMappings={serviceDoctorMappings}
-        canPropose={session.permissions.has("patients.treatments.edit")}
-        canEditBilling={session.permissions.has("patients.billing.edit")}
-        billingBalance={ledger.balance}
-      />
-    </Suspense>
+    <PatientWorkspaceView
+      group={group}
+      notes={notes}
+      imaging={imaging}
+      treatments={treatments}
+      services={servicesResult}
+      directory={directory}
+      doctors={doctors.map((d) => ({ id: d.id, display_name: d.display_name }))}
+      serviceDoctorMappings={serviceDoctorMappings}
+      canPropose={session.permissions.has("patients.treatments.edit")}
+      canEditBilling={session.permissions.has("patients.billing.edit")}
+      billingBalance={ledger.balance}
+    />
   );
 }
