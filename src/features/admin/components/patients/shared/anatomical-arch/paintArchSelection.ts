@@ -12,7 +12,17 @@ type PaintOpts = {
   markedFdis: string[];
 };
 
-/** Selected / marked teeth use highlight; others stay clinical white. */
+const TISSUE_TARGET = new THREE.Color(ARCH_ROOT);
+const CROWN_TARGET = new THREE.Color(ARCH_CROWN);
+
+/**
+ * Selected / marked teeth use highlight; others stay clinical white.
+ *
+ * Stashes each material's *target* color rather than applying it directly —
+ * AnatomicalArchModel's per-frame loop glides mat.color toward that target,
+ * so picking a tooth reads as a smooth tint transition instead of an
+ * instant, jarring color swap.
+ */
 export function paintArchSelection(
   root: THREE.Object3D,
   selectedFdi: string | null,
@@ -25,13 +35,13 @@ export function paintArchSelection(
     const mat = mesh.material as THREE.MeshPhysicalMaterial;
     if (!mat?.isMeshPhysicalMaterial) return;
 
+    mat.emissive.set("#000000");
+    mat.emissiveIntensity = 0;
+    mat.transparent = false;
+    mat.opacity = 1;
+
     if (mesh.userData.archTissue) {
-      mat.color.set(ARCH_ROOT);
-      mat.emissive.set("#000000");
-      mat.emissiveIntensity = 0;
-      mat.transparent = false;
-      mat.opacity = 1;
-      mat.needsUpdate = true;
+      setArchTarget(mat, TISSUE_TARGET);
       return;
     }
 
@@ -42,17 +52,20 @@ export function paintArchSelection(
     if (isSelected || isMarked) {
       // Soft tint toward crown white — no emissive glow.
       const tint = new THREE.Color(opts.highlightColor);
-      tint.lerp(new THREE.Color(ARCH_CROWN), isSelected ? 0.55 : 0.72);
-      mat.color.copy(tint);
-      mat.emissive.set("#000000");
-      mat.emissiveIntensity = 0;
+      tint.lerp(CROWN_TARGET, isSelected ? 0.55 : 0.72);
+      setArchTarget(mat, tint);
     } else {
-      mat.color.set(ARCH_CROWN);
-      mat.emissive.set("#000000");
-      mat.emissiveIntensity = 0;
+      setArchTarget(mat, CROWN_TARGET);
     }
-    mat.transparent = false;
-    mat.opacity = 1;
-    mat.needsUpdate = true;
   });
+}
+
+/** Stash the color this material should glide toward in the next frames. */
+function setArchTarget(
+  mat: THREE.MeshPhysicalMaterial,
+  target: THREE.Color,
+): void {
+  const current = mat.userData.archTargetColor as THREE.Color | undefined;
+  if (current) current.copy(target);
+  else mat.userData.archTargetColor = target.clone();
 }
