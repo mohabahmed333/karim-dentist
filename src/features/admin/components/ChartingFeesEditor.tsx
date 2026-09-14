@@ -11,16 +11,7 @@ export function ChartingFeesEditor() {
   if (editor.loading) {
     return (
       <div aria-busy="true" className="space-y-8">
-        <span className="sr-only">Loading clinic prices…</span>
-        <section className="space-y-3">
-          <AdminSkeleton className="h-4 w-32" />
-          <AdminSkeleton className="h-3 w-72" />
-          <div className="flex flex-wrap gap-2">
-            {[0, 1, 2, 3].map((slot) => (
-              <AdminSkeleton key={slot} className="h-8 w-28 rounded-full" />
-            ))}
-          </div>
-        </section>
+        <span className="sr-only">Loading prices…</span>
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-2">
             <AdminSkeleton className="h-4 w-36" />
@@ -59,7 +50,6 @@ export function ChartingFeesEditor() {
         }
         onFeeBlur={(code, feeEgp) => void editor.persistFee(code, feeEgp)}
         onRemove={editor.setRemoveCode}
-        onPresetChange={(slot, code) => void editor.onPresetChange(slot, code)}
       />
       <ConfirmDeleteDialog
         open={Boolean(editor.removeCode)}

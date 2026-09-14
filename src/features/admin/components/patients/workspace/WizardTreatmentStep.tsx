@@ -52,7 +52,7 @@ export function WizardTreatmentStep({ draft, pending, onDraft }: Props) {
           Treatment
         </Label>
         <p className={`mt-0.5 text-[11px] ${WIZARD_SOFT}`}>
-          From Settings → Clinic prices
+          From Settings → Prices
         </p>
       </div>
       {loading && presets.length === 0 ? (
@@ -86,7 +86,7 @@ export function WizardTreatmentStep({ draft, pending, onDraft }: Props) {
             </span>
           </p>
           <p className={`mt-1 text-[11px] ${WIZARD_MUTE}`}>
-            Filled from Clinic prices — edit to override
+            Filled from Prices — edit to override
           </p>
           <div className="mt-3 grid gap-1.5">
             <Label htmlFor="wizard-fee" className={`font-semibold ${WIZARD_INK}`}>

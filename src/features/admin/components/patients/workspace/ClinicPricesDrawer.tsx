@@ -10,10 +10,10 @@ type Props = {
 
 export function ClinicPricesDrawer({ open, onClose }: Props) {
   return (
-    <SideDrawer open={open} title="Clinic prices" onClose={onClose}>
+    <SideDrawer open={open} title="Prices" onClose={onClose}>
       <div className="h-full overflow-y-auto px-5 pb-8">
         <p className="mb-4 text-[12px] text-[#64748B]">
-          Same menu as Settings — favorites and fees update immediately.
+          Same menu as Settings — fees update immediately.
         </p>
         <ChartingFeesEditor />
       </div>
