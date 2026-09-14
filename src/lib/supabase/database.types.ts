@@ -1424,6 +1424,47 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_billing_entries: {
+        Row: {
+          amount_egp: number
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          kind: "charge" | "payment"
+          method: string | null
+          patient_key: string
+        }
+        Insert: {
+          amount_egp: number
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          kind: "charge" | "payment"
+          method?: string | null
+          patient_key: string
+        }
+        Update: {
+          amount_egp?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          kind?: "charge" | "payment"
+          method?: string | null
+          patient_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_billing_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_clinical_notes: {
         Row: {
           author: string
@@ -3172,7 +3213,7 @@ export type Database = {
           paused_until: string | null
           pending: Json
           state_expires_at: string | null
-          step: "idle" | "collecting" | "awaiting_slot" | "awaiting_confirm"
+          step: "idle" | "collecting" | "awaiting_doctor" | "awaiting_slot" | "awaiting_confirm"
           updated_at: string
         }
         Insert: {
@@ -3184,7 +3225,7 @@ export type Database = {
           paused_until?: string | null
           pending?: Json
           state_expires_at?: string | null
-          step?: "idle" | "collecting" | "awaiting_slot" | "awaiting_confirm"
+          step?: "idle" | "collecting" | "awaiting_doctor" | "awaiting_slot" | "awaiting_confirm"
           updated_at?: string
         }
         Update: {
@@ -3196,7 +3237,7 @@ export type Database = {
           paused_until?: string | null
           pending?: Json
           state_expires_at?: string | null
-          step?: "idle" | "collecting" | "awaiting_slot" | "awaiting_confirm"
+          step?: "idle" | "collecting" | "awaiting_doctor" | "awaiting_slot" | "awaiting_confirm"
           updated_at?: string
         }
         Relationships: [
