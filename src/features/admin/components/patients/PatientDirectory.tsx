@@ -18,7 +18,7 @@ import { usePatientTableServerFiltering } from "@/features/admin/lib/usePatientT
 import type { Service } from "@/services/services/types";
 import { useTranslations } from "@/lib/i18n";
 import { ClientProfileDrawer } from "./workspace/ClientProfileDrawer";
-import { AddPatientDrawer } from "./AddPatientDrawer";
+import { AddPatientDialog } from "./AddPatientDialog";
 
 type Props = {
   groups: PatientGroup[];
@@ -172,12 +172,12 @@ export function PatientDirectory({
         />
       ) : null}
 
-      <AddPatientDrawer
+      <AddPatientDialog
         open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onCreated={(patientKey) => {
+        onOpenChange={setAddOpen}
+        onCreated={() => {
           setAddOpen(false);
-          router.push(patientProfilePath(patientKey));
+          router.refresh();
         }}
       />
     </div>

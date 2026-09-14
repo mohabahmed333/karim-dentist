@@ -1117,6 +1117,7 @@ export const adminEn = {
   "admin.reservations.noAppointmentsToday": "No appointments today",
   "admin.reservations.create": "Create reservation",
   "admin.reservations.createDesc": "Complete the booking details for this client.",
+  "admin.reservations.pickPatientDesc": "Search for the patient, or add a new one.",
   "admin.reservations.update": "Update reservation",
   "admin.reservations.existingFound": "This patient already has an upcoming booking",
   "admin.reservations.replaceExisting": "Replace existing booking",
@@ -1144,8 +1145,6 @@ export const adminEn = {
 
 
   "admin.reservations.patientName": "Patient name",
-  "admin.reservations.linkedToPatient": "Linked to existing patient",
-  "admin.reservations.unlinkPatient": "Unlink",
   "admin.reservations.searchingPatients": "Searching…",
   "admin.reservations.noMatchingPatients": "No matching patients",
   "admin.reservations.openSlot": "Open slot",

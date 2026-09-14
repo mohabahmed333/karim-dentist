@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -12,6 +13,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { PatientHistorySnippet } from "@/features/admin/components/PatientHistorySnippet";
 import { ReservationFormFields } from "@/features/admin/components/ReservationFormFields";
+import {
+  PatientPickerStep,
+  type ChosenPatient,
+} from "@/features/admin/components/reservations/PatientPickerStep";
 import { useTranslations } from "@/lib/i18n";
 import { formatReservationWhen } from "@/services/reservations/stats";
 import type { ReservationFormValues } from "@/services/reservations/schemas";
@@ -54,6 +59,30 @@ export function ReservationFormDialog({
 }: Props) {
   const t = useTranslations();
   const showModeChoice = Boolean(replaceTarget && onSaveModeChange);
+  const [step, setStep] = useState<"patient" | "details">("details");
+
+  useEffect(() => {
+    if (!open) return;
+    // A brand-new, never-touched form (no patient linked yet, nothing typed)
+    // starts at the patient step. Anything already identified — editing an
+    // existing reservation, or a prefilled quick-book/reception link — skips
+    // straight to the booking details.
+    const freshNew =
+      !values.patient_id && !values.patient_name.trim() && !values.phone.trim();
+    setStep(freshNew ? "patient" : "details");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only decide the step when the dialog opens, not on every value change
+  }, [open]);
+
+  function handlePatientChosen(patient: ChosenPatient) {
+    onChange({
+      ...values,
+      patient_id: patient.id,
+      patient_name: patient.display_name,
+      phone: patient.phone,
+      email: patient.email ?? "",
+    });
+    setStep("details");
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,72 +95,82 @@ export function ReservationFormDialog({
             {t("admin.reservations.new")}
           </DialogTitle>
           <DialogDescription className="text-[var(--admin-muted)]">
-            {t("admin.reservations.createDesc")}
+            {step === "patient"
+              ? t("admin.reservations.pickPatientDesc")
+              : t("admin.reservations.createDesc")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
-          {showModeChoice && replaceTarget ? (
-            <div className="space-y-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-hover)]/30 p-3">
-              <p className="text-xs font-medium text-[var(--admin-text)]">
-                {t("admin.reservations.existingFound")}
-              </p>
-              <p className="text-[11px] text-[var(--admin-muted)]">
-                <ReservationServiceLabel
-                  serviceId={replaceTarget.service_id}
-                  storedLabel={replaceTarget.service_label}
-                  services={services}
-                />{" "}
-                · {formatReservationWhen(replaceTarget.starts_at)}
-              </p>
-              <div className="flex flex-col gap-1.5 pt-1">
-                <ModeOption
-                  selected={saveMode === "replace"}
-                  onSelect={() => onSaveModeChange?.("replace")}
-                  title={t("admin.reservations.replaceExisting")}
-                  description={t("admin.reservations.replaceExistingDesc")}
-                />
-                <ModeOption
-                  selected={saveMode === "new"}
-                  onSelect={() => onSaveModeChange?.("new")}
-                  title={t("admin.reservations.createNew")}
-                  description={t("admin.reservations.createNewDesc")}
-                />
-              </div>
-            </div>
-          ) : null}
+          {step === "patient" ? (
+            <PatientPickerStep onPatientChosen={handlePatientChosen} />
+          ) : (
+            <>
+              {showModeChoice && replaceTarget ? (
+                <div className="space-y-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-hover)]/30 p-3">
+                  <p className="text-xs font-medium text-[var(--admin-text)]">
+                    {t("admin.reservations.existingFound")}
+                  </p>
+                  <p className="text-[11px] text-[var(--admin-muted)]">
+                    <ReservationServiceLabel
+                      serviceId={replaceTarget.service_id}
+                      storedLabel={replaceTarget.service_label}
+                      services={services}
+                    />{" "}
+                    · {formatReservationWhen(replaceTarget.starts_at)}
+                  </p>
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <ModeOption
+                      selected={saveMode === "replace"}
+                      onSelect={() => onSaveModeChange?.("replace")}
+                      title={t("admin.reservations.replaceExisting")}
+                      description={t("admin.reservations.replaceExistingDesc")}
+                    />
+                    <ModeOption
+                      selected={saveMode === "new"}
+                      onSelect={() => onSaveModeChange?.("new")}
+                      title={t("admin.reservations.createNew")}
+                      description={t("admin.reservations.createNewDesc")}
+                    />
+                  </div>
+                </div>
+              ) : null}
 
-          <ReservationFormFields
-            values={values}
-            services={services}
-            doctors={doctors}
-            pending={pending}
-            onChange={onChange}
-          />
-          <PatientHistorySnippet
-            reservations={reservations}
-            patientName={values.patient_name}
-            phone={values.phone}
-            excludeId={
-              saveMode === "replace" ? replaceTarget?.id : undefined
-            }
-          />
+              <ReservationFormFields
+                values={values}
+                services={services}
+                doctors={doctors}
+                pending={pending}
+                onChange={onChange}
+              />
+              <PatientHistorySnippet
+                reservations={reservations}
+                patientName={values.patient_name}
+                phone={values.phone}
+                excludeId={
+                  saveMode === "replace" ? replaceTarget?.id : undefined
+                }
+              />
+            </>
+          )}
         </div>
 
-        <DialogFooter className="m-0 shrink-0 rounded-none border-[var(--admin-border)] bg-[var(--admin-hover)]/40 px-4 py-3">
-          <Button
-            type="button"
-            data-showreel-action="reservation-create"
-            disabled={pending}
-            onClick={onSave}
-          >
-            {pending
-              ? t("admin.saving")
-              : saveMode === "replace" && replaceTarget
-                ? t("admin.reservations.update")
-                : t("admin.reservations.create")}
-          </Button>
-        </DialogFooter>
+        {step === "details" ? (
+          <DialogFooter className="m-0 shrink-0 rounded-none border-[var(--admin-border)] bg-[var(--admin-hover)]/40 px-4 py-3">
+            <Button
+              type="button"
+              data-showreel-action="reservation-create"
+              disabled={pending}
+              onClick={onSave}
+            >
+              {pending
+                ? t("admin.saving")
+                : saveMode === "replace" && replaceTarget
+                  ? t("admin.reservations.update")
+                  : t("admin.reservations.create")}
+            </Button>
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

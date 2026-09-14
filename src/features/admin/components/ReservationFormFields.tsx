@@ -19,8 +19,6 @@ import {
   SERVICE_PICKER_CONSULT_VALUE,
   ServicePicker,
 } from "@/features/admin/components/ServicePicker";
-import { PatientCombobox } from "@/features/admin/components/reservations/PatientCombobox";
-import type { PatientSearchResult } from "@/services/patient_profiles/types";
 import { getLatestReservationForPatient } from "@/services/reservations/queries";
 
 type Props = {
@@ -96,19 +94,8 @@ export function ReservationFormFields({
   const [slots, setSlots] = useState<SlotDto[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [slotsError, setSlotsError] = useState<string | null>(null);
-  const [nameDropdownOpen, setNameDropdownOpen] = useState(false);
-  const nameFieldRef = useRef<HTMLLabelElement>(null);
-
-  useEffect(() => {
-    if (!nameDropdownOpen) return;
-    function onDoc(event: MouseEvent) {
-      if (!nameFieldRef.current?.contains(event.target as Node)) {
-        setNameDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [nameDropdownOpen]);
+  const [pendingPrefillTime, setPendingPrefillTime] = useState<string | null>(null);
+  const lastPrefilledPatientId = useRef<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -173,35 +160,51 @@ export function ReservationFormFields({
     onChange({ ...values, ...partial });
   }
 
-  async function onPatientSelect(patient: PatientSearchResult) {
-    setNameDropdownOpen(false);
-    const last = await getLatestReservationForPatient(patient.id).catch(() => null);
-    const resolvedDoctorId = last?.doctor_id ?? values.doctor_id;
-    const lastTime = last ? splitStartsAt(last.starts_at).time : null;
-    // Only carry the old time-of-day over if this doctor actually has an
-    // open slot at that time — the old date itself is always in the past,
-    // so match by time and pick the earliest upcoming slot instead of
-    // showing a phantom, unbookable date.
-    const matchedSlot = lastTime
-      ? slots
-          .filter(
-            (s) => s.doctor_id === resolvedDoctorId && timeKey(s.starts_at) === lastTime,
-          )
-          .sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0]
-      : undefined;
-    patch({
-      patient_id: patient.id,
-      patient_name: patient.display_name,
-      phone: patient.phone,
-      email: patient.email ?? "",
-      service_id: last?.service_id ?? values.service_id,
-      service_label: last?.service_label ?? values.service_label,
-      doctor_id: resolvedDoctorId,
-      date: matchedSlot ? dayKey(matchedSlot.starts_at) : values.date,
-      time: matchedSlot ? timeKey(matchedSlot.starts_at) : values.time,
-      slot_id: matchedSlot ? matchedSlot.id : values.slot_id,
-    });
-  }
+  // The patient is already resolved by the time this form mounts (Step 1 of
+  // the reservation dialog sets patient_id before this component ever
+  // renders) — so fetch their last visit's service/doctor once per patient,
+  // then separately wait for the open-slots list to finish loading before
+  // trying to match a same-time-of-day slot for that doctor.
+  useEffect(() => {
+    const patientId = values.patient_id;
+    if (!patientId || lastPrefilledPatientId.current === patientId) return;
+    lastPrefilledPatientId.current = patientId;
+    let alive = true;
+    void getLatestReservationForPatient(patientId)
+      .catch(() => null)
+      .then((last) => {
+        if (!alive || !last) return;
+        patch({
+          service_id: last.service_id ?? values.service_id,
+          service_label: last.service_label ?? values.service_label,
+          doctor_id: last.doctor_id ?? values.doctor_id,
+        });
+        setPendingPrefillTime(splitStartsAt(last.starts_at).time);
+      });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when a different patient_id is set
+  }, [values.patient_id]);
+
+  useEffect(() => {
+    if (!pendingPrefillTime || slotsLoading) return;
+    const matchedSlot = slots
+      .filter(
+        (s) =>
+          s.doctor_id === values.doctor_id && timeKey(s.starts_at) === pendingPrefillTime,
+      )
+      .sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0];
+    if (matchedSlot) {
+      patch({
+        date: dayKey(matchedSlot.starts_at),
+        time: timeKey(matchedSlot.starts_at),
+        slot_id: matchedSlot.id,
+      });
+    }
+    setPendingPrefillTime(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once slots/doctor are ready, not on every values change
+  }, [pendingPrefillTime, slots, slotsLoading]);
 
   function onServiceChange(serviceValue: string) {
     if (serviceValue === SERVICE_PICKER_CONSULT_VALUE) {
@@ -268,39 +271,15 @@ export function ReservationFormFields({
         </p>
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
-        <label ref={nameFieldRef} className="relative grid gap-2">
+        <label className="grid gap-2">
           <Label htmlFor="patient_name">{t("admin.reservations.patientName")}</Label>
           <AdminInput
             id="patient_name"
             data-showreel-action="reservation-patient-name"
-            autoComplete="off"
             value={values.patient_name}
             disabled={pending}
-            onFocus={() => setNameDropdownOpen(true)}
-            onChange={(event) => {
-              patch({ patient_name: event.target.value, patient_id: null });
-              setNameDropdownOpen(true);
-            }}
+            onChange={(event) => patch({ patient_name: event.target.value })}
           />
-          {values.patient_id ? (
-            <span className="text-[11px] text-[var(--admin-muted)]">
-              {t("admin.reservations.linkedToPatient")}{" "}
-              <button
-                type="button"
-                className="text-[var(--admin-primary)] hover:underline"
-                disabled={pending}
-                onClick={() => patch({ patient_id: null })}
-              >
-                {t("admin.reservations.unlinkPatient")}
-              </button>
-            </span>
-          ) : (
-            <PatientCombobox
-              query={values.patient_name}
-              open={nameDropdownOpen}
-              onSelect={onPatientSelect}
-            />
-          )}
         </label>
         <label className="grid gap-2">
           <Label htmlFor="phone">{t("admin.reservations.phone")}</Label>

@@ -1118,6 +1118,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.reservations.noAppointmentsToday": "لا مواعيد اليوم",
   "admin.reservations.create": "إنشاء حجز",
   "admin.reservations.createDesc": "أكمل تفاصيل الحجز لهذا العميل.",
+  "admin.reservations.pickPatientDesc": "ابحث عن المريض أو أضف مريضًا جديدًا.",
   "admin.reservations.update": "تحديث الحجز",
   "admin.reservations.existingFound": "هذا المريض لديه حجز قادم بالفعل",
   "admin.reservations.replaceExisting": "استبدال الحجز الحالي",
@@ -1145,8 +1146,6 @@ export const adminAr: Record<AdminMessageKey, string> = {
 
 
   "admin.reservations.patientName": "اسم المريض",
-  "admin.reservations.linkedToPatient": "مرتبط بمريض موجود",
-  "admin.reservations.unlinkPatient": "إلغاء الربط",
   "admin.reservations.searchingPatients": "جارٍ البحث…",
   "admin.reservations.noMatchingPatients": "لا يوجد مرضى مطابقون",
   "admin.reservations.openSlot": "موعد متاح",

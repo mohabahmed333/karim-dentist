@@ -3,17 +3,26 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
   patientProfileUpsertSchema,
   type PatientProfileUpsertValues,
 } from "@/services/patient_profiles/schemas";
 import { createPatient } from "@/services/patient_profiles/actions";
-import { SideDrawer } from "./treatments/SideDrawer";
+import type { PatientProfile } from "@/services/patient_profiles/types";
 import { ClientProfileForm } from "./workspace/ClientProfileForm";
 
 type Props = {
   open: boolean;
-  onClose: () => void;
-  onCreated: (patientKey: string) => void;
+  onOpenChange: (open: boolean) => void;
+  onCreated: (patient: PatientProfile) => void;
 };
 
 const EMPTY_FORM: PatientProfileUpsertValues = {
@@ -29,14 +38,9 @@ const EMPTY_FORM: PatientProfileUpsertValues = {
   notes: "",
 };
 
-export function AddPatientDrawer({ open, onClose, onCreated }: Props) {
+export function AddPatientDialog({ open, onOpenChange, onCreated }: Props) {
   const [form, setForm] = useState<PatientProfileUpsertValues>(EMPTY_FORM);
   const [pending, setPending] = useState(false);
-
-  function handleClose() {
-    setForm(EMPTY_FORM);
-    onClose();
-  }
 
   async function save() {
     const parsed = patientProfileUpsertSchema.safeParse(form);
@@ -53,7 +57,7 @@ export function AddPatientDrawer({ open, onClose, onCreated }: Props) {
       const created = await createPatient(parsed.data);
       toast.success("Patient added");
       setForm(EMPTY_FORM);
-      onCreated(created.patient_key);
+      onCreated(created);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not add patient");
     } finally {
@@ -62,29 +66,39 @@ export function AddPatientDrawer({ open, onClose, onCreated }: Props) {
   }
 
   return (
-    <SideDrawer open={open} title="Add patient" onClose={handleClose}>
-      <div className="flex h-full min-h-0 flex-col">
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) setForm(EMPTY_FORM);
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent
+        data-showreel-action="add-patient-modal"
+        className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
+      >
+        <DialogHeader className="shrink-0 space-y-1 px-4 pt-4 pe-12">
+          <DialogTitle className="text-[var(--admin-text)]">Add patient</DialogTitle>
+          <DialogDescription className="text-[var(--admin-muted)]">
+            Create a new patient record.
+          </DialogDescription>
+        </DialogHeader>
+
         <div className="min-h-0 flex-1 overflow-y-auto">
           <ClientProfileForm value={form} onChange={setForm} />
         </div>
-        <div className="flex shrink-0 justify-end gap-2 border-t border-[#E8EAED] px-5 py-3">
-          <button
+
+        <DialogFooter className="m-0 shrink-0 rounded-none border-[var(--admin-border)] bg-[var(--admin-hover)]/40 px-4 py-3">
+          <Button
             type="button"
-            onClick={handleClose}
-            className="rounded-lg px-3 py-1.5 text-[12px] font-medium text-[#70758A]"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
+            data-showreel-action="add-patient-submit"
             disabled={pending}
             onClick={() => void save()}
-            className="rounded-lg bg-[#111111] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40"
           >
             {pending ? "Adding…" : "Add patient"}
-          </button>
-        </div>
-      </div>
-    </SideDrawer>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
