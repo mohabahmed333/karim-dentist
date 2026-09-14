@@ -5,6 +5,8 @@ import { ChevronRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { HelpTip } from "./HelpTip";
 import { TemplateProposalCard, type TemplateProposal } from "./TemplateProposalCard";
+import { useTranslations } from "@/lib/i18n";
+import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 
 export type FeatureCondition = {
   key: string;
@@ -27,18 +29,24 @@ export type FeatureStatus = {
   conditions: FeatureCondition[];
 };
 
-const STATE: Record<FeatureStatus["state"], { label: string; className: string }> = {
-  working: { label: "Working", className: "border-[#86EFAC] bg-[#F0FDF4] text-[#15803D]" },
-  blocked: { label: "Not working", className: "border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]" },
-  check: { label: "Check", className: "border-[#FCD34D] bg-[#FFFBEB] text-[#B45309]" },
+const STATE: Record<FeatureStatus["state"], { labelKey: AdminMessageKey; className: string }> = {
+  working: { labelKey: "admin.notifications.stateWorking", className: "border-[#86EFAC] bg-[#F0FDF4] text-[#15803D]" },
+  blocked: { labelKey: "admin.notifications.stateBlocked", className: "border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]" },
+  check: { labelKey: "admin.notifications.stateCheck", className: "border-[#FCD34D] bg-[#FFFBEB] text-[#B45309]" },
 };
 
 /** What still has to be done for one feature, for its "?" tooltip. */
-function featureFix(feature: FeatureStatus): string {
+function featureFix(
+  feature: FeatureStatus,
+  t: (key: AdminMessageKey) => string,
+): string {
   const todo = feature.conditions.filter((c) => c.met !== true);
-  if (todo.length === 0) return "Nothing to do — everything this feature needs is in place.";
+  if (todo.length === 0) return t("admin.notifications.nothingToDo");
   const shown = todo.slice(0, 4).map((c, i) => `${i + 1}. ${c.fix}`);
-  const more = todo.length > 4 ? ` +${todo.length - 4} more — open the row for all of them.` : "";
+  const more =
+    todo.length > 4
+      ? t("admin.notifications.moreFixes").replace("{count}", String(todo.length - 4))
+      : "";
   return `${shown.join(" ")}${more}`;
 }
 
@@ -57,6 +65,7 @@ export function FeatureReadinessList({
   /** Flip a feature's own switch. Absent hides the toggles entirely. */
   onToggle?: (key: string, enabled: boolean) => Promise<void>;
 }) {
+  const t = useTranslations();
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
 
@@ -78,9 +87,11 @@ export function FeatureReadinessList({
   return (
     <section className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-sm font-medium">Features</h3>
+        <h3 className="text-sm font-medium">{t("admin.notifications.featuresHeading")}</h3>
         <span className="text-xs tabular-nums text-[var(--admin-muted)]">
-          {working} of {features.length} working
+          {t("admin.notifications.workingCount")
+            .replace("{done}", String(working))
+            .replace("{total}", String(features.length))}
         </span>
       </div>
 
@@ -105,7 +116,7 @@ export function FeatureReadinessList({
                   {met}/{feature.conditions.length}
                 </span>
                 <span className={`min-w-[88px] shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-center text-xs ${state.className}`}>
-                  {state.label}
+                  {t(state.labelKey)}
                 </span>
                 <ChevronRight
                   aria-hidden
@@ -123,7 +134,10 @@ export function FeatureReadinessList({
               <span className="flex w-7 shrink-0 justify-center">
                 {onToggle && switchOf(feature) ? (
                   <Checkbox
-                    aria-label={`Switch ${feature.title} on or off`}
+                    aria-label={t("admin.notifications.switchFeatureAria").replace(
+                      "{title}",
+                      feature.title,
+                    )}
                     checked={switchOf(feature)!.met === true}
                     disabled={pending === feature.key}
                     onCheckedChange={(next) => void toggle(feature, next === true)}
@@ -131,7 +145,13 @@ export function FeatureReadinessList({
                 ) : null}
               </span>
               <span className="pr-3">
-                <HelpTip label={`To make “${feature.title}” work`} text={featureFix(feature)} />
+                <HelpTip
+                  label={t("admin.notifications.toMakeItWork").replace(
+                    "{title}",
+                    feature.title,
+                  )}
+                  text={featureFix(feature, t)}
+                />
               </span>
               </div>
 
@@ -149,7 +169,7 @@ export function FeatureReadinessList({
                               <label htmlFor={id} className="text-sm">
                                 {condition.label}
                                 {condition.met === null ? (
-                                  <span className="ml-2 text-[11px] text-[#B45309]">check by hand</span>
+                                  <span className="ml-2 text-[11px] text-[#B45309]">{t("admin.notifications.checkByHand")}</span>
                                 ) : null}
                               </label>
                               {condition.met !== true ? <HelpTip text={condition.fix} /> : null}

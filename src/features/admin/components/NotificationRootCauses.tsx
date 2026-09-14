@@ -5,15 +5,19 @@ import { ChevronRight } from "lucide-react";
 import { rootCauses, type RootCause } from "@/services/patient_notifications/rootCauses";
 import type { FeatureStatus } from "./FeatureReadinessList";
 import { HelpTip } from "./HelpTip";
+import { useTranslations } from "@/lib/i18n";
+import type { AnyMessageKey } from "@/lib/i18n";
 
 function CauseRow({
   cause,
   open,
   onToggle,
+  t,
 }: {
   cause: RootCause;
   open: boolean;
   onToggle: () => void;
+  t: (key: AnyMessageKey) => string;
 }) {
   const blocked = cause.met === false;
   return (
@@ -31,7 +35,10 @@ function CauseRow({
         />
         <span className="min-w-0 flex-1 truncate">{cause.label}</span>
         <span className="shrink-0 text-xs tabular-nums text-[var(--admin-muted)]">
-          {blocked ? "blocks" : "affects"} {cause.features.length}
+          {t(blocked ? "admin.notifications.blocks" : "admin.notifications.affects").replace(
+            "{count}",
+            String(cause.features.length),
+          )}
         </span>
         <ChevronRight
           aria-hidden
@@ -46,10 +53,10 @@ function CauseRow({
         <div className="space-y-1 px-3 pb-2.5 pl-[26px] text-xs leading-relaxed text-[var(--admin-muted)]">
           <p>{cause.why}</p>
           <p>
-            <span className="text-[var(--admin-text,#1a1a1a)]">To fix:</span> {cause.fix}
+            <span className="text-[var(--admin-text,#1a1a1a)]">{t("admin.notifications.toFixLabel")}</span> {cause.fix}
           </p>
           <p>
-            <span className="text-[var(--admin-text,#1a1a1a)]">Affects:</span> {cause.features.join(" · ")}
+            <span className="text-[var(--admin-text,#1a1a1a)]">{t("admin.notifications.affectsLabel")}</span> {cause.features.join(" · ")}
           </p>
         </div>
       ) : null}
@@ -65,6 +72,7 @@ const VISIBLE_BLOCKERS = 5;
  * into one row underneath so they do not crowd out what is actually broken.
  */
 export function NotificationRootCauses({ features }: { features: FeatureStatus[] }) {
+  const t = useTranslations();
   const causes = useMemo(() => rootCauses(features), [features]);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
@@ -81,20 +89,22 @@ export function NotificationRootCauses({ features }: { features: FeatureStatus[]
   return (
     <section className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-sm font-medium">Fix these first</h3>
+        <h3 className="text-sm font-medium">{t("admin.notifications.fixTheseFirst")}</h3>
         <span className="text-xs text-[var(--admin-muted)]">
-          {blockers.length === 0 ? "Nothing blocking" : `${blockers.length} to fix`}
+          {blockers.length === 0
+            ? t("admin.notifications.nothingBlocking")
+            : t("admin.notifications.countToFix").replace("{count}", String(blockers.length))}
         </span>
       </div>
 
       {blockers.length === 0 && manual.length === 0 ? (
         <p className="rounded-lg border border-[var(--admin-border,#e5e7eb)] px-3 py-2.5 text-sm text-[var(--admin-muted)]">
-          Every feature has what it needs.
+          {t("admin.notifications.everythingReady")}
         </p>
       ) : (
         <ul className="overflow-hidden rounded-lg border border-[var(--admin-border,#e5e7eb)] bg-[var(--admin-panel,#fff)]">
           {visibleBlockers.map((cause) => (
-            <CauseRow key={cause.key} cause={cause} open={openKey === cause.key} onToggle={() => toggle(cause.key)} />
+            <CauseRow key={cause.key} cause={cause} open={openKey === cause.key} onToggle={() => toggle(cause.key)} t={t} />
           ))}
           {hiddenCount > 0 || (showAll && blockers.length > VISIBLE_BLOCKERS) ? (
             <li className="border-b border-[var(--admin-border,#e5e7eb)]">
@@ -103,7 +113,9 @@ export function NotificationRootCauses({ features }: { features: FeatureStatus[]
                 onClick={() => setShowAll((v) => !v)}
                 className="w-full px-3 py-1.5 text-left text-xs text-[var(--admin-muted)] hover:bg-[var(--admin-canvas,#f7f7f8)] hover:text-[var(--admin-text,#1a1a1a)] focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
               >
-                {showAll ? "Show fewer" : `Show ${hiddenCount} more`}
+                {showAll
+                  ? t("admin.notifications.showFewer")
+                  : t("admin.notifications.showMore").replace("{count}", String(hiddenCount))}
               </button>
             </li>
           ) : null}
@@ -117,7 +129,11 @@ export function NotificationRootCauses({ features }: { features: FeatureStatus[]
               >
                 <span aria-hidden className="size-2 shrink-0 rounded-full bg-[#D97706]" />
                 <span className="flex-1">
-                  {manual.length} {manual.length === 1 ? "thing" : "things"} to check by hand
+                  {t(
+                    manual.length === 1
+                      ? "admin.notifications.thingsToCheckOne"
+                      : "admin.notifications.thingsToCheck",
+                  ).replace("{count}", String(manual.length))}
                 </span>
                 <ChevronRight
                   aria-hidden
@@ -127,7 +143,7 @@ export function NotificationRootCauses({ features }: { features: FeatureStatus[]
               {manualOpen ? (
                 <ul className="border-t border-[var(--admin-border,#e5e7eb)]">
                   {manual.map((cause) => (
-                    <CauseRow key={cause.key} cause={cause} open={openKey === cause.key} onToggle={() => toggle(cause.key)} />
+                    <CauseRow key={cause.key} cause={cause} open={openKey === cause.key} onToggle={() => toggle(cause.key)} t={t} />
                   ))}
                 </ul>
               ) : null}
