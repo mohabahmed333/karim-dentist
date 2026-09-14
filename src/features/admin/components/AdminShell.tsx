@@ -268,7 +268,7 @@ export function AdminShell({
         ["--admin-panel" as string]: effectivePanel,
       }}
     >
-      <AdminIconRail permissions={permissions} />
+      <AdminIconRail permissions={permissions} sidebarCollapsed={sidebarCollapsed} />
       <AnimatePresence initial={false}>
         {!sidebarCollapsed ? (
           <motion.div
