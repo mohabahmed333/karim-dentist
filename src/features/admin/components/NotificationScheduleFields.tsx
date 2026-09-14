@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import type { PatientNotificationSettings } from "@/services/patient_notifications/types";
+import { useTranslations } from "@/lib/i18n";
 
 type Editable = Pick<
   PatientNotificationSettings,
@@ -17,15 +18,16 @@ const SMALL = "h-8 w-16 text-center tabular-nums";
 const heading = "text-xs font-medium uppercase tracking-wide text-[var(--admin-muted)]";
 
 export function NotificationScheduleFields({ settings, onChange }: Props) {
+  const t = useTranslations();
   const leadIsDay = settings.reminder_lead_minutes === 1440;
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <p className={heading}>Schedule</p>
+        <p className={heading}>{t("admin.notifications.schedule")}</p>
 
         <div className="flex items-center justify-between gap-2 text-sm">
-          <label htmlFor="quiet-start">Quiet hours</label>
+          <label htmlFor="quiet-start">{t("admin.notifications.quietHours")}</label>
           <span className="flex items-center gap-1.5">
             <Input
               id="quiet-start"
@@ -38,7 +40,7 @@ export function NotificationScheduleFields({ settings, onChange }: Props) {
             />
             <span aria-hidden className="text-[var(--admin-muted)]">→</span>
             <Input
-              aria-label="Quiet hours end"
+              aria-label={t("admin.notifications.quietHoursEndAria")}
               type="number"
               min={0}
               max={23}
@@ -50,7 +52,7 @@ export function NotificationScheduleFields({ settings, onChange }: Props) {
         </div>
 
         <div className="flex items-center justify-between gap-2 text-sm">
-          <label htmlFor="daily-cap">Messages per patient per day</label>
+          <label htmlFor="daily-cap">{t("admin.notifications.dailyCap")}</label>
           <Input
             id="daily-cap"
             type="number"
@@ -63,7 +65,7 @@ export function NotificationScheduleFields({ settings, onChange }: Props) {
         </div>
 
         <div className="flex items-center justify-between gap-2 text-sm">
-          <label htmlFor="reminder-lead">Reminder lead (minutes)</label>
+          <label htmlFor="reminder-lead">{t("admin.notifications.reminderLead")}</label>
           <Input
             id="reminder-lead"
             type="number"
@@ -77,20 +79,20 @@ export function NotificationScheduleFields({ settings, onChange }: Props) {
         </div>
 
         <p className={`text-xs ${leadIsDay ? "text-[var(--admin-muted)]" : "text-[#B45309]"}`}>
-          Hours in {settings.timezone}.{" "}
+          {t("admin.notifications.hoursInTimezone").replace("{tz}", settings.timezone)}
           {leadIsDay
-            ? "Reminders go out 24 hours ahead."
-            : "Use 1440 — the reminder text says “tomorrow”, so other values are skipped."}
+            ? t("admin.notifications.remindersDayAhead")
+            : t("admin.notifications.reminderUse1440")}
         </p>
       </div>
 
       <div className="space-y-2">
-        <p className={heading}>Marketing</p>
+        <p className={heading}>{t("admin.notifications.marketing")}</p>
         <label className="flex cursor-pointer items-start justify-between gap-3 text-sm">
           <span className="space-y-0.5">
-            <span className="block">Recalls and review requests</span>
+            <span className="block">{t("admin.notifications.recallsLabel")}</span>
             <span className="block text-xs text-[var(--admin-muted)]">
-              Separate from Send. Needs its own templates and patient consent.
+              {t("admin.notifications.recallsHint")}
             </span>
           </span>
           <input
@@ -102,11 +104,9 @@ export function NotificationScheduleFields({ settings, onChange }: Props) {
         </label>
 
         <label className="mt-3 block">
-          <span className="text-sm">Review link</span>
+          <span className="text-sm">{t("admin.notifications.reviewLinkLabel")}</span>
           <span className="mb-1 block text-xs text-[var(--admin-muted)]">
-            Where happy patients are sent. Everyone who rates a visit gets it —
-            withholding it from unhappy patients is against Google&apos;s policy —
-            but a low score waits two days, until after the call they were promised.
+            {t("admin.notifications.reviewLinkHint")}
           </span>
           <input
             type="url"

@@ -148,6 +148,58 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.richText.bulletList": "قائمة نقطية",
   "admin.richText.orderedList": "قائمة مرقّمة",
   "admin.richText.link": "رابط",
+
+  "admin.notifications.off": "متوقف",
+  "admin.notifications.rehearsing": "تجريبي",
+  "admin.notifications.live": "مباشر",
+  "admin.notifications.loadFailed": "فشل تحميل إعدادات الإشعارات",
+  "admin.notifications.statusCheckFailed": "تعذّر التحقق من الحالة",
+  "admin.notifications.missingPrefix": "لا يزال ناقصًا: {items}",
+  "admin.notifications.saveFailed": "تعذّر الحفظ",
+  "admin.notifications.saved": "تم حفظ إعدادات الإشعارات",
+  "admin.notifications.noSettings":
+    "لم يتم العثور على إعدادات. قد تكون قاعدة البيانات لم تُحدَّث بجداول إشعارات المرضى بعد.",
+  "admin.notifications.description":
+    "تأكيدات ومواعيد ومتابعات واتساب المُرسلة للمرضى.",
+  "admin.notifications.switchFailed": "تعذّر تغيير هذا الخيار",
+  "admin.notifications.featureOn": "تم تفعيل الميزة",
+  "admin.notifications.featureOff": "تم إيقاف الميزة",
+  "admin.notifications.modeLabel": "الوضع",
+  "admin.notifications.ariaModeGroup": "وضع إشعارات المرضى",
+  "admin.notifications.dryRun": "تجربة",
+  "admin.notifications.dryRunHint":
+    "تُكتب الرسائل ولا تُرسل — اقرأها في رسائل المرضى.",
+  "admin.notifications.send": "إرسال",
+  "admin.notifications.sendHint": "يستلم المرضى رسائلهم.",
+  "admin.notifications.offHint": "لا يُرسل شيء. الحجوزات الجديدة تظل تجدول رسائلها.",
+  "admin.notifications.sendDisabledTitle":
+    "أصلح العناصر ضمن «أصلح هذه أولًا» لتفعيل الإرسال",
+  "admin.notifications.sendLockedPrefix":
+    "الإرسال مقفل حتى تُصلح العناصر على اليمين. ",
+  "admin.notifications.schedule": "الجدول الزمني",
+  "admin.notifications.quietHours": "ساعات الهدوء",
+  "admin.notifications.quietHoursEndAria": "نهاية ساعات الهدوء",
+  "admin.notifications.dailyCap": "رسائل لكل مريض يوميًا",
+  "admin.notifications.reminderLead": "مهلة التذكير (بالدقائق)",
+  "admin.notifications.hoursInTimezone": "بتوقيت {tz}. ",
+  "admin.notifications.remindersDayAhead": "تُرسل التذكيرات قبل 24 ساعة.",
+  "admin.notifications.reminderUse1440":
+    "استخدم 1440 — نص التذكير يقول «غدًا»، فتُتجاهل القيم الأخرى.",
+  "admin.notifications.marketing": "التسويق",
+  "admin.notifications.recallsLabel": "التذكير بالمراجعة وطلبات التقييم",
+  "admin.notifications.recallsHint":
+    "منفصلة عن الإرسال. تحتاج قوالبها وموافقة المريض الخاصة بها.",
+  "admin.notifications.reviewLinkLabel": "رابط التقييم",
+  "admin.notifications.reviewLinkHint":
+    "الوجهة التي يُرسل إليها المرضى الراضون. يحصل عليه كل من يُقيّم زيارته — حجبه عن غير الراضين يخالف سياسة جوجل — لكن التقييم المنخفض ينتظر يومين، حتى بعد المكالمة الموعودة.",
+  "admin.notifications.checking": "جارٍ التحقق…",
+  "admin.notifications.checkedAt": "آخر تحقق {time}",
+  "admin.notifications.notCheckedYet": "لم يُتحقق بعد",
+  "admin.notifications.checkAgain": "تحقق مرة أخرى",
+  "admin.notifications.tryAgain": "حاول مرة أخرى",
+  "admin.notifications.templatesLabel": "القوالب:",
+  "admin.notifications.queueLabel": "قائمة الانتظار: {queue}",
+  "admin.notifications.patientMessagesLink": "رسائل المرضى ←",
   "admin.pages.profile.title": "ملفي الشخصي",
   "admin.pages.profile.description":
     "اسمك وصورتك وبيانات التواصل كما يراها بقية الفريق.",

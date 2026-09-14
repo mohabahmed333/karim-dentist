@@ -146,6 +146,58 @@ export const adminEn = {
   "admin.richText.bulletList": "Bullet list",
   "admin.richText.orderedList": "Ordered list",
   "admin.richText.link": "Link",
+
+  "admin.notifications.off": "Off",
+  "admin.notifications.rehearsing": "Rehearsing",
+  "admin.notifications.live": "Live",
+  "admin.notifications.loadFailed": "Failed to load notification settings",
+  "admin.notifications.statusCheckFailed": "Could not check the status",
+  "admin.notifications.missingPrefix": "Still missing: {items}",
+  "admin.notifications.saveFailed": "Could not save",
+  "admin.notifications.saved": "Notification settings saved",
+  "admin.notifications.noSettings":
+    "No settings found. The database has not been updated with the patient notification tables yet.",
+  "admin.notifications.description":
+    "WhatsApp confirmations, reminders and follow-ups sent to patients.",
+  "admin.notifications.switchFailed": "Could not change the switch",
+  "admin.notifications.featureOn": "Feature switched on",
+  "admin.notifications.featureOff": "Feature switched off",
+  "admin.notifications.modeLabel": "Mode",
+  "admin.notifications.ariaModeGroup": "Patient notifications mode",
+  "admin.notifications.dryRun": "Dry run",
+  "admin.notifications.dryRunHint":
+    "Messages are written but not sent — read them in Patient messages.",
+  "admin.notifications.send": "Send",
+  "admin.notifications.sendHint": "Patients receive their messages.",
+  "admin.notifications.offHint": "Nothing is sent. New bookings still queue their messages.",
+  "admin.notifications.sendDisabledTitle":
+    "Fix the items under “Fix these first” to enable sending",
+  "admin.notifications.sendLockedPrefix":
+    "Send is locked until the items on the right are fixed. ",
+  "admin.notifications.schedule": "Schedule",
+  "admin.notifications.quietHours": "Quiet hours",
+  "admin.notifications.quietHoursEndAria": "Quiet hours end",
+  "admin.notifications.dailyCap": "Messages per patient per day",
+  "admin.notifications.reminderLead": "Reminder lead (minutes)",
+  "admin.notifications.hoursInTimezone": "Hours in {tz}. ",
+  "admin.notifications.remindersDayAhead": "Reminders go out 24 hours ahead.",
+  "admin.notifications.reminderUse1440":
+    "Use 1440 — the reminder text says “tomorrow”, so other values are skipped.",
+  "admin.notifications.marketing": "Marketing",
+  "admin.notifications.recallsLabel": "Recalls and review requests",
+  "admin.notifications.recallsHint":
+    "Separate from Send. Needs its own templates and patient consent.",
+  "admin.notifications.reviewLinkLabel": "Review link",
+  "admin.notifications.reviewLinkHint":
+    "Where happy patients are sent. Everyone who rates a visit gets it — withholding it from unhappy patients is against Google's policy — but a low score waits two days, until after the call they were promised.",
+  "admin.notifications.checking": "Checking…",
+  "admin.notifications.checkedAt": "Checked {time}",
+  "admin.notifications.notCheckedYet": "Not checked yet",
+  "admin.notifications.checkAgain": "Check again",
+  "admin.notifications.tryAgain": "Try again",
+  "admin.notifications.templatesLabel": "Templates:",
+  "admin.notifications.queueLabel": "Queue: {queue}",
+  "admin.notifications.patientMessagesLink": "Patient messages →",
   "admin.pages.profile.title": "My profile",
   "admin.pages.profile.description":
     "Your name, photo and contact details, as other staff see them.",

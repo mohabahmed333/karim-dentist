@@ -10,11 +10,13 @@ import { NotificationScheduleFields } from "./NotificationScheduleFields";
 import { NotificationStatusColumn } from "./NotificationStatusColumn";
 import { NotificationSettingsSkeleton } from "./NotificationStatusSkeleton";
 import type { Readiness } from "./notificationReadinessTypes";
+import { useTranslations } from "@/lib/i18n";
+import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 
-const MODE_BADGE: Record<NotificationMode, { label: string; className: string }> = {
-  off: { label: "Off", className: "border-[var(--admin-border)] text-[var(--admin-muted)]" },
-  dry_run: { label: "Rehearsing", className: "border-[#93C5FD] bg-[#EFF6FF] text-[#1D4ED8]" },
-  send: { label: "Live", className: "border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]" },
+const MODE_BADGE: Record<NotificationMode, { labelKey: AdminMessageKey; className: string }> = {
+  off: { labelKey: "admin.notifications.off", className: "border-[var(--admin-border)] text-[var(--admin-muted)]" },
+  dry_run: { labelKey: "admin.notifications.rehearsing", className: "border-[#93C5FD] bg-[#EFF6FF] text-[#1D4ED8]" },
+  send: { labelKey: "admin.notifications.live", className: "border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]" },
 };
 
 // Loaded separately on purpose: settings come back at once, but the status
@@ -33,6 +35,7 @@ async function fetchReadiness(): Promise<Readiness | null> {
 }
 
 export function NotificationSettingsForm() {
+  const t = useTranslations();
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [settings, setSettings] = useState<PatientNotificationSettings | null>(null);
@@ -48,7 +51,7 @@ export function NotificationSettingsForm() {
         if (alive) setSettings(next);
       })
       .catch(() => {
-        if (alive) toast.error("Failed to load notification settings");
+        if (alive) toast.error(t("admin.notifications.loadFailed"));
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -82,7 +85,7 @@ export function NotificationSettingsForm() {
         setReadiness(next);
         setCheckedAt(new Date());
       } else {
-        toast.error("Could not check the status");
+        toast.error(t("admin.notifications.statusCheckFailed"));
       }
     } finally {
       setRefreshing(false);
@@ -109,10 +112,17 @@ export function NotificationSettingsForm() {
       const body = (await res.json()) as { settings?: PatientNotificationSettings; error?: string; blocking?: string[] };
       if (!res.ok) {
         // The server refuses Send while something required is missing, so name it.
-        toast.error(body.blocking?.length ? `Still missing: ${body.blocking.join(", ")}` : (body.error ?? "Could not save"));
+        toast.error(
+          body.blocking?.length
+            ? t("admin.notifications.missingPrefix").replace(
+                "{items}",
+                body.blocking.join(", "),
+              )
+            : (body.error ?? t("admin.notifications.saveFailed")),
+        );
         return;
       }
-      toast.success("Notification settings saved");
+      toast.success(t("admin.notifications.saved"));
       setSettings(body.settings ?? settings);
       // Keep the current status on screen while it refreshes, instead of
       // flashing back to skeletons after every save.
@@ -126,20 +136,21 @@ export function NotificationSettingsForm() {
   if (!settings) {
     return (
       <p className="text-sm text-[var(--admin-muted)]">
-        No settings found. The database has not been updated with the patient notification tables yet.
+        {t("admin.notifications.noSettings")}
       </p>
     );
   }
 
   const mode = settings.mode as NotificationMode;
-  const badge = MODE_BADGE[mode] ?? MODE_BADGE.off;
+  const badgeEntry = MODE_BADGE[mode] ?? MODE_BADGE.off;
+  const badge = { label: t(badgeEntry.labelKey), className: badgeEntry.className };
   const set = (patch: Partial<PatientNotificationSettings>) => setSettings({ ...settings, ...patch });
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-hover)] px-3.5 py-2.5">
         <p className="text-sm text-[var(--admin-muted)]">
-          WhatsApp confirmations, reminders and follow-ups sent to patients.
+          {t("admin.notifications.description")}
         </p>
         <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs ${badge.className}`}>{badge.label}</span>
       </div>
@@ -154,7 +165,7 @@ export function NotificationSettingsForm() {
           />
           <NotificationScheduleFields settings={settings} onChange={set} />
           <Button type="button" className="w-full" onClick={onSave} disabled={pending}>
-            {pending ? "Saving…" : "Save"}
+            {pending ? t("admin.saving") : t("admin.save")}
           </Button>
         </aside>
 
@@ -172,14 +183,22 @@ export function NotificationSettingsForm() {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ feature: key, enabled }),
                 });
-                if (!res.ok) throw new Error("Could not change the switch");
+                if (!res.ok) throw new Error(t("admin.notifications.switchFailed"));
                 // Re-check rather than patch locally: the switch changes what
                 // else is true about the feature, and guessing at that is how
                 // a checklist starts lying.
                 await refresh();
-                toast.success(enabled ? "Feature switched on" : "Feature switched off");
+                toast.success(
+                  enabled
+                    ? t("admin.notifications.featureOn")
+                    : t("admin.notifications.featureOff"),
+                );
               } catch (err) {
-                toast.error(err instanceof Error ? err.message : "Could not change the switch");
+                toast.error(
+                  err instanceof Error
+                    ? err.message
+                    : t("admin.notifications.switchFailed"),
+                );
               }
             }}
           />

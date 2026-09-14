@@ -6,6 +6,7 @@ import { FeatureReadinessList } from "./FeatureReadinessList";
 import { NotificationRootCauses } from "./NotificationRootCauses";
 import { FeaturesSkeleton, RootCausesSkeleton } from "./NotificationStatusSkeleton";
 import type { Readiness } from "./notificationReadinessTypes";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   readiness: Readiness | null;
@@ -49,6 +50,7 @@ export function NotificationStatusColumn({
   onRefresh,
   onToggleFeature,
 }: Props) {
+  const t = useTranslations();
   const features = readiness?.features ?? [];
   const queue = readiness ? queueSummary(readiness.queue) : "";
 
@@ -57,10 +59,13 @@ export function NotificationStatusColumn({
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-[var(--admin-muted)]">
           {checking || refreshing
-            ? "Checking…"
+            ? t("admin.notifications.checking")
             : checkedAt
-              ? `Checked ${timeOfDay(checkedAt)}`
-              : "Not checked yet"}
+              ? t("admin.notifications.checkedAt").replace(
+                  "{time}",
+                  timeOfDay(checkedAt),
+                )
+              : t("admin.notifications.notCheckedYet")}
         </span>
         <Button
           type="button"
@@ -69,7 +74,7 @@ export function NotificationStatusColumn({
           onClick={onRefresh}
           disabled={checking || refreshing}
         >
-          {refreshing ? "Checking…" : "Check again"}
+          {refreshing ? t("admin.notifications.checking") : t("admin.notifications.checkAgain")}
         </Button>
       </div>
 
@@ -85,9 +90,9 @@ export function NotificationStatusColumn({
         </>
       ) : (
         <div className="space-y-2">
-          <p className="text-sm text-[var(--admin-muted)]">Could not check the status.</p>
+          <p className="text-sm text-[var(--admin-muted)]">{t("admin.notifications.statusCheckFailed")}</p>
           <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={refreshing}>
-            {refreshing ? "Checking…" : "Try again"}
+            {refreshing ? t("admin.notifications.checking") : t("admin.notifications.tryAgain")}
           </Button>
         </div>
       )}
@@ -95,12 +100,15 @@ export function NotificationStatusColumn({
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--admin-muted)]">
         {readiness?.requiredTemplates?.length ? (
           <span>
-            Templates: <span className="font-mono">{readiness.requiredTemplates.join(" · ")}</span>
+            {t("admin.notifications.templatesLabel")}{" "}
+            <span className="font-mono">{readiness.requiredTemplates.join(" · ")}</span>
           </span>
         ) : null}
-        {queue ? <span>Queue: {queue}</span> : null}
+        {queue ? (
+          <span>{t("admin.notifications.queueLabel").replace("{queue}", queue)}</span>
+        ) : null}
         <Link href="/admin/outbox" className="underline underline-offset-2 hover:text-[var(--admin-text,#1a1a1a)]">
-          Patient messages →
+          {t("admin.notifications.patientMessagesLink")}
         </Link>
       </p>
     </div>
