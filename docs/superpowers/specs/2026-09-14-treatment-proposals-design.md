@@ -77,7 +77,14 @@ Permission: reuses `patients.billing.edit` (already exists, already granted to `
 
 ## WhatsApp
 
-New `TemplateKind` entry `"treatment_proposal"` in `src/services/patient_notifications/templates.ts`, and a new notification kind in `patient_notifications` alongside the existing `confirmation`/`reminder_24h`/etc. Message composed server-side (same reasoning as `depositInstructions` — amounts and service names must never be model-hallucinated): 4 params — patient name, doctor name, comma-joined service list, total amount — matching the existing `confirmation` template's 4-param shape. Real template wording and Meta submission happen outside this codebase; the code ships ready to use whatever gets approved (see Non-goals).
+Reuses the exact mechanism already in place for the six other not-yet-approved notification kinds (`followup`, `recall_6m`, `waitlist_offer`, `review_request`, `cancellation`, and one more — see `src/services/patient_notifications/templateProposals.ts`'s header comment): `buildTemplateForKind()` (`templateParams.ts`) switches on `kind` and falls through to `default: return null` for anything without a case, which `dispatchNotification.ts` cleanly records as `skipped` / `no_approved_template` — no crash, no special-casing needed elsewhere.
+
+So this feature does **not** touch `TemplateKind`/`PATIENT_TEMPLATES`/`buildTemplateForKind` at all yet — that trio only gets a new case once a template is actually Meta-approved (a later, separate one-line change, exactly like the file's own header comment already describes for its two existing kinds). What this feature does add:
+
+- Enqueues a `patient_notifications` row with `kind: "treatment_proposal"` (via the same `.upsert(..., { onConflict: "dedupe_key", ignoreDuplicates: true })` pattern `enqueueFollowupsAndRecalls` already uses), `service_label` set to a pre-composed human-readable summary ("Root canal (EGP 1,500), Crown (EGP 2,000) — Dr. Youssef — Total EGP 3,500") — composed server-side at proposal-send time, never by a model, same reasoning as `depositInstructions`. This reuses the *existing* `ConfirmationInput` shape (`patientName`, `clinicName`, `startsAt`, `serviceLabel`, `language`) with zero type changes: the whole message rides in `serviceLabel`.
+- A new entry in `TEMPLATE_PROPOSALS` (`templateProposals.ts`) — the EN/AR body text to submit to Meta, sitting alongside the other six already-documented-but-unsubmitted proposals, so "what do I submit for this one" lives in the same place as every other pending template.
+
+Until that template is approved and wired in, the proposal is fully queued and correctly tracked (visible in `/admin/outbox`, same as the other six pending kinds) but doesn't yet reach the patient — this is the same limitation already called out in Non-goals, just grounded in the actual mechanism now.
 
 ## UI
 
