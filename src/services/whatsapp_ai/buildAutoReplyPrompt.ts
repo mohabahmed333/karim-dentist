@@ -29,6 +29,8 @@ export type PromptDoctor = {
   specialty?: string | null;
   /** Raw ISO timestamp of their next open slot — formatted in doctorBlock(), like slotBlock() does for slots. */
   nextSlotStartsAt?: string | null;
+  /** What this doctor charges for the currently-known service — their own override, or the clinic default. Null/absent means no price on file for them. */
+  priceLabel?: string | null;
 };
 
 export type PromptTurn = { role: "user" | "assistant"; content: string };
@@ -90,14 +92,16 @@ export type BuiltPrompt = {
  * and the assistant can answer "الكشف بكام؟" outright instead of promising a
  * call back.
  *
- * It remains the only price in the assistant's world. No service row carries a
- * fee, so every other figure it could produce would be invented.
+ * It is the only price GUARANTEED to be on file — a service or a specific
+ * doctor may also carry a real price (see servicesBlock/doctorBlock), stated
+ * only when actually shown there. Anything not shown anywhere is still never
+ * invented, guessed, or turned into a range.
  */
 function depositBlock(
   deposit: { amountEgp: number; currency: string } | null,
 ): string {
   if (!deposit || !(deposit.amountEgp > 0)) {
-    return "Consultation fee: not set. You have no price information at all — every question about cost goes to a colleague.";
+    return "Consultation fee: not set. Only state a price shown below in the services or doctors list — anything else goes to a colleague.";
   }
   return [
     `Consultation fee (الكشف): ${deposit.amountEgp} ${deposit.currency}.`,
@@ -107,9 +111,11 @@ function depositBlock(
     `Use the number exactly: ${deposit.amountEgp}. Write the currency the way a`,
     "patient reads it in their own language — \"جنيه\" in Arabic, \"EGP\" in",
     "English — never the two mixed.",
-    "This is the ONLY price you have. Any other treatment — a crown, whitening,",
-    "an implant, orthodontics — has no price on file: never guess one, never",
-    "give a range, and never add anything to this figure.",
+    "For any other treatment, only state a price if one is shown in the",
+    "services or doctors list below (a doctor's own price, if given, is what",
+    "that doctor actually charges — prefer it over the service's general one).",
+    "Never guess a figure, never turn one into a range, and never add anything",
+    "to a figure you were given.",
   ].join("\n");
 }
 
@@ -184,7 +190,7 @@ function doctorBlock(doctors: PromptDoctor[]): string {
       const next = d.nextSlotStartsAt
         ? formatAppointmentDateTime(d.nextSlotStartsAt, "en")
         : "fully booked";
-      return `- doctorId=${d.id} name="${d.name}"${d.specialty ? ` specialty="${d.specialty}"` : ""} next="${next}"`;
+      return `- doctorId=${d.id} name="${d.name}"${d.specialty ? ` specialty="${d.specialty}"` : ""} next="${next}"${d.priceLabel ? ` price="${d.priceLabel}"` : ""}`;
     })
     .join("\n");
   return [

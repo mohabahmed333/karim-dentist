@@ -41,6 +41,13 @@ export type ButtonDoctor = {
   specialty?: string | null;
   /** Their next open slot, or null when they are fully booked out to the horizon. */
   nextSlotStartsAt?: string | null;
+  /**
+   * What this doctor charges for the currently-known service, their own
+   * override or the clinic default — carried through to the prompt so the
+   * assistant can answer "how much with Dr. X?" Deliberately not rendered
+   * on the tappable row itself (doctorRows()), only spoken when asked.
+   */
+  priceLabel?: string | null;
 };
 
 function label(slot: ButtonSlot, language: BodyLanguage, withDate: boolean): string {

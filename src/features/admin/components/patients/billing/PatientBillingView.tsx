@@ -17,6 +17,8 @@ import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
 import { saveBillingEntry } from "@/services/patient_billing/actions";
 import type { LedgerEntryWithBalance } from "@/services/patient_billing/types";
 import { formatEgp } from "@/services/deposits/receiptMessages";
+import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
+import { extractSingleAmount, resolveServiceDoctorPrice } from "@/services/service_doctors/pricing";
 import { useLocale } from "@/lib/i18n";
 
 type FormState = {
@@ -30,12 +32,19 @@ function defaultForm(): FormState {
   return { kind: "payment", amount: "", description: "", method: "cash" };
 }
 
+type PriceableService = { id: string; title: string; price_label: string | null };
+type PriceableDoctor = { id: string; display_name: string | null };
+
 type Props = {
   patientKey: string;
   displayName: string;
   entries: LedgerEntryWithBalance[];
   balance: number;
   canEdit: boolean;
+  /** For the optional "which service, which doctor" price-lookup on a charge. */
+  services: PriceableService[];
+  doctors: PriceableDoctor[];
+  serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
 };
 
 export function PatientBillingView({
@@ -44,12 +53,52 @@ export function PatientBillingView({
   entries: initialEntries,
   balance: initialBalance,
   canEdit,
+  services,
+  doctors,
+  serviceDoctorMappings,
 }: Props) {
   const { locale } = useLocale();
   const [entries, setEntries] = useState(initialEntries);
   const [balance, setBalance] = useState(initialBalance);
   const [form, setForm] = useState<FormState>(defaultForm());
   const [pending, setPending] = useState(false);
+  // Purely a convenience lookup for the amount field below — the saved charge
+  // itself still only ever stores amount + description, nothing service- or
+  // doctor-specific.
+  const [priceServiceId, setPriceServiceId] = useState("");
+  const [priceDoctorId, setPriceDoctorId] = useState("");
+
+  const resolvedPrice =
+    priceServiceId && priceDoctorId
+      ? resolveServiceDoctorPrice(
+          priceServiceId,
+          priceDoctorId,
+          serviceDoctorMappings,
+          services.find((s) => s.id === priceServiceId)?.price_label ?? null,
+        )
+      : null;
+
+  function pickService(serviceId: string) {
+    setPriceServiceId(serviceId);
+    applyResolvedPrice(serviceId, priceDoctorId);
+  }
+
+  function pickDoctor(doctorId: string) {
+    setPriceDoctorId(doctorId);
+    applyResolvedPrice(priceServiceId, doctorId);
+  }
+
+  function applyResolvedPrice(serviceId: string, doctorId: string) {
+    if (!serviceId || !doctorId) return;
+    const label = resolveServiceDoctorPrice(
+      serviceId,
+      doctorId,
+      serviceDoctorMappings,
+      services.find((s) => s.id === serviceId)?.price_label ?? null,
+    );
+    const amount = extractSingleAmount(label);
+    if (amount) setForm((prev) => ({ ...prev, amount }));
+  }
 
   async function onSubmit() {
     const amount = Number(form.amount);
@@ -82,6 +131,8 @@ export function PatientBillingView({
       setEntries((prev) => [...prev, newEntry]);
       setBalance(newEntry.balanceAfter);
       setForm(defaultForm());
+      setPriceServiceId("");
+      setPriceDoctorId("");
       toast.success("Entry recorded");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
@@ -143,6 +194,40 @@ export function PatientBillingView({
               </AdminSelect>
             ) : null}
           </div>
+          {form.kind === "charge" && services.length > 0 && doctors.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <AdminSelect value={priceServiceId} onValueChange={(value) => pickService(String(value))}>
+                <AdminSelectTrigger>
+                  <AdminSelectValue placeholder="Service (optional, for a price lookup)" />
+                </AdminSelectTrigger>
+                <AdminSelectContent>
+                  {services.map((service) => (
+                    <AdminSelectItem key={service.id} value={service.id}>
+                      {service.title}
+                    </AdminSelectItem>
+                  ))}
+                </AdminSelectContent>
+              </AdminSelect>
+              <AdminSelect value={priceDoctorId} onValueChange={(value) => pickDoctor(String(value))}>
+                <AdminSelectTrigger>
+                  <AdminSelectValue placeholder="Doctor" />
+                </AdminSelectTrigger>
+                <AdminSelectContent>
+                  {doctors.map((doctor) => (
+                    <AdminSelectItem key={doctor.id} value={doctor.id}>
+                      {doctor.display_name ?? "Unnamed"}
+                    </AdminSelectItem>
+                  ))}
+                </AdminSelectContent>
+              </AdminSelect>
+            </div>
+          ) : null}
+          {resolvedPrice ? (
+            <p className="text-xs text-[var(--admin-muted)]">
+              {doctors.find((d) => d.id === priceDoctorId)?.display_name ?? "This doctor"}’s price for{" "}
+              {services.find((s) => s.id === priceServiceId)?.title ?? "this service"}: {resolvedPrice}
+            </p>
+          ) : null}
           <AdminInput
             placeholder="Amount (EGP)"
             inputMode="decimal"

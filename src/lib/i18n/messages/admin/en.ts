@@ -627,6 +627,8 @@ export const adminEn = {
   "admin.doctors.openToAll": "Open to all doctors",
   "admin.doctors.restrictedToOne": "Restricted to {count} doctor",
   "admin.doctors.restrictedToMany": "Restricted to {count} doctors",
+  "admin.doctors.priceOverridePlaceholder": "Clinic default: {default} — leave blank to use it",
+  "admin.doctors.priceOverridePlaceholderNone": "Price this doctor charges (optional)",
   "admin.doctors.openDays": "Open days",
   "admin.doctors.timeWindows": "Time windows",
   "admin.doctors.timeWindowsHint": "Choose From / To times from the lists — no typing.",

@@ -629,6 +629,8 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.doctors.openToAll": "متاحة لكل الأطباء",
   "admin.doctors.restrictedToOne": "مقيّدة بطبيب واحد ({count})",
   "admin.doctors.restrictedToMany": "مقيّدة بـ {count} أطباء",
+  "admin.doctors.priceOverridePlaceholder": "سعر العيادة الافتراضي: {default} — اتركه فارغًا لاستخدامه",
+  "admin.doctors.priceOverridePlaceholderNone": "السعر الذي يتقاضاه هذا الطبيب (اختياري)",
   "admin.doctors.openDays": "أيام العمل",
   "admin.doctors.timeWindows": "الفترات الزمنية",
   "admin.doctors.timeWindowsHint": "اختر وقتي البداية والنهاية من القوائم — بلا كتابة.",

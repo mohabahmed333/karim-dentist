@@ -566,6 +566,7 @@ export async function processAutoReplyJob(
           name: d.displayName ?? d.id,
           specialty: d.specialty,
           nextSlotStartsAt: d.nextSlot?.startsAt ?? null,
+          priceLabel: d.priceLabel,
         }));
       },
       // An expired or corrupt row reads as a fresh start, so an abandoned

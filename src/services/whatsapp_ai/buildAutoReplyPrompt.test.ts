@@ -321,6 +321,20 @@ describe("buildAutoReplyPrompt — eligible doctors", () => {
     assert.match(system, /next="fully booked"/i);
   });
 
+  it("states a doctor's own price when they carry one", () => {
+    const system = build({
+      doctors: [{ ...DOCTOR_A, priceLabel: "EGP 900" }],
+    }).system;
+    assert.match(system, /price="EGP 900"/);
+  });
+
+  it("omits the price entirely for a doctor with none on file, rather than inventing one", () => {
+    const system = build({ doctors: [DOCTOR_B] }).system;
+    const line = system.split("\n").find((l) => l.includes(`doctorId=${DOCTOR_B.id}`));
+    assert.ok(line);
+    assert.doesNotMatch(line!, /price=/);
+  });
+
   it("carries the settled doctor's name into Already collected", () => {
     const system = build({
       collected: { service: "Cleaning", doctorName: "Dr. Karim" },

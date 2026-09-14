@@ -9,6 +9,8 @@ import { listReservationsServer } from "@/services/reservations/queries";
 import { listPatientLedger } from "@/services/patient_billing/queries";
 import { PatientBillingView } from "@/features/admin/components/patients/billing/PatientBillingView";
 import { requirePagePermission } from "@/lib/auth/pageGuard";
+import { listDoctors } from "@/services/profiles";
+import { listAllServiceDoctorMappings } from "@/services/service_doctors/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -26,11 +28,17 @@ export default async function AdminPatientBillingPage({ params }: Props) {
   const group = getPatientGroup(directory, patientKey);
   if (!group) notFound();
 
-  const { entries, balance } = await listPatientLedger(
-    supabase,
-    group.patientKey,
-    group.visits.map((v) => v.id),
-  );
+  const [{ entries, balance }, doctors, serviceDoctorMappings, servicesRes] = await Promise.all([
+    listPatientLedger(supabase, group.patientKey, group.visits.map((v) => v.id)),
+    listDoctors(supabase),
+    listAllServiceDoctorMappings(supabase),
+    supabase
+      .from("services")
+      .select("id, title, price_label")
+      .eq("is_published", true)
+      .is("deleted_at", null)
+      .order("sort_order", { ascending: true }),
+  ]);
 
   return (
     <PatientBillingView
@@ -39,6 +47,9 @@ export default async function AdminPatientBillingPage({ params }: Props) {
       entries={entries}
       balance={balance}
       canEdit={session.permissions.has("patients.billing.edit")}
+      services={servicesRes.data ?? []}
+      doctors={doctors.map((d) => ({ id: d.id, display_name: d.display_name }))}
+      serviceDoctorMappings={serviceDoctorMappings}
     />
   );
 }

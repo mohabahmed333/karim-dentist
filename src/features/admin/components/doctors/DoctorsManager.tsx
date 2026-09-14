@@ -41,6 +41,7 @@ import { saveDoctorIdentity } from "@/services/profiles/actions";
 import { doctorIdentityUpsertSchema } from "@/services/profiles/schemas";
 import { DOCTOR_COLOR_PALETTE } from "@/services/profiles/colorPalette";
 import { saveDoctorServices } from "@/services/service_doctors/actions";
+import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
 import type { Service } from "@/services/services";
 import { useTranslations } from "@/lib/i18n";
 import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
@@ -127,8 +128,8 @@ type Props = {
   doctors: DoctorProfile[];
   initialHours: Record<string, DoctorHours>;
   services: Service[];
-  /** service_id -> doctor_ids currently mapped to it. Empty/absent = open to every doctor. */
-  initialMappings: Record<string, string[]>;
+  /** service_id -> its doctors, each with their own price override. Empty/absent = open to every doctor. */
+  initialMappings: Record<string, ServiceDoctorMapping[]>;
 };
 
 export function DoctorsManager({
@@ -160,20 +161,36 @@ export function DoctorsManager({
     }
     return out;
   });
-  // service_id -> doctor_ids currently mapped, kept in sync with the DB only
+  // service_id -> its doctors (with price), kept in sync with the DB only
   // on a successful save (mirrors hoursByDoctor/doctors elsewhere in this
   // file) — this is what the "open to all / restricted to N" badge reads,
   // deliberately separate from the in-progress, unsaved serviceIdForms.
   const [mappings, setMappings] =
-    useState<Record<string, string[]>>(initialMappings);
+    useState<Record<string, ServiceDoctorMapping[]>>(initialMappings);
   const [serviceIdForms, setServiceIdForms] = useState<
     Record<string, string[]>
   >(() => {
     const out: Record<string, string[]> = {};
     for (const doctor of initialDoctors) {
       out[doctor.id] = Object.entries(initialMappings)
-        .filter(([, doctorIds]) => doctorIds.includes(doctor.id))
+        .filter(([, entries]) => entries.some((e) => e.doctorId === doctor.id))
         .map(([serviceId]) => serviceId);
+    }
+    return out;
+  });
+  // doctor_id -> service_id -> price override text, in progress alongside
+  // serviceIdForms — blank means "use the clinic default", not "no price".
+  const [priceOverrideForms, setPriceOverrideForms] = useState<
+    Record<string, Record<string, string>>
+  >(() => {
+    const out: Record<string, Record<string, string>> = {};
+    for (const doctor of initialDoctors) {
+      const prices: Record<string, string> = {};
+      for (const [serviceId, entries] of Object.entries(initialMappings)) {
+        const own = entries.find((e) => e.doctorId === doctor.id);
+        if (own?.priceLabel) prices[serviceId] = own.priceLabel;
+      }
+      out[doctor.id] = prices;
     }
     return out;
   });
@@ -197,6 +214,14 @@ export function DoctorsManager({
     identityForms[selectedId] ??
     (selectedDoctor ? identityFromDoctor(selectedDoctor) : { specialty: "", bio: "", calendar_color: null });
   const selectedServiceIds = serviceIdForms[selectedId] ?? [];
+  const selectedPrices = priceOverrideForms[selectedId] ?? {};
+
+  function patchPrice(serviceId: string, priceLabel: string) {
+    setPriceOverrideForms((prev) => ({
+      ...prev,
+      [selectedId]: { ...(prev[selectedId] ?? {}), [serviceId]: priceLabel },
+    }));
+  }
 
   function patchIdentity(partial: Partial<IdentityFormState>) {
     setIdentityForms((prev) => ({
@@ -333,20 +358,28 @@ export function DoctorsManager({
   async function onSaveServices() {
     if (!selectedId) return;
     const serviceIds = serviceIdForms[selectedId] ?? [];
+    const prices = priceOverrideForms[selectedId] ?? {};
+    const entries = serviceIds.map((serviceId) => ({
+      serviceId,
+      priceLabel: prices[serviceId]?.trim() || null,
+    }));
     setSavingServices(true);
     try {
-      await saveDoctorServices(selectedId, serviceIds);
+      await saveDoctorServices(selectedId, entries);
       // Mirror the server's delete-then-insert exactly: drop this doctor
       // from every service's list, then add them back to the ones just
       // saved — keeps the cross-doctor badges correct without a refetch.
       setMappings((prev) => {
-        const next: Record<string, string[]> = {};
-        for (const [svcId, docIds] of Object.entries(prev)) {
-          const filtered = docIds.filter((id) => id !== selectedId);
+        const next: Record<string, ServiceDoctorMapping[]> = {};
+        for (const [svcId, prevEntries] of Object.entries(prev)) {
+          const filtered = prevEntries.filter((e) => e.doctorId !== selectedId);
           if (filtered.length > 0) next[svcId] = filtered;
         }
-        for (const svcId of serviceIds) {
-          next[svcId] = [...(next[svcId] ?? []), selectedId];
+        for (const entry of entries) {
+          next[entry.serviceId] = [
+            ...(next[entry.serviceId] ?? []),
+            { doctorId: selectedId, priceLabel: entry.priceLabel },
+          ];
         }
         return next;
       });
@@ -413,13 +446,18 @@ export function DoctorsManager({
         delete next[removedId];
         return next;
       });
+      setPriceOverrideForms((prev) => {
+        const next = { ...prev };
+        delete next[removedId];
+        return next;
+      });
       // list_bookable_doctors_for_service already filters deleted_at IS NULL,
       // so a removed doctor stops being offered regardless — this just keeps
       // the badge counts on screen from still counting them.
       setMappings((prev) => {
-        const next: Record<string, string[]> = {};
-        for (const [svcId, docIds] of Object.entries(prev)) {
-          const filtered = docIds.filter((id) => id !== removedId);
+        const next: Record<string, ServiceDoctorMapping[]> = {};
+        for (const [svcId, entries] of Object.entries(prev)) {
+          const filtered = entries.filter((e) => e.doctorId !== removedId);
           if (filtered.length > 0) next[svcId] = filtered;
         }
         return next;
@@ -608,38 +646,56 @@ export function DoctorsManager({
                   const restrictedTo = mappings[service.id] ?? [];
                   const checked = selectedServiceIds.includes(service.id);
                   return (
-                    <label
+                    <div
                       key={service.id}
-                      className="flex items-start gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-2.5 text-sm"
+                      className="flex flex-col gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-2.5 text-sm"
                     >
-                      <Checkbox
-                        className="mt-0.5"
-                        checked={checked}
-                        onCheckedChange={(next) =>
-                          toggleService(service.id, next === true)
-                        }
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[var(--admin-text)]">
-                          {service.title}
+                      <label className="flex items-start gap-2">
+                        <Checkbox
+                          className="mt-0.5"
+                          checked={checked}
+                          onCheckedChange={(next) =>
+                            toggleService(service.id, next === true)
+                          }
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[var(--admin-text)]">
+                            {service.title}
+                          </span>
+                          <span
+                            className={`block text-[11px] ${
+                              restrictedTo.length === 0
+                                ? "text-[var(--admin-muted)]"
+                                : "text-amber-700"
+                            }`}
+                          >
+                            {restrictedTo.length === 0
+                              ? t("admin.doctors.openToAll")
+                              : t(
+                                  restrictedTo.length === 1
+                                    ? "admin.doctors.restrictedToOne"
+                                    : "admin.doctors.restrictedToMany",
+                                ).replace("{count}", String(restrictedTo.length))}
+                          </span>
                         </span>
-                        <span
-                          className={`block text-[11px] ${
-                            restrictedTo.length === 0
-                              ? "text-[var(--admin-muted)]"
-                              : "text-amber-700"
-                          }`}
-                        >
-                          {restrictedTo.length === 0
-                            ? t("admin.doctors.openToAll")
-                            : t(
-                                restrictedTo.length === 1
-                                  ? "admin.doctors.restrictedToOne"
-                                  : "admin.doctors.restrictedToMany",
-                              ).replace("{count}", String(restrictedTo.length))}
-                        </span>
-                      </span>
-                    </label>
+                      </label>
+                      {checked ? (
+                        <AdminInput
+                          value={selectedPrices[service.id] ?? ""}
+                          placeholder={
+                            service.price_label
+                              ? t("admin.doctors.priceOverridePlaceholder").replace(
+                                  "{default}",
+                                  service.price_label,
+                                )
+                              : t("admin.doctors.priceOverridePlaceholderNone")
+                          }
+                          maxLength={80}
+                          onChange={(e) => patchPrice(service.id, e.target.value)}
+                          className="ml-6 text-xs"
+                        />
+                      ) : null}
+                    </div>
                   );
                 })}
               </div>

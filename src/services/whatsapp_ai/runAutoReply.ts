@@ -168,6 +168,7 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
       name: d.name,
       specialty: d.specialty,
       nextSlotStartsAt: d.nextSlotStartsAt,
+      priceLabel: d.priceLabel,
     })),
   });
 

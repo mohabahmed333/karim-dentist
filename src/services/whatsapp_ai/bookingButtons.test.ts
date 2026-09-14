@@ -185,6 +185,18 @@ describe("doctorRows", () => {
     }));
     assert.ok(doctorRows(many, "en").length <= 10);
   });
+
+  /**
+   * priceLabel is carried on ButtonDoctor for the prompt (see buildAutoReplyPrompt's
+   * doctorBlock), but stays off the tappable row itself — spoken when asked,
+   * not crammed onto an already-tight description.
+   */
+  it("never renders a price on the tappable row, even when the doctor carries one", () => {
+    const withPrice = [{ ...doctors[0], priceLabel: "EGP 900" }];
+    const row = doctorRows(withPrice, "en").find((r) => r.title === "Dr. Karim");
+    assert.ok(row);
+    assert.doesNotMatch(row!.description ?? "", /900/);
+  });
 });
 
 describe("replyUi", () => {

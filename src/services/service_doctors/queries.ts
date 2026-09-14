@@ -15,6 +15,12 @@ export type BookableDoctorOption = {
   calendarColor: string | null;
   /** Null means fully booked out to the horizon — not ineligible, just nothing open right now. */
   nextSlot: { id: string; startsAt: string } | null;
+  /**
+   * What this doctor charges for the service just asked about — their own
+   * override if set, else the service's clinic-wide price_label, else null.
+   * Always null when serviceId was null (no service context to price).
+   */
+  priceLabel: string | null;
 };
 
 /**
@@ -42,6 +48,7 @@ export async function listBookableDoctorsForService(
     nextSlot: row.next_slot_id
       ? { id: row.next_slot_id, startsAt: row.next_slot_starts_at as string }
       : null,
+    priceLabel: row.price_label,
   }));
 }
 
@@ -58,19 +65,25 @@ export async function listServiceIdsForDoctor(
   return (data ?? []).map((row) => row.service_id);
 }
 
+/** One doctor's mapping to one service, with whatever price override they carry. */
+export type ServiceDoctorMapping = { doctorId: string; priceLabel: string | null };
+
 /**
- * The whole mapping table, service_id -> doctor_ids. Used to compute the
- * "open to all doctors" / "restricted to N doctors" badge across every
- * doctor's tab at once, not just the one currently selected.
+ * The whole mapping table, service_id -> its doctors (each with their own
+ * price override, if any). Used to compute the "open to all doctors" /
+ * "restricted to N doctors" badge across every doctor's tab at once, and to
+ * seed each doctor's price-override inputs without a second query.
  */
 export async function listAllServiceDoctorMappings(
   supabase: AnySupabase,
-): Promise<Record<string, string[]>> {
-  const { data, error } = await supabase.from("service_doctors").select("service_id, doctor_id");
+): Promise<Record<string, ServiceDoctorMapping[]>> {
+  const { data, error } = await supabase
+    .from("service_doctors")
+    .select("service_id, doctor_id, price_label");
   if (error) throw error;
-  const out: Record<string, string[]> = {};
+  const out: Record<string, ServiceDoctorMapping[]> = {};
   for (const row of data ?? []) {
-    (out[row.service_id] ??= []).push(row.doctor_id);
+    (out[row.service_id] ??= []).push({ doctorId: row.doctor_id, priceLabel: row.price_label });
   }
   return out;
 }
