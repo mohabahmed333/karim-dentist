@@ -245,6 +245,7 @@ export function useReservationEditor(initial: Reservation[]) {
     try {
       const payload = {
         patient_name: parsed.data.patient_name,
+        patient_id: parsed.data.patient_id ?? null,
         phone: parsed.data.phone,
         email: parsed.data.email || null,
         service_id: parsed.data.service_id ?? null,

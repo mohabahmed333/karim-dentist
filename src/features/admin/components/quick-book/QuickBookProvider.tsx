@@ -147,6 +147,7 @@ export function QuickBookProvider({ children }: Props) {
       const matched = findPatientGroupByPhone(groups, parsed.data.phone);
       const payload = {
         patient_name: matched?.displayName || parsed.data.patient_name,
+        patient_id: parsed.data.patient_id ?? null,
         phone: matched?.phone || parsed.data.phone,
         email: parsed.data.email || matched?.email || null,
         service_id: parsed.data.service_id ?? null,
