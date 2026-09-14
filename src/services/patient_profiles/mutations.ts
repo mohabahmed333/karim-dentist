@@ -55,6 +55,48 @@ export async function resolvePatientId(
   throw inserted.error;
 }
 
+/** Create a brand-new patient. Rejects rather than silently merging if the
+ * computed patient_key already matches someone — use upsertPatientProfile
+ * to edit an already-identified existing patient instead. */
+export async function createPatient(
+  supabase: AnySupabase,
+  input: PatientProfileUpsertValues,
+): Promise<PatientProfile> {
+  const patientKey = patientKeyFromNamePhone(input.display_name, input.phone);
+
+  const existing = await supabase
+    .from("patients")
+    .select("id, display_name")
+    .eq("patient_key", patientKey)
+    .maybeSingle();
+  if (existing.error) throw existing.error;
+  if (existing.data) {
+    throw new Error(
+      `A patient with this name/phone already exists (${existing.data.display_name})`,
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("patients")
+    .insert({
+      patient_key: patientKey,
+      display_name: input.display_name,
+      phone: input.phone,
+      email: input.email ?? null,
+      date_of_birth: input.date_of_birth ?? null,
+      age_years: input.age_years ?? null,
+      gender: input.gender,
+      medical_history: input.medical_history,
+      allergies: input.allergies,
+      medications: input.medications,
+      notes: input.notes,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as PatientProfile;
+}
+
 export async function upsertPatientProfile(
   supabase: AnySupabase,
   patientKey: string,

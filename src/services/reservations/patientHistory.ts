@@ -104,6 +104,33 @@ export function groupReservationsByPatient(
   return groups.sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
 
+/** Adds a zero-visit PatientGroup for any `patients` row not already
+ * represented by a reservation (e.g. added directly, never yet booked). */
+export function mergePatientsWithoutVisits(
+  groups: PatientGroup[],
+  patients: {
+    patient_key: string;
+    display_name: string;
+    phone: string;
+    email: string | null;
+  }[],
+): PatientGroup[] {
+  const known = new Set(groups.map((g) => g.patientKey));
+  const extra: PatientGroup[] = patients
+    .filter((p) => !known.has(p.patient_key))
+    .map((p) => ({
+      patientKey: p.patient_key,
+      displayName: p.display_name,
+      phone: p.phone,
+      email: p.email,
+      alternateNames: [],
+      visits: [],
+    }));
+  return [...groups, ...extra].sort((a, b) =>
+    a.displayName.localeCompare(b.displayName),
+  );
+}
+
 export function buildPatientHistoryStats(
   group: PatientGroup,
   now = new Date(),
