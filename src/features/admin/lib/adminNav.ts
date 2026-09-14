@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   Gauge,
   MessagesSquare,
+  Receipt,
   Settings,
   Users,
 } from "lucide-react";
@@ -103,6 +104,13 @@ export const adminRailItems: AdminRailItem[] = [
     permission: "patients.view",
   },
   {
+    id: "billing",
+    href: "/admin/billing",
+    labelKey: "admin.nav.billing",
+    icon: Receipt,
+    permission: "patients.view",
+  },
+  {
     id: "support",
     href: "/admin/support",
     labelKey: "admin.nav.support",
@@ -193,6 +201,7 @@ export const adminNavSections: AdminNavSection[] = [
         ],
       },
       { href: "/admin/patients", labelKey: "admin.nav.patients", permission: "patients.view" },
+      { href: "/admin/billing", labelKey: "admin.nav.billing", permission: "patients.view" },
       { href: "/admin/support", labelKey: "admin.nav.support", permission: "support.view" },
       {
         id: "messaging",
@@ -255,6 +264,7 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin": "admin.nav.overview",
   "/admin/reservations": "admin.nav.reservations",
   "/admin/patients": "admin.nav.patients",
+  "/admin/billing": "admin.nav.billing",
   "/admin/support": "admin.nav.support",
   "/admin/hero": "admin.nav.hero",
   "/admin/about": "admin.nav.about",
@@ -306,6 +316,7 @@ export const adminPagePermissions: Record<string, string> = {
   "/admin": "dashboard.view",
   "/admin/reservations": "reservations.view",
   "/admin/patients": "patients.view",
+  "/admin/billing": "patients.view",
   "/admin/support": "support.view",
   "/admin/hero": "hero.view",
   "/admin/about": "about.view",
