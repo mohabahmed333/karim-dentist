@@ -43,6 +43,10 @@ import { doctorIdentityUpsertSchema } from "@/services/profiles/schemas";
 import { DOCTOR_COLOR_PALETTE } from "@/services/profiles/colorPalette";
 import { saveDoctorServices } from "@/services/service_doctors/actions";
 import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
+import {
+  extractPriceRange,
+  isPriceWithinClinicRange,
+} from "@/services/service_doctors/pricing";
 import type { Service } from "@/services/services";
 import { useTranslations } from "@/lib/i18n";
 import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
@@ -364,6 +368,28 @@ export function DoctorsManager({
       serviceId,
       priceLabel: prices[serviceId]?.trim() || null,
     }));
+
+    // The clinic's own price is the floor and ceiling a doctor's price has
+    // to land inside — usually published as a range ("EGP 300-600"). Only
+    // enforced when both sides reduce to comparable number(s); anything
+    // that can't be honestly compared is left alone rather than guessed at.
+    // isPriceWithinClinicRange only ever refuses when the clinic side did
+    // resolve to a range, so extractPriceRange here is never null.
+    for (const entry of entries) {
+      if (!entry.priceLabel) continue;
+      const service = services.find((s) => s.id === entry.serviceId);
+      const clinicPrice = service?.price_label ?? null;
+      if (isPriceWithinClinicRange(entry.priceLabel, clinicPrice)) continue;
+      const range = extractPriceRange(clinicPrice)!;
+      toast.error(
+        t("admin.doctors.priceOutOfRange")
+          .replace("{service}", service?.title ?? t("admin.doctors.thisService"))
+          .replace("{min}", String(range.min))
+          .replace("{max}", String(range.max)),
+      );
+      return;
+    }
+
     setSavingServices(true);
     try {
       await saveDoctorServices(selectedId, entries);
@@ -675,7 +701,7 @@ export function DoctorsManager({
                 {t("admin.doctors.noServices")}
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-4">
                 {services.map((service) => {
                   const restrictedTo = mappings[service.id] ?? [];
                   const checked = selectedServiceIds.includes(service.id);
@@ -726,7 +752,7 @@ export function DoctorsManager({
                           }
                           maxLength={80}
                           onChange={(e) => patchPrice(service.id, e.target.value)}
-                          className="ml-6 text-xs"
+                          className="ms-6 w-[calc(100%-1.5rem)] text-xs"
                         />
                       ) : null}
                     </div>
