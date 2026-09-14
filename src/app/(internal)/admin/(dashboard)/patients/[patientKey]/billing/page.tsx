@@ -36,7 +36,7 @@ export default async function AdminPatientBillingPage({ params }: Props) {
       listAllServiceDoctorMappings(supabase),
       supabase
         .from("services")
-        .select("id, title, price_label")
+        .select("id, title, title_ar, price_label")
         .eq("is_published", true)
         .is("deleted_at", null)
         .order("sort_order", { ascending: true }),
@@ -56,6 +56,7 @@ export default async function AdminPatientBillingPage({ params }: Props) {
       doctors={doctors.map((d) => ({ id: d.id, display_name: d.display_name }))}
       serviceDoctorMappings={serviceDoctorMappings}
       pendingProposals={pendingProposals}
+      reservations={group.visits}
     />
   );
 }
