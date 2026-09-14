@@ -233,17 +233,17 @@ export function formatReservationWhen(startsAt: string): string {
 export function statusBadgeClass(status: ReservationStatus): string {
   switch (status) {
     case "pending":
-      return "bg-[#c9a962]/15 text-[#0f2744]";
+      return "bg-[#c9a962]/15 text-[#7a5b1e] dark:bg-[#c9a962]/20 dark:text-[#e8cf8f]";
     case "confirmed":
       return "bg-[#0f2744] text-white";
     case "completed":
-      return "bg-[#e6e8ec] text-[#0f2744]";
+      return "bg-[var(--admin-hover)] text-[var(--admin-text)]";
     case "cancelled":
-      return "bg-red-50 text-red-700";
+      return "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300";
     case "no_show":
-      return "bg-orange-50 text-orange-800";
+      return "bg-orange-50 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300";
     default:
-      return "bg-[#e6e8ec] text-[#0f2744]";
+      return "bg-[var(--admin-hover)] text-[var(--admin-text)]";
   }
 }
 

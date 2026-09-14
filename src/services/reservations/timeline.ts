@@ -400,15 +400,15 @@ export function formatCalendarDayLabel(iso: string): string {
 export function calendarEventAccent(status: ReservationStatus): string {
   switch (status) {
     case "pending":
-      return "border-l-[#c9a962] bg-[#c9a962]/10";
+      return "border-l-[#c9a962] bg-[#c9a962]/10 dark:bg-[#c9a962]/20";
     case "confirmed":
-      return "border-l-[#7c5cff] bg-[#7c5cff]/10";
+      return "border-l-[#7c5cff] bg-[#7c5cff]/10 dark:bg-[#7c5cff]/20";
     case "completed":
-      return "border-l-emerald-500 bg-emerald-500/10";
+      return "border-l-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20";
     case "cancelled":
-      return "border-l-red-400 bg-red-400/10";
+      return "border-l-red-400 bg-red-400/10 dark:bg-red-400/20";
     case "no_show":
-      return "border-l-orange-400 bg-orange-400/10";
+      return "border-l-orange-400 bg-orange-400/10 dark:bg-orange-400/20";
     default:
       return "border-l-[#6b7280] bg-[var(--admin-hover)]";
   }
