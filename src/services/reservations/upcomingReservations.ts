@@ -7,6 +7,8 @@ export type UpcomingReservation = {
   service_label: string;
   starts_at: string;
   status: string;
+  doctor_id: string | null;
+  doctor_name: string | null;
 };
 
 /**
@@ -25,12 +27,25 @@ export async function loadUpcomingReservations(
 ): Promise<UpcomingReservation[]> {
   const { data } = await db
     .from("reservations")
-    .select("id,patient_name,service_label,starts_at,status")
+    .select(
+      "id,patient_name,service_label,starts_at,status,doctor_id,doctor:profiles!reservations_doctor_id_fkey(display_name)",
+    )
     .eq("phone_suffix", phone.replace(/\D/g, "").slice(-8))
     .is("deleted_at", null)
     .gte("starts_at", now.toISOString())
     .neq("status", "cancelled")
     .order("starts_at", { ascending: true })
     .limit(limit);
-  return (data ?? []) as UpcomingReservation[];
+  return (data ?? []).map((row) => {
+    const doctor = row.doctor as { display_name: string | null } | null;
+    return {
+      id: row.id,
+      patient_name: row.patient_name,
+      service_label: row.service_label,
+      starts_at: row.starts_at,
+      status: row.status,
+      doctor_id: row.doctor_id,
+      doctor_name: doctor?.display_name ?? null,
+    };
+  });
 }

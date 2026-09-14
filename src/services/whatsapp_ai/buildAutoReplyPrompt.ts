@@ -19,6 +19,16 @@ export type PatientReservation = {
   service_label: string;
   starts_at: string;
   status: string;
+  doctor_id?: string | null;
+  doctor_name?: string | null;
+};
+
+export type PromptDoctor = {
+  id: string;
+  name: string;
+  specialty?: string | null;
+  /** Raw ISO timestamp of their next open slot — formatted in doctorBlock(), like slotBlock() does for slots. */
+  nextSlotStartsAt?: string | null;
 };
 
 export type PromptTurn = { role: "user" | "assistant"; content: string };
@@ -32,6 +42,13 @@ export type BuildPromptInput = {
   /** Whether the assistant is permitted to write bookings this turn. */
   canBook: boolean;
   services: { title: string; title_ar?: string | null; price?: string | null }[];
+  /**
+   * Eligible doctors for the currently-known service, soonest-available
+   * first — empty until a service is settled. Lets a patient who *types*
+   * "I'd like Dr. Karim" be understood, symmetric with how slots already
+   * support a typed answer alongside a tapped one.
+   */
+  doctors?: PromptDoctor[];
   /**
    * The booking deposit, when the clinic takes one. Server-supplied, so it is
    * the one money figure the assistant may state — and the only honest answer
@@ -49,6 +66,7 @@ export type BuildPromptInput = {
     patientName?: string;
     age?: string;
     medicalInfo?: string;
+    doctorName?: string;
     slotStartsAt?: string;
   };
   reservations: PatientReservation[];
@@ -133,15 +151,44 @@ function reservationBlock(reservations: PatientReservation[]): string {
     return "This patient has no upcoming appointments.";
   }
   const lines = reservations
-    .map(
-      (r) =>
-        `- reservationId=${r.id} ${r.service_label} at ${formatAppointmentDateTime(r.starts_at, "en")} (${r.status})`,
-    )
+    .map((r) => {
+      const doctor = r.doctor_name ? `, with ${r.doctor_name}` : "";
+      return `- reservationId=${r.id} ${r.service_label} at ${formatAppointmentDateTime(r.starts_at, "en")}${doctor} (${r.status})`;
+    })
     .join("\n");
   return [
     "This patient ALREADY HAS an appointment booked, and these are the only ones they may change.",
     "If they ask to book, do not silently add a second one: say when this appointment is and ask",
     "whether they want to move it or book an additional one. Only then offer times.",
+    "Rescheduling this appointment keeps the same doctor by default — you do not need to ask",
+    "about the doctor again unless the patient brings it up. If they say they want a different",
+    "doctor, treat that exactly like the doctor step of a fresh booking: report needs=[\"doctor\"]",
+    "and offer the doctor list, rather than guessing who they mean.",
+    lines,
+  ].join("\n");
+}
+
+/**
+ * Doctors eligible for the currently-known service, so the model can
+ * understand a typed answer ("Dr. Karim please") the same way it already
+ * understands a typed time — not just a tap. Empty until a service is
+ * settled; the doctor step in bookingButtons.ts governs when this is
+ * actually asked.
+ */
+function doctorBlock(doctors: PromptDoctor[]): string {
+  if (doctors.length === 0) {
+    return "Eligible doctors: (none yet — a service must be settled first)";
+  }
+  const lines = doctors
+    .map((d) => {
+      const next = d.nextSlotStartsAt
+        ? formatAppointmentDateTime(d.nextSlotStartsAt, "en")
+        : "fully booked";
+      return `- doctorId=${d.id} name="${d.name}"${d.specialty ? ` specialty="${d.specialty}"` : ""} next="${next}"`;
+    })
+    .join("\n");
+  return [
+    "Doctors who can take the currently-known service (ONLY offer these; copy doctorId exactly):",
     lines,
   ].join("\n");
 }
@@ -191,6 +238,7 @@ function collectedBlock(collected: BuildPromptInput["collected"]): string {
       patientName: collected?.patientName,
       age: collected?.age,
       medicalInfo: collected?.medicalInfo,
+      doctor: collected?.doctorName,
       chosenTime: collected?.slotStartsAt,
     }).filter(([, value]) => typeof value === "string" && value.trim()),
   );
@@ -223,6 +271,8 @@ export function buildAutoReplyPrompt(input: BuildPromptInput): BuiltPrompt {
     formatClinicHours(input.hours),
     "",
     servicesBlock,
+    "",
+    doctorBlock(input.doctors ?? []),
     "",
     depositBlock(input.deposit ?? null),
     "",

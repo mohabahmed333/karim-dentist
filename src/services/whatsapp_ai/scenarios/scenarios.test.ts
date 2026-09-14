@@ -71,8 +71,11 @@ describe("scenarios — what the assistant must remember", () => {
       const state = nextBookingState(
         { step: "idle", pending: { ...scenario.prior }, expiresAt: null },
         {
+          intent: scenario.intent,
           collected: scenario.collected,
           offeredSlots: OFFERED_SLOTS,
+          offeredDoctors: scenario.offeredDoctors,
+          activeReservationDoctor: scenario.activeReservationDoctor,
           bookingCompleted: scenario.bookingCompleted ?? false,
           now: new Date("2026-09-10T22:00:00.000Z"),
         },

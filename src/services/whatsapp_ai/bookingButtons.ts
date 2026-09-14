@@ -34,6 +34,15 @@ export type ButtonSlot = { id: string; starts_at: string };
 export const CONFIRM_ID = "booking:confirm";
 export const CHANGE_ID = "booking:change";
 
+/** A doctor the server is offering, for the doctor picker step. */
+export type ButtonDoctor = {
+  id: string;
+  name: string;
+  specialty?: string | null;
+  /** Their next open slot, or null when they are fully booked out to the horizon. */
+  nextSlotStartsAt?: string | null;
+};
+
 function label(slot: ButtonSlot, language: BodyLanguage, withDate: boolean): string {
   const base = formatSlotButtonLabel(slot.starts_at, language);
   if (!withDate) return base;
@@ -153,6 +162,55 @@ export function serviceRows(
   return rows;
 }
 
+/** The row that books whoever has the earliest matching time, no doctor named. */
+export const ANY_DOCTOR_ID = "doctor:any";
+
+/**
+ * Eligible doctors as list rows, ending with "no preference".
+ *
+ * A list for the same reason services are a list, not buttons: a doctor's
+ * name plus specialty can run past a button's 20-character limit. Each row's
+ * description carries their real next-available time (or "fully booked"),
+ * from list_bookable_doctors_for_service — this is what makes the picker
+ * useful rather than a bare name to choose blind.
+ */
+export function doctorRows(
+  doctors: ButtonDoctor[],
+  language: BodyLanguage,
+): ReplyRow[] {
+  const rows: ReplyRow[] = [];
+
+  for (const doctor of doctors) {
+    if (rows.length >= LIST_ROW_LIMIT - 1) break;
+    const name = doctor.name.trim();
+    if (!name) continue;
+    const title = name.length <= LIST_ROW_TITLE_LIMIT ? name : name.slice(0, LIST_ROW_TITLE_LIMIT).trim();
+    const when = doctor.nextSlotStartsAt
+      ? formatSlotButtonLabel(doctor.nextSlotStartsAt, language)
+      : language === "ar"
+        ? "محجوز بالكامل"
+        : "Fully booked";
+    const nextLabel = language === "ar" ? `التالي: ${when}` : `Next: ${when}`;
+    const description = doctor.specialty
+      ? `${doctor.specialty} — ${nextLabel}`
+      : nextLabel;
+    rows.push({
+      id: `doctor:${doctor.id}`,
+      title,
+      description: description.slice(0, LIST_ROW_DESCRIPTION_LIMIT),
+    });
+  }
+
+  if (rows.length === 0) return [];
+
+  rows.push(
+    language === "ar"
+      ? { id: ANY_DOCTOR_ID, title: "بدون تفضيل", description: "أقرب موعد متاح" }
+      : { id: ANY_DOCTOR_ID, title: "No preference", description: "Earliest available" },
+  );
+  return rows;
+}
+
 /**
  * The model's own suggested answers, made safe to show.
  *
@@ -208,6 +266,10 @@ export function replyUi(input: {
   pendingSlotId?: string;
   /** A service they already named — settled, so never asked again. */
   pendingService?: string;
+  /** A doctor they already chose — settled, so never asked again. */
+  pendingDoctorId?: string;
+  /** Eligible doctors for the pending service, soonest-first — for the doctor chooser. */
+  doctors?: ButtonDoctor[];
   /** What the model says it is still waiting on. Decides what may be tapped. */
   needs?: readonly string[];
   /** Short answers the model proposed for the question it just asked. */
@@ -233,6 +295,19 @@ export function replyUi(input: {
     return {
       kind: "list",
       button: input.language === "ar" ? "اختار الخدمة" : "Choose a service",
+      rows,
+    };
+  }
+
+  // Service → Doctor → Date/time: once the service is settled, the next
+  // question is who — before any time is offered, same precedence rule as
+  // the service branch above (needs decides, not a fixed ranking).
+  if (needs.includes("doctor") && input.pendingService && !input.pendingDoctorId) {
+    const rows = doctorRows(input.doctors ?? [], input.language);
+    if (rows.length === 0) return null;
+    return {
+      kind: "list",
+      button: input.language === "ar" ? "اختار الدكتور" : "Choose a doctor",
       rows,
     };
   }

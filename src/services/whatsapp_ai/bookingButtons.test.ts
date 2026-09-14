@@ -3,12 +3,14 @@ import { describe, it } from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
 import { BUTTON_TITLE_LIMIT } from "@/services/patient_notifications/formatWhen";
 import {
+  ANY_DOCTOR_ID,
   CHANGE_ID,
   CONFIRM_ID,
   MAX_BUTTONS,
   NOT_SURE_ID,
   choiceButtons,
   confirmButtons,
+  doctorRows,
   replyUi,
   serviceRows,
   slotButtons,
@@ -135,6 +137,56 @@ describe("serviceRows", () => {
   });
 });
 
+describe("doctorRows", () => {
+  const doctors = [
+    { id: "aaaaaaaa-1111-4111-8111-111111111111", name: "Dr. Karim", specialty: "General Dentistry", nextSlotStartsAt: "2026-09-13T07:30:00.000Z" },
+    { id: "bbbbbbbb-2222-4222-8222-222222222222", name: "Dr. Nourhan", specialty: null, nextSlotStartsAt: null },
+  ];
+
+  it("carries the doctor id where the patient cannot see it", () => {
+    for (const row of doctorRows(doctors, "en")) {
+      if (row.id === ANY_DOCTOR_ID) continue;
+      assert.match(row.id, /^doctor:/);
+      assert.match(row.id, UUID);
+      assert.doesNotMatch(row.title, UUID);
+    }
+  });
+
+  it("names the specialty and next-available time in the description", () => {
+    const row = doctorRows(doctors, "en").find((r) => r.title === "Dr. Karim");
+    assert.ok(row);
+    assert.match(row!.description ?? "", /General Dentistry/);
+    assert.match(row!.description ?? "", /Next:/);
+  });
+
+  it("says a doctor with no open slot is fully booked, rather than omitting them", () => {
+    const row = doctorRows(doctors, "en").find((r) => r.title === "Dr. Nourhan");
+    assert.ok(row);
+    assert.match(row!.description ?? "", /Fully booked/);
+  });
+
+  it("always ends with a way to book without choosing a doctor", () => {
+    for (const language of ["ar", "en"] as const) {
+      const rows = doctorRows(doctors, language);
+      assert.equal(rows[rows.length - 1].id, ANY_DOCTOR_ID);
+    }
+  });
+
+  it("offers nothing at all when no doctor is eligible", () => {
+    assert.deepEqual(doctorRows([], "ar"), []);
+  });
+
+  it("never exceeds WhatsApp's ten rows, counting the way out", () => {
+    const many = Array.from({ length: 30 }, (_, i) => ({
+      id: `cccccccc-0000-4000-8000-${String(i).padStart(12, "0")}`,
+      name: `Dr. ${i}`,
+      specialty: null,
+      nextSlotStartsAt: null,
+    }));
+    assert.ok(doctorRows(many, "en").length <= 10);
+  });
+});
+
 describe("replyUi", () => {
   const one = [slot("11111111-1111-4111-8111-111111111111", "2026-09-13T07:30:00.000Z")];
   const chosen = "11111111-1111-4111-8111-111111111111";
@@ -196,6 +248,55 @@ describe("replyUi", () => {
       offeredSlots: [],
       needs: ["service"],
       pendingService: "Dental implants",
+    });
+    assert.equal(ui, null);
+  });
+
+  const doctors = [
+    { id: "aaaaaaaa-1111-4111-8111-111111111111", name: "Dr. Karim", specialty: "General Dentistry", nextSlotStartsAt: null },
+  ];
+
+  it("offers the doctor list once the service is settled and a doctor is being asked for", () => {
+    const ui = replyUi({
+      ...base,
+      needs: ["doctor"],
+      pendingService: "Dental implants",
+      doctors,
+    });
+    assert.equal(ui?.kind, "list");
+    assert.equal(ui!.kind === "list" ? ui!.rows[ui!.rows.length - 1].id : "", ANY_DOCTOR_ID);
+  });
+
+  /** Doctor is asked before any time, same precedence rule that governs service vs. slots. */
+  it("shows doctors, not times, when the question asked was about the doctor", () => {
+    const ui = replyUi({ ...base, needs: ["doctor"], pendingService: "Dental implants", doctors });
+    assert.equal(ui?.kind, "list");
+  });
+
+  it("does not ask for a doctor before a service is even settled", () => {
+    const ui = replyUi({ ...base, needs: ["doctor"], doctors });
+    // Falls through to whatever else applies — here, the offered time.
+    assert.equal(ui?.kind, "buttons");
+  });
+
+  it("does not ask again for a doctor already settled", () => {
+    const ui = replyUi({
+      ...base,
+      needs: ["doctor"],
+      pendingService: "Dental implants",
+      pendingDoctorId: doctors[0].id,
+      doctors,
+    });
+    assert.notEqual(ui?.kind, "list");
+  });
+
+  it("offers nothing tappable when no doctor is eligible for the settled service", () => {
+    const ui = replyUi({
+      ...base,
+      offeredSlots: [],
+      needs: ["doctor"],
+      pendingService: "Dental implants",
+      doctors: [],
     });
     assert.equal(ui, null);
   });

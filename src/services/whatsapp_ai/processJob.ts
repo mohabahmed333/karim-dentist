@@ -23,6 +23,7 @@ import { insertOutboundMessage } from "@/services/whatsapp/mutations";
 import { sendWhatsappMessage } from "@/services/whatsapp/sendMessage";
 import { recordVisitRating } from "./visitRatings";
 import { runAutoReply } from "./runAutoReply";
+import { listBookableDoctorsForService } from "@/services/service_doctors/queries";
 import {
   claimJob,
   countAiRepliesEver,
@@ -251,7 +252,7 @@ export async function processAutoReplyJob(
       // whatever order the database happens to return them.
       db
         .from("services")
-        .select("title,title_ar,price_label")
+        .select("id,title,title_ar,price_label")
         .eq("is_published", true)
         .is("deleted_at", null)
         .order("sort_order")
@@ -315,6 +316,22 @@ export async function processAutoReplyJob(
     // Which model answered is decided at call time by the fallback chain, so
     // the event row has to record what actually ran, not what we hoped would.
     let usedModel = "";
+
+    // The booking flow only ever knows a service by its free-text label
+    // (bookingState.ts's PendingBooking.service, unchanged since before
+    // doctors existed — see the Stage 2 plan for why this was kept simple
+    // rather than threading real service ids through every button id and
+    // model-reported field). This is the one place that label gets resolved
+    // back to a real id, so eligibility can be looked up. A label the model
+    // paraphrased into something not matching any row falls back to
+    // serviceId null — "any bookable doctor" — the same safe default
+    // list_bookable_doctors_for_service already uses for an unmapped
+    // service, not a crash or an empty list.
+    const serviceIdByLabel = new Map<string, string>();
+    for (const row of serviceRows ?? []) {
+      if (row.title) serviceIdByLabel.set(row.title, row.id);
+      if (row.title_ar) serviceIdByLabel.set(row.title_ar, row.id);
+    }
 
     const outcome = await runAutoReply({
       conversationId: conversation.id,
@@ -388,12 +405,16 @@ export async function processAutoReplyJob(
         // inferred from WhatsApp metadata; buildAutoReplyPrompt now always
         // asks, and the only way a name becomes settled is `collected` once
         // the patient actually gives one in the conversation.
-        reservations: reservations.map(({ id, service_label, starts_at, status }) => ({
-          id,
-          service_label,
-          starts_at,
-          status,
-        })),
+        reservations: reservations.map(
+          ({ id, service_label, starts_at, status, doctor_id, doctor_name }) => ({
+            id,
+            service_label,
+            starts_at,
+            status,
+            doctor_id,
+            doctor_name,
+          }),
+        ),
         history: buildHistoryTurns(history ?? [], HISTORY_TURNS),
       },
       async chat(messages) {
@@ -520,6 +541,19 @@ export async function processAutoReplyJob(
       },
       async rememberOfferedSlots(slotIds) {
         await saveOfferedSlots(db, conversation.id, slotIds);
+      },
+      async listEligibleDoctors(serviceLabel) {
+        const serviceId = serviceIdByLabel.get(serviceLabel) ?? null;
+        const doctors = await listBookableDoctorsForService(db, {
+          serviceId,
+          fromIso: new Date().toISOString(),
+        });
+        return doctors.map((d) => ({
+          id: d.id,
+          name: d.displayName ?? d.id,
+          specialty: d.specialty,
+          nextSlotStartsAt: d.nextSlot?.startsAt ?? null,
+        }));
       },
       // An expired or corrupt row reads as a fresh start, so an abandoned
       // booking from an hour ago is never resumed as if it were live.

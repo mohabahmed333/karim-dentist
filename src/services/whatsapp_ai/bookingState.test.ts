@@ -6,6 +6,9 @@ import { nextBookingState, readBookingState } from "./bookingState.ts";
 const NOW = new Date("2026-09-10T22:00:00.000Z");
 const SLOT_A = { id: "11111111-1111-4111-8111-111111111111", starts_at: "2026-09-11T07:30:00.000Z" };
 const SLOT_B = { id: "22222222-2222-4222-8222-222222222222", starts_at: "2026-09-11T11:00:00.000Z" };
+const DOCTOR_A = { id: "aaaaaaaa-1111-4111-8111-111111111111", name: "Dr. Karim" };
+const DOCTOR_B = { id: "bbbbbbbb-2222-4222-8222-222222222222", name: "Dr. Nourhan" };
+const DOCTORS = [DOCTOR_A, DOCTOR_B];
 const EMPTY = { step: "idle", pending: {}, expiresAt: null };
 
 function next(current: unknown, over: Record<string, unknown> = {}) {
@@ -27,7 +30,7 @@ describe("nextBookingState", () => {
   it("remembers a service the patient named", () => {
     const s = next(EMPTY, { collected: { service: "تنظيف اسنان" } });
     assert.equal(s.pending.service, "تنظيف اسنان");
-    assert.equal(s.step, "awaiting_slot");
+    assert.equal(s.step, "awaiting_doctor", "a doctor must be chosen before a slot");
   });
 
   it("keeps what it already knows when the next turn adds nothing", () => {
@@ -37,15 +40,30 @@ describe("nextBookingState", () => {
   });
 
   it("does not forget the booking when the patient asks something else mid-way", () => {
-    const booking = next(EMPTY, { collected: { service: "Cleaning", slotId: SLOT_A.id } });
+    const booking = next(EMPTY, {
+      collected: { service: "Cleaning", doctorId: DOCTOR_A.id, slotId: SLOT_A.id },
+      offeredDoctors: DOCTORS,
+    });
     const asideAboutHours = next(booking, { intent: "hours", collected: {} });
     assert.equal(asideAboutHours.pending.service, "Cleaning");
+    assert.equal(asideAboutHours.pending.doctorId, DOCTOR_A.id);
     assert.equal(asideAboutHours.pending.slotId, SLOT_A.id);
     assert.equal(asideAboutHours.step, "awaiting_confirm");
   });
 
-  it("records a chosen slot with its time, once service is known", () => {
+  it("gates on the doctor before offering a slot", () => {
     const s = next(EMPTY, { collected: { service: "Cleaning", slotId: SLOT_B.id } });
+    assert.equal(s.pending.slotId, SLOT_B.id, "a typed/tapped slot is still recorded");
+    assert.equal(s.pending.slotStartsAt, SLOT_B.starts_at);
+    assert.equal(s.step, "awaiting_doctor", "still needs a doctor before it can be confirmed");
+  });
+
+  it("records a chosen slot with its time, once service and doctor are known", () => {
+    const s = next(EMPTY, {
+      collected: { service: "Cleaning", doctorId: DOCTOR_B.id, slotId: SLOT_B.id },
+      offeredDoctors: DOCTORS,
+    });
+    assert.equal(s.pending.doctorId, DOCTOR_B.id);
     assert.equal(s.pending.slotId, SLOT_B.id);
     assert.equal(s.pending.slotStartsAt, SLOT_B.starts_at);
     assert.equal(s.step, "awaiting_confirm");
@@ -54,7 +72,12 @@ describe("nextBookingState", () => {
   /** A slot id the server never offered must not be planted by the model. */
   it("ignores a slot id that was not offered", () => {
     const s = next(EMPTY, {
-      collected: { service: "Cleaning", slotId: "99999999-9999-4999-8999-999999999999" },
+      collected: {
+        service: "Cleaning",
+        doctorId: DOCTOR_A.id,
+        slotId: "99999999-9999-4999-8999-999999999999",
+      },
+      offeredDoctors: DOCTORS,
     });
     assert.equal(s.pending.slotId, undefined);
     assert.equal(s.step, "awaiting_slot");
@@ -104,13 +127,118 @@ describe("nextBookingState", () => {
   });
 });
 
+describe("nextBookingState — doctor selection", () => {
+  it("gates the step order: service, then doctor, then slot, then confirm", () => {
+    const withService = next(EMPTY, { collected: { service: "Cleaning" } });
+    assert.equal(withService.step, "awaiting_doctor");
+
+    const withDoctor = next(withService, {
+      collected: { doctorId: DOCTOR_A.id },
+      offeredDoctors: DOCTORS,
+    });
+    assert.equal(withDoctor.step, "awaiting_slot");
+
+    const withSlot = next(withDoctor, { collected: { slotId: SLOT_A.id } });
+    assert.equal(withSlot.step, "awaiting_confirm");
+  });
+
+  /** Same discipline as a slot id: a doctor id the server never offered is not planted. */
+  it("ignores a doctor id that was not offered", () => {
+    const s = next(EMPTY, {
+      collected: { service: "Cleaning", doctorId: "99999999-9999-4999-8999-999999999999" },
+      offeredDoctors: DOCTORS,
+    });
+    assert.equal(s.pending.doctorId, undefined);
+    assert.equal(s.step, "awaiting_doctor");
+  });
+
+  it("a doctor id with no offered list is ignored, same as an unoffered id", () => {
+    const s = next(EMPTY, { collected: { service: "Cleaning", doctorId: DOCTOR_A.id } });
+    assert.equal(s.pending.doctorId, undefined);
+  });
+
+  it("caches the doctor's name beside the id", () => {
+    const s = next(EMPTY, {
+      collected: { service: "Cleaning", doctorId: DOCTOR_B.id },
+      offeredDoctors: DOCTORS,
+    });
+    assert.equal(s.pending.doctorId, DOCTOR_B.id);
+    assert.equal(s.pending.doctorName, DOCTOR_B.name);
+  });
+
+  it("lets the patient change their mind on the doctor, same as any other field", () => {
+    const first = next(EMPTY, {
+      collected: { service: "Cleaning", doctorId: DOCTOR_A.id },
+      offeredDoctors: DOCTORS,
+    });
+    const switched = next(first, {
+      collected: { doctorId: DOCTOR_B.id },
+      offeredDoctors: DOCTORS,
+    });
+    assert.equal(switched.pending.doctorId, DOCTOR_B.id);
+    assert.equal(switched.pending.doctorName, DOCTOR_B.name);
+  });
+
+  /**
+   * Reschedule continuity of care: when the patient is rescheduling and hasn't
+   * named a doctor yet, the reservation's own doctor is seeded in rather than
+   * asking a question whose answer the clinic already knows.
+   */
+  it("seeds the doctor from the reservation being rescheduled", () => {
+    const s = next(EMPTY, {
+      intent: "booking_reschedule",
+      collected: { service: "Cleaning" },
+      activeReservationDoctor: DOCTOR_A,
+    });
+    assert.equal(s.pending.doctorId, DOCTOR_A.id);
+    assert.equal(s.pending.doctorName, DOCTOR_A.name);
+    assert.equal(s.step, "awaiting_slot");
+  });
+
+  it("does not seed a reschedule doctor over one already picked this booking", () => {
+    const withDoctor = next(EMPTY, {
+      collected: { service: "Cleaning", doctorId: DOCTOR_B.id },
+      offeredDoctors: DOCTORS,
+    });
+    const s = next(withDoctor, {
+      intent: "booking_reschedule",
+      collected: {},
+      activeReservationDoctor: DOCTOR_A,
+    });
+    assert.equal(s.pending.doctorId, DOCTOR_B.id, "an explicit prior choice always wins");
+  });
+
+  it("an explicit switch beats the reservation's own doctor, same turn", () => {
+    const s = next(EMPTY, {
+      intent: "booking_reschedule",
+      collected: { service: "Cleaning", doctorId: DOCTOR_B.id },
+      offeredDoctors: DOCTORS,
+      activeReservationDoctor: DOCTOR_A,
+    });
+    assert.equal(s.pending.doctorId, DOCTOR_B.id);
+  });
+
+  it("does not seed a reschedule doctor on a fresh, non-reschedule booking", () => {
+    const s = next(EMPTY, {
+      intent: "booking_request",
+      collected: { service: "Cleaning" },
+      activeReservationDoctor: DOCTOR_A,
+    });
+    assert.equal(s.pending.doctorId, undefined);
+  });
+});
+
 describe("readBookingState", () => {
   const future = new Date(NOW.getTime() + 60_000).toISOString();
   const past = new Date(NOW.getTime() - 60_000).toISOString();
 
   it("reads a live row", () => {
     const s = readBookingState(
-      { step: "awaiting_slot", pending: { service: "Cleaning" }, state_expires_at: future },
+      {
+        step: "awaiting_slot",
+        pending: { service: "Cleaning", doctorId: DOCTOR_A.id, doctorName: DOCTOR_A.name },
+        state_expires_at: future,
+      },
       NOW,
     );
     assert.equal(s.pending.service, "Cleaning");
@@ -137,6 +265,28 @@ describe("readBookingState", () => {
 
   it("returns empty for a missing row", () => {
     assert.deepEqual(readBookingState(null, NOW).pending, {});
+  });
+
+  it("reads a stored doctor back with its name", () => {
+    const s = readBookingState(
+      {
+        step: "awaiting_slot",
+        pending: { service: "Cleaning", doctorId: DOCTOR_A.id, doctorName: DOCTOR_A.name },
+        state_expires_at: future,
+      },
+      NOW,
+    );
+    assert.equal(s.pending.doctorId, DOCTOR_A.id);
+    assert.equal(s.pending.doctorName, DOCTOR_A.name);
+  });
+
+  it("drops a malformed stored doctor rather than throwing", () => {
+    const s = readBookingState(
+      { step: "idle", pending: { doctorId: 42, doctorName: ["x"] }, state_expires_at: future },
+      NOW,
+    );
+    assert.equal(s.pending.doctorId, undefined);
+    assert.equal(s.pending.doctorName, undefined);
   });
 });
 

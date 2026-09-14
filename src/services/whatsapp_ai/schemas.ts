@@ -134,6 +134,7 @@ export const autoReplyEnvelopeSchema = z.object({
         "age",
         "medical_info",
         "service",
+        "doctor",
         "slot",
         "reservation_id",
       ]),
@@ -151,6 +152,7 @@ export const autoReplyEnvelopeSchema = z.object({
     .object({
       service: z.string().nullish(),
       patientName: z.string().nullish(),
+      doctorId: z.string().nullish(),
       slotId: z.string().nullish(),
       age: z.string().nullish(),
       medicalInfo: z.string().nullish(),

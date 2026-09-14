@@ -283,3 +283,80 @@ describe("buildAutoReplyPrompt — the patient's name is never assumed", () => {
     assert.match(system, /"patientName":"Ahmed Hassan"/);
   });
 });
+
+describe("buildAutoReplyPrompt — eligible doctors", () => {
+  const DOCTOR_A = {
+    id: "aaaaaaaa-1111-4111-8111-111111111111",
+    name: "Dr. Karim",
+    specialty: "General Dentistry",
+    nextSlotStartsAt: "2026-09-13T14:00:00.000Z",
+  };
+  const DOCTOR_B = {
+    id: "bbbbbbbb-2222-4222-8222-222222222222",
+    name: "Dr. Nourhan",
+    nextSlotStartsAt: null,
+  };
+
+  it("says no doctors are known before a service is settled", () => {
+    const system = build().system;
+    assert.match(system, /Eligible doctors: \(none yet/i);
+  });
+
+  it("lists eligible doctors with their id, specialty and next-available time", () => {
+    const system = build({ doctors: [DOCTOR_A, DOCTOR_B] }).system;
+    assert.ok(system.includes(`doctorId=${DOCTOR_A.id}`));
+    assert.ok(system.includes('name="Dr. Karim"'));
+    assert.ok(system.includes('specialty="General Dentistry"'));
+    assert.ok(system.includes(`doctorId=${DOCTOR_B.id}`));
+  });
+
+  it("shows a doctor's own time in the clinic's local time, never raw UTC", () => {
+    const system = build({ doctors: [DOCTOR_A] }).system;
+    assert.doesNotMatch(system, /2026-09-13T14:00:00\.000Z/);
+    assert.match(system, /next="Sunday, 13 September 2026 at 5:00 pm"/);
+  });
+
+  it("says a doctor with no open slot is fully booked, rather than omitting them", () => {
+    const system = build({ doctors: [DOCTOR_B] }).system;
+    assert.match(system, /next="fully booked"/i);
+  });
+
+  it("carries the settled doctor's name into Already collected", () => {
+    const system = build({
+      collected: { service: "Cleaning", doctorName: "Dr. Karim" },
+    }).system;
+    assert.match(system, /"doctor":"Dr. Karim"/);
+  });
+
+  it("names the doctor on the patient's own reservation", () => {
+    const system = build({
+      reservations: [
+        {
+          id: "res-1",
+          service_label: "Cleaning",
+          starts_at: "2026-09-14T10:00:00.000Z",
+          status: "confirmed",
+          doctor_id: DOCTOR_A.id,
+          doctor_name: "Dr. Karim",
+        },
+      ],
+    }).system;
+    assert.match(system, /with Dr\. Karim/);
+  });
+
+  it("tells the model a reschedule keeps the same doctor unless the patient asks to switch", () => {
+    const system = build({
+      reservations: [
+        {
+          id: "res-1",
+          service_label: "Cleaning",
+          starts_at: "2026-09-14T10:00:00.000Z",
+          status: "confirmed",
+          doctor_id: DOCTOR_A.id,
+          doctor_name: "Dr. Karim",
+        },
+      ],
+    }).system;
+    assert.match(system, /keeps the same doctor by default/i);
+  });
+});

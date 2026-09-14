@@ -70,6 +70,9 @@ function harness(overrides: Record<string, unknown> = {}) {
     async record(e: { decision: string; reason: string }) {
       events.push({ decision: e.decision, reason: e.reason });
     },
+    async listEligibleDoctors() {
+      return [];
+    },
     ...overrides,
   };
 
@@ -530,6 +533,239 @@ describe("runAutoReply — disclosure and offering a person", () => {
     h.deps.policy.settings.full_conversation = false;
     await runAutoReply(h.deps);
     assert.match(h.sent[0], /connect you with a colleague/);
+  });
+});
+
+describe("runAutoReply — doctor selection", () => {
+  const DOCTOR_A = {
+    id: "aaaaaaaa-1111-4111-8111-111111111111",
+    name: "Dr. Karim",
+    specialty: "General Dentistry",
+    nextSlotStartsAt: null,
+  };
+  const DOCTOR_B = {
+    id: "bbbbbbbb-2222-4222-8222-222222222222",
+    name: "Dr. Nourhan",
+    specialty: null,
+    nextSlotStartsAt: null,
+  };
+
+  function withUi(h: ReturnType<typeof harness>) {
+    let ui: unknown;
+    const originalSend = h.deps.send;
+    const originalDraft = h.deps.draft;
+    h.deps.send = async (text: string, replyUi?: unknown) => {
+      ui = replyUi;
+      return originalSend(text, replyUi as never);
+    };
+    h.deps.draft = async (text: string, reason: string, replyUi?: unknown) => {
+      ui = replyUi;
+      return originalDraft(text, reason, replyUi as never);
+    };
+    return { ui: () => ui };
+  }
+
+  it("offers a real doctor list, fetched under the service just named this turn", async () => {
+    const calls: string[] = [];
+    const h = harness({
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_request",
+          confidence: 0.9,
+          reply: "Which doctor would you like?",
+          needs: ["doctor"],
+          collected: { service: "Cleaning" },
+        });
+      },
+      async listEligibleDoctors(serviceLabel: string) {
+        calls.push(serviceLabel);
+        return [DOCTOR_A, DOCTOR_B];
+      },
+    });
+    const captured = withUi(h);
+    await runAutoReply(h.deps);
+    assert.deepEqual(calls, ["Cleaning"]);
+    const ui = captured.ui() as { kind: string; rows: { id: string }[] } | undefined;
+    assert.equal(ui?.kind, "list");
+    assert.ok(ui!.rows.some((r) => r.id === `doctor:${DOCTOR_A.id}`));
+    assert.ok(ui!.rows.some((r) => r.id === `doctor:${DOCTOR_B.id}`));
+  });
+
+  it("skips the doctor question and goes straight to a time when only one doctor is eligible", async () => {
+    const saved: { step: string; pending: Record<string, string> }[] = [];
+    const h = harness({
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_request",
+          confidence: 0.9,
+          reply: "When would you like to come in?",
+          needs: ["slot"],
+          collected: { service: "Whitening" },
+        });
+      },
+      async listEligibleDoctors() {
+        return [DOCTOR_A];
+      },
+      async saveBookingState(state: { step: string; pending: Record<string, string> }) {
+        saved.push(state);
+      },
+    });
+    const captured = withUi(h);
+    await runAutoReply(h.deps);
+    assert.equal(saved.at(-1)?.pending.doctorId, DOCTOR_A.id);
+    assert.equal(saved.at(-1)?.step, "awaiting_slot", "no question asked — straight to time selection");
+    const ui = captured.ui() as { kind: string } | undefined;
+    assert.notEqual(ui?.kind, "list", "no doctor picker shown for a single eligible doctor");
+  });
+
+  it("validates a doctor tap against the list actually offered last turn", async () => {
+    const saved: { step: string; pending: Record<string, string> }[] = [];
+    const h = harness({
+      bookingState: { step: "awaiting_doctor", pending: { service: "Cleaning" }, expiresAt: null },
+      tap: { buttonId: `doctor:${DOCTOR_B.id}`, title: "Dr. Nourhan" },
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_request",
+          confidence: 0.9,
+          reply: "Great, what time works?",
+          needs: ["slot"],
+        });
+      },
+      async listEligibleDoctors(serviceLabel: string) {
+        assert.equal(serviceLabel, "Cleaning");
+        return [DOCTOR_A, DOCTOR_B];
+      },
+      async saveBookingState(state: { step: string; pending: Record<string, string> }) {
+        saved.push(state);
+      },
+    });
+    await runAutoReply(h.deps);
+    assert.equal(saved.at(-1)?.pending.doctorId, DOCTOR_B.id);
+    assert.equal(saved.at(-1)?.pending.doctorName, DOCTOR_B.name);
+  });
+
+  it("ignores a doctor tap id the server never offered", async () => {
+    const saved: { step: string; pending: Record<string, string> }[] = [];
+    const h = harness({
+      bookingState: { step: "awaiting_doctor", pending: { service: "Cleaning" }, expiresAt: null },
+      tap: { buttonId: "doctor:99999999-9999-4999-8999-999999999999" },
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_request",
+          confidence: 0.9,
+          reply: "Who would you like to see?",
+          needs: ["doctor"],
+        });
+      },
+      async listEligibleDoctors() {
+        return [DOCTOR_A, DOCTOR_B];
+      },
+      async saveBookingState(state: { step: string; pending: Record<string, string> }) {
+        saved.push(state);
+      },
+    });
+    await runAutoReply(h.deps);
+    assert.equal(saved.at(-1)?.pending.doctorId, undefined);
+  });
+
+  it("fetches doctors only once when the service does not change this turn", async () => {
+    const calls: string[] = [];
+    const h = harness({
+      bookingState: { step: "awaiting_doctor", pending: { service: "Cleaning" }, expiresAt: null },
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_request",
+          confidence: 0.9,
+          reply: "Who would you like to see?",
+          needs: ["doctor"],
+        });
+      },
+      async listEligibleDoctors(serviceLabel: string) {
+        calls.push(serviceLabel);
+        return [DOCTOR_A, DOCTOR_B];
+      },
+    });
+    await runAutoReply(h.deps);
+    assert.deepEqual(calls, ["Cleaning"], "one fetch serves the tap check, the prompt and the reply");
+  });
+
+  it("re-fetches doctors when the model changes the service mid-conversation", async () => {
+    const calls: string[] = [];
+    const h = harness({
+      bookingState: { step: "awaiting_doctor", pending: { service: "Cleaning" }, expiresAt: null },
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_request",
+          confidence: 0.9,
+          reply: "Sure — who would you like to see for whitening?",
+          needs: ["doctor"],
+          collected: { service: "Whitening" },
+        });
+      },
+      async listEligibleDoctors(serviceLabel: string) {
+        calls.push(serviceLabel);
+        return [DOCTOR_A, DOCTOR_B];
+      },
+    });
+    await runAutoReply(h.deps);
+    assert.deepEqual(calls, ["Cleaning", "Whitening"]);
+  });
+
+  it("seeds the reservation's own doctor on a reschedule, without asking", async () => {
+    const saved: { step: string; pending: Record<string, string> }[] = [];
+    const h = harness({
+      prompt: {
+        basePrompt: "# Front desk",
+        slots: [{ id: SLOT_A, starts_at: "2026-09-13T14:00:00.000Z" }],
+        clinic: { name: "The Dental Lounge" },
+        services: [],
+        reservations: [
+          {
+            id: RES_MINE,
+            service_label: "Cleaning",
+            starts_at: "2026-09-14T10:00:00.000Z",
+            status: "confirmed",
+            doctor_id: DOCTOR_A.id,
+            doctor_name: DOCTOR_A.name,
+          },
+        ],
+        history: [{ role: "user" as const, content: "I need to move my appointment" }],
+      },
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_reschedule",
+          confidence: 0.9,
+          reply: "Sure, what time suits you better?",
+          needs: ["slot"],
+          collected: { service: "Cleaning" },
+        });
+      },
+      async saveBookingState(state: { step: string; pending: Record<string, string> }) {
+        saved.push(state);
+      },
+    });
+    await runAutoReply(h.deps);
+    assert.equal(saved.at(-1)?.pending.doctorId, DOCTOR_A.id);
+    assert.equal(saved.at(-1)?.pending.doctorName, DOCTOR_A.name);
+  });
+
+  it("does not crash and still replies when a service has zero eligible doctors", async () => {
+    const h = harness({
+      async chat() {
+        return JSON.stringify({
+          intent: "booking_request",
+          confidence: 0.9,
+          reply: "Let me check who is available for that.",
+          needs: ["doctor"],
+          collected: { service: "Rare procedure" },
+        });
+      },
+      async listEligibleDoctors() {
+        return [];
+      },
+    });
+    const out = await runAutoReply(h.deps);
+    assert.ok(out.status === "sent" || out.status === "drafted");
   });
 });
 

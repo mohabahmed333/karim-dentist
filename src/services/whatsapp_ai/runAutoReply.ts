@@ -2,9 +2,10 @@ import {
   applyTap,
   nextBookingState,
   type BookingState,
+  type OfferedDoctor,
   type TapChoice,
 } from "./bookingState";
-import { replyUi, type ReplyUi } from "./bookingButtons";
+import { replyUi, type ButtonDoctor, type ReplyUi } from "./bookingButtons";
 import { buildAutoReplyPrompt, type BuildPromptInput } from "./buildAutoReplyPrompt";
 import { decideAutoReply } from "./decideAutoReply";
 import { extractAutoReplyEnvelope } from "./extractAutoReplyEnvelope";
@@ -47,6 +48,13 @@ export type RunDeps = {
     append?: string;
   }>;
   rememberOfferedSlots: (slotIds: string[]) => Promise<void>;
+  /**
+   * Doctors eligible for a service label, soonest-available first — the one
+   * DB call the pure booking-state machine can't make itself. `null`/empty
+   * label means "no service known yet" and should resolve to every bookable
+   * doctor (mirrors list_bookable_doctors_for_service's own NULL default).
+   */
+  listEligibleDoctors: (serviceLabel: string) => Promise<ButtonDoctor[]>;
   /** Hand the thread to a colleague, and tell them why. */
   requestHuman?: (reason: string) => Promise<void>;
   /** True when the assistant has never spoken in this conversation. */
@@ -121,14 +129,46 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
 
   const now = deps.now?.() ?? new Date();
 
+  // Doctors eligible under the *prior* turn's service — a doctor:<uuid> tap
+  // can only have come from a list the previous reply actually showed, so
+  // that is what it has to be checked against, not whatever the service
+  // turns out to be after this turn's tap/report is folded in.
+  const priorService = deps.bookingState?.pending.service;
+  const doctorsForTap: ButtonDoctor[] = priorService
+    ? await deps.listEligibleDoctors(priorService)
+    : [];
+
   // A tap is recorded before the model is asked anything. We put the id on the
   // button, so what it meant is not a question — and the model is then told the
   // choice is settled rather than left to infer it from the words.
-  const tapped = applyTap(deps.bookingState ?? null, deps.tap, deps.prompt.slots, now);
+  const tapped = applyTap(
+    deps.bookingState ?? null,
+    deps.tap,
+    deps.prompt.slots,
+    now,
+    doctorsForTap,
+  );
+
+  // Doctors eligible under the service as of right now — after the tap, but
+  // before the model runs. Reused below for nextBookingState's own
+  // validation and, when the model doesn't change the service this turn,
+  // for the reply the patient actually sees — refetched only if it does.
+  const doctorsForPrompt: ButtonDoctor[] =
+    tapped.pending.service === priorService
+      ? doctorsForTap
+      : tapped.pending.service
+        ? await deps.listEligibleDoctors(tapped.pending.service)
+        : [];
 
   const built = buildAutoReplyPrompt({
     ...deps.prompt,
     collected: tapped.pending,
+    doctors: doctorsForPrompt.map((d) => ({
+      id: d.id,
+      name: d.name,
+      specialty: d.specialty,
+      nextSlotStartsAt: d.nextSlotStartsAt,
+    })),
   });
 
   let raw: string;
@@ -156,6 +196,17 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
   const guarded = stripInternalIds(rawEnvelope.reply);
   const envelope = { ...rawEnvelope, reply: guarded.reply };
 
+  // The doctor already on the reservation being moved, when there is exactly
+  // one and it is unambiguous — see nextBookingState's own doc comment for
+  // why this only ever seeds a default, never overrides an explicit choice.
+  const activeReservationDoctor: OfferedDoctor | null =
+    deps.prompt.reservations.length === 1 && deps.prompt.reservations[0].doctor_id
+      ? {
+          id: deps.prompt.reservations[0].doctor_id,
+          name: deps.prompt.reservations[0].doctor_name ?? "",
+        }
+      : null;
+
   // Record what the patient told us before deciding anything about the reply.
   // It is true whether or not the reply goes out, and losing it is how the
   // assistant asked for a service one turn after being told it.
@@ -163,9 +214,42 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
     intent: envelope.intent,
     collected: envelope.collected,
     offeredSlots: deps.prompt.slots,
+    offeredDoctors: doctorsForPrompt,
+    activeReservationDoctor,
     bookingCompleted: false,
     now,
   });
+
+  // Doctors eligible under the service as it stands *after* this turn — only
+  // worth a second fetch when the model just changed the service itself
+  // (free text, not a tap); otherwise doctorsForPrompt is still current.
+  // This is what the reply the patient is about to receive is built from, so
+  // it can never show a doctor list one message behind what was just said.
+  const doctorsForReply: ButtonDoctor[] =
+    booking.pending.service === tapped.pending.service
+      ? doctorsForPrompt
+      : booking.pending.service
+        ? await deps.listEligibleDoctors(booking.pending.service)
+        : [];
+
+  // Nothing to choose between — skip the question entirely rather than make
+  // the patient tap through a list of one, and say straight through to
+  // offering times.
+  if (
+    booking.pending.service &&
+    !booking.pending.doctorId &&
+    doctorsForReply.length === 1
+  ) {
+    const only = doctorsForReply[0];
+    booking = nextBookingState(booking, {
+      collected: { doctorId: only.id },
+      offeredSlots: deps.prompt.slots,
+      offeredDoctors: doctorsForReply,
+      bookingCompleted: false,
+      now,
+    });
+  }
+
   if (!sameBooking(deps.bookingState, booking)) {
     await deps.saveBookingState?.(booking);
   }
@@ -255,6 +339,8 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
       services: deps.prompt.services,
       pendingSlotId: booking.pending.slotId,
       pendingService: booking.pending.service,
+      pendingDoctorId: booking.pending.doctorId,
+      doctors: doctorsForReply,
       // What it says it is waiting for decides what may be tapped — including
       // showing nothing at all when the answer has to be typed out.
       needs: envelope.needs,
