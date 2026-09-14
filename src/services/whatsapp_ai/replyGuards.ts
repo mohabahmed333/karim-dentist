@@ -1,3 +1,4 @@
+import { foldArabicDigits } from "@/lib/text/arabicDigits";
 import { normalizeArabic } from "./normalizeArabic";
 
 const UUID =
@@ -133,4 +134,48 @@ export function claimsCompletedBooking(reply: string): boolean {
   const probe = normalizeArabic(reply);
   if (OFFER_MARKERS.some((re) => re.test(probe))) return false;
   return COMPLETION_CLAIMS.some((re) => re.test(probe));
+}
+
+/**
+ * Currency, in every spelling an Egyptian patient or an English one would use.
+ * `ج.م` and `جم` are the written short forms; `LE` is still common in print.
+ */
+const CURRENCY = "(?:جنيه(?:ات|ا|اً)?|ج\\s*\\.?\\s*م|EGP|E\\.?G\\.?P|LE|L\\.E|pounds?)";
+
+/** A figure sitting next to a currency, in either order: "200 جنيه", "EGP 200". */
+const PRICE_FIGURE = [
+  new RegExp(`\\d[\\d.,]*\\s*${CURRENCY}`, "i"),
+  new RegExp(`${CURRENCY}\\s*\\d`, "i"),
+];
+
+/** Claiming something costs nothing is quoting a price of zero. */
+const FREE_CLAIMS = [/مجان/, /ببلاش/, /بدون\s*مقابل/, /free\s+of\s+charge/i, /\bno\s+charge\b/i];
+
+/**
+ * Does this reply tell the patient what something costs?
+ *
+ * The clinic's prices are not in the assistant's context — there is no price on
+ * a service row — so any figure it produces was invented, and a patient acts on
+ * a quoted price. Money is the one subject where "a colleague will confirm" is
+ * the right answer rather than a dead end.
+ *
+ * A figure beside a currency is refused even inside a question: "الكشف بـ 200
+ * جنيه، تحب أحجز؟" has already told them the price. A claim that something is
+ * free is refused only when it is asserted — asking "تقصد عرض مجاني؟" is the
+ * clarifying question the prompt now asks for, and must stay allowed.
+ *
+ * The deposit is not affected: its amount is composed by the server and
+ * appended after this runs, precisely so it cannot be hallucinated.
+ *
+ * When the clinic publishes real prices, this guard has to learn to allow a
+ * figure that appears verbatim in the context the server supplied. Until then
+ * every figure is invented.
+ */
+export function quotesMoney(reply: string): boolean {
+  // `\d` is ASCII-only, so "٢٠٠ جنيه" would sail past an unfolded probe — the
+  // same trap as `\b` beside an Arabic letter.
+  const probe = foldArabicDigits(normalizeArabic(reply));
+  if (PRICE_FIGURE.some((re) => re.test(probe))) return true;
+  const asks = OFFER_MARKERS.some((re) => re.test(probe));
+  return !asks && FREE_CLAIMS.some((re) => re.test(probe));
 }

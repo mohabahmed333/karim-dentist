@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 // @ts-expect-error -- Node strip-types needs the extension.
 import {
   claimsCompletedBooking,
+  quotesMoney,
   isSendableReply,
   stripInternalIds,
 } from "./replyGuards.ts";
@@ -177,4 +178,46 @@ describe("claimsCompletedBooking — hamza-dropped spelling", () => {
   it("still reads a hamza-dropped offer as an offer, not a claim", () => {
     assert.equal(claimsCompletedBooking("تحب اكد الحجز؟"), false);
   });
+});
+
+/**
+ * There is no price on a service row, so every figure the assistant produces
+ * about money was invented — and a patient acts on a quoted price. The prompt
+ * sends money to a person; this is the enforcement.
+ */
+describe("quotesMoney", () => {
+  for (const reply of [
+    "الكشف بـ 200 جنيه",
+    "الكشف ٢٠٠ جنيه",
+    "السعر 200 ج.م",
+    "That will be 200 EGP",
+    "The consultation is EGP 200",
+    "It costs 350 LE",
+    "الكشف والاستشارة 200 جنيه، تحب أحجزلك؟",
+    "الكشف مجاني",
+    "الاستشارة ببلاش",
+  ]) {
+    it(`refuses "${reply}"`, () => assert.equal(quotesMoney(reply), true));
+  }
+
+  /** The clarifying question the prompt now asks for must still go out. */
+  for (const reply of [
+    "تقصد عرض مجاني ولا الكشف نفسه؟",
+    "هل تقصد استشارة مجانية؟",
+    "Do you mean a free consultation, or the check-up itself?",
+  ]) {
+    it(`allows the clarifying question "${reply}"`, () =>
+      assert.equal(quotesMoney(reply), false));
+  }
+
+  /** Ordinary booking talk is full of numbers and none of them are prices. */
+  for (const reply of [
+    "ميعادك الأربعاء 16 سبتمبر الساعة 1:30 م",
+    "عندنا مواعيد الساعة 10:00 و 11:30",
+    "تمام يا مهاب، سجلت عمرك 17 سنة",
+    "Your appointment is on Wednesday at 1:30 pm",
+    "أسعار العروض بيأكدها الفريق، تحب أحجزلك كشف؟",
+  ]) {
+    it(`allows "${reply}"`, () => assert.equal(quotesMoney(reply), false));
+  }
 });

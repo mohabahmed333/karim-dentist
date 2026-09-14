@@ -14,6 +14,7 @@ import { injectionHeuristics } from "./injectionHeuristics";
 import { evaluateAutoReplyPolicy, type PolicyInput } from "./policy";
 import {
   claimsCompletedBooking,
+  quotesMoney,
   isSendableReply,
   stripInternalIds,
 } from "./replyGuards";
@@ -324,6 +325,25 @@ export async function runAutoReply(deps: RunDeps): Promise<RunOutcome> {
       messageId: id,
       envelope,
     };
+  }
+
+  // Money is the one subject the assistant has no data for: there is no price
+  // on a service row, so any figure it produces was invented, and a patient
+  // acts on a quoted price. The prompt sends every money question to a person;
+  // this is what makes that true. The deposit amount is unaffected — the server
+  // composes it and appends it below, which is why it is checked here against
+  // the model's own words rather than the outgoing text.
+  if (quotesMoney(envelope.reply)) {
+    const { id } = await deps.draft(envelope.reply, "price_claim");
+    await deps.record({
+      decision: "draft",
+      reason: "price_claim",
+      envelope,
+      injectionFlags: flags,
+      latencyMs: Date.now() - startedAt,
+      ...(fallbackReason ? { rawOutput: raw, fallbackReason } : {}),
+    });
+    return { status: "drafted", reason: "price_claim", messageId: id, envelope };
   }
 
   const { id } = await deps.send(outgoing, ui);
