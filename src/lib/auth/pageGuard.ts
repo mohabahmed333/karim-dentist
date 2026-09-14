@@ -24,3 +24,23 @@ export async function requirePagePermission(key: string) {
 
   return session;
 }
+
+/**
+ * Like `requirePagePermission`, but also lets a doctor reach the page (to
+ * manage their own profile/hours/services) even without holding `key` —
+ * for pages built on an admin-or-self write model.
+ */
+export async function requirePagePermissionOrDoctor(key: string) {
+  const supabase = await createClient();
+  const session = await resolveSessionPermissions(supabase);
+
+  if (!session.user) {
+    redirect("/admin/login");
+  }
+
+  if (!hasPermission(session, key) && !session.isDoctor) {
+    notFound();
+  }
+
+  return session;
+}

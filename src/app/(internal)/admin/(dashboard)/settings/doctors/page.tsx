@@ -1,6 +1,6 @@
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
 import { DoctorsManager } from "@/features/admin/components/doctors/DoctorsManager";
-import { requirePagePermission } from "@/lib/auth/pageGuard";
+import { requirePagePermissionOrDoctor } from "@/lib/auth/pageGuard";
 import { createClient } from "@/lib/supabase/server";
 import { listDoctors } from "@/services/profiles";
 import { listDoctorHours } from "@/services/doctor_schedule/queries";
@@ -10,7 +10,7 @@ import { listAllServiceDoctorMappings } from "@/services/service_doctors/queries
 export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsDoctorsPage() {
-  await requirePagePermission("settings.view");
+  const session = await requirePagePermissionOrDoctor("settings.view");
   const supabase = await createClient();
 
   const [doctors, hours, services, mappings] = await Promise.all([
@@ -42,6 +42,8 @@ export default async function AdminSettingsDoctorsPage() {
         initialHours={initialHours}
         services={services.data ?? []}
         initialMappings={mappings}
+        currentUserId={session.user?.id ?? null}
+        canEditAny={session.permissions.has("settings.edit")}
       />
     </AdminPageMotion>
   );

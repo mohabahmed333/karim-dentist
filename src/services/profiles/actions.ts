@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { requirePermission } from "@/lib/api/requirePermission";
+import { requirePermissionOrSelf } from "@/lib/api/requirePermission";
 import {
   updateProfileDetails,
   updateDoctorIdentity,
@@ -31,14 +31,15 @@ export async function updateMyProfile(input: ProfileDetailsInput): Promise<void>
 }
 
 /**
- * Admin-side edit of another doctor's specialty/bio/calendar color, from the
- * settings/doctors page. Gated the same way as saveDoctorHours.
+ * Edit of a doctor's specialty/bio/calendar color from the settings/doctors
+ * page — either an admin editing any doctor, or a doctor editing themselves.
+ * Gated the same way as saveDoctorHours.
  */
 export async function saveDoctorIdentity(
   doctorId: string,
   input: DoctorIdentityUpsertValues,
 ): Promise<void> {
-  const auth = await requirePermission("settings.edit");
+  const auth = await requirePermissionOrSelf("settings.edit", doctorId);
   if (auth.error) throw new Error("Forbidden");
 
   const parsed = doctorIdentityUpsertSchema.safeParse(input);
