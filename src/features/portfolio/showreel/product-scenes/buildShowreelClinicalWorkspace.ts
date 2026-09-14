@@ -95,6 +95,8 @@ export function buildShowreelClinicalTreatments(): PatientTreatmentRow[] {
       cdt_code: "D2391",
       phase: "urgent",
       fee_amount: 3200,
+      doctor_id: null,
+      service_id: null,
       created_at: NOW,
       updated_at: NOW,
       patient_treatment_attachments: [
@@ -126,6 +128,8 @@ export function buildShowreelClinicalTreatments(): PatientTreatmentRow[] {
       cdt_code: "D9951",
       phase: "restorative",
       fee_amount: 600,
+      doctor_id: null,
+      service_id: null,
       created_at: NOW,
       updated_at: NOW,
       patient_treatment_attachments: [],

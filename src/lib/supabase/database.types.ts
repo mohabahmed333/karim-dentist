@@ -2080,12 +2080,14 @@ export type Database = {
           ai_title: string | null
           cdt_code: string | null
           created_at: string
+          doctor_id: string | null
           fee_amount: number
           id: string
           last_treatment: string
           patient_key: string
           phase: "urgent" | "restorative" | "prosthodontic"
           reservation_id: string | null
+          service_id: string | null
           severity: "Critical" | "Minor"
           status: "open" | "scheduled" | "done"
           tooth_fdi: string | null
@@ -2099,12 +2101,14 @@ export type Database = {
           ai_title?: string | null
           cdt_code?: string | null
           created_at?: string
+          doctor_id?: string | null
           fee_amount?: number
           id?: string
           last_treatment?: string
           patient_key: string
           phase?: "urgent" | "restorative" | "prosthodontic"
           reservation_id?: string | null
+          service_id?: string | null
           severity?: "Critical" | "Minor"
           status?: "open" | "scheduled" | "done"
           tooth_fdi?: string | null
@@ -2118,12 +2122,14 @@ export type Database = {
           ai_title?: string | null
           cdt_code?: string | null
           created_at?: string
+          doctor_id?: string | null
           fee_amount?: number
           id?: string
           last_treatment?: string
           patient_key?: string
           phase?: "urgent" | "restorative" | "prosthodontic"
           reservation_id?: string | null
+          service_id?: string | null
           severity?: "Critical" | "Minor"
           status?: "open" | "scheduled" | "done"
           tooth_fdi?: string | null
@@ -2395,16 +2401,19 @@ export type Database = {
         Row: {
           created_at: string
           doctor_id: string
+          price_label: string | null
           service_id: string
         }
         Insert: {
           created_at?: string
           doctor_id: string
+          price_label?: string | null
           service_id: string
         }
         Update: {
           created_at?: string
           doctor_id?: string
+          price_label?: string | null
           service_id?: string
         }
         Relationships: [
@@ -2846,6 +2855,76 @@ export type Database = {
           table_name?: string
         }
         Relationships: []
+      }
+      treatment_proposals: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          doctor_id: string
+          id: string
+          patient_key: string
+          status: "sent" | "accepted" | "declined"
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          doctor_id: string
+          id?: string
+          patient_key: string
+          status?: "sent" | "accepted" | "declined"
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          doctor_id?: string
+          id?: string
+          patient_key?: string
+          status?: "sent" | "accepted" | "declined"
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_proposals_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treatment_proposal_items: {
+        Row: {
+          amount_egp: number
+          description: string
+          id: string
+          proposal_id: string
+          service_id: string
+        }
+        Insert: {
+          amount_egp: number
+          description: string
+          id?: string
+          proposal_id: string
+          service_id: string
+        }
+        Update: {
+          amount_egp?: number
+          description?: string
+          id?: string
+          proposal_id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_proposal_items_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       whatsapp_ai_corrections: {
         Row: {
@@ -3578,6 +3657,7 @@ export type Database = {
           id: string
           next_slot_id: string
           next_slot_starts_at: string
+          price_label: string | null
           specialty: string
         }[]
       }
