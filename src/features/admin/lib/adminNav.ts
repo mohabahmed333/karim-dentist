@@ -65,6 +65,13 @@ export type AdminRailItem = {
   permission?: string;
   /** Shown as a click-to-open dropdown flyout when the sidebar is the narrow icon rail. */
   children?: { href: string; labelKey: AdminMessageKey; permission?: string }[];
+  /**
+   * The icon opens its list and nothing else — `href` is only the path prefix
+   * that marks it active. Settings is one: every page under it is a child, so
+   * offering its own label in the flyout is a second way to reach a page that
+   * is already listed one line below.
+   */
+  container?: boolean;
 };
 
 export const adminRailItems: AdminRailItem[] = [
@@ -132,7 +139,9 @@ export const adminRailItems: AdminRailItem[] = [
     labelKey: "admin.nav.settings",
     icon: Settings,
     permission: "settings.view",
+    container: true,
     children: [
+      { href: "/admin/settings/theme", labelKey: "admin.settings.theme", permission: "settings.view" },
       { href: "/admin/settings/clinic-hours", labelKey: "admin.settings.hours", permission: "settings.view" },
       { href: "/admin/settings/site", labelKey: "admin.settings.brand", permission: "settings.view" },
       { href: "/admin/settings/clinic-prices", labelKey: "admin.settings.clinic", permission: "settings.view" },
@@ -200,19 +209,22 @@ export const adminNavSections: AdminNavSection[] = [
         ],
       },
       {
+        // No href on purpose: Settings is a container, and clicking it should
+        // open the group rather than navigate. It had one because the
+        // dashboard theme lived at /admin/settings; that page now sits in the
+        // list below with its siblings.
         id: "settings",
         labelKey: "admin.nav.settings",
-        href: "/admin/settings",
-        permission: "settings.view",
         defaultOpen: false,
         items: [
+          { href: "/admin/settings/theme", labelKey: "admin.settings.theme", permission: "settings.view" },
           { href: "/admin/settings/clinic-hours", labelKey: "admin.settings.hours", permission: "settings.view" },
           { href: "/admin/settings/site", labelKey: "admin.settings.brand", permission: "settings.view" },
           { href: "/admin/settings/clinic-prices", labelKey: "admin.settings.clinic", permission: "settings.view" },
           { href: "/admin/settings/whatsapp-ai", labelKey: "admin.settings.whatsappAi", permission: "settings.view" },
           { href: "/admin/settings/patient-notifications", labelKey: "admin.settings.notifications", permission: "settings.view" },
           { href: "/admin/settings/deposits", labelKey: "admin.settings.deposits", permission: "settings.view" },
-      { href: "/admin/settings/templates", labelKey: "admin.settings.templates", permission: "settings.view" },
+          { href: "/admin/settings/templates", labelKey: "admin.settings.templates", permission: "settings.view" },
           { href: "/admin/settings/doctors", labelKey: "admin.settings.doctors", permission: "settings.view" },
           { href: "/admin/settings/accounts", labelKey: "admin.nav.accounts", permission: "accounts.view" },
           { href: "/admin/settings/roles", labelKey: "admin.nav.roles", permission: "roles.view" },
@@ -252,7 +264,7 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin/assist-analytics": "admin.nav.assistAnalytics",
   "/admin/ai-actions": "admin.nav.aiActions",
   "/admin/system-log": "admin.nav.systemLog",
-  "/admin/settings": "admin.nav.settings",
+  "/admin/settings/theme": "admin.settings.theme",
   "/admin/settings/clinic-hours": "admin.settings.hours",
   "/admin/settings/site": "admin.settings.brand",
   "/admin/settings/clinic-prices": "admin.settings.clinic",
@@ -303,7 +315,7 @@ export const adminPagePermissions: Record<string, string> = {
   "/admin/assist-analytics": "assist-analytics.view",
   "/admin/ai-actions": "ai-actions.view",
   "/admin/system-log": "system-log.view",
-  "/admin/settings": "settings.view",
+  "/admin/settings/theme": "settings.view",
   "/admin/settings/clinic-hours": "settings.view",
   "/admin/settings/site": "settings.view",
   "/admin/settings/clinic-prices": "settings.view",

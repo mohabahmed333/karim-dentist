@@ -36,10 +36,22 @@ async function ensureUser(
     if (error) throw error;
     user = data.user;
   }
-  // profiles.role is what public.is_admin() reads; a viewer row is what proves
-  // the authorization fix works.
+  // profiles.role is the legacy flag public.is_admin() reads (a viewer row
+  // proves the coarse authorization check works); profiles.role_id is what
+  // the granular RBAC system (resolveSessionPermissions) requires — without
+  // it the admin fixture would pass is_admin() but hold zero permissions.
+  let roleId: string | null = null;
+  if (role === "admin") {
+    const { data: ownerRole } = await db
+      .from("roles")
+      .select("id")
+      .eq("key", "owner")
+      .maybeSingle();
+    roleId = ownerRole?.id ?? null;
+  }
+
   await db.from("profiles").upsert(
-    { id: user!.id, role, display_name: role, deleted_at: null },
+    { id: user!.id, role, role_id: roleId, display_name: role, deleted_at: null },
     { onConflict: "id" },
   );
   return user!;

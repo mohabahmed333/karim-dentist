@@ -32,15 +32,23 @@ function railButtonClass(active: boolean) {
   );
 }
 
-/** A rail item with children opens a flyout of its pages instead of navigating straight there. */
+/**
+ * A rail item with children opens a flyout of its pages instead of navigating
+ * straight there. Hover only opens it when the labeled sidebar is collapsed —
+ * with the sidebar expanded, the same items are already visible there, so a
+ * hover flyout over the rail would just be a redundant, flickery overlay.
+ * Clicking still opens it either way.
+ */
 function RailDropdownItem({
   item,
   active,
   side,
+  sidebarCollapsed,
 }: {
   item: AdminRailItem;
   active: boolean;
   side: "left" | "right";
+  sidebarCollapsed: boolean;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -51,7 +59,7 @@ function RailDropdownItem({
     <AdminDropdownMenu>
       <AdminDropdownMenuTrigger
         aria-label={label}
-        openOnHover
+        openOnHover={sidebarCollapsed}
         delay={200}
         closeDelay={150}
         className={railButtonClass(active)}
@@ -60,9 +68,11 @@ function RailDropdownItem({
         <span className="sr-only">{label}</span>
       </AdminDropdownMenuTrigger>
       <AdminDropdownMenuContent side={side} align="start" className="min-w-40">
-        <AdminDropdownMenuItem onClick={() => router.push(item.href)}>
-          {label}
-        </AdminDropdownMenuItem>
+        {item.container ? null : (
+          <AdminDropdownMenuItem onClick={() => router.push(item.href)}>
+            {label}
+          </AdminDropdownMenuItem>
+        )}
         {(item.children ?? []).map((child) => (
           <AdminDropdownMenuItem
             key={child.href}
@@ -79,9 +89,11 @@ function RailDropdownItem({
 type Props = {
   /** Omit to show every item unfiltered (e.g. showreel demos with no session). */
   permissions?: string[] | null;
+  /** Whether the labeled sidebar next to the rail is collapsed. Gates hover-to-open on the rail's flyouts. */
+  sidebarCollapsed?: boolean;
 };
 
-export function AdminIconRail({ permissions }: Props = {}) {
+export function AdminIconRail({ permissions, sidebarCollapsed = true }: Props = {}) {
   const pathname = usePathname();
   const t = useTranslations();
   const { locale } = useLocale();
@@ -115,6 +127,7 @@ export function AdminIconRail({ permissions }: Props = {}) {
                 item={item}
                 active={active}
                 side={tipSide}
+                sidebarCollapsed={sidebarCollapsed}
               />
             );
           }

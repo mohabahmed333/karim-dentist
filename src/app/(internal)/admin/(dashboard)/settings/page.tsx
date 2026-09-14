@@ -1,21 +1,13 @@
-import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
-import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
-import { SettingsDashboardForm } from "@/features/admin/components/SettingsDashboardForm";
-import { Card } from "@/components/ui/card";
-import { getPortfolioData } from "@/services/portfolio";
-import { requirePagePermission } from "@/lib/auth/pageGuard";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default async function AdminSettingsPage() {
-  await requirePagePermission("settings.view");
-  const data = await getPortfolioData();
-  return (
-    <AdminPageMotion className="space-y-4">
-      <LocalizedAdminPageHeader titleKey="admin.settings.theme" />
-      <Card className="max-w-4xl gap-0 p-6">
-        <SettingsDashboardForm settings={data.settings} />
-      </Card>
-    </AdminPageMotion>
-  );
+/**
+ * Settings is a sidebar group, not a page.
+ *
+ * The dashboard theme lived here, which made "Settings" in the sidebar a link
+ * to one of its own children — clicking the group to open it navigated away
+ * instead. The theme now has its own route like every other settings page, and
+ * this path only forwards the bookmarks that still point at it.
+ */
+export default function AdminSettingsPage() {
+  redirect("/admin/settings/theme");
 }
