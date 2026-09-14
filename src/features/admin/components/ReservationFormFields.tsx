@@ -176,7 +176,19 @@ export function ReservationFormFields({
   async function onPatientSelect(patient: PatientSearchResult) {
     setNameDropdownOpen(false);
     const last = await getLatestReservationForPatient(patient.id).catch(() => null);
-    const lastSlot = last ? splitStartsAt(last.starts_at) : null;
+    const resolvedDoctorId = last?.doctor_id ?? values.doctor_id;
+    const lastTime = last ? splitStartsAt(last.starts_at).time : null;
+    // Only carry the old time-of-day over if this doctor actually has an
+    // open slot at that time — the old date itself is always in the past,
+    // so match by time and pick the earliest upcoming slot instead of
+    // showing a phantom, unbookable date.
+    const matchedSlot = lastTime
+      ? slots
+          .filter(
+            (s) => s.doctor_id === resolvedDoctorId && timeKey(s.starts_at) === lastTime,
+          )
+          .sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0]
+      : undefined;
     patch({
       patient_id: patient.id,
       patient_name: patient.display_name,
@@ -184,10 +196,10 @@ export function ReservationFormFields({
       email: patient.email ?? "",
       service_id: last?.service_id ?? values.service_id,
       service_label: last?.service_label ?? values.service_label,
-      doctor_id: last?.doctor_id ?? values.doctor_id,
-      date: lastSlot?.date ?? values.date,
-      time: lastSlot?.time ?? values.time,
-      slot_id: lastSlot ? null : values.slot_id,
+      doctor_id: resolvedDoctorId,
+      date: matchedSlot ? dayKey(matchedSlot.starts_at) : values.date,
+      time: matchedSlot ? timeKey(matchedSlot.starts_at) : values.time,
+      slot_id: matchedSlot ? matchedSlot.id : values.slot_id,
     });
   }
 
