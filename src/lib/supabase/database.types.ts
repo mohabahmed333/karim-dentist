@@ -2719,6 +2719,45 @@ export type Database = {
         }
         Relationships: []
       }
+      system_action_log: {
+        Row: {
+          actor_id: string | null
+          after: Json | null
+          before: Json | null
+          created_at: string
+          id: string
+          operation: "insert" | "update" | "delete"
+          reverted_at: string | null
+          reverted_by: string | null
+          row_id: string
+          table_name: string
+        }
+        Insert: {
+          actor_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          id?: string
+          operation: "insert" | "update" | "delete"
+          reverted_at?: string | null
+          reverted_by?: string | null
+          row_id: string
+          table_name: string
+        }
+        Update: {
+          actor_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          id?: string
+          operation?: "insert" | "update" | "delete"
+          reverted_at?: string | null
+          reverted_by?: string | null
+          row_id?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
       whatsapp_ai_corrections: {
         Row: {
           ai_text: string
