@@ -58,16 +58,30 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   )
 }
 
+/** Exported so callers that need a raw motion.tr (framer-motion can't ref-forward
+ *  through these plain wrapper components) can match this styling exactly. */
+export const TABLE_ROW_CLASS = cn(
+  "bg-[var(--admin-panel,#fff)] transition-colors",
+  "hover:bg-[var(--admin-hover,#f4f5f6)]/70",
+  "data-[state=selected]:bg-[var(--admin-panel,#fff)]",
+)
+export const TABLE_HEAD_CLASS = cn(
+  "h-11 px-4 text-left align-middle text-[11px] font-medium tracking-wide whitespace-nowrap",
+  "text-[var(--admin-muted,#6b6f76)]",
+  "border-b border-[var(--admin-border,#e8e8ea)] bg-[var(--admin-panel,#fff)]",
+  "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+)
+export const TABLE_CELL_CLASS = cn(
+  "px-4 py-3.5 align-middle text-[13px] text-[var(--admin-text,#1a1a1a)]",
+  "border-b border-[var(--admin-border,#e8e8ea)]",
+  "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+)
+
 function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   return (
     <tr
       data-slot="table-row"
-      className={cn(
-        "bg-[var(--admin-panel,#fff)] transition-colors",
-        "hover:bg-[var(--admin-hover,#f4f5f6)]/70",
-        "data-[state=selected]:bg-[var(--admin-panel,#fff)]",
-        className,
-      )}
+      className={cn(TABLE_ROW_CLASS, className)}
       {...props}
     />
   )
@@ -77,13 +91,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       data-slot="table-head"
-      className={cn(
-        "h-11 px-4 text-left align-middle text-[11px] font-medium tracking-wide whitespace-nowrap",
-        "text-[var(--admin-muted,#6b6f76)]",
-        "border-b border-[var(--admin-border,#e8e8ea)] bg-[var(--admin-panel,#fff)]",
-        "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-        className,
-      )}
+      className={cn(TABLE_HEAD_CLASS, className)}
       {...props}
     />
   )
@@ -93,12 +101,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   return (
     <td
       data-slot="table-cell"
-      className={cn(
-        "px-4 py-3.5 align-middle text-[13px] text-[var(--admin-text,#1a1a1a)]",
-        "border-b border-[var(--admin-border,#e8e8ea)]",
-        "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-        className,
-      )}
+      className={cn(TABLE_CELL_CLASS, className)}
       {...props}
     />
   )

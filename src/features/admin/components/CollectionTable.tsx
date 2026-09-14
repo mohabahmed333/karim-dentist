@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowDownUp,
   Columns3,
@@ -25,6 +26,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TABLE_CELL_CLASS,
+  TABLE_HEAD_CLASS,
+  TABLE_ROW_CLASS,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -191,6 +195,11 @@ export function CollectionTable<T>({
   serverFiltering,
 }: Props<T>) {
   const t = useTranslations();
+  const reduced = useReducedMotion();
+  const cellTransition = reduced ? { duration: 0 } : { duration: 0.15 };
+  const rowTransition = reduced
+    ? { duration: 0 }
+    : { duration: 0.18, ease: [0.22, 1, 0.36, 1] as const };
   const server = Boolean(serverFiltering);
   const [query, setQuery] = useState(serverFiltering?.q ?? "");
   const [sort, setSort] = useState<SortState>(null);
@@ -582,38 +591,46 @@ export function CollectionTable<T>({
                 />
               </TableHead>
             ) : null}
-            {visibleColumns.map((col) => {
-              const sortable =
-                enableSort && showChrome && col.sortable !== false;
-              const active = activeSortKey === col.key;
-              return (
-                <TableHead
-                  key={col.key}
-                  className={cn(
-                    "bg-[var(--admin-hover)]/80 uppercase tracking-[0.04em]",
-                    col.className,
-                  )}
-                >
-                  {sortable ? (
-                    <button
-                      type="button"
-                      onClick={() => toggleSort(col.key)}
-                      className="inline-flex items-center gap-1.5 text-start"
-                    >
-                      {col.header}
-                      <ArrowDownUp
-                        className={cn(
-                          "size-3 opacity-40",
-                          active && "opacity-100 text-[var(--admin-primary)]",
-                        )}
-                      />
-                    </button>
-                  ) : (
-                    col.header
-                  )}
-                </TableHead>
-              );
-            })}
+            <AnimatePresence initial={false}>
+              {visibleColumns.map((col) => {
+                const sortable =
+                  enableSort && showChrome && col.sortable !== false;
+                const active = activeSortKey === col.key;
+                return (
+                  <motion.th
+                    key={col.key}
+                    layout="position"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={cellTransition}
+                    className={cn(
+                      TABLE_HEAD_CLASS,
+                      "bg-[var(--admin-hover)]/80 uppercase tracking-[0.04em]",
+                      col.className,
+                    )}
+                  >
+                    {sortable ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(col.key)}
+                        className="inline-flex items-center gap-1.5 text-start"
+                      >
+                        {col.header}
+                        <ArrowDownUp
+                          className={cn(
+                            "size-3 opacity-40",
+                            active && "opacity-100 text-[var(--admin-primary)]",
+                          )}
+                        />
+                      </button>
+                    ) : (
+                      col.header
+                    )}
+                  </motion.th>
+                );
+              })}
+            </AnimatePresence>
             {showRowActions ? (
               <TableHead className="w-20 bg-[var(--admin-hover)]/80 text-end">
                 <span className="sr-only">{t("admin.table.actions")}</span>
@@ -632,67 +649,87 @@ export function CollectionTable<T>({
               </TableCell>
             </TableRow>
           ) : (
-            pageRows.map((row) => {
-              const id = getRowId(row);
-              const isSelected = selected.has(id);
-              return (
-                <TableRow
-                  key={id}
-                  className={cn(onRowClick && "cursor-pointer")}
-                  data-state={
-                    selectedId === id || isSelected ? "selected" : undefined
-                  }
-                  onClick={() => onRowClick?.(id)}
-                >
-                  {showSelection ? (
-                    <TableCell
-                      className="px-3"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={(v) => toggleRow(id, Boolean(v))}
-                        aria-label={t("admin.table.selectRow")}
-                      />
-                    </TableCell>
-                  ) : null}
-                  {visibleColumns.map((col) => (
-                    <TableCell key={col.key} className={col.className}>
-                      {col.cell(row)}
-                    </TableCell>
-                  ))}
-                  {showRowActions ? (
-                    <TableCell
-                      className="text-end"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="inline-flex items-center gap-0.5">
-                        {rowActions!.map((action) => (
-                          <button
-                            key={action.id}
-                            type="button"
-                            title={action.label}
-                            aria-label={action.label}
-                            onClick={() => action.onClick(row)}
-                            className={cn(
-                              "rounded-md p-1.5 text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]",
-                              action.tone === "danger" &&
-                                "hover:text-red-600",
-                            )}
-                          >
-                            {action.icon === "delete" ? (
-                              <Trash2 className="size-3.5" />
-                            ) : (
-                              <Pencil className="size-3.5" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </TableCell>
-                  ) : null}
-                </TableRow>
-              );
-            })
+            <AnimatePresence initial={false}>
+              {pageRows.map((row) => {
+                const id = getRowId(row);
+                const isSelected = selected.has(id);
+                return (
+                  <motion.tr
+                    key={id}
+                    layout="position"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={rowTransition}
+                    className={cn(
+                      TABLE_ROW_CLASS,
+                      onRowClick && "cursor-pointer",
+                    )}
+                    data-state={
+                      selectedId === id || isSelected ? "selected" : undefined
+                    }
+                    onClick={() => onRowClick?.(id)}
+                  >
+                    {showSelection ? (
+                      <TableCell
+                        className="px-3"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(v) => toggleRow(id, Boolean(v))}
+                          aria-label={t("admin.table.selectRow")}
+                        />
+                      </TableCell>
+                    ) : null}
+                    <AnimatePresence initial={false}>
+                      {visibleColumns.map((col) => (
+                        <motion.td
+                          key={col.key}
+                          layout="position"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={cellTransition}
+                          className={cn(TABLE_CELL_CLASS, col.className)}
+                        >
+                          {col.cell(row)}
+                        </motion.td>
+                      ))}
+                    </AnimatePresence>
+                    {showRowActions ? (
+                      <TableCell
+                        className="text-end"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="inline-flex items-center gap-0.5">
+                          {rowActions!.map((action) => (
+                            <button
+                              key={action.id}
+                              type="button"
+                              title={action.label}
+                              aria-label={action.label}
+                              onClick={() => action.onClick(row)}
+                              className={cn(
+                                "rounded-md p-1.5 text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]",
+                                action.tone === "danger" &&
+                                  "hover:text-red-600",
+                              )}
+                            >
+                              {action.icon === "delete" ? (
+                                <Trash2 className="size-3.5" />
+                              ) : (
+                                <Pencil className="size-3.5" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </TableCell>
+                    ) : null}
+                  </motion.tr>
+                );
+              })}
+            </AnimatePresence>
           )}
         </TableBody>
       </Table>
