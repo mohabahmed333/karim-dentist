@@ -1,3 +1,4 @@
+import type { AnyMessageKey } from "@/lib/i18n";
 import type { Reservation, ReservationStatus } from "./types";
 
 export type ReservationStats = {
@@ -244,6 +245,26 @@ export function statusBadgeClass(status: ReservationStatus): string {
       return "bg-orange-50 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300";
     default:
       return "bg-[var(--admin-hover)] text-[var(--admin-text)]";
+  }
+}
+
+export function reservationStatusLabel(
+  status: string,
+  t: (key: AnyMessageKey) => string,
+): string {
+  switch (status) {
+    case "pending":
+      return t("admin.reservations.pending");
+    case "confirmed":
+      return t("admin.reservations.confirmed");
+    case "cancelled":
+      return t("admin.reservations.cancelled");
+    case "completed":
+      return t("admin.reservations.completed");
+    case "no_show":
+      return t("admin.reservations.noShow");
+    default:
+      return status;
   }
 }
 

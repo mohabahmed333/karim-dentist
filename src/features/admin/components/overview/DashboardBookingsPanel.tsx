@@ -5,6 +5,7 @@ import { Calendar } from "lucide-react";
 import type { Reservation } from "@/services/reservations/types";
 import {
   isUpcomingReservation,
+  reservationStatusLabel,
   statusBadgeClass,
 } from "@/services/reservations/stats";
 import { relativeTimeLabel, DASHBOARD_LIST_LIMIT } from "@/features/admin/lib/dashboardModel";
@@ -16,26 +17,6 @@ type Props = {
   services?: import("@/services/services/types").Service[];
   onPatientSelect?: (reservation: Reservation) => void;
 };
-
-function statusLabel(
-  status: string,
-  t: (key: import("@/lib/i18n").AnyMessageKey) => string,
-): string {
-  switch (status) {
-    case "pending":
-      return t("admin.reservations.pending");
-    case "confirmed":
-      return t("admin.reservations.confirmed");
-    case "cancelled":
-      return t("admin.reservations.cancelled");
-    case "completed":
-      return t("admin.reservations.completed");
-    case "no_show":
-      return t("admin.reservations.noShow");
-    default:
-      return status;
-  }
-}
 
 export function DashboardBookingsPanel({
   reservations,
@@ -137,7 +118,7 @@ export function DashboardBookingsPanel({
                     {row.status === "confirmed" ? (
                       <Calendar className="size-3" />
                     ) : null}
-                    {statusLabel(row.status, t)}
+                    {reservationStatusLabel(row.status, t)}
                   </span>
                 </div>
               </button>

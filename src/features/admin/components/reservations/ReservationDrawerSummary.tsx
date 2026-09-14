@@ -2,6 +2,7 @@
 
 import {
   formatReservationWhen,
+  reservationStatusLabel,
   statusBadgeClass,
 } from "@/services/reservations/stats";
 import type { ReservationFormValues } from "@/services/reservations/schemas";
@@ -27,26 +28,6 @@ function Row({ label, value }: { label: string; value: string }) {
       <dd className="text-[14px] text-[var(--admin-text)]">{value || "—"}</dd>
     </div>
   );
-}
-
-function statusLabel(
-  status: string,
-  t: (key: import("@/lib/i18n").AnyMessageKey) => string,
-) {
-  switch (status) {
-    case "pending":
-      return t("admin.reservations.pending");
-    case "confirmed":
-      return t("admin.reservations.confirmed");
-    case "cancelled":
-      return t("admin.reservations.cancelled");
-    case "completed":
-      return t("admin.reservations.completed");
-    case "no_show":
-      return t("admin.reservations.noShow");
-    default:
-      return status;
-  }
 }
 
 export function ReservationDrawerSummary({
@@ -90,7 +71,7 @@ export function ReservationDrawerSummary({
           <span
             className={`inline-flex rounded-full px-2 py-0.5 text-xs ${statusBadgeClass(values.status)}`}
           >
-            {statusLabel(values.status, t)}
+            {reservationStatusLabel(values.status, t)}
           </span>
         </dd>
       </div>

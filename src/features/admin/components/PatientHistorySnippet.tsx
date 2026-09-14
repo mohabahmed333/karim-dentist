@@ -10,10 +10,12 @@ import {
 } from "@/services/reservations/patientHistory";
 import {
   formatReservationWhen,
+  reservationStatusLabel,
   statusBadgeClass,
 } from "@/services/reservations/stats";
 import type { Reservation } from "@/services/reservations/types";
 import { phoneSuffixForLookup } from "@/services/reservations/phoneSuffix";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   reservations: Reservation[];
@@ -30,6 +32,7 @@ export function PatientHistorySnippet({
   excludeId,
   limit = 5,
 }: Props) {
+  const t = useTranslations();
   if (!patientName.trim() && !phone.trim()) return null;
 
   const probe: Reservation = {
@@ -67,19 +70,26 @@ export function PatientHistorySnippet({
     <section className="mt-6 border-t border-[var(--admin-border,#e6e8ec)] pt-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-sm font-medium text-[var(--admin-text,#0f2744)]">
-          Patient history
+          {t("admin.patientHistory.title")}
         </h3>
         <Link
           href={patientProfilePath(key)}
           className="text-xs font-medium text-[var(--admin-primary,#5e6ad2)] hover:underline"
         >
-          Full history
+          {t("admin.patientHistory.fullHistory")}
         </Link>
       </div>
       <p className="mb-3 text-xs text-[var(--admin-muted,#6b7280)]">
-        {stats.visitCount} visits
+        {t(
+          stats.visitCount === 1
+            ? "admin.patientHistory.visitsCountOne"
+            : "admin.patientHistory.visitsCount",
+        ).replace("{count}", String(stats.visitCount))}
         {stats.lastVisit
-          ? ` · Last ${formatPatientVisitDate(stats.lastVisit.starts_at)}`
+          ? t("admin.patientHistory.lastVisitSuffix").replace(
+              "{date}",
+              formatPatientVisitDate(stats.lastVisit.starts_at),
+            )
           : ""}
       </p>
       <ul className="space-y-2">
@@ -97,9 +107,9 @@ export function PatientHistorySnippet({
               </p>
             </div>
             <span
-              className={`shrink-0 rounded-full px-2 py-0.5 capitalize ${statusBadgeClass(visit.status)}`}
+              className={`shrink-0 rounded-full px-2 py-0.5 ${statusBadgeClass(visit.status)}`}
             >
-              {visit.status}
+              {reservationStatusLabel(visit.status, t)}
             </span>
           </li>
         ))}

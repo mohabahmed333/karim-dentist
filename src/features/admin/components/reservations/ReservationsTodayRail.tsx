@@ -2,6 +2,7 @@
 
 import {
   formatReservationWhen,
+  reservationStatusLabel,
   statusBadgeClass,
 } from "@/services/reservations/stats";
 import type { Reservation } from "@/services/reservations/types";
@@ -18,26 +19,6 @@ type Props = {
   onSelect: (id: string) => void;
   services?: Service[];
 };
-
-function statusLabel(
-  status: string,
-  t: (key: import("@/lib/i18n").AnyMessageKey) => string,
-) {
-  switch (status) {
-    case "pending":
-      return t("admin.reservations.pending");
-    case "confirmed":
-      return t("admin.reservations.confirmed");
-    case "cancelled":
-      return t("admin.reservations.cancelled");
-    case "completed":
-      return t("admin.reservations.completed");
-    case "no_show":
-      return t("admin.reservations.noShow");
-    default:
-      return status;
-  }
-}
 
 function dayHeading(
   key: NextThreeDayKey,
@@ -124,7 +105,7 @@ export function ReservationsTodayRail({
                         <span
                           className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadgeClass(row.status)}`}
                         >
-                          {statusLabel(row.status, t)}
+                          {reservationStatusLabel(row.status, t)}
                         </span>
                       </button>
                     </li>

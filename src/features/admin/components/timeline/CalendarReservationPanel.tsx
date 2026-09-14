@@ -14,10 +14,14 @@ import {
   patientKeyFromReservation,
   patientProfilePath,
 } from "@/services/reservations/patientHistory";
-import { statusBadgeClass } from "@/services/reservations/stats";
+import {
+  reservationStatusLabel,
+  statusBadgeClass,
+} from "@/services/reservations/stats";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ClientProfileDrawer } from "../patients/workspace/ClientProfileDrawer";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   dayIso: string | null;
@@ -40,6 +44,7 @@ export function CalendarReservationPanel({
   onSelectReservation,
   onReschedule,
 }: Props) {
+  const t = useTranslations();
   const [moveDate, setMoveDate] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -55,7 +60,9 @@ export function CalendarReservationPanel({
 
   if (!dayIso) return null;
 
-  const title = reservation ? reservation.service_label : "Day appointments";
+  const title = reservation
+    ? reservation.service_label
+    : t("admin.reservations.dayAppointments");
 
   const currentDate = reservation
     ? reservationDayIso(reservation.starts_at)
@@ -70,12 +77,14 @@ export function CalendarReservationPanel({
           type="button"
           onClick={onClose}
           className="rounded-lg p-1 text-[#6b7280] hover:bg-white"
-          aria-label="Close panel"
+          aria-label={t("admin.reservations.closePanel")}
         >
           <X className="size-4" />
         </button>
         <p className="text-sm font-medium text-[#6b7280]">
-          {reservation ? "Appointment" : "Create appointment"}
+          {reservation
+            ? t("admin.reservations.panelAppointment")
+            : t("admin.reservations.createAppointment")}
         </p>
         <Button
           size="sm"
@@ -83,7 +92,7 @@ export function CalendarReservationPanel({
             <Link href={panelActionHref(reservation, dayIso, reservationsBase)} />
           }
         >
-          {reservation ? "Open" : "Add"}
+          {reservation ? t("admin.open") : t("admin.add")}
         </Button>
       </div>
 
@@ -106,9 +115,9 @@ export function CalendarReservationPanel({
             ) : null}
           </div>
           <span
-            className={`inline-flex rounded-full px-2.5 py-1 text-xs capitalize ${statusBadgeClass(reservation.status)}`}
+            className={`inline-flex rounded-full px-2.5 py-1 text-xs ${statusBadgeClass(reservation.status)}`}
           >
-            {reservation.status}
+            {reservationStatusLabel(reservation.status, t)}
           </span>
           {reservation.notes ? (
             <div className="rounded-xl border border-[#e6e8ec] p-3 text-sm text-[#4b5563]">
@@ -121,21 +130,21 @@ export function CalendarReservationPanel({
               onClick={() => setProfileOpen(true)}
               className="text-sm font-medium text-[#0f2744] underline-offset-2 hover:underline"
             >
-              Client intake
+              {t("admin.reservations.clientIntake")}
             </button>
             <Link
               href={patientProfilePath(patientKeyFromReservation(reservation))}
               className="text-sm font-medium text-[#6b7280] hover:underline"
             >
-              Full history
+              {t("admin.patientHistory.fullHistory")}
             </Link>
           </div>
           <div className="space-y-2 border-t border-[#e6e8ec] pt-4">
             <p className="text-xs font-medium uppercase tracking-wide text-[#6b7280]">
-              Move to another day
+              {t("admin.reservations.moveToAnotherDay")}
             </p>
             <p className="text-xs text-[#9ca3af]">
-              Drag the appointment on the calendar or pick a date below.
+              {t("admin.reservations.moveHint")}
             </p>
             <div className="flex gap-2">
               <Input
@@ -151,7 +160,9 @@ export function CalendarReservationPanel({
                 disabled={!canMove}
                 onClick={() => onReschedule(moveDate)}
               >
-                {isRescheduling ? "Moving…" : "Move"}
+                {isRescheduling
+                  ? t("admin.reservations.moving")
+                  : t("admin.reservations.move")}
               </Button>
             </div>
           </div>
@@ -171,8 +182,12 @@ export function CalendarReservationPanel({
           </h3>
           <p className="text-sm text-[#6b7280]">
             {dayEvents.length === 0
-              ? "No appointments on this day."
-              : `${dayEvents.length} appointment${dayEvents.length === 1 ? "" : "s"}`}
+              ? t("admin.reservations.noAppointmentsThisDay")
+              : t(
+                  dayEvents.length === 1
+                    ? "admin.reservations.appointmentCountOne"
+                    : "admin.reservations.appointmentsCount",
+                ).replace("{count}", String(dayEvents.length))}
           </p>
           <ul className="space-y-2">
             {dayEvents.map((event) => (
