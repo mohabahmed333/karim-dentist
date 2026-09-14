@@ -149,7 +149,7 @@ export function AddChargeForm({
   }
 
   return (
-    <Card className="max-w-3xl gap-3 bg-transparent p-6">
+    <Card className="h-full gap-3 bg-transparent p-6">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <AdminSelect
           value={form.kind}

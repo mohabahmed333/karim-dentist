@@ -58,54 +58,60 @@ export function PatientBillingView({
   }
 
   return (
-    <AdminPageMotion className="space-y-4">
+    <AdminPageMotion className="max-w-6xl space-y-4">
       <LocalizedAdminPageHeader
         titleKey="admin.billing.patientTitle"
         descriptionKey="admin.billing.patientDescription"
       />
 
-      <Card className="max-w-3xl gap-2 bg-transparent p-6">
-        <p className="text-sm text-[var(--admin-muted)]">{displayName}</p>
-        <p
-          className={`text-2xl font-semibold ${balance > 0 ? "text-red-600" : "text-emerald-600"}`}
-        >
-          {formatEgp(Math.abs(balance), locale)}
-          {balance > 0 ? " owed" : balance < 0 ? " credit" : ""}
-        </p>
-      </Card>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="space-y-4">
+          <Card className="gap-2 bg-transparent p-6">
+            <p className="text-sm text-[var(--admin-muted)]">{displayName}</p>
+            <p
+              className={`text-2xl font-semibold ${balance > 0 ? "text-red-600" : "text-emerald-600"}`}
+            >
+              {formatEgp(Math.abs(balance), locale)}
+              {balance > 0 ? " owed" : balance < 0 ? " credit" : ""}
+            </p>
+          </Card>
 
-      <PendingProposalsList
-        proposals={pendingProposals}
-        doctors={doctors}
-        onDecided={() => router.refresh()}
-      />
+          <PendingProposalsList
+            proposals={pendingProposals}
+            doctors={doctors}
+            onDecided={() => router.refresh()}
+          />
+        </div>
 
-      {canPropose ? (
-        <ProposeServicesForm
-          patientKey={patientKey}
-          patientPhone={patientPhone}
-          patientName={displayName}
-          services={services}
-          doctors={doctors}
-          serviceDoctorMappings={serviceDoctorMappings}
-          reservations={reservations}
-          onSent={() => router.refresh()}
-        />
-      ) : null}
+        <div className="space-y-4">
+          {canPropose ? (
+            <ProposeServicesForm
+              patientKey={patientKey}
+              patientPhone={patientPhone}
+              patientName={displayName}
+              services={services}
+              doctors={doctors}
+              serviceDoctorMappings={serviceDoctorMappings}
+              reservations={reservations}
+              onSent={() => router.refresh()}
+            />
+          ) : null}
 
-      {canEdit ? (
-        <AddChargeForm
-          patientKey={patientKey}
-          services={services}
-          doctors={doctors}
-          serviceDoctorMappings={serviceDoctorMappings}
-          reservations={reservations}
-          balance={balance}
-          onRecorded={onChargeRecorded}
-        />
-      ) : null}
+          {canEdit ? (
+            <AddChargeForm
+              patientKey={patientKey}
+              services={services}
+              doctors={doctors}
+              serviceDoctorMappings={serviceDoctorMappings}
+              reservations={reservations}
+              balance={balance}
+              onRecorded={onChargeRecorded}
+            />
+          ) : null}
+        </div>
+      </div>
 
-      <Card className="max-w-3xl gap-0 bg-transparent p-0">
+      <Card className="gap-0 bg-transparent p-0">
         {entries.length === 0 ? (
           <p className="p-6 text-sm text-[var(--admin-muted)]">No billing activity yet.</p>
         ) : (

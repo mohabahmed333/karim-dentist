@@ -37,7 +37,7 @@ export function PendingProposalsList({ proposals, doctors, onDecided }: Props) {
   if (proposals.length === 0) return null;
 
   return (
-    <Card className="max-w-3xl gap-3 bg-transparent p-6">
+    <Card className="h-full gap-3 bg-transparent p-6">
       <p className="text-sm font-medium text-[var(--admin-text)]">Pending proposals</p>
       <ul className="space-y-3">
         {proposals.map((proposal) => (

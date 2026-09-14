@@ -127,7 +127,7 @@ export function ProposeServicesForm({
   }
 
   return (
-    <Card className="max-w-3xl gap-3 bg-transparent p-6">
+    <Card className="h-full gap-3 bg-transparent p-6">
       <p className="text-sm font-medium text-[var(--admin-text)]">Propose services</p>
       <AdminSelect value={doctorId} onValueChange={(value) => setDoctorId(String(value))}>
         <AdminSelectTrigger>
