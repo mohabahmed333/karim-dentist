@@ -11,7 +11,11 @@ export async function insertProposal(
 ): Promise<{ id: string }> {
   const { data: proposal, error: proposalError } = await supabase
     .from("treatment_proposals")
-    .insert({ patient_key: patientKey, doctor_id: input.doctorId })
+    .insert({
+      patient_key: patientKey,
+      doctor_id: input.doctorId,
+      reservation_id: input.reservationId ?? null,
+    })
     .select("id")
     .single();
   if (proposalError) throw proposalError;
@@ -57,6 +61,7 @@ export async function createTreatmentsFromProposal(
   patientKey: string,
   doctorId: string,
   items: ProposalItem[],
+  reservationId: string | null,
 ): Promise<void> {
   const { error } = await supabase.from("patient_treatments").insert(
     items.map((item) => ({
@@ -66,6 +71,7 @@ export async function createTreatmentsFromProposal(
       service_id: item.serviceId,
       fee_amount: item.amountEgp,
       status: "open" as const,
+      reservation_id: reservationId,
     })),
   );
   if (error) throw error;

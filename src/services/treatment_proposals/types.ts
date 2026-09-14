@@ -15,4 +15,5 @@ export type PendingProposal = {
   createdAt: string;
   items: ProposalItem[];
   total: number;
+  reservationId: string | null;
 };

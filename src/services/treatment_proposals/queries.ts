@@ -27,7 +27,7 @@ export async function listPendingProposals(
 ): Promise<PendingProposal[]> {
   const { data: proposals, error: proposalsError } = await supabase
     .from("treatment_proposals")
-    .select("id, patient_key, doctor_id, status, created_at")
+    .select("id, patient_key, doctor_id, status, created_at, reservation_id")
     .eq("patient_key", patientKey)
     .eq("status", "sent")
     .order("created_at", { ascending: false });
@@ -55,6 +55,7 @@ export async function listPendingProposals(
       createdAt: proposal.created_at,
       items: proposalItems,
       total: proposalTotal(proposalItems),
+      reservationId: proposal.reservation_id,
     };
   });
 }
@@ -70,7 +71,7 @@ export async function getProposalWithItems(
 ): Promise<PendingProposal | null> {
   const { data: proposal, error: proposalError } = await supabase
     .from("treatment_proposals")
-    .select("id, patient_key, doctor_id, status, created_at")
+    .select("id, patient_key, doctor_id, status, created_at, reservation_id")
     .eq("id", proposalId)
     .maybeSingle();
   if (proposalError) throw proposalError;
@@ -91,5 +92,6 @@ export async function getProposalWithItems(
     createdAt: proposal.created_at,
     items: proposalItems,
     total: proposalTotal(proposalItems),
+    reservationId: proposal.reservation_id,
   };
 }

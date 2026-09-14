@@ -16,6 +16,7 @@ export async function addBillingEntry(
     description: input.description,
     method: input.method,
     created_by: createdBy,
+    reservation_id: input.reservation_id ?? null,
   });
   if (error) throw error;
 }

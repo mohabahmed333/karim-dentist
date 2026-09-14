@@ -1434,6 +1434,7 @@ export type Database = {
           kind: "charge" | "payment"
           method: string | null
           patient_key: string
+          reservation_id: string | null
         }
         Insert: {
           amount_egp: number
@@ -1444,6 +1445,7 @@ export type Database = {
           kind: "charge" | "payment"
           method?: string | null
           patient_key: string
+          reservation_id?: string | null
         }
         Update: {
           amount_egp?: number
@@ -1454,6 +1456,7 @@ export type Database = {
           kind?: "charge" | "payment"
           method?: string | null
           patient_key?: string
+          reservation_id?: string | null
         }
         Relationships: [
           {
@@ -1461,6 +1464,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_billing_entries_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
             referencedColumns: ["id"]
           },
         ]
@@ -1863,7 +1873,7 @@ export type Database = {
         }
         Relationships: []
       }
-      patient_profiles: {
+      patients: {
         Row: {
           age_years: number | null
           allergies: string[]
@@ -2262,6 +2272,7 @@ export type Database = {
           email: string | null
           id: string
           notes: string
+          patient_id: string | null
           patient_name: string
           phone: string
           phone_suffix: string | null
@@ -2279,6 +2290,7 @@ export type Database = {
           email?: string | null
           id?: string
           notes?: string
+          patient_id?: string | null
           patient_name: string
           phone: string
           phone_suffix?: string | null
@@ -2296,6 +2308,7 @@ export type Database = {
           email?: string | null
           id?: string
           notes?: string
+          patient_id?: string | null
           patient_name?: string
           phone?: string
           phone_suffix?: string | null
@@ -2311,6 +2324,13 @@ export type Database = {
             columns: ["doctor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
           {
@@ -2864,6 +2884,7 @@ export type Database = {
           doctor_id: string
           id: string
           patient_key: string
+          reservation_id: string | null
           status: "sent" | "accepted" | "declined"
         }
         Insert: {
@@ -2873,6 +2894,7 @@ export type Database = {
           doctor_id: string
           id?: string
           patient_key: string
+          reservation_id?: string | null
           status?: "sent" | "accepted" | "declined"
         }
         Update: {
@@ -2882,6 +2904,7 @@ export type Database = {
           doctor_id?: string
           id?: string
           patient_key?: string
+          reservation_id?: string | null
           status?: "sent" | "accepted" | "declined"
         }
         Relationships: [
@@ -2890,6 +2913,13 @@ export type Database = {
             columns: ["doctor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_proposals_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
             referencedColumns: ["id"]
           },
         ]

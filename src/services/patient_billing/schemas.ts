@@ -6,6 +6,8 @@ export const billingEntryUpsertSchema = z
     amount_egp: z.number().positive(),
     description: z.string().trim().min(1).max(200),
     method: z.enum(["cash", "card", "instapay", "other"]).nullable().default(null),
+    /** Which visit this entry is for, when staff picked one. */
+    reservation_id: z.string().uuid().nullish(),
   })
   .superRefine((data, ctx) => {
     if (data.kind === "payment" && !data.method) {

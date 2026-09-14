@@ -56,4 +56,37 @@ describe("billingEntryUpsertSchema", () => {
       }),
     );
   });
+
+  it("accepts a reservation id, tying the entry to a visit", () => {
+    const parsed = billingEntryUpsertSchema.parse({
+      kind: "charge",
+      amount_egp: 500,
+      description: "Consultation fee",
+      method: null,
+      reservation_id: "44444444-4444-4444-8444-444444444444",
+    });
+    assert.equal(parsed.reservation_id, "44444444-4444-4444-8444-444444444444");
+  });
+
+  it("leaves reservation_id absent when no visit is picked", () => {
+    const parsed = billingEntryUpsertSchema.parse({
+      kind: "charge",
+      amount_egp: 500,
+      description: "Consultation fee",
+      method: null,
+    });
+    assert.equal(parsed.reservation_id, undefined);
+  });
+
+  it("rejects a non-uuid reservation_id", () => {
+    assert.throws(() =>
+      billingEntryUpsertSchema.parse({
+        kind: "charge",
+        amount_egp: 500,
+        description: "Consultation fee",
+        method: null,
+        reservation_id: "not-a-uuid",
+      }),
+    );
+  });
 });

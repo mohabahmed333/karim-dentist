@@ -64,6 +64,7 @@ export async function decideTreatmentProposal(
       proposal.patientKey,
       proposal.doctorId,
       proposal.items,
+      proposal.reservationId,
     );
   }
 }
