@@ -11,7 +11,7 @@ export default async function AdminSettingsClinicPricesPage() {
   return (
     <AdminPageMotion className="space-y-4">
       <LocalizedAdminPageHeader titleKey="admin.settings.clinic" />
-      <Card className="max-w-3xl gap-0 p-6">
+      <Card className="max-w-5xl gap-0 p-6">
         <ChartingFeesEditor />
       </Card>
     </AdminPageMotion>

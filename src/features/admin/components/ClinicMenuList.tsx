@@ -30,13 +30,13 @@ export function ClinicMenuList({
     );
   }
   return (
-    <ul className="divide-y divide-[#E2E8F0] overflow-hidden rounded-xl border border-[#E2E8F0]">
+    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       {menu.map((row) => {
         const locked = !canRemoveFromMenu(row.code, presets);
         return (
           <li
             key={row.code}
-            className="flex items-center gap-3 bg-white px-3 py-2"
+            className="flex items-center gap-3 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2"
           >
             <span className="min-w-0 flex-1 truncate text-sm text-[#1E293B]">
               {row.shortLabel}
