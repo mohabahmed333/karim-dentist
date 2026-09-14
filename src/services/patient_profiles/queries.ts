@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
-import type { PatientProfile } from "./types";
+import { sanitizeIlike } from "@/services/reservations/listFilters";
+import type { PatientProfile, PatientSearchResult } from "./types";
 
 export async function getPatientProfile(
   patientKey: string,
@@ -12,4 +13,21 @@ export async function getPatientProfile(
     .maybeSingle();
   if (error) throw error;
   return data as PatientProfile | null;
+}
+
+export async function searchPatients(
+  query: string,
+  limit = 8,
+): Promise<PatientSearchResult[]> {
+  const term = sanitizeIlike(query);
+  if (!term) return [];
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("patients")
+    .select("id, patient_key, display_name, phone, email")
+    .or(`display_name.ilike.%${term}%,phone.ilike.%${term}%`)
+    .order("display_name", { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
 }

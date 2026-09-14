@@ -22,6 +22,14 @@ export type PatientProfile = {
   updated_at: string;
 };
 
+export type PatientSearchResult = {
+  id: string;
+  patient_key: string;
+  display_name: string;
+  phone: string;
+  email: string | null;
+};
+
 export function emptyPatientProfile(
   patientKey: string,
   seed?: { displayName?: string; phone?: string; email?: string | null },
