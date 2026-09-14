@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { AdminUserAvatar } from "@/features/admin/components/AdminUserAvatar";
 import {
   AdminInput,
   AdminSelect,
@@ -531,24 +532,31 @@ export function DoctorsManager({
   return (
     <div className="space-y-4">
       {header}
-      <Card className="grid max-w-3xl grid-cols-1 gap-6 bg-transparent p-6 lg:grid-cols-[220px_1fr]">
-        <div className="space-y-1">
+      <Card className="grid max-w-3xl grid-cols-1 gap-6 bg-[var(--admin-canvas)] p-6 lg:grid-cols-[240px_1fr]">
+        <div className="space-y-1 lg:border-e lg:border-[var(--admin-border)] lg:pe-5">
           {doctors.map((doctor) => (
             <button
               key={doctor.id}
               type="button"
               onClick={() => setSelectedId(doctor.id)}
-              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${
+              className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors ${
                 doctor.id === selectedId
                   ? "bg-[var(--admin-hover)] font-medium text-[var(--admin-text)]"
                   : "text-[var(--admin-muted)] hover:bg-[var(--admin-hover)]/60"
               }`}
             >
-              <span className="truncate">
-                {doctor.display_name ?? t("admin.doctors.unnamed")}
+              <span className="flex min-w-0 items-center gap-2">
+                <AdminUserAvatar
+                  name={doctor.display_name}
+                  avatarUrl={doctor.avatar_url}
+                  size="xs"
+                />
+                <span className="truncate">
+                  {doctor.display_name ?? t("admin.doctors.unnamed")}
+                </span>
               </span>
               {!hoursByDoctor[doctor.id] ? (
-                <span className="ml-2 shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
                   {t("admin.doctors.noHoursBadge")}
                 </span>
               ) : null}
@@ -558,10 +566,24 @@ export function DoctorsManager({
 
         {selectedDoctor ? (
           <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[var(--admin-text)]">
-              {selectedDoctor.display_name ?? "Unnamed"}
-            </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--admin-border)] pb-4">
+            <div className="flex items-center gap-3">
+              <AdminUserAvatar
+                name={selectedDoctor.display_name}
+                avatarUrl={selectedDoctor.avatar_url}
+                size="lg"
+              />
+              <div className="min-w-0">
+                <h2 className="truncate text-sm font-semibold text-[var(--admin-text)]">
+                  {selectedDoctor.display_name ?? t("admin.doctors.unnamed")}
+                </h2>
+                {selectedDoctor.specialty ? (
+                  <p className="truncate text-xs text-[var(--admin-muted)]">
+                    {selectedDoctor.specialty}
+                  </p>
+                ) : null}
+              </div>
+            </div>
             <div className="flex items-center gap-3">
               <label className="flex items-center gap-2 text-xs text-[var(--admin-muted)]">
                 <Checkbox
@@ -612,21 +634,33 @@ export function DoctorsManager({
               <span className="text-[11px] font-medium text-[var(--admin-muted)]">
                 {t("admin.profile.calendarColor")}
               </span>
-              <div className="flex flex-wrap gap-1.5">
-                {DOCTOR_COLOR_PALETTE.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    aria-label={color}
-                    onClick={() => patchIdentity({ calendar_color: color })}
-                    className={`size-6 rounded-full ${
-                      identityForm.calendar_color === color
-                        ? "ring-2 ring-offset-2 ring-(--admin-text)"
-                        : ""
-                    }`}
-                    style={{ background: color }}
-                  />
-                ))}
+              <div className="flex flex-wrap gap-2.5">
+                {DOCTOR_COLOR_PALETTE.map((color) => {
+                  const selected = identityForm.calendar_color === color;
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      aria-label={color}
+                      aria-pressed={selected}
+                      onClick={() => patchIdentity({ calendar_color: color })}
+                      className="flex size-8 shrink-0 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-primary)]"
+                      style={{
+                        background: color,
+                        boxShadow: selected
+                          ? `0 0 0 2px var(--admin-panel), 0 0 0 4px ${color}`
+                          : undefined,
+                      }}
+                    >
+                      {selected ? (
+                        <Check
+                          className="size-4 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]"
+                          aria-hidden
+                        />
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </SettingsSectionGroup>
@@ -648,7 +682,7 @@ export function DoctorsManager({
                   return (
                     <div
                       key={service.id}
-                      className="flex flex-col gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-2.5 text-sm"
+                      className="flex flex-col gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-2.5 text-sm transition-colors hover:border-[var(--admin-primary)]/40"
                     >
                       <label className="flex items-start gap-2">
                         <Checkbox
@@ -711,7 +745,7 @@ export function DoctorsManager({
                     key={day.value}
                     type="button"
                     onClick={() => toggleDay(day.value)}
-                    className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                       on
                         ? "border-[var(--admin-primary)] bg-[var(--admin-primary)] text-white"
                         : "border-[var(--admin-border)] bg-[var(--admin-panel)] text-[var(--admin-text)]"
