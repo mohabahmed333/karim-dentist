@@ -28,7 +28,7 @@
 **Interfaces:**
 - Produces: table `public.patients` (same columns as the old `public.patient_profiles`, `patient_key` values unchanged), column `public.reservations.patient_id uuid REFERENCES public.patients(id)`.
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 ```sql
 -- Rename patient_profiles -> patients (same columns, same patient_key values),
@@ -154,7 +154,7 @@ WHERE r.id = k.id AND r.patient_id IS NULL;
 -- ALTER TABLE public.patients RENAME TO patient_profiles;
 ```
 
-- [ ] **Step 2: Confirm with the user, then apply**
+- [x] **Step 2: Confirm with the user, then apply**
 
 This changes the schema of the live, production-linked Supabase project (per project memory, `.env.local` is production — there is no separate local DB). Ask the user to confirm before running:
 
@@ -163,7 +163,7 @@ supabase link --project-ref puibdsyokgjdvkkousil
 supabase db push --linked
 ```
 
-- [ ] **Step 3: Verify the backfill**
+- [x] **Step 3: Verify the backfill** — 36 patients, 0 unlinked non-deleted reservations.
 
 In the Supabase SQL editor (or via `supabase db execute` if available), run:
 
@@ -174,7 +174,7 @@ select count(*) from public.reservations where patient_id is null and deleted_at
 
 Expected: the second query returns `0` (every non-deleted reservation resolved to a patient).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit** — `e08a75c`
 
 ```bash
 git add supabase/migrations/20260915100000_patients_table.sql
@@ -200,15 +200,13 @@ EOF
 **Interfaces:**
 - Produces: `Tables<"patients">`, `TablesInsert<"patients">`, `TablesUpdate<"patients">`; `Tables<"reservations">` gaining `patient_id: string | null`.
 
-- [ ] **Step 1: Regenerate (preferred), with confirmation**
-
-This reads the live, production-linked project's schema. Confirm with the user, then:
+- [x] **Step 1: Regenerate (preferred), with confirmation** — tried, but reverted: full regen also picked up ~350 unrelated lines of schema drift from other in-progress work (treatment proposals / patient billing), which isn't in scope here. Used the manual fallback (Step 2) instead.
 
 ```bash
 supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts
 ```
 
-- [ ] **Step 2: If codegen isn't available in this environment, edit manually**
+- [x] **Step 2: If codegen isn't available in this environment, edit manually** — applied manually. Note: the edited file got swept into a concurrent session's commit `d82bd35` (shared working tree, unrelated `feat(billing)` work) rather than getting its own commit — content is correct, just bundled. Also required `patient_id: null` in two places that construct synthetic `Reservation` objects for the showreel demo (`src/features/portfolio/showreel/product-scenes/buildShowreelReservations.ts`, `src/features/admin/hooks/useReservationEditor.ts`'s showreel branch) — committed as `e39eae7`.
 
 Rename the object key `patient_profiles` (line 1866) to `patients` — the column lists inside `Row`/`Insert`/`Update` don't change. In the `reservations` block (line 2256), add `patient_id: string | null` to `Row`, `patient_id?: string | null` to `Insert` and `Update`, and add to `Relationships`:
 
@@ -222,12 +220,12 @@ Rename the object key `patient_profiles` (line 1866) to `patients` — the colum
 }
 ```
 
-- [ ] **Step 3: Confirm the project type-checks**
+- [x] **Step 3: Confirm the project type-checks** — ran `yarn typecheck`; only `patient_profiles`-related errors remain (expected, Task 3 fixes them) plus the two showreel `patient_id` spots (fixed above).
 
 Run: `yarn tsc --noEmit` (or the repo's existing typecheck script if one exists in `package.json`)
 Expected: no new errors from `database.types.ts` consumers (some will appear until Task 3 renames the table references — that's expected at this point).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit** — already part of `d82bd35` (see Step 2 note); nothing left to commit here.
 
 ```bash
 git add src/lib/supabase/database.types.ts
@@ -242,6 +240,8 @@ EOF
 ---
 
 ### Task 3: Rename `patient_profiles` table references to `patients`
+
+**Discovered during execution, not in the original file list:** the `system_action_log` trigger stays attached across a table rename, but the revert RPC's hardcoded table allowlist doesn't — added `supabase/migrations/20260915120000_patients_rename_followups.sql` (renames `patient_profiles_log_action` → `patients_log_action`, updates `revert_system_action`'s `revertible_tables` array), applied and committed as `7b6659e`.
 
 **Files:**
 - Modify: `src/services/patient_profiles/queries.ts:11` (`.eq("patient_key", ...)` call's `.from("patient_profiles")`)
@@ -258,26 +258,26 @@ EOF
 **Interfaces:**
 - No signature changes — every call site swaps the literal string `"patient_profiles"` for `"patients"`.
 
-- [ ] **Step 1: Swap every `.from("patient_profiles")` to `.from("patients")`**
+- [x] **Step 1: Swap every `.from("patient_profiles")` to `.from("patients")`** — also updated a stale `patient_profiles` mention in a `pickLanguage.ts` comment, and `patient_id: null` in `PatientHistorySnippet.tsx`'s synthetic probe `Reservation` object (same ripple as the two showreel spots in Task 2).
 
 In `src/services/patient_profiles/queries.ts`, `mutations.ts`, `src/services/admin_ai/clinicalAdapters.ts`, `src/services/admin_ai/patientAdapters.ts`, `src/services/profiles/servedPatients.ts`, `src/services/whatsapp/quickReplyContext.ts`: change every `.from("patient_profiles")` to `.from("patients")`. No other code in these files changes.
 
-- [ ] **Step 2: Update the system-log revertible-tables allowlist**
+- [x] **Step 2: Update the system-log revertible-tables allowlist**
 
 In `src/services/system_log/revertPolicy.ts:14`, change the array entry `"patient_profiles"` to `"patients"`.
 
-- [ ] **Step 3: Update the three test files' string literals to match**
+- [x] **Step 3: Update the three test files' string literals to match**
 
 In `src/services/system_log/revertPolicy.test.ts:9`: change `isRevertible("patient_profiles")` to `isRevertible("patients")`.
 In `src/services/system_log/listActions.test.ts:61,66`: change both `table_name: "patient_profiles"` and `table: "patient_profiles"` to `"patients"`.
 In `src/services/admin_ai/patientAdapters.test.ts:76,90,99,107,114`: change every `tables: { patient_profiles: [...] }` / `db.upsertsTo("patient_profiles")` to use `patients` as the key/table name instead.
 
-- [ ] **Step 4: Run the test suite**
+- [x] **Step 4: Run the test suite** — 2313/2313 pass.
 
 Run: `bash scripts/test.sh`
 Expected: all tests pass, including the three files just edited.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** — `dd62424`
 
 ```bash
 git add src/services/patient_profiles src/services/admin_ai src/services/profiles/servedPatients.ts src/services/whatsapp/quickReplyContext.ts src/services/system_log
