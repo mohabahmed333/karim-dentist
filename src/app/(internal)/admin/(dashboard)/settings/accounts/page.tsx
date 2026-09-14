@@ -5,6 +5,7 @@ import { listAccounts } from "@/services/accounts/queries";
 import { listRoles } from "@/services/roles/queries";
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
 import { AccountsManager } from "@/features/admin/components/accounts/AccountsManager";
+import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -28,12 +29,10 @@ export default async function AdminAccountsPage() {
 
   return (
     <AdminPageMotion className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Staff accounts</h1>
-        <p className="text-sm text-muted-foreground">
-          Create staff logins and assign each one a role.
-        </p>
-      </div>
+      <LocalizedAdminPageHeader
+        titleKey="admin.nav.accounts"
+        descriptionKey="admin.accounts.description"
+      />
       <AccountsManager
         initialAccounts={accounts.map((account) => ({
           ...account,

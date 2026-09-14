@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import type { Role } from "@/services/roles/queries";
 import { AdminUserAvatar } from "@/features/admin/components/AdminUserAvatar";
+import { useTranslations } from "@/lib/i18n";
 
 type Account = {
   id: string;
@@ -44,6 +45,7 @@ function randomTempPassword() {
 }
 
 export function AccountsManager({ initialAccounts, roles }: Props) {
+  const t = useTranslations();
   const [accounts, setAccounts] = useState(initialAccounts);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -63,7 +65,7 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
 
   async function handleCreate() {
     if (!email || !displayName || !roleId) {
-      toast.error("Email, name, and role are required");
+      toast.error(t("admin.accounts.keyNameRoleRequired"));
       return;
     }
     setBusy(true);
@@ -75,7 +77,7 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Create failed");
+        throw new Error(body.error ?? t("admin.accounts.createFailed"));
       }
       setCreatedAccount({ email, password: tempPassword });
       setEmail("");
@@ -83,7 +85,7 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
       setTempPassword(randomTempPassword());
       await refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Create failed");
+      toast.error(error instanceof Error ? error.message : t("admin.accounts.createFailed"));
     } finally {
       setBusy(false);
     }
@@ -93,9 +95,9 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
     if (!createdAccount) return;
     try {
       await navigator.clipboard.writeText(createdAccount.password);
-      toast.success("Password copied");
+      toast.success(t("admin.accounts.passwordCopied"));
     } catch {
-      toast.error("Couldn't copy — select and copy it manually");
+      toast.error(t("admin.accounts.copyFailed"));
     }
   }
 
@@ -107,10 +109,10 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ roleId: newRoleId }),
       });
-      if (!res.ok) throw new Error("Update failed");
+      if (!res.ok) throw new Error(t("admin.accounts.updateFailed"));
       await refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Update failed");
+      toast.error(error instanceof Error ? error.message : t("admin.accounts.updateFailed"));
     } finally {
       setBusy(false);
     }
@@ -124,10 +126,10 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deleted }),
       });
-      if (!res.ok) throw new Error("Update failed");
+      if (!res.ok) throw new Error(t("admin.accounts.updateFailed"));
       await refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Update failed");
+      toast.error(error instanceof Error ? error.message : t("admin.accounts.updateFailed"));
     } finally {
       setBusy(false);
     }
@@ -136,15 +138,15 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
   return (
     <div className="space-y-6">
       <div className="rounded-lg border p-4 space-y-3">
-        <h2 className="text-sm font-semibold">Create account</h2>
+        <h2 className="text-sm font-semibold">{t("admin.accounts.createAccount")}</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Input
-            placeholder="Email"
+            placeholder={t("admin.accounts.email")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <Input
-            placeholder="Display name"
+            placeholder={t("admin.accounts.displayNamePlaceholder")}
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
           />
@@ -165,17 +167,17 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
           />
         </div>
         <Button onClick={handleCreate} disabled={busy}>
-          Create account
+          {t("admin.accounts.createAccount")}
         </Button>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>{t("admin.name")}</TableHead>
+            <TableHead>{t("admin.accounts.email")}</TableHead>
+            <TableHead>{t("admin.accounts.role")}</TableHead>
+            <TableHead>{t("admin.status")}</TableHead>
             <TableHead />
           </TableRow>
         </TableHeader>
@@ -211,7 +213,7 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
                 </select>
               </TableCell>
               <TableCell>
-                {account.deleted_at ? "Deactivated" : "Active"}
+                {account.deleted_at ? t("admin.accounts.deactivated") : t("admin.accounts.active")}
               </TableCell>
               <TableCell>
                 <Button
@@ -222,7 +224,7 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
                     handleToggleDeactivated(account.id, !account.deleted_at)
                   }
                 >
-                  {account.deleted_at ? "Reactivate" : "Deactivate"}
+                  {account.deleted_at ? t("admin.accounts.reactivate") : t("admin.accounts.deactivate")}
                 </Button>
               </TableCell>
             </TableRow>
@@ -238,10 +240,12 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Account created</DialogTitle>
+            <DialogTitle>{t("admin.accounts.accountCreated")}</DialogTitle>
             <DialogDescription>
-              Share this temporary password with {createdAccount?.email} —
-              it won&apos;t be shown again.
+              {t("admin.accounts.sharePasswordPrefix").replace(
+                "{email}",
+                createdAccount?.email ?? "",
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-2">
@@ -256,14 +260,14 @@ export function AccountsManager({ initialAccounts, roles }: Props) {
               variant="ghost"
               size="icon"
               onClick={handleCopyPassword}
-              aria-label="Copy password"
+              aria-label={t("admin.accounts.copyPasswordAria")}
               className="shrink-0 border border-border"
             >
               <Copy className="size-4" />
             </Button>
           </div>
           <div className="flex justify-end pt-2">
-            <Button onClick={() => setCreatedAccount(null)}>Done</Button>
+            <Button onClick={() => setCreatedAccount(null)}>{t("admin.accounts.done")}</Button>
           </div>
         </DialogContent>
       </Dialog>
