@@ -679,66 +679,202 @@ export function DoctorsManager({
             </div>
           </div>
 
-          <SettingsSectionGroup title={t("admin.doctors.profile")} className="space-y-3">
-            <label className="grid gap-1">
-              <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                {t("admin.profile.specialty")}
-              </span>
-              <AdminInput
-                value={identityForm.specialty}
-                placeholder={t("admin.doctors.specialtyPlaceholder")}
-                maxLength={120}
-                disabled={!canEditSelected}
-                onChange={(e) => patchIdentity({ specialty: e.target.value })}
-              />
-            </label>
-            <label className="grid gap-1">
-              <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                {t("admin.profile.bio")}
-              </span>
-              <Textarea
-                value={identityForm.bio}
-                maxLength={500}
-                rows={3}
-                disabled={!canEditSelected}
-                onChange={(e) => patchIdentity({ bio: e.target.value })}
-              />
-            </label>
-            <div className="grid gap-1">
-              <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                {t("admin.profile.calendarColor")}
-              </span>
-              <div className="flex flex-wrap gap-2.5">
-                {DOCTOR_COLOR_PALETTE.map((color) => {
-                  const selected = identityForm.calendar_color === color;
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <SettingsSectionGroup title={t("admin.doctors.profile")} className="space-y-3">
+              <label className="grid gap-1">
+                <span className="text-[11px] font-medium text-[var(--admin-muted)]">
+                  {t("admin.profile.specialty")}
+                </span>
+                <AdminInput
+                  value={identityForm.specialty}
+                  placeholder={t("admin.doctors.specialtyPlaceholder")}
+                  maxLength={120}
+                  disabled={!canEditSelected}
+                  onChange={(e) => patchIdentity({ specialty: e.target.value })}
+                />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-[11px] font-medium text-[var(--admin-muted)]">
+                  {t("admin.profile.bio")}
+                </span>
+                <Textarea
+                  value={identityForm.bio}
+                  maxLength={500}
+                  rows={3}
+                  disabled={!canEditSelected}
+                  onChange={(e) => patchIdentity({ bio: e.target.value })}
+                />
+              </label>
+              <div className="grid gap-1">
+                <span className="text-[11px] font-medium text-[var(--admin-muted)]">
+                  {t("admin.profile.calendarColor")}
+                </span>
+                <div className="flex flex-wrap gap-2.5">
+                  {DOCTOR_COLOR_PALETTE.map((color) => {
+                    const selected = identityForm.calendar_color === color;
+                    return (
+                      <button
+                        key={color}
+                        type="button"
+                        aria-label={color}
+                        aria-pressed={selected}
+                        disabled={!canEditSelected}
+                        onClick={() => patchIdentity({ calendar_color: color })}
+                        className="flex size-8 shrink-0 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-primary)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+                        style={{
+                          background: color,
+                          boxShadow: selected
+                            ? `0 0 0 2px var(--admin-panel), 0 0 0 4px ${color}`
+                            : undefined,
+                        }}
+                      >
+                        {selected ? (
+                          <Check
+                            className="size-4 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]"
+                            aria-hidden
+                          />
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </SettingsSectionGroup>
+
+            <div className="space-y-6">
+              <SettingsSectionGroup title={t("admin.doctors.openDays")}>
+                <div className="flex flex-wrap gap-2">
+                  {DAY_LABELS.map((day) => {
+                    const on = form.open_weekdays.includes(day.value);
+                    return (
+                      <button
+                        key={day.value}
+                        type="button"
+                        disabled={!canEditSelected}
+                        onClick={() => toggleDay(day.value)}
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                          on
+                            ? "border-[var(--admin-primary)] bg-[var(--admin-primary)] text-white"
+                            : "border-[var(--admin-border)] bg-[var(--admin-panel)] text-[var(--admin-text)]"
+                        }`}
+                      >
+                        {t(day.labelKey)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </SettingsSectionGroup>
+
+              <SettingsSectionGroup
+                title={t("admin.doctors.timeWindows")}
+                hint={t("admin.doctors.timeWindowsHint")}
+                className="space-y-3"
+              >
+                {form.time_windows.map((w, i) => {
+                  const { start, end } = parseWindow(w);
                   return (
-                    <button
-                      key={color}
-                      type="button"
-                      aria-label={color}
-                      aria-pressed={selected}
-                      disabled={!canEditSelected}
-                      onClick={() => patchIdentity({ calendar_color: color })}
-                      className="flex size-8 shrink-0 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-primary)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
-                      style={{
-                        background: color,
-                        boxShadow: selected
-                          ? `0 0 0 2px var(--admin-panel), 0 0 0 4px ${color}`
-                          : undefined,
-                      }}
+                    <div
+                      key={i}
+                      className="flex flex-wrap items-end gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-2.5"
                     >
-                      {selected ? (
-                        <Check
-                          className="size-4 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]"
-                          aria-hidden
-                        />
-                      ) : null}
-                    </button>
+                      <label className="grid min-w-[8rem] flex-1 gap-1">
+                        <span className="text-[11px] font-medium text-[var(--admin-muted)]">
+                          {t("admin.from")}
+                        </span>
+                        <AdminSelect
+                          value={start}
+                          disabled={!canEditSelected}
+                          onValueChange={(value) =>
+                            updateWindow(i, "start", String(value))
+                          }
+                        >
+                          <AdminSelectTrigger className="w-full">
+                            <AdminSelectValue />
+                          </AdminSelectTrigger>
+                          <AdminSelectContent>
+                            {TIME_OPTIONS.map((time) => (
+                              <AdminSelectItem key={`s-${i}-${time}`} value={time}>
+                                {time}
+                              </AdminSelectItem>
+                            ))}
+                          </AdminSelectContent>
+                        </AdminSelect>
+                      </label>
+                      <label className="grid min-w-[8rem] flex-1 gap-1">
+                        <span className="text-[11px] font-medium text-[var(--admin-muted)]">
+                          {t("admin.to")}
+                        </span>
+                        <AdminSelect
+                          value={end}
+                          disabled={!canEditSelected}
+                          onValueChange={(value) =>
+                            updateWindow(i, "end", String(value))
+                          }
+                        >
+                          <AdminSelectTrigger className="w-full">
+                            <AdminSelectValue />
+                          </AdminSelectTrigger>
+                          <AdminSelectContent>
+                            {TIME_OPTIONS.map((time) => (
+                              <AdminSelectItem key={`e-${i}-${time}`} value={time}>
+                                {time}
+                              </AdminSelectItem>
+                            ))}
+                          </AdminSelectContent>
+                        </AdminSelect>
+                      </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        disabled={!canEditSelected}
+                        onClick={() =>
+                          patchForm({
+                            time_windows: form.time_windows.filter(
+                              (_, j) => j !== i,
+                            ),
+                          })
+                        }
+                      >
+                        {t("admin.remove")}
+                      </Button>
+                    </div>
                   );
                 })}
-              </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!canEditSelected}
+                  onClick={addWindow}
+                >
+                  {t("admin.doctors.addWindow")}
+                </Button>
+              </SettingsSectionGroup>
+
+              <SettingsSectionGroup title={t("admin.doctors.slotLength")}>
+                <AdminSelect
+                  value={String(form.slot_minutes)}
+                  disabled={!canEditSelected}
+                  onValueChange={(value) =>
+                    patchForm({ slot_minutes: Number(value) })
+                  }
+                >
+                  <AdminSelectTrigger className="w-48">
+                    <AdminSelectValue />
+                  </AdminSelectTrigger>
+                  <AdminSelectContent>
+                    {[15, 30, 45, 60, 90, 120].map((m) => (
+                      <AdminSelectItem key={m} value={String(m)}>
+                        {t("admin.doctors.minutes").replace("{count}", String(m))}
+                      </AdminSelectItem>
+                    ))}
+                  </AdminSelectContent>
+                </AdminSelect>
+              </SettingsSectionGroup>
             </div>
-          </SettingsSectionGroup>
+          </div>
 
           <SettingsSectionGroup
             title={t("admin.doctors.servicesTitle")}
@@ -813,138 +949,6 @@ export function DoctorsManager({
                 })}
               </div>
             )}
-          </SettingsSectionGroup>
-
-          <SettingsSectionGroup title={t("admin.doctors.openDays")}>
-            <div className="flex flex-wrap gap-2">
-              {DAY_LABELS.map((day) => {
-                const on = form.open_weekdays.includes(day.value);
-                return (
-                  <button
-                    key={day.value}
-                    type="button"
-                    disabled={!canEditSelected}
-                    onClick={() => toggleDay(day.value)}
-                    className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                      on
-                        ? "border-[var(--admin-primary)] bg-[var(--admin-primary)] text-white"
-                        : "border-[var(--admin-border)] bg-[var(--admin-panel)] text-[var(--admin-text)]"
-                    }`}
-                  >
-                    {t(day.labelKey)}
-                  </button>
-                );
-              })}
-            </div>
-          </SettingsSectionGroup>
-
-          <SettingsSectionGroup
-            title={t("admin.doctors.timeWindows")}
-            hint={t("admin.doctors.timeWindowsHint")}
-            className="space-y-3"
-          >
-            {form.time_windows.map((w, i) => {
-              const { start, end } = parseWindow(w);
-              return (
-                <div
-                  key={i}
-                  className="flex flex-wrap items-end gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-2.5"
-                >
-                  <label className="grid min-w-[8rem] flex-1 gap-1">
-                    <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                      {t("admin.from")}
-                    </span>
-                    <AdminSelect
-                      value={start}
-                      disabled={!canEditSelected}
-                      onValueChange={(value) =>
-                        updateWindow(i, "start", String(value))
-                      }
-                    >
-                      <AdminSelectTrigger className="w-full">
-                        <AdminSelectValue />
-                      </AdminSelectTrigger>
-                      <AdminSelectContent>
-                        {TIME_OPTIONS.map((time) => (
-                          <AdminSelectItem key={`s-${i}-${time}`} value={time}>
-                            {time}
-                          </AdminSelectItem>
-                        ))}
-                      </AdminSelectContent>
-                    </AdminSelect>
-                  </label>
-                  <label className="grid min-w-[8rem] flex-1 gap-1">
-                    <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                      {t("admin.to")}
-                    </span>
-                    <AdminSelect
-                      value={end}
-                      disabled={!canEditSelected}
-                      onValueChange={(value) =>
-                        updateWindow(i, "end", String(value))
-                      }
-                    >
-                      <AdminSelectTrigger className="w-full">
-                        <AdminSelectValue />
-                      </AdminSelectTrigger>
-                      <AdminSelectContent>
-                        {TIME_OPTIONS.map((time) => (
-                          <AdminSelectItem key={`e-${i}-${time}`} value={time}>
-                            {time}
-                          </AdminSelectItem>
-                        ))}
-                      </AdminSelectContent>
-                    </AdminSelect>
-                  </label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0"
-                    disabled={!canEditSelected}
-                    onClick={() =>
-                      patchForm({
-                        time_windows: form.time_windows.filter(
-                          (_, j) => j !== i,
-                        ),
-                      })
-                    }
-                  >
-                    {t("admin.remove")}
-                  </Button>
-                </div>
-              );
-            })}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={!canEditSelected}
-              onClick={addWindow}
-            >
-              {t("admin.doctors.addWindow")}
-            </Button>
-          </SettingsSectionGroup>
-
-          <SettingsSectionGroup title={t("admin.doctors.slotLength")}>
-            <AdminSelect
-              value={String(form.slot_minutes)}
-              disabled={!canEditSelected}
-              onValueChange={(value) =>
-                patchForm({ slot_minutes: Number(value) })
-              }
-            >
-              <AdminSelectTrigger className="w-48">
-                <AdminSelectValue />
-              </AdminSelectTrigger>
-              <AdminSelectContent>
-                {[15, 30, 45, 60, 90, 120].map((m) => (
-                  <AdminSelectItem key={m} value={String(m)}>
-                    {t("admin.doctors.minutes").replace("{count}", String(m))}
-                  </AdminSelectItem>
-                ))}
-              </AdminSelectContent>
-            </AdminSelect>
           </SettingsSectionGroup>
         </div>
       ) : null}
