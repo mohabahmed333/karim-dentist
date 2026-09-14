@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   buildPatientHistoryStats,
@@ -17,6 +18,7 @@ import { usePatientTableServerFiltering } from "@/features/admin/lib/usePatientT
 import type { Service } from "@/services/services/types";
 import { useTranslations } from "@/lib/i18n";
 import { ClientProfileDrawer } from "./workspace/ClientProfileDrawer";
+import { AddPatientDrawer } from "./AddPatientDrawer";
 
 type Props = {
   groups: PatientGroup[];
@@ -32,7 +34,9 @@ export function PatientDirectory({
   services,
 }: Props) {
   const t = useTranslations();
+  const router = useRouter();
   const [profileKey, setProfileKey] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
   const [filtering, setFiltering] = useState(false);
   const filterQuery = useReservationFilterQuery(setFiltering);
   const serverFiltering = usePatientTableServerFiltering(total, filterQuery);
@@ -51,11 +55,21 @@ export function PatientDirectory({
         titleKey="admin.patients.title"
         descriptionKey="admin.patients.description"
         actions={
-          <AdminReservationFilters
-            services={services}
-            showCohort
-            onPendingChange={setFiltering}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <AdminReservationFilters
+              services={services}
+              showCohort
+              onPendingChange={setFiltering}
+            />
+            <button
+              type="button"
+              data-showreel-action="add-patient"
+              className="rounded-lg bg-[var(--admin-primary)] px-3 py-1.5 text-[12px] font-semibold text-white"
+              onClick={() => setAddOpen(true)}
+            >
+              {t("admin.patients.new")}
+            </button>
+          </div>
         }
       />
 
@@ -157,6 +171,15 @@ export function PatientDirectory({
           onClose={() => setProfileKey(null)}
         />
       ) : null}
+
+      <AddPatientDrawer
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onCreated={(patientKey) => {
+          setAddOpen(false);
+          router.push(patientProfilePath(patientKey));
+        }}
+      />
     </div>
   );
 }

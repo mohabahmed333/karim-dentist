@@ -4,7 +4,10 @@ import { PatientDirectory } from "@/features/admin/components/patients/PatientDi
 import { PatientsPageSkeleton } from "@/features/admin/components/patients/PatientsPageSkeleton";
 import { reservationFiltersCache } from "@/features/admin/lib/reservationFilters";
 import { parseServiceFilter } from "@/features/admin/lib/serviceFilter";
-import { groupReservationsByPatient } from "@/services/reservations/patientHistory";
+import {
+  groupReservationsByPatient,
+  mergePatientsWithoutVisits,
+} from "@/services/reservations/patientHistory";
 import { pagePatientGroups } from "@/services/reservations/patientDirectoryPage";
 import { listReservationsServer } from "@/services/reservations/queries";
 import { requirePagePermission } from "@/lib/auth/pageGuard";
@@ -23,7 +26,7 @@ export default async function AdminPatientsPage({ searchParams }: PageProps) {
   const q = (raw.q ?? "").trim();
 
   const supabase = await createClient();
-  const [reservations, services] = await Promise.all([
+  const [reservations, services, patientsRows] = await Promise.all([
     // Full visit history — no date clamp; status/service/q at SQL.
     listReservationsServer(supabase, {
       status: raw.status,
@@ -35,9 +38,18 @@ export default async function AdminPatientsPage({ searchParams }: PageProps) {
       .select("*")
       .is("deleted_at", null)
       .order("sort_order", { ascending: true }),
+    supabase
+      .from("patients")
+      .select("patient_key, display_name, phone, email")
+      .then((res) => res.data ?? []),
   ]);
 
-  const page = pagePatientGroups(groupReservationsByPatient(reservations), {
+  const groups = mergePatientsWithoutVisits(
+    groupReservationsByPatient(reservations),
+    patientsRows,
+  );
+
+  const page = pagePatientGroups(groups, {
     cohort,
     q: "",
     from: dateActive ? raw.from : null,
