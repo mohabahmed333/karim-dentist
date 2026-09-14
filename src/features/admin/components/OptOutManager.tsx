@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Tables } from "@/lib/supabase/database.types";
 import { AdminSkeleton } from "./AdminSkeleton";
+import { useTranslations } from "@/lib/i18n";
 
 type OptOut = Pick<Tables<"patient_notification_optouts">, "phone_suffix" | "phone" | "reason" | "created_at">;
 
@@ -21,6 +22,7 @@ async function fetchOptOuts(): Promise<OptOut[]> {
  * automatically; staff can add someone who asked on the phone.
  */
 export function OptOutManager() {
+  const t = useTranslations();
   const [rows, setRows] = useState<OptOut[] | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -54,12 +56,12 @@ export function OptOutManager() {
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(body.error ?? "Could not add");
+        toast.error(body.error ?? t("admin.optOut.addFailed"));
         return;
       }
       formEl.reset();
       setRows(await fetchOptOuts());
-      toast.success("Opted out — anything already queued for them was withdrawn");
+      toast.success(t("admin.optOut.added"));
     } finally {
       setPending(false);
     }
@@ -68,26 +70,27 @@ export function OptOutManager() {
   async function onRemove(suffix: string) {
     const res = await fetch(`/api/v1/notifications/optouts/${suffix}`, { method: "DELETE" });
     if (!res.ok) {
-      toast.error("Could not remove");
+      toast.error(t("admin.optOut.removeFailed"));
       return;
     }
     setRows((prev) => (prev ?? []).filter((r) => r.phone_suffix !== suffix));
-    toast.success("They can be messaged again");
+    toast.success(t("admin.optOut.removed"));
   }
 
   return (
     <div className="space-y-3">
+      <h2 className="text-sm font-medium">{t("admin.optOut.title")}</h2>
       <form className="flex flex-wrap gap-2" onSubmit={(e) => void onAdd(e)}>
-        <Input name="phone" required placeholder="+20 100 000 0000" className="w-48" />
-        <Input name="reason" placeholder="Reason (optional)" className="w-56" />
+        <Input name="phone" required placeholder={t("admin.optOut.phonePlaceholder")} className="w-48" />
+        <Input name="reason" placeholder={t("admin.optOut.reasonPlaceholder")} className="w-56" />
         <Button type="submit" size="sm" disabled={pending}>
-          {pending ? "Adding…" : "Opt out"}
+          {pending ? t("admin.optOut.adding") : t("admin.optOut.submit")}
         </Button>
       </form>
 
       {rows === null ? (
         <div aria-busy="true" className="divide-y">
-          <span className="sr-only">Loading opted-out numbers…</span>
+          <span className="sr-only">{t("admin.optOut.loading")}</span>
           {["w-36", "w-32"].map((w) => (
             <div key={w} className="flex items-center justify-between gap-3 py-2">
               <div className="space-y-1.5">
@@ -99,7 +102,7 @@ export function OptOutManager() {
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nobody has opted out.</p>
+        <p className="text-sm text-muted-foreground">{t("admin.optOut.empty")}</p>
       ) : (
         <ul className="divide-y text-sm">
           {rows.map((row) => (
@@ -107,11 +110,11 @@ export function OptOutManager() {
               <div>
                 <div>{row.phone || `…${row.phone_suffix}`}</div>
                 <div className="text-xs text-muted-foreground">
-                  {row.reason || "no reason given"} · {new Date(row.created_at).toLocaleDateString()}
+                  {row.reason || t("admin.optOut.noReason")} · {new Date(row.created_at).toLocaleDateString()}
                 </div>
               </div>
               <Button size="sm" variant="outline" onClick={() => void onRemove(row.phone_suffix)}>
-                Remove
+                {t("admin.remove")}
               </Button>
             </li>
           ))}

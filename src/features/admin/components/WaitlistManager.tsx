@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Tables } from "@/lib/supabase/database.types";
 import { AdminSkeleton } from "./AdminSkeleton";
+import { useTranslations } from "@/lib/i18n";
+import type { AnyMessageKey } from "@/lib/i18n";
 
 type Entry = Tables<"appointment_waitlist">;
 
@@ -24,13 +26,15 @@ function toIso(value: FormDataEntryValue | null): string | null {
   return text ? new Date(text).toISOString() : null;
 }
 
-function windowLabel(entry: Entry): string {
+function windowLabel(entry: Entry, t: (key: AnyMessageKey) => string): string {
   const fmt = (iso: string) => new Date(iso).toLocaleString();
-  if (!entry.preferred_from && !entry.preferred_to) return "Any time";
+  if (!entry.preferred_from && !entry.preferred_to) return t("admin.waitlist.anyTime");
   if (entry.preferred_from && entry.preferred_to) {
     return `${fmt(entry.preferred_from)} – ${fmt(entry.preferred_to)}`;
   }
-  return entry.preferred_from ? `From ${fmt(entry.preferred_from)}` : `Until ${fmt(entry.preferred_to!)}`;
+  return entry.preferred_from
+    ? t("admin.waitlist.fromTime").replace("{time}", fmt(entry.preferred_from))
+    : t("admin.waitlist.untilTime").replace("{time}", fmt(entry.preferred_to!));
 }
 
 /**
@@ -40,6 +44,7 @@ function windowLabel(entry: Entry): string {
  * window contains it are offered it on WhatsApp, and the first to answer gets it.
  */
 export function WaitlistManager() {
+  const t = useTranslations();
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -52,7 +57,7 @@ export function WaitlistManager() {
       .catch(() => {
         if (alive) {
           setEntries([]);
-          toast.error("Could not load the waitlist");
+          toast.error(t("admin.waitlist.loadFailed"));
         }
       });
     return () => {
@@ -79,12 +84,12 @@ export function WaitlistManager() {
       });
       const body = (await res.json()) as { entry?: Entry; error?: string };
       if (!res.ok || !body.entry) {
-        toast.error(body.error ?? "Could not add to the waitlist");
+        toast.error(body.error ?? t("admin.waitlist.addFailed"));
         return;
       }
       setEntries((prev) => [...(prev ?? []), body.entry!]);
       formEl.reset();
-      toast.success("Added to the waitlist");
+      toast.success(t("admin.waitlist.added"));
     } finally {
       setPending(false);
     }
@@ -93,11 +98,11 @@ export function WaitlistManager() {
   async function onRemove(id: string) {
     const res = await fetch(`/api/v1/waitlist/${id}`, { method: "DELETE" });
     if (!res.ok) {
-      toast.error("Could not remove");
+      toast.error(t("admin.optOut.removeFailed"));
       return;
     }
     setEntries((prev) => (prev ?? []).filter((e) => e.id !== id));
-    toast.success("Removed — any offer not yet sent was withdrawn");
+    toast.success(t("admin.waitlist.removed"));
   }
 
   return (
@@ -105,7 +110,7 @@ export function WaitlistManager() {
       <Card className="gap-2 p-4">
         {entries === null ? (
           <div aria-busy="true" className="divide-y">
-            <span className="sr-only">Loading the waitlist…</span>
+            <span className="sr-only">{t("admin.waitlist.loading")}</span>
             {["w-40", "w-32", "w-44"].map((w) => (
               <div key={w} className="flex items-start justify-between gap-3 py-2.5">
                 <div className="space-y-1.5">
@@ -118,8 +123,7 @@ export function WaitlistManager() {
           </div>
         ) : entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Nobody is waiting. When someone asks for an earlier time than you
-            have, add them here and they will be offered the next cancellation.
+            {t("admin.waitlist.empty")}
           </p>
         ) : (
           <ul className="divide-y">
@@ -131,17 +135,17 @@ export function WaitlistManager() {
                     {entry.patient_name}
                     {entry.status === "offered" ? (
                       <span className="ml-2 rounded border border-[#93C5FD] bg-[#EFF6FF] px-1.5 py-0.5 text-xs text-[#1D4ED8]">
-                        offered a slot
+                        {t("admin.waitlist.offeredBadge")}
                       </span>
                     ) : null}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {entry.phone}
-                    {entry.service_label ? ` · ${entry.service_label}` : ""} · {windowLabel(entry)}
+                    {entry.service_label ? ` · ${entry.service_label}` : ""} · {windowLabel(entry, t)}
                   </div>
                 </div>
                 <Button size="sm" variant="outline" onClick={() => void onRemove(entry.id)}>
-                  Remove
+                  {t("admin.remove")}
                 </Button>
               </li>
             ))}
@@ -151,33 +155,32 @@ export function WaitlistManager() {
 
       <Card className="gap-0 p-4">
         <form className="space-y-3" onSubmit={(e) => void onAdd(e)}>
-          <h3 className="text-sm font-medium">Add a patient</h3>
+          <h3 className="text-sm font-medium">{t("admin.waitlist.addPatient")}</h3>
           <div className="space-y-1.5">
-            <Label htmlFor="wl-name">Name</Label>
+            <Label htmlFor="wl-name">{t("admin.name")}</Label>
             <Input id="wl-name" name="patient_name" required />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="wl-phone">WhatsApp number</Label>
-            <Input id="wl-phone" name="phone" required placeholder="+20 100 000 0000" />
+            <Label htmlFor="wl-phone">{t("admin.waitlist.whatsappNumber")}</Label>
+            <Input id="wl-phone" name="phone" required placeholder={t("admin.optOut.phonePlaceholder")} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="wl-service">Service</Label>
+            <Label htmlFor="wl-service">{t("admin.waitlist.service")}</Label>
             <Input id="wl-service" name="service_label" placeholder="Cleaning" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="wl-from">Earliest they can come</Label>
+            <Label htmlFor="wl-from">{t("admin.waitlist.earliestLabel")}</Label>
             <Input id="wl-from" name="preferred_from" type="datetime-local" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="wl-to">Latest they can come</Label>
+            <Label htmlFor="wl-to">{t("admin.waitlist.latestLabel")}</Label>
             <Input id="wl-to" name="preferred_to" type="datetime-local" />
           </div>
           <p className="text-xs text-muted-foreground">
-            Leave both empty for &quot;any time&quot;. They will only be offered
-            slots inside this window.
+            {t("admin.waitlist.windowHint")}
           </p>
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Adding…" : "Add to waitlist"}
+            {pending ? t("admin.waitlist.adding") : t("admin.waitlist.addToWaitlist")}
           </Button>
         </form>
       </Card>

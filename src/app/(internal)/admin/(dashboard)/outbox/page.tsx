@@ -19,7 +19,6 @@ export default async function AdminOutboxPage() {
         <NotificationsOutboxTable />
       </Card>
       <Card className="gap-3 p-4">
-        <h2 className="text-sm font-medium">Opted out</h2>
         <OptOutManager />
       </Card>
     </AdminPageMotion>
