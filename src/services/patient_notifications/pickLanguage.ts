@@ -2,7 +2,7 @@
  * Which language to send a patient.
  *
  * Nothing in the schema records this — there is no language column on
- * `reservations`, `patient_profiles` or `whatsapp_conversations` — so it is
+ * `reservations`, `patients` or `whatsapp_conversations` — so it is
  * inferred, in order of how much it tells us:
  *
  *   1. What the patient last wrote on WhatsApp. Strongest signal by far.

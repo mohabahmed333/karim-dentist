@@ -73,7 +73,7 @@ describe("mergeProfile", () => {
 
 describe("patient.upsert_profile", () => {
   it("previews the merged result against the stored row", async () => {
-    const db = createFakeDb({ tables: { patient_profiles: [existing] } });
+    const db = createFakeDb({ tables: { patients: [existing] } });
     const out = await patientUpsertProfileAdapter.preview(
       act("patient.upsert_profile", {
         patientKey: "phone:201001234567",
@@ -87,7 +87,7 @@ describe("patient.upsert_profile", () => {
   });
 
   it("warns that a new profile will be created", async () => {
-    const db = createFakeDb({ tables: { patient_profiles: [] } });
+    const db = createFakeDb({ tables: { patients: [] } });
     const out = await patientUpsertProfileAdapter.preview(
       act("patient.upsert_profile", { patientKey: "phone:999", display_name: "Sara" }),
       ctx(db),
@@ -96,7 +96,7 @@ describe("patient.upsert_profile", () => {
   });
 
   it("upserts on patient_key", async () => {
-    const db = createFakeDb({ tables: { patient_profiles: [existing] } });
+    const db = createFakeDb({ tables: { patients: [existing] } });
     await patientUpsertProfileAdapter.execute(
       act("patient.upsert_profile", {
         patientKey: "phone:201001234567",
@@ -104,14 +104,14 @@ describe("patient.upsert_profile", () => {
       }),
       ctx(db),
     );
-    const [row] = db.upsertsTo("patient_profiles");
+    const [row] = db.upsertsTo("patients");
     assert.equal(row.values.patient_key, "phone:201001234567");
     assert.equal(row.values.notes, "Updated");
     assert.deepEqual(row.values.allergies, ["Penicillin"]);
   });
 
   it("falls back to the active patient in context", async () => {
-    const db = createFakeDb({ tables: { patient_profiles: [existing] } });
+    const db = createFakeDb({ tables: { patients: [existing] } });
     const out = await patientUpsertProfileAdapter.preview(
       act("patient.upsert_profile", { notes: "x" }),
       { db, actorId: "a", patientKey: "phone:201001234567" },

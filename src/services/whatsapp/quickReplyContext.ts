@@ -31,7 +31,7 @@ export async function loadQuickReplyContext(
     loadUpcomingReservations(db, conversation.phone_number, 1),
     conversation.patient_key
       ? db
-          .from("patient_profiles")
+          .from("patients")
           .select("display_name")
           .eq("patient_key", conversation.patient_key)
           .maybeSingle()

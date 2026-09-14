@@ -58,12 +58,12 @@ describe("listSystemActions", () => {
       tables: {
         system_action_log: [
           entry({ id: "e1", table_name: "reservations", operation: "update" }),
-          entry({ id: "e2", table_name: "patient_profiles", operation: "delete" }),
+          entry({ id: "e2", table_name: "patients", operation: "delete" }),
         ],
       },
     });
 
-    const byTable = await listSystemActions(db, { table: "patient_profiles" });
+    const byTable = await listSystemActions(db, { table: "patients" });
     assert.deepEqual(byTable.rows.map((r: { id: string }) => r.id), ["e2"]);
 
     const byOperation = await listSystemActions(db, { operation: "delete" });

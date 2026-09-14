@@ -13,7 +13,7 @@ export async function upsertPatientProfile(
   input: PatientProfileUpsertValues,
 ): Promise<PatientProfile> {
   const { data, error } = await supabase
-    .from("patient_profiles")
+    .from("patients")
     .upsert(
       {
         patient_key: patientKey,

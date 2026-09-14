@@ -13,7 +13,7 @@ function resolvePatientKey(action: { payload: Record<string, unknown> }, ctx: Ac
 
 async function loadProfile(ctx: ActionContext, patientKey: string) {
   const { data, error } = await ctx.db
-    .from("patient_profiles")
+    .from("patients")
     .select("*")
     .eq("patient_key", patientKey)
     .maybeSingle();
@@ -47,7 +47,7 @@ export const patientUpsertProfileAdapter: ActionAdapter = {
     const patientKey = resolvePatientKey(action, ctx);
     const existing = await loadProfile(ctx, patientKey);
     const merged = mergeProfile(existing, action.payload);
-    const { error } = await ctx.db.from("patient_profiles").upsert(
+    const { error } = await ctx.db.from("patients").upsert(
       { patient_key: patientKey, ...merged, updated_at: new Date().toISOString() },
       { onConflict: "patient_key" },
     );

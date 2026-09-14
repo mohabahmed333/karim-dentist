@@ -6,7 +6,7 @@ import { isRevertible, TRACKED_TABLES } from "./revertPolicy.ts";
 describe("isRevertible", () => {
   it("allows a plain tracked table", () => {
     assert.equal(isRevertible("reservations"), true);
-    assert.equal(isRevertible("patient_profiles"), true);
+    assert.equal(isRevertible("patients"), true);
   });
 
   it("excludes messaging metadata even though it is tracked", () => {

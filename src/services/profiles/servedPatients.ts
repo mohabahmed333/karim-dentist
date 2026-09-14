@@ -78,7 +78,7 @@ export async function listServedPatients(
 
   // Prefer the real patient record's name/phone over the conversation's.
   const { data: profiles } = await supabase
-    .from("patient_profiles")
+    .from("patients")
     .select("patient_key, display_name, phone")
     .in("patient_key", keys);
 

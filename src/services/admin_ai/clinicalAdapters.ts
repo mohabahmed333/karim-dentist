@@ -163,7 +163,7 @@ export const noteGeneralAdapter: ActionAdapter = {
   async preview(action, ctx) {
     const patientKey = str(action.payload.patientKey ?? ctx.patientKey);
     const { data } = await ctx.db
-      .from("patient_profiles")
+      .from("patients")
       .select("notes,display_name,phone")
       .eq("patient_key", patientKey)
       .maybeSingle();
@@ -180,7 +180,7 @@ export const noteGeneralAdapter: ActionAdapter = {
   async execute(action, ctx) {
     const patientKey = str(action.payload.patientKey ?? ctx.patientKey);
     const { data: existing } = await ctx.db
-      .from("patient_profiles")
+      .from("patients")
       .select("*")
       .eq("patient_key", patientKey)
       .maybeSingle();
@@ -201,7 +201,7 @@ export const noteGeneralAdapter: ActionAdapter = {
       updated_at: new Date().toISOString(),
     };
     const { data, error } = await ctx.db
-      .from("patient_profiles")
+      .from("patients")
       .upsert(payload, { onConflict: "patient_key" })
       .select("*")
       .single();

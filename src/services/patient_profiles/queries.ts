@@ -6,7 +6,7 @@ export async function getPatientProfile(
 ): Promise<PatientProfile | null> {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from("patient_profiles")
+    .from("patients")
     .select("*")
     .eq("patient_key", patientKey)
     .maybeSingle();

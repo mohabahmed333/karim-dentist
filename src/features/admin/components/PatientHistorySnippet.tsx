@@ -39,6 +39,7 @@ export function PatientHistorySnippet({
     id: excludeId ?? "probe",
     deposit_hold: false,
     doctor_id: null,
+    patient_id: null,
     patient_name: patientName,
     phone,
     phone_suffix: phoneSuffixForLookup(phone) ?? "",
