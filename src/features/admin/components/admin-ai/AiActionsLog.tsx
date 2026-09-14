@@ -196,7 +196,7 @@ function ProposalCard({
           {row.diffs.map((diff) => {
             const fields = diffFieldLines(diff);
             return (
-              <li key={diff.actionId} className="rounded-lg border border-[#EEF0F2] bg-[#FAFBFC] px-2.5 py-2 text-xs">
+              <li key={diff.actionId} className="rounded-lg border bg-[var(--admin-hover)] px-2.5 py-2 text-xs">
                 <p className="font-medium">{actionKindLabel(diff.kind, locale)}</p>
                 <p className="text-[11px] text-muted-foreground">{diff.target}</p>
                 {fields.length ? (
