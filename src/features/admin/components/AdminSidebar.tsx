@@ -10,7 +10,6 @@ import {
   findActiveAdminNavGroupId,
 } from "@/features/admin/lib/adminNav";
 import { useTranslations } from "@/lib/i18n";
-import { AdminAccountMenu } from "./AdminAccountMenu";
 import { AdminNavSectionBlock } from "./AdminNavSectionBlock";
 
 type Props = {
@@ -79,7 +78,6 @@ export function AdminSidebar({
         />
       ))}
       <div className="mt-auto space-y-0.5 border-t border-[var(--admin-border)] px-1 pt-3">
-        <AdminAccountMenu />
         <Link
           href="/"
           className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]"
