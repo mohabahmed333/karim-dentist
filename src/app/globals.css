@@ -177,6 +177,36 @@ html:has(.customize-shell.dark),
   --tooltip-bg: var(--admin-panel, #202124);
   --tooltip-fg: var(--admin-text);
   --tooltip-border: var(--admin-border);
+
+  /* Same shadcn-semantic-token remap `.admin-shell` does for its own descendants
+     (below), but at `<html>` scope so portaled content — Dialog/Sheet/DropdownMenu
+     content rendered via Base UI's Portal, outside `.admin-shell` entirely — picks
+     up dark values too instead of staying pinned to the light block's fixed oklch
+     colors. Without this, e.g. a Dialog's `bg-popover` or a Button's `outline`
+     variant (`bg-background`, `border-border`) renders pale-on-pale in dark mode. */
+  --background: var(--admin-canvas);
+  --foreground: var(--admin-text);
+  --card: var(--admin-panel);
+  --card-foreground: var(--admin-text);
+  --popover: var(--admin-panel);
+  --popover-foreground: var(--admin-text);
+  --secondary: var(--admin-secondary);
+  --secondary-foreground: #ffffff;
+  --muted: var(--admin-panel);
+  --muted-foreground: var(--admin-muted);
+  --accent: var(--admin-secondary);
+  --accent-foreground: #ffffff;
+  --border: var(--admin-border);
+  --input: var(--admin-border);
+  --ring: var(--admin-primary);
+  --sidebar: var(--admin-canvas);
+  --sidebar-foreground: var(--admin-text);
+  --sidebar-primary: var(--admin-primary);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--admin-active);
+  --sidebar-accent-foreground: var(--admin-text);
+  --sidebar-border: var(--admin-border);
+  --sidebar-ring: transparent;
 }
 
 .admin-shell.dark {
