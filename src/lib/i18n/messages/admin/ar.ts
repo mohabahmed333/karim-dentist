@@ -415,6 +415,9 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.patients.nextVisit": "الزيارة القادمة",
   "admin.patients.profile": "الملف",
   "admin.patients.clinicalWorkspace": "مساحة العمل السريرية",
+
+  "admin.billing.patientTitle": "الفواتير",
+  "admin.billing.patientDescription": "الرسوم والمدفوعات والرصيد الجاري لهذا المريض.",
   "admin.patients.chat": "محادثة",
   "admin.patients.attachments": "المرفقات",
   "admin.patients.details": "التفاصيل",
@@ -560,6 +563,21 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.deposits.minConfidence": "الحد الأدنى للثقة",
   "admin.deposits.amountTolerance": "هامش تفاوت المبلغ (جنيه)",
   "admin.deposits.maxAgeHours": "لا يتجاوز عمر الإيصال (بالساعات)",
+
+  "admin.roles.systemBadge": "نظام",
+  "admin.roles.newRole": "دور جديد",
+  "admin.roles.keyPlaceholder": "المعرّف (مثال: front-desk)",
+  "admin.roles.createRole": "إنشاء دور",
+  "admin.roles.doctorRoleHint": "دور طبيب — يمنح منتقي طبيب وساعات عمل خاصة",
+  "admin.roles.dashboardLabel": "لوحة التحكم:",
+  "admin.roles.clinicWide": "على مستوى العيادة",
+  "admin.roles.ownPatientsOnly": "مرضاه فقط",
+  "admin.roles.deleteRole": "حذف الدور",
+  "admin.roles.selectOrCreate": "اختر دورًا أو أنشئ واحدًا.",
+  "admin.roles.keyNameRequired": "المعرّف والاسم مطلوبان",
+  "admin.roles.createFailed": "فشل الإنشاء",
+  "admin.roles.updateFailed": "فشل التحديث",
+  "admin.roles.deleteFailed": "فشل الحذف",
 
   "admin.settings.description":
     "ساعات العيادة وسمة اللوحة وعلامة الموقع وأسعار العلاجات.",

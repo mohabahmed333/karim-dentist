@@ -413,6 +413,9 @@ export const adminEn = {
   "admin.patients.nextVisit": "Next visit",
   "admin.patients.profile": "Profile",
   "admin.patients.clinicalWorkspace": "Clinical workspace",
+
+  "admin.billing.patientTitle": "Billing",
+  "admin.billing.patientDescription": "Charges, payments, and this patient's running balance.",
   "admin.patients.chat": "Chat",
   "admin.patients.attachments": "Attachments",
   "admin.patients.details": "Details",
@@ -559,6 +562,21 @@ export const adminEn = {
   "admin.deposits.minConfidence": "Minimum confidence",
   "admin.deposits.amountTolerance": "Amount tolerance (EGP)",
   "admin.deposits.maxAgeHours": "Receipt no older than (hours)",
+
+  "admin.roles.systemBadge": "system",
+  "admin.roles.newRole": "New role",
+  "admin.roles.keyPlaceholder": "key (e.g. front-desk)",
+  "admin.roles.createRole": "Create role",
+  "admin.roles.doctorRoleHint": "Doctor role — grants a doctor picker + own hours",
+  "admin.roles.dashboardLabel": "Dashboard:",
+  "admin.roles.clinicWide": "Clinic-wide",
+  "admin.roles.ownPatientsOnly": "Own patients only",
+  "admin.roles.deleteRole": "Delete role",
+  "admin.roles.selectOrCreate": "Select or create a role.",
+  "admin.roles.keyNameRequired": "Key and name are required",
+  "admin.roles.createFailed": "Create failed",
+  "admin.roles.updateFailed": "Update failed",
+  "admin.roles.deleteFailed": "Delete failed",
 
   "admin.settings.description":
     "Clinic hours, dashboard theme, site brand, and treatment prices.",
