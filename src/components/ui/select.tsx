@@ -11,7 +11,52 @@ import {
   adminSelectTriggerClass,
 } from "@/features/admin/ui/styles"
 
-const Select = SelectPrimitive.Root
+export type SelectItemOption = { value: unknown; label: React.ReactNode }
+
+/**
+ * Base UI's `Select.Value` can't read a selected item's label off the DOM
+ * (unlike Radix) — it needs an `items` map to resolve `value` -> label, or it
+ * falls back to stringifying the raw value. This walks the declaratively
+ * authored `<Select.Item>` children (through groups/content/fragments) to
+ * build that map for free, so callers don't have to hand-author it.
+ */
+export function collectSelectItems(
+  node: React.ReactNode,
+  ItemComponent: React.ElementType,
+): SelectItemOption[] {
+  const items: SelectItemOption[] = []
+  React.Children.forEach(node, (child) => {
+    if (!React.isValidElement(child)) return
+    if (child.type === ItemComponent) {
+      const { value, children: label } = child.props as {
+        value?: unknown
+        children?: React.ReactNode
+      }
+      items.push({ value, label })
+      return
+    }
+    const nested = (child.props as { children?: React.ReactNode } | undefined)
+      ?.children
+    if (nested) {
+      items.push(...collectSelectItems(nested, ItemComponent))
+    }
+  })
+  return items
+}
+
+function Select({ children, items, ...props }: SelectPrimitive.Root.Props<any>) {
+  const resolvedItems = React.useMemo(() => {
+    if (items) return items
+    const collected = collectSelectItems(children, SelectItem)
+    return collected.length > 0 ? collected : undefined
+  }, [children, items])
+
+  return (
+    <SelectPrimitive.Root items={resolvedItems} {...props}>
+      {children}
+    </SelectPrimitive.Root>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
