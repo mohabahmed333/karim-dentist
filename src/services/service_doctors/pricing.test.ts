@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  extractPriceRange,
   extractSingleAmount,
-  isPriceWithinClinicRange,
+  formatPriceRangeLabel,
+  isPriceEgpWithinRange,
   resolveServiceDoctorPrice,
 } from "./pricing";
 
@@ -59,76 +59,66 @@ describe("extractSingleAmount", () => {
   });
 });
 
-describe("extractPriceRange", () => {
-  it("reads a real range as [min, max]", () => {
-    assert.deepEqual(extractPriceRange("EGP 300-600"), { min: 300, max: 600 });
+describe("formatPriceRangeLabel", () => {
+  it("formats a real range", () => {
+    assert.equal(formatPriceRangeLabel(300, 600), "EGP 300-600");
   });
 
-  it("still resolves a range written high-to-low", () => {
-    assert.deepEqual(extractPriceRange("EGP 600-300"), { min: 300, max: 600 });
+  it("collapses an equal min/max into one figure", () => {
+    assert.equal(formatPriceRangeLabel(800, 800), "EGP 800");
   });
 
-  it("treats a single figure as a one-point range", () => {
-    assert.deepEqual(extractPriceRange("EGP 800"), { min: 800, max: 800 });
+  it("uses whichever bound is set when only one is", () => {
+    assert.equal(formatPriceRangeLabel(300, null), "EGP 300");
+    assert.equal(formatPriceRangeLabel(null, 600), "EGP 600");
   });
 
-  it("treats an open-ended 'from' price the same way", () => {
-    assert.deepEqual(extractPriceRange("From EGP 800"), { min: 800, max: 800 });
-  });
-
-  it("gives up on text with no number", () => {
-    assert.equal(extractPriceRange("Ask at the front desk"), null);
-  });
-
-  it("gives up on more than two numbers — nothing sane to bound", () => {
-    assert.equal(extractPriceRange("EGP 300, 450 or 600"), null);
-  });
-
-  it("returns null for an empty label", () => {
-    assert.equal(extractPriceRange(null), null);
+  it("returns null when nothing is on file", () => {
+    assert.equal(formatPriceRangeLabel(null, null), null);
   });
 });
 
-describe("isPriceWithinClinicRange", () => {
-  it("accepts a doctor price inside the clinic's range", () => {
-    assert.equal(isPriceWithinClinicRange("EGP 450", "EGP 300-600"), true);
+describe("isPriceEgpWithinRange", () => {
+  it("accepts a price inside the range", () => {
+    assert.equal(isPriceEgpWithinRange(450, 300, 600), true);
   });
 
-  it("accepts a doctor price sitting exactly on the floor", () => {
-    assert.equal(isPriceWithinClinicRange("EGP 300", "EGP 300-600"), true);
+  it("accepts a price sitting exactly on the floor", () => {
+    assert.equal(isPriceEgpWithinRange(300, 300, 600), true);
   });
 
-  it("accepts a doctor price sitting exactly on the ceiling", () => {
-    assert.equal(isPriceWithinClinicRange("EGP 600", "EGP 300-600"), true);
+  it("accepts a price sitting exactly on the ceiling", () => {
+    assert.equal(isPriceEgpWithinRange(600, 300, 600), true);
   });
 
-  it("refuses a doctor price under the clinic's floor", () => {
-    assert.equal(isPriceWithinClinicRange("EGP 250", "EGP 300-600"), false);
+  it("refuses a price under the floor", () => {
+    assert.equal(isPriceEgpWithinRange(250, 300, 600), false);
   });
 
-  it("refuses a doctor price over the clinic's ceiling", () => {
-    assert.equal(isPriceWithinClinicRange("EGP 650", "EGP 300-600"), false);
+  it("refuses a price over the ceiling", () => {
+    assert.equal(isPriceEgpWithinRange(650, 300, 600), false);
   });
 
   it("treats a single-figure clinic price as its own floor and ceiling", () => {
-    assert.equal(isPriceWithinClinicRange("EGP 900", "EGP 800"), false);
-    assert.equal(isPriceWithinClinicRange("EGP 800", "EGP 800"), true);
+    assert.equal(isPriceEgpWithinRange(900, 800, 800), false);
+    assert.equal(isPriceEgpWithinRange(800, 800, 800), true);
   });
 
-  it("allows a blank doctor price — nothing overridden, nothing to check", () => {
-    assert.equal(isPriceWithinClinicRange(null, "EGP 300-600"), true);
-    assert.equal(isPriceWithinClinicRange("", "EGP 300-600"), true);
+  it("allows a null doctor price — nothing overridden, nothing to check", () => {
+    assert.equal(isPriceEgpWithinRange(null, 300, 600), true);
   });
 
-  it("allows a doctor price that isn't a single clean number — can't compare it honestly", () => {
-    assert.equal(isPriceWithinClinicRange("Ask at the front desk", "EGP 300-600"), true);
+  it("allows any doctor price when the clinic has no floor or ceiling on file", () => {
+    assert.equal(isPriceEgpWithinRange(50, null, null), true);
   });
 
-  it("allows any doctor price when the clinic has no price on file at all", () => {
-    assert.equal(isPriceWithinClinicRange("EGP 50", null), true);
+  it("still enforces a floor when only the floor is set", () => {
+    assert.equal(isPriceEgpWithinRange(250, 300, null), false);
+    assert.equal(isPriceEgpWithinRange(300, 300, null), true);
   });
 
-  it("allows any doctor price when the clinic price itself isn't comparable", () => {
-    assert.equal(isPriceWithinClinicRange("EGP 50", "Ask at the front desk"), true);
+  it("still enforces a ceiling when only the ceiling is set", () => {
+    assert.equal(isPriceEgpWithinRange(650, null, 600), false);
+    assert.equal(isPriceEgpWithinRange(600, null, 600), true);
   });
 });

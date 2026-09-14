@@ -2421,18 +2421,21 @@ export type Database = {
         Row: {
           created_at: string
           doctor_id: string
+          price_egp: number | null
           price_label: string | null
           service_id: string
         }
         Insert: {
           created_at?: string
           doctor_id: string
+          price_egp?: number | null
           price_label?: string | null
           service_id: string
         }
         Update: {
           created_at?: string
           doctor_id?: string
+          price_egp?: number | null
           price_label?: string | null
           service_id?: string
         }
@@ -2465,6 +2468,8 @@ export type Database = {
           kind: "our_services" | "laser"
           media_type: "image" | "video"
           price_label: string | null
+          price_max_egp: number | null
+          price_min_egp: number | null
           slug: string | null
           sort_order: number
           tags: string[]
@@ -2483,6 +2488,8 @@ export type Database = {
           kind?: "our_services" | "laser"
           media_type?: "image" | "video"
           price_label?: string | null
+          price_max_egp?: number | null
+          price_min_egp?: number | null
           slug?: string | null
           sort_order?: number
           tags?: string[]
@@ -2501,6 +2508,8 @@ export type Database = {
           kind?: "our_services" | "laser"
           media_type?: "image" | "video"
           price_label?: string | null
+          price_max_egp?: number | null
+          price_min_egp?: number | null
           slug?: string | null
           sort_order?: number
           tags?: string[]

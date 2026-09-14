@@ -3,10 +3,36 @@ import type { createClient as createBrowserClient } from "@/lib/supabase/client"
 import type { Service, ServiceInsert, ServiceUpdate } from "./types";
 import { resolveUniqueSlug } from "./queries";
 import { isBlankSlug } from "./slug";
+import { formatPriceRangeLabel } from "@/services/service_doctors/pricing";
 
 type AnySupabase =
   | Awaited<ReturnType<typeof createServerClient>>
   | ReturnType<typeof createBrowserClient>;
+
+/**
+ * price_label is generated, never hand-typed — the one place that happens.
+ * Only touches it when the caller is actually setting a price (both bounds
+ * present in the payload, even if null); a payload that doesn't mention
+ * price at all leaves whatever price_label is already stored untouched.
+ */
+function withGeneratedPriceLabel<
+  T extends {
+    price_min_egp?: number | null;
+    price_max_egp?: number | null;
+    price_label?: string | null;
+  },
+>(payload: T): T {
+  if (!("price_min_egp" in payload) || !("price_max_egp" in payload)) {
+    return payload;
+  }
+  return {
+    ...payload,
+    price_label: formatPriceRangeLabel(
+      payload.price_min_egp ?? null,
+      payload.price_max_egp ?? null,
+    ),
+  };
+}
 
 export async function createService(
   supabase: AnySupabase,
@@ -17,7 +43,7 @@ export async function createService(
     : payload.slug;
   const { data, error } = await supabase
     .from("services")
-    .insert({ ...payload, slug })
+    .insert(withGeneratedPriceLabel({ ...payload, slug }))
     .select()
     .single();
   if (error) throw error;
@@ -29,10 +55,10 @@ export async function updateService(
   id: string,
   payload: ServiceUpdate,
 ): Promise<Service> {
-  const next: ServiceUpdate = {
+  const next: ServiceUpdate = withGeneratedPriceLabel({
     ...payload,
     updated_at: new Date().toISOString(),
-  };
+  });
   if (isBlankSlug(payload.slug)) {
     const { data: existing, error: readError } = await supabase
       .from("services")

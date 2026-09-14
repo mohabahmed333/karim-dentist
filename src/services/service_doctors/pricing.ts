@@ -41,41 +41,42 @@ export function extractSingleAmount(label: string | null): string | null {
 }
 
 /**
- * The band a clinic price label actually allows — "EGP 300-600" is
- * [300, 600]; a single figure like "EGP 800" or "From EGP 800" is [800, 800]
- * (nothing to range over, so floor and ceiling are the same number). Null
- * when the label has no numbers, or more than two — nothing reliable to
- * bound a doctor's own price against.
+ * The one place services.price_label / service_doctors.price_label are ever
+ * generated, from the real, structured price fields — null when both are
+ * null (nothing on file), "EGP {min}" when they're equal (one clean
+ * figure), else "EGP {min}-{max}" (a real range). Every existing reader of
+ * price_label (the WhatsApp prompt, the public site, billing price-lookup)
+ * keeps working unchanged, since this is just what now writes that column.
  */
-export function extractPriceRange(
-  label: string | null,
-): { min: number; max: number } | null {
-  if (!label) return null;
-  const matches = label.match(/\d+(?:\.\d+)?/g);
-  if (!matches || matches.length === 0 || matches.length > 2) return null;
-  const numbers = matches.map(Number).sort((a, b) => a - b);
-  return { min: numbers[0], max: numbers[numbers.length - 1] };
+export function formatPriceRangeLabel(
+  min: number | null,
+  max: number | null,
+): string | null {
+  if (min == null && max == null) return null;
+  if (min == null) return `EGP ${max}`;
+  if (max == null) return `EGP ${min}`;
+  return min === max ? `EGP ${min}` : `EGP ${min}-${max}`;
 }
 
 /**
  * Whether a doctor's own price stays within the clinic's published band for
- * that service — the clinic sets the floor and ceiling (usually as a range,
- * "EGP 300-600"), and each doctor's actual price has to land somewhere
- * inside it, not undercut the floor or exceed the ceiling.
+ * that service — the clinic sets the floor and ceiling, and a doctor's
+ * actual price has to land somewhere inside it, not undercut the floor or
+ * exceed the ceiling. Both sides are now real numbers (price_min_egp/
+ * price_max_egp on the service, price_egp on the doctor's override), so
+ * this is an exact comparison, not a guess parsed out of free text.
  *
- * Fails open on purpose: a blank doctor price (no override at all), or
- * either side not reducing to number(s) worth comparing, means there is
- * nothing reliable to check — never block a save over a comparison that
- * cannot honestly be made.
+ * Fails open: a blank doctor price (no override at all), or a clinic
+ * bound that isn't set, means there is nothing to check — never block a
+ * save over a comparison that cannot honestly be made.
  */
-export function isPriceWithinClinicRange(
-  doctorPriceLabel: string | null,
-  clinicPriceLabel: string | null,
+export function isPriceEgpWithinRange(
+  doctorPriceEgp: number | null,
+  min: number | null,
+  max: number | null,
 ): boolean {
-  const doctorAmount = extractSingleAmount(doctorPriceLabel);
-  if (!doctorAmount) return true;
-  const clinicRange = extractPriceRange(clinicPriceLabel);
-  if (!clinicRange) return true;
-  const value = Number(doctorAmount);
-  return value >= clinicRange.min && value <= clinicRange.max;
+  if (doctorPriceEgp == null) return true;
+  if (min != null && doctorPriceEgp < min) return false;
+  if (max != null && doctorPriceEgp > max) return false;
+  return true;
 }
