@@ -11,7 +11,7 @@ The AI actions log (`/admin/ai-actions`, shipped just before this) only covers w
 ## Goals
 
 1. Log every write (insert/update/delete) across the admin-editable resource tables *outside the CMS*, with who did it and the full before/after row.
-2. Let staff revert **any** logged action with one click — no curated subset; every tracked table gets a revert button.
+2. Let staff revert a logged action with one click, for every tracked table except messaging metadata (no external system to keep in sync with there — see Data).
 3. Keep this fully separate from the AI actions log (different data, different lifecycle) but discoverable together in the sidebar.
 
 ## Non-goals
@@ -32,7 +32,7 @@ This is an explicit trade-off for simplicity over building per-table-safe revert
 ## Decisions
 
 - **Capture mechanism: a generic Postgres trigger**, not per-file JS instrumentation. Every mutation already runs through the RLS-enforced session client (verified: `services`, `reservations`, `site_settings`, `patient_profiles`, `roles` mutations all take the cookie-based client; only `accounts.createAccount`'s one `profiles` upsert uses the service-role client, so that single write logs a null actor). `auth.uid()` inside a trigger body is an already-proven pattern in this codebase (`is_admin()`, `enqueue_patient_notifications()`). This means zero changes to the 31 mutation files, and no future write path can accidentally skip logging.
-- **Tracked-tables list is the only allowlist** — the same `Set` of table names gates both "does this show up in the log" and "can this be reverted" (no separate curated revert subset). It's checked both in the API route and again inside the revert SQL function (defense in depth, since the function takes a dynamic table name). Adding a table later is a one-line change + review, not a migration.
+- **Two lists, not one:** which tables are tracked (logged), and which of those are revertible. Almost every tracked table is also revertible; messaging metadata is the one carve-out (see Data). Both lists are checked in the API route and again inside the revert SQL function (defense in depth, since the function takes a dynamic table name). Changing either is a one-line change + review, not a migration.
 - **Kept separate from `ai_action_proposals`/`ai_action_audit_events`** — different shape (this is raw before/after JSON per row; AI proposals carry a summary, multi-action bundles, and a confirm/cancel lifecycle). Both surface under a new "Logs" nav group.
 
 ## Data
@@ -58,18 +58,20 @@ create index on system_action_log (table_name, created_at desc);
 
 **Trigger function `public.log_system_action()`** (`plpgsql`, `security definer`): reads `TG_TABLE_NAME`, `TG_OP`, `TG_ARGV[0]` (PK column name, default `'id'`), builds `to_jsonb(OLD)`/`to_jsonb(NEW)`, resolves `row_id` from the PK column via `->>`, and inserts one row. Runs `AFTER INSERT OR UPDATE OR DELETE ... FOR EACH ROW`.
 
-**Attached to** (all default PK `id`, except `doctor_hours` → `doctor_id`) — every one of these is also revertible, no further curation:
+**Attached to** (all default PK `id`, except `doctor_hours` → `doctor_id`):
 
-| Group | Tables |
-|---|---|
-| Clinic ops | `reservations`, `appointment_slots`, `clinic_hours`, `doctor_hours`, `clinic_cdt_fees`, `clinic_treatment_presets` |
-| Patients / clinical | `patient_profiles`, `patient_clinical_notes`, `patient_treatments`, `patient_imaging`, `patient_tooth_notes`, `patient_tooth_note_attachments`, `patient_tooth_surfaces` |
-| Access | `profiles`, `roles`, `permissions`, `role_permissions` |
-| Messaging metadata | `whatsapp_conversations`, `clinic_chat_threads` |
+| Group | Tables | Revertible? |
+|---|---|---|
+| Clinic ops | `reservations`, `appointment_slots`, `clinic_hours`, `doctor_hours`, `clinic_cdt_fees`, `clinic_treatment_presets` | Yes |
+| Patients / clinical | `patient_profiles`, `patient_clinical_notes`, `patient_treatments`, `patient_imaging`, `patient_tooth_notes`, `patient_tooth_note_attachments`, `patient_tooth_surfaces` | Yes |
+| Access | `profiles`, `roles`, `permissions`, `role_permissions` | Yes |
+| Messaging metadata | `whatsapp_conversations`, `clinic_chat_threads` | **No** |
 
 Excluded entirely: every CMS table (see Non-goals) and the raw content tables `whatsapp_messages`, `whatsapp_webhook_events`, `clinic_chat_messages`.
 
-**Revert policy**, defined in `src/services/system_log/revertPolicy.ts`: `isRevertible(table)` is just membership in the same tracked-tables list above — kept as its own module (rather than inlined) so the two concerns — "what do we track" and "what can be undone" — stay easy to split apart again later if a table in this list turns out to need the old curated treatment.
+**Messaging metadata is logged but never revertible.** `whatsapp_conversations`'s state (status, assignee, mute, tags) exists purely as local bookkeeping — Kapso (the WhatsApp Cloud API provider) has no API to "unmute" or "reassign" a conversation from our side in a way that corresponds to anything on its end, so writing the `before` row back would just be a local fiction with nothing to keep it honest. `clinic_chat_threads` is grouped with it for the same reason (no external system to stay in sync with, and no clear use case for undoing a thread's status).
+
+**Revert policy**, defined in `src/services/system_log/revertPolicy.ts`: `isRevertible(table)` is membership in the tracked-tables list **minus** the messaging metadata group — a genuine (if small) curated subset again, kept as its own module so it's a one-line change to add or remove a table's revert eligibility independent of whether it's tracked at all.
 
 ## Revert mechanism
 
@@ -121,4 +123,5 @@ Three PRs, in order (each depends on the previous):
   2. Click Revert on it → the field is back to the original, and the log shows a second entry (the revert itself).
   3. Cancel a reservation → log shows an `update` row with `before` populated; Revert restores its prior status.
   4. Editing a CMS table (e.g. a service) produces no system-log entry at all — confirms the exclusion.
-  5. Reverting the same entry twice: the second attempt is rejected (button already hidden, but also assert the API returns non-200 if hit directly).
+  5. Muting a WhatsApp conversation logs an entry with no Revert button (and the API rejects a direct revert attempt on it).
+  6. Reverting the same entry twice: the second attempt is rejected (button already hidden, but also assert the API returns non-200 if hit directly).
