@@ -2,42 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  AdminInput,
-  AdminSelect,
-  AdminSelectContent,
-  AdminSelectItem,
-  AdminSelectTrigger,
-  AdminSelectValue,
-} from "@/features/admin/ui";
 import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
-import { saveBillingEntry } from "@/services/patient_billing/actions";
 import type { LedgerEntryWithBalance } from "@/services/patient_billing/types";
 import { formatEgp } from "@/services/deposits/receiptMessages";
 import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
-import { extractSingleAmount, resolveServiceDoctorPrice } from "@/services/service_doctors/pricing";
+import type { PriceableService, PriceableDoctor } from "@/services/service_doctors/pricing";
+import type { Reservation } from "@/services/reservations/types";
 import { ProposeServicesForm } from "./ProposeServicesForm";
+import { AddChargeForm } from "./AddChargeForm";
 import { PendingProposalsList } from "./PendingProposalsList";
 import type { PendingProposal } from "@/services/treatment_proposals/types";
 import { useLocale } from "@/lib/i18n";
-
-type FormState = {
-  kind: "charge" | "payment";
-  amount: string;
-  description: string;
-  method: "cash" | "card" | "instapay" | "other";
-};
-
-function defaultForm(): FormState {
-  return { kind: "payment", amount: "", description: "", method: "cash" };
-}
-
-type PriceableService = { id: string; title: string; price_label: string | null };
-type PriceableDoctor = { id: string; display_name: string | null };
 
 type Props = {
   patientKey: string;
@@ -49,6 +26,8 @@ type Props = {
   services: PriceableService[];
   doctors: PriceableDoctor[];
   serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
+  /** This patient's visits, for the "which visit is this for?" pickers. */
+  reservations: Reservation[];
   patientPhone: string;
   canPropose: boolean;
   pendingProposals: PendingProposal[];
@@ -63,6 +42,7 @@ export function PatientBillingView({
   services,
   doctors,
   serviceDoctorMappings,
+  reservations,
   patientPhone,
   canPropose,
   pendingProposals,
@@ -71,85 +51,10 @@ export function PatientBillingView({
   const { locale } = useLocale();
   const [entries, setEntries] = useState(initialEntries);
   const [balance, setBalance] = useState(initialBalance);
-  const [form, setForm] = useState<FormState>(defaultForm());
-  const [pending, setPending] = useState(false);
-  // Purely a convenience lookup for the amount field below — the saved charge
-  // itself still only ever stores amount + description, nothing service- or
-  // doctor-specific.
-  const [priceServiceId, setPriceServiceId] = useState("");
-  const [priceDoctorId, setPriceDoctorId] = useState("");
 
-  const resolvedPrice =
-    priceServiceId && priceDoctorId
-      ? resolveServiceDoctorPrice(
-          priceServiceId,
-          priceDoctorId,
-          serviceDoctorMappings,
-          services.find((s) => s.id === priceServiceId)?.price_label ?? null,
-        )
-      : null;
-
-  function pickService(serviceId: string) {
-    setPriceServiceId(serviceId);
-    applyResolvedPrice(serviceId, priceDoctorId);
-  }
-
-  function pickDoctor(doctorId: string) {
-    setPriceDoctorId(doctorId);
-    applyResolvedPrice(priceServiceId, doctorId);
-  }
-
-  function applyResolvedPrice(serviceId: string, doctorId: string) {
-    if (!serviceId || !doctorId) return;
-    const label = resolveServiceDoctorPrice(
-      serviceId,
-      doctorId,
-      serviceDoctorMappings,
-      services.find((s) => s.id === serviceId)?.price_label ?? null,
-    );
-    const amount = extractSingleAmount(label);
-    if (amount) setForm((prev) => ({ ...prev, amount }));
-  }
-
-  async function onSubmit() {
-    const amount = Number(form.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      toast.error("Enter a valid amount");
-      return;
-    }
-    if (!form.description.trim()) {
-      toast.error("Enter a description");
-      return;
-    }
-    setPending(true);
-    try {
-      await saveBillingEntry(patientKey, {
-        kind: form.kind,
-        amount_egp: amount,
-        description: form.description.trim(),
-        method: form.kind === "payment" ? form.method : null,
-      });
-      const newEntry: LedgerEntryWithBalance = {
-        id: `pending:${Date.now()}`,
-        date: new Date().toISOString(),
-        kind: form.kind,
-        source: "manual",
-        amount,
-        description: form.description.trim(),
-        method: form.kind === "payment" ? form.method : null,
-        balanceAfter: form.kind === "charge" ? balance + amount : balance - amount,
-      };
-      setEntries((prev) => [...prev, newEntry]);
-      setBalance(newEntry.balanceAfter);
-      setForm(defaultForm());
-      setPriceServiceId("");
-      setPriceDoctorId("");
-      toast.success("Entry recorded");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setPending(false);
-    }
+  function onChargeRecorded(entry: LedgerEntryWithBalance) {
+    setEntries((prev) => [...prev, entry]);
+    setBalance(entry.balanceAfter);
   }
 
   return (
@@ -183,95 +88,21 @@ export function PatientBillingView({
           services={services}
           doctors={doctors}
           serviceDoctorMappings={serviceDoctorMappings}
+          reservations={reservations}
           onSent={() => router.refresh()}
         />
       ) : null}
 
       {canEdit ? (
-        <Card className="max-w-3xl gap-3 bg-transparent p-6">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <AdminSelect
-              value={form.kind}
-              onValueChange={(value) =>
-                setForm((prev) => ({ ...prev, kind: value as FormState["kind"] }))
-              }
-            >
-              <AdminSelectTrigger>
-                <AdminSelectValue />
-              </AdminSelectTrigger>
-              <AdminSelectContent>
-                <AdminSelectItem value="payment">Payment</AdminSelectItem>
-                <AdminSelectItem value="charge">Charge</AdminSelectItem>
-              </AdminSelectContent>
-            </AdminSelect>
-            {form.kind === "payment" ? (
-              <AdminSelect
-                value={form.method}
-                onValueChange={(value) =>
-                  setForm((prev) => ({ ...prev, method: value as FormState["method"] }))
-                }
-              >
-                <AdminSelectTrigger>
-                  <AdminSelectValue />
-                </AdminSelectTrigger>
-                <AdminSelectContent>
-                  <AdminSelectItem value="cash">Cash</AdminSelectItem>
-                  <AdminSelectItem value="card">Card</AdminSelectItem>
-                  <AdminSelectItem value="instapay">InstaPay</AdminSelectItem>
-                  <AdminSelectItem value="other">Other</AdminSelectItem>
-                </AdminSelectContent>
-              </AdminSelect>
-            ) : null}
-          </div>
-          {form.kind === "charge" && services.length > 0 && doctors.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <AdminSelect value={priceServiceId} onValueChange={(value) => pickService(String(value))}>
-                <AdminSelectTrigger>
-                  <AdminSelectValue placeholder="Service (optional, for a price lookup)" />
-                </AdminSelectTrigger>
-                <AdminSelectContent>
-                  {services.map((service) => (
-                    <AdminSelectItem key={service.id} value={service.id}>
-                      {service.title}
-                    </AdminSelectItem>
-                  ))}
-                </AdminSelectContent>
-              </AdminSelect>
-              <AdminSelect value={priceDoctorId} onValueChange={(value) => pickDoctor(String(value))}>
-                <AdminSelectTrigger>
-                  <AdminSelectValue placeholder="Doctor" />
-                </AdminSelectTrigger>
-                <AdminSelectContent>
-                  {doctors.map((doctor) => (
-                    <AdminSelectItem key={doctor.id} value={doctor.id}>
-                      {doctor.display_name ?? "Unnamed"}
-                    </AdminSelectItem>
-                  ))}
-                </AdminSelectContent>
-              </AdminSelect>
-            </div>
-          ) : null}
-          {resolvedPrice ? (
-            <p className="text-xs text-[var(--admin-muted)]">
-              {doctors.find((d) => d.id === priceDoctorId)?.display_name ?? "This doctor"}’s price for{" "}
-              {services.find((s) => s.id === priceServiceId)?.title ?? "this service"}: {resolvedPrice}
-            </p>
-          ) : null}
-          <AdminInput
-            placeholder="Amount (EGP)"
-            inputMode="decimal"
-            value={form.amount}
-            onChange={(e) => setForm((prev) => ({ ...prev, amount: e.target.value }))}
-          />
-          <AdminInput
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-          />
-          <Button type="button" disabled={pending} onClick={() => void onSubmit()}>
-            {pending ? "Saving…" : "Record entry"}
-          </Button>
-        </Card>
+        <AddChargeForm
+          patientKey={patientKey}
+          services={services}
+          doctors={doctors}
+          serviceDoctorMappings={serviceDoctorMappings}
+          reservations={reservations}
+          balance={balance}
+          onRecorded={onChargeRecorded}
+        />
       ) : null}
 
       <Card className="max-w-3xl gap-0 bg-transparent p-0">

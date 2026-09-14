@@ -13,17 +13,29 @@ import {
   AdminSelectValue,
 } from "@/features/admin/ui";
 import { saveTreatmentProposal } from "@/services/treatment_proposals/actions";
-import { resolveServiceDoctorPrice, extractSingleAmount } from "@/services/service_doctors/pricing";
+import {
+  resolveServiceDoctorPrice,
+  extractSingleAmount,
+  type PriceableService,
+  type PriceableDoctor,
+} from "@/services/service_doctors/pricing";
 import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
+import type { Reservation } from "@/services/reservations/types";
+import { formatAppointmentDateTime } from "@/services/patient_notifications/formatWhen";
+import { ServiceSearchSelect } from "./ServiceSearchSelect";
 
-type PriceableService = { id: string; title: string; price_label: string | null };
-type PriceableDoctor = { id: string; display_name: string | null };
-
-type DraftItem = { serviceId: string; description: string; amount: string };
+export type DraftItem = { serviceId: string; description: string; amount: string };
 
 function emptyItem(): DraftItem {
   return { serviceId: "", description: "", amount: "" };
 }
+
+/**
+ * Not a real reservation id — the value the "no specific visit" option
+ * carries. Select items can't take an empty-string value, so this is a
+ * sentinel, converted back to null right before it's sent.
+ */
+const NO_RESERVATION = "none";
 
 type Props = {
   patientKey: string;
@@ -32,7 +44,13 @@ type Props = {
   services: PriceableService[];
   doctors: PriceableDoctor[];
   serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
+  /** This patient's visits, for the optional "which visit is this for?" picker. */
+  reservations: Reservation[];
   onSent: () => void;
+  /** Seeds the form instead of starting blank — e.g. an AI draft proposing a starting point. */
+  initialDoctorId?: string;
+  initialItems?: DraftItem[];
+  initialReservationId?: string | null;
 };
 
 export function ProposeServicesForm({
@@ -42,10 +60,15 @@ export function ProposeServicesForm({
   services,
   doctors,
   serviceDoctorMappings,
+  reservations,
   onSent,
+  initialDoctorId,
+  initialItems,
+  initialReservationId,
 }: Props) {
-  const [doctorId, setDoctorId] = useState("");
-  const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
+  const [doctorId, setDoctorId] = useState(initialDoctorId ?? "");
+  const [items, setItems] = useState<DraftItem[]>(initialItems ?? [emptyItem()]);
+  const [reservationId, setReservationId] = useState(initialReservationId ?? NO_RESERVATION);
   const [pending, setPending] = useState(false);
 
   function patchItem(index: number, partial: Partial<DraftItem>) {
@@ -89,9 +112,11 @@ export function ProposeServicesForm({
       await saveTreatmentProposal(patientKey, patientPhone, patientName, {
         doctorId,
         items: parsedItems,
+        reservationId: reservationId === NO_RESERVATION ? null : reservationId,
       });
       setDoctorId("");
       setItems([emptyItem()]);
+      setReservationId(NO_RESERVATION);
       toast.success("Proposal sent");
       onSent();
     } catch (err) {
@@ -117,23 +142,36 @@ export function ProposeServicesForm({
         </AdminSelectContent>
       </AdminSelect>
 
+      {reservations.length > 0 ? (
+        <AdminSelect
+          value={reservationId}
+          onValueChange={(value) => setReservationId(String(value))}
+        >
+          <AdminSelectTrigger>
+            <AdminSelectValue placeholder="Which visit is this for? (optional)" />
+          </AdminSelectTrigger>
+          <AdminSelectContent>
+            <AdminSelectItem value={NO_RESERVATION}>Not tied to a visit</AdminSelectItem>
+            {reservations.map((reservation) => (
+              <AdminSelectItem key={reservation.id} value={reservation.id}>
+                {reservation.service_label} — {formatAppointmentDateTime(reservation.starts_at, "en")}
+              </AdminSelectItem>
+            ))}
+          </AdminSelectContent>
+        </AdminSelect>
+      ) : null}
+
       {items.map((item, index) => (
         <div
           key={index}
           className="grid grid-cols-1 gap-2 rounded-lg border border-[var(--admin-border)] p-3 sm:grid-cols-[1fr_1fr_auto]"
         >
-          <AdminSelect value={item.serviceId} onValueChange={(value) => pickService(index, String(value))}>
-            <AdminSelectTrigger>
-              <AdminSelectValue placeholder="Service" />
-            </AdminSelectTrigger>
-            <AdminSelectContent>
-              {services.map((service) => (
-                <AdminSelectItem key={service.id} value={service.id}>
-                  {service.title}
-                </AdminSelectItem>
-              ))}
-            </AdminSelectContent>
-          </AdminSelect>
+          <ServiceSearchSelect
+            services={services}
+            value={item.serviceId}
+            onChange={(serviceId) => pickService(index, serviceId)}
+            placeholder="Service"
+          />
           <AdminInput
             placeholder="Amount (EGP)"
             inputMode="decimal"
