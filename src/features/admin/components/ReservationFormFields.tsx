@@ -5,11 +5,6 @@ import type { ReservationFormValues } from "@/services/reservations/schemas";
 import { RESERVATION_STATUSES } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
 import type { DoctorProfile } from "@/services/profiles";
-import {
-  getClinicHours,
-  listOpenAppointmentSlots,
-  regenerateOpenSlots,
-} from "@/services/clinic_schedule";
 import { Label } from "@/components/ui/label";
 import { AdminInput, AdminNativeSelect, AdminTextarea } from "@/features/admin/ui";
 import { useTranslations } from "@/lib/i18n";
@@ -70,42 +65,18 @@ async function fetchSlotsFromApi(): Promise<SlotDto[]> {
 }
 
 async function loadOpenSlots(): Promise<SlotDto[]> {
-  let slots = await fetchSlotsFromApi().catch(() => [] as SlotDto[]);
+  const slots = await fetchSlotsFromApi().catch(() => [] as SlotDto[]);
   if (slots.length > 0) return slots;
 
-  // Clinic hours exist but slots table empty — regenerate via admin API.
-  const regen = await fetch("/api/v1/booking/slots/regenerate", {
+  // Slots table empty — regenerate every bookable doctor's slots from
+  // their own hours (there's no clinic-wide fallback pool anymore; a
+  // doctor with no hours configured just produces none).
+  const res = await fetch("/api/v1/booking/slots/regenerate", {
     method: "POST",
-  })
-    .then(async (res) => {
-      const body = (await res.json()) as {
-        slots?: SlotDto[];
-        error?: string;
-      };
-      if (!res.ok) throw new Error(body.error ?? "Could not generate slots");
-      return body.slots ?? [];
-    })
-    .catch(async (err) => {
-      // Fallback: client-side regenerate (requires admin session)
-      try {
-        const hours = await getClinicHours();
-        await regenerateOpenSlots(hours);
-        const fromIso = new Date().toISOString();
-        const toIso = new Date(
-          Date.now() + 21 * 24 * 60 * 60 * 1000,
-        ).toISOString();
-        const rows = await listOpenAppointmentSlots({ fromIso, toIso });
-        return rows.map((r) => ({
-          id: r.id,
-          starts_at: r.starts_at,
-          ends_at: r.ends_at,
-        }));
-      } catch {
-        throw err instanceof Error ? err : new Error("Could not generate slots");
-      }
-    });
-
-  return regen;
+  });
+  const body = (await res.json()) as { slots?: SlotDto[]; error?: string };
+  if (!res.ok) throw new Error(body.error ?? "Could not generate slots");
+  return body.slots ?? [];
 }
 
 export function ReservationFormFields({

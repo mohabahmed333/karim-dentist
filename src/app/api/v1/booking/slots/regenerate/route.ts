@@ -1,41 +1,28 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/api/requirePermission";
-import { regenerateOpenSlotsWithClient } from "@/services/clinic_schedule/regenerate";
-import type { ClinicHours } from "@/services/clinic_schedule/types";
+import { regenerateAllDoctorSlots } from "@/services/doctor_schedule/mutations";
 
-const HOURS_ID = "00000000-0000-4000-8000-000000000001";
-
+/**
+ * Regenerates every bookable doctor's open slots — this used to rebuild the
+ * clinic-wide, doctor-less pool, but that pool is retired now that each
+ * doctor has their own hours (see the multi-doctor plan). A doctor with no
+ * `doctor_hours` row simply produces zero slots; nothing here creates a
+ * doctor-less slot anymore.
+ */
 export async function POST() {
   const auth = await requirePermission("reservations.regenerate-slots");
   if (auth.error) return auth.error;
   const supabase = auth.supabase;
 
-  const { data: hours, error: hoursError } = await supabase
-    .from("clinic_hours")
-    .select("*")
-    .eq("id", HOURS_ID)
-    .maybeSingle();
-
-  if (hoursError) {
-    return NextResponse.json({ error: hoursError.message }, { status: 500 });
-  }
-  if (!hours) {
-    return NextResponse.json(
-      { error: "Clinic hours not configured" },
-      { status: 404 },
-    );
-  }
-
   try {
-    const created = await regenerateOpenSlotsWithClient(
-      supabase,
-      hours as ClinicHours,
-    );
+    const perDoctor = await regenerateAllDoctorSlots(supabase);
+    const created = perDoctor.reduce((sum, row) => sum + row.created, 0);
+
     const from = new Date().toISOString();
     const to = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString();
     const { data: slots, error: slotsError } = await supabase
       .from("appointment_slots")
-      .select("id, starts_at, ends_at, status")
+      .select("id, starts_at, ends_at, status, doctor_id")
       .eq("status", "open")
       .gte("starts_at", from)
       .lte("starts_at", to)
@@ -48,6 +35,7 @@ export async function POST() {
 
     return NextResponse.json({
       created,
+      perDoctor,
       slots: slots ?? [],
     });
   } catch (err) {

@@ -8,6 +8,14 @@ import type { AppointmentSlot, ClinicHours } from "./types";
 
 const HOURS_ID = "00000000-0000-4000-8000-000000000001";
 
+/**
+ * Now that every doctor has their own hours, clinic_hours only still means
+ * `horizon_days` (and `timezone`) — open_weekdays/time_windows/slot_minutes
+ * are carried forward unchanged rather than edited here. Saving no longer
+ * regenerates slots: doing so would recreate the retired doctor-less pool
+ * (see regenerateOpenSlotsWithClient's docstring) every time horizon_days
+ * changes, quietly un-retiring it.
+ */
 export async function saveClinicHours(
   input: ClinicHoursUpsertValues,
 ): Promise<ClinicHours> {
@@ -26,11 +34,20 @@ export async function saveClinicHours(
     .select("*")
     .single();
   if (error) throw error;
-  await regenerateOpenSlots(data as ClinicHours);
   return data as ClinicHours;
 }
 
-/** Rebuild upcoming open slots from hours; keep booked rows. */
+/**
+ * Rebuild upcoming open, doctor-less slots from hours; keep booked rows.
+ *
+ * @deprecated Retired now that every doctor has their own hours (see the
+ * approved multi-doctor plan). Kept only because the AI assistant's
+ * `schedule.regenerate_slots`/`schedule.set_hours` actions still call it —
+ * removing it outright means touching that action's registry/schema/prompt
+ * surface, which is a separate change. Prefer
+ * `regenerateOneDoctorSlots`/`regenerateAllDoctorSlots` in
+ * `@/services/doctor_schedule` for anything new.
+ */
 export async function regenerateOpenSlots(
   hours: ClinicHours,
 ): Promise<number> {

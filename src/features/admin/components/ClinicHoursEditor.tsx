@@ -10,71 +10,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  AdminSelect,
-  AdminSelectContent,
-  AdminSelectItem,
-  AdminSelectTrigger,
-  AdminSelectValue,
-} from "@/features/admin/ui";
-import { SettingsSaveRow, SettingsSectionGroup } from "./SettingsSectionGroup";
+  SettingsHintBanner,
+  SettingsSaveRow,
+  SettingsSectionGroup,
+} from "./SettingsSectionGroup";
 import {
   clinicHoursUpsertSchema,
   getClinicHours,
   saveClinicHours,
-  suggestNonOverlappingWindow,
-  timeWindowsIssue,
   type ClinicHours,
 } from "@/services/clinic_schedule";
 
-const DAY_LABELS = [
-  { value: 0, label: "Sun" },
-  { value: 1, label: "Mon" },
-  { value: 2, label: "Tue" },
-  { value: 3, label: "Wed" },
-  { value: 4, label: "Thu" },
-  { value: 5, label: "Fri" },
-  { value: 6, label: "Sat" },
-] as const;
-
-const TIME_OPTIONS: string[] = (() => {
-  const out: string[] = [];
-  for (let h = 6; h <= 22; h += 1) {
-    for (const m of [0, 15, 30, 45]) {
-      if (h === 22 && m > 0) break;
-      out.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
-    }
-  }
-  return out;
-})();
-
-function parseWindow(window: string): { start: string; end: string } {
-  const [start = "10:00", end = "12:00"] = window.split("-");
-  return {
-    start: normalizeTime(start),
-    end: normalizeTime(end),
-  };
-}
-
-function normalizeTime(raw: string): string {
-  const match = raw.trim().match(/^(\d{1,2}):(\d{2})$/);
-  if (!match) return "10:00";
-  const h = String(Math.min(23, Number(match[1]))).padStart(2, "0");
-  const m = String(Math.min(59, Number(match[2]))).padStart(2, "0");
-  const value = `${h}:${m}`;
-  return TIME_OPTIONS.includes(value) ? value : "10:00";
-}
-
-function joinWindow(start: string, end: string): string {
-  return `${normalizeTime(start)}-${normalizeTime(end)}`;
-}
-
+/**
+ * Weekdays/time windows/slot length used to live here, but each doctor now
+ * sets their own on Settings > Doctors — a clinic-wide schedule with no
+ * doctor attached stopped meaning anything once there was more than one.
+ * This page keeps only what's still genuinely clinic-wide: how many days
+ * ahead booking is open. The retired fields are loaded and carried forward
+ * unchanged on save (nothing reads them for slot generation anymore), never
+ * edited here.
+ */
 export function ClinicHoursEditor() {
   const t = useTranslations();
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
-  const [openWeekdays, setOpenWeekdays] = useState<number[]>([0, 1, 2, 3, 4]);
-  const [windows, setWindows] = useState<string[]>(["10:00-13:00", "14:00-18:00"]);
-  const [slotMinutes, setSlotMinutes] = useState(60);
+  const [retired, setRetired] = useState<Pick<
+    ClinicHours,
+    "open_weekdays" | "time_windows" | "slot_minutes"
+  > | null>(null);
   const [horizonDays, setHorizonDays] = useState(21);
 
   useEffect(() => {
@@ -82,9 +45,11 @@ export function ClinicHoursEditor() {
     void getClinicHours()
       .then((row: ClinicHours) => {
         if (!alive) return;
-        setOpenWeekdays(row.open_weekdays);
-        setWindows(row.time_windows);
-        setSlotMinutes(row.slot_minutes);
+        setRetired({
+          open_weekdays: row.open_weekdays,
+          time_windows: row.time_windows,
+          slot_minutes: row.slot_minutes,
+        });
         setHorizonDays(row.horizon_days);
       })
       .catch((err) => {
@@ -98,44 +63,12 @@ export function ClinicHoursEditor() {
     };
   }, []);
 
-  function toggleDay(day: number) {
-    setOpenWeekdays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort(),
-    );
-  }
-
-  function updateWindow(index: number, part: "start" | "end", value: string) {
-    setWindows((prev) => {
-      const next = [...prev];
-      const current = parseWindow(next[index] ?? "10:00-12:00");
-      const start = part === "start" ? value : current.start;
-      const end = part === "end" ? value : current.end;
-      next[index] = joinWindow(start, end);
-      const issue = timeWindowsIssue(next.filter(Boolean));
-      if (issue) {
-        queueMicrotask(() => toast.error(issue));
-        return prev;
-      }
-      return next;
-    });
-  }
-
-  function addWindow() {
-    const candidate = suggestNonOverlappingWindow(windows.filter(Boolean));
-    const next = [...windows, candidate];
-    const issue = timeWindowsIssue(next.filter(Boolean));
-    if (issue) {
-      toast.error(issue);
-      return;
-    }
-    setWindows(next);
-  }
-
   async function onSave() {
+    if (!retired) return;
     const parsed = clinicHoursUpsertSchema.safeParse({
-      open_weekdays: openWeekdays,
-      time_windows: windows.filter(Boolean),
-      slot_minutes: slotMinutes,
+      open_weekdays: retired.open_weekdays,
+      time_windows: retired.time_windows,
+      slot_minutes: retired.slot_minutes,
       horizon_days: horizonDays,
     });
     if (!parsed.success) {
@@ -147,9 +80,6 @@ export function ClinicHoursEditor() {
       const saved = await saveClinicHours(parsed.data);
       toast.success(t("admin.pages.hours.saved"));
       notifyRevalidate(["clinic-hours"]);
-      setOpenWeekdays(saved.open_weekdays);
-      setWindows(saved.time_windows);
-      setSlotMinutes(saved.slot_minutes);
       setHorizonDays(saved.horizon_days);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
@@ -161,33 +91,11 @@ export function ClinicHoursEditor() {
   if (loading) {
     return (
       <div aria-busy="true" className="space-y-5">
-        <span className="sr-only">Loading clinic hours…</span>
-        <div>
-          <AdminSkeleton className="h-3.5 w-20" />
-          <div className="mt-2 flex flex-wrap gap-2">
-            {Array.from({ length: 7 }, (_, day) => (
-              <AdminSkeleton key={day} className="h-7 w-12 rounded-lg" />
-            ))}
-          </div>
-        </div>
+        <span className="sr-only">Loading booking settings…</span>
+        <AdminSkeleton className="h-3.5 w-64" />
         <div className="space-y-2">
-          <AdminSkeleton className="h-3.5 w-24" />
-          <AdminSkeleton className="h-3 w-64" />
-          {[0, 1].map((row) => (
-            <div
-              key={row}
-              className="flex flex-wrap items-end gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-2.5"
-            >
-              {[0, 1].map((field) => (
-                <div key={field} className="grid min-w-[8rem] flex-1 gap-1">
-                  <AdminSkeleton className="h-3 w-10" />
-                  <AdminSkeleton className="h-9 w-full rounded-md" />
-                </div>
-              ))}
-              <AdminSkeleton className="h-8 w-20 rounded-md" />
-            </div>
-          ))}
-          <AdminSkeleton className="h-8 w-28 rounded-md" />
+          <AdminSkeleton className="h-3.5 w-32" />
+          <AdminSkeleton className="h-9 w-40 rounded-md" />
         </div>
         <AdminSkeleton className="h-9 w-32 rounded-md" />
       </div>
@@ -196,128 +104,23 @@ export function ClinicHoursEditor() {
 
   return (
     <div className="space-y-6">
-      <SettingsSectionGroup title="Open days">
-        <div className="flex flex-wrap gap-2">
-          {DAY_LABELS.map((day) => {
-            const on = openWeekdays.includes(day.value);
-            return (
-              <button
-                key={day.value}
-                type="button"
-                onClick={() => toggleDay(day.value)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${
-                  on
-                    ? "border-[var(--admin-primary)] bg-[var(--admin-primary)] text-white"
-                    : "border-[var(--admin-border)] bg-[var(--admin-panel)] text-[var(--admin-text)]"
-                }`}
-              >
-                {day.label}
-              </button>
-            );
-          })}
-        </div>
-      </SettingsSectionGroup>
+      <SettingsHintBanner>
+        Open days, time windows and slot length are set per doctor now — see
+        Settings &gt; Doctors. This page only controls how far ahead the
+        booking calendar opens.
+      </SettingsHintBanner>
 
-      <SettingsSectionGroup
-        title="Time windows"
-        hint="Choose From / To times from the lists — no typing."
-        className="space-y-3"
-      >
-        {windows.map((w, i) => {
-          const { start, end } = parseWindow(w);
-          return (
-            <div
-              key={i}
-              className="flex flex-wrap items-end gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-2.5"
-            >
-              <label className="grid min-w-[8rem] flex-1 gap-1">
-                <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                  From
-                </span>
-                <AdminSelect
-                  value={start}
-                  onValueChange={(value) => updateWindow(i, "start", String(value))}
-                >
-                  <AdminSelectTrigger className="w-full">
-                    <AdminSelectValue />
-                  </AdminSelectTrigger>
-                  <AdminSelectContent>
-                    {TIME_OPTIONS.map((t) => (
-                      <AdminSelectItem key={`s-${i}-${t}`} value={t}>
-                        {t}
-                      </AdminSelectItem>
-                    ))}
-                  </AdminSelectContent>
-                </AdminSelect>
-              </label>
-              <label className="grid min-w-[8rem] flex-1 gap-1">
-                <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                  To
-                </span>
-                <AdminSelect
-                  value={end}
-                  onValueChange={(value) => updateWindow(i, "end", String(value))}
-                >
-                  <AdminSelectTrigger className="w-full">
-                    <AdminSelectValue />
-                  </AdminSelectTrigger>
-                  <AdminSelectContent>
-                    {TIME_OPTIONS.map((t) => (
-                      <AdminSelectItem key={`e-${i}-${t}`} value={t}>
-                        {t}
-                      </AdminSelectItem>
-                    ))}
-                  </AdminSelectContent>
-                </AdminSelect>
-              </label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-                onClick={() => setWindows(windows.filter((_, j) => j !== i))}
-              >
-                Remove
-              </Button>
-            </div>
-          );
-        })}
-        <Button type="button" variant="outline" size="sm" onClick={addWindow}>
-          Add window
-        </Button>
-      </SettingsSectionGroup>
-
-      <SettingsSectionGroup title="Scheduling">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="space-y-1.5">
-            <Label>Slot length (minutes)</Label>
-            <AdminSelect
-              value={String(slotMinutes)}
-              onValueChange={(value) => setSlotMinutes(Number(value))}
-            >
-              <AdminSelectTrigger className="w-full">
-                <AdminSelectValue />
-              </AdminSelectTrigger>
-              <AdminSelectContent>
-                {[15, 30, 45, 60, 90, 120].map((m) => (
-                  <AdminSelectItem key={m} value={String(m)}>
-                    {m}
-                  </AdminSelectItem>
-                ))}
-              </AdminSelectContent>
-            </AdminSelect>
-          </label>
-          <label className="space-y-1.5">
-            <Label>Publish horizon (days)</Label>
-            <Input
-              type="number"
-              min={7}
-              max={60}
-              value={horizonDays}
-              onChange={(e) => setHorizonDays(Number(e.target.value))}
-            />
-          </label>
-        </div>
+      <SettingsSectionGroup title="Booking horizon">
+        <label className="block max-w-xs space-y-1.5">
+          <Label>Publish horizon (days)</Label>
+          <Input
+            type="number"
+            min={7}
+            max={60}
+            value={horizonDays}
+            onChange={(e) => setHorizonDays(Number(e.target.value))}
+          />
+        </label>
       </SettingsSectionGroup>
 
       <SettingsSaveRow>

@@ -11,7 +11,17 @@ function errorMessage(err: unknown): string {
   return "Regenerate failed";
 }
 
-/** Rebuild upcoming open slots from hours; keep booked rows. */
+/**
+ * Rebuild upcoming open, doctor-less slots from hours; keep booked rows.
+ *
+ * @deprecated Retired: now that every doctor has their own hours
+ * (`doctor_hours` + `regenerateDoctorOpenSlotsWithClient` below), a
+ * clinic-wide pool with no doctor attached is no longer meaningful — a
+ * patient could book it with nobody actually assigned. No admin-facing
+ * path calls this anymore; it stays only because the AI assistant's
+ * `schedule.set_hours`/`schedule.regenerate_slots` actions still can
+ * (see the deprecation note on `regenerateOpenSlots` in ./mutations.ts).
+ */
 export async function regenerateOpenSlotsWithClient(
   supabase: SupabaseClient,
   hours: ClinicHours,
@@ -39,14 +49,22 @@ export async function regenerateOpenSlotsWithClient(
     .gte("starts_at", now.toISOString());
   if (bookedError) throw new Error(errorMessage(bookedError));
 
-  const bookedStarts = new Set((booked ?? []).map((r) => r.starts_at));
+  // Keyed by epoch, not the raw string: Postgres returns timestamptz as
+  // "...+00:00" while slot.startsAt.toISOString() produces "...Z" — a
+  // string-equality check here never matches, so a booked slot's start
+  // silently doesn't get excluded and the batch insert dies on the unique
+  // index instead, wiping out every slot in this regenerate, not just the
+  // one collision.
+  const bookedStarts = new Set(
+    (booked ?? []).map((r) => new Date(r.starts_at).getTime()),
+  );
 
   // Overlapping windows (e.g. 10:00-13:00 + 10:00-12:00) create duplicate starts —
   // unique index requires one row per starts_at for non-cancelled statuses.
   const byStart = new Map<string, { starts_at: string; ends_at: string; status: "open" }>();
   for (const slot of expanded) {
+    if (bookedStarts.has(slot.startsAt.getTime())) continue;
     const starts_at = slot.startsAt.toISOString();
-    if (bookedStarts.has(starts_at)) continue;
     if (byStart.has(starts_at)) continue;
     byStart.set(starts_at, {
       starts_at,
@@ -115,15 +133,18 @@ export async function regenerateDoctorOpenSlotsWithClient(
     .gte("starts_at", now.toISOString());
   if (bookedError) throw new Error(errorMessage(bookedError));
 
-  const bookedStarts = new Set((booked ?? []).map((r) => r.starts_at));
+  // Epoch, not the raw string — see the matching comment above.
+  const bookedStarts = new Set(
+    (booked ?? []).map((r) => new Date(r.starts_at).getTime()),
+  );
 
   const byStart = new Map<
     string,
     { starts_at: string; ends_at: string; status: "open"; doctor_id: string }
   >();
   for (const slot of expanded) {
+    if (bookedStarts.has(slot.startsAt.getTime())) continue;
     const starts_at = slot.startsAt.toISOString();
-    if (bookedStarts.has(starts_at)) continue;
     if (byStart.has(starts_at)) continue;
     byStart.set(starts_at, {
       starts_at,

@@ -316,7 +316,7 @@ export const adminEn = {
   "admin.pages.callout.title": "Callout",
   "admin.pages.callout.description": "Homepage callout banner.",
   "admin.pages.footer.add": "New link",
-  "admin.pages.hours.save": "Save clinic hours",
+  "admin.pages.hours.save": "Save booking settings",
   "admin.no": "No",
 
   "admin.reservations.title": "Reservations",
@@ -412,7 +412,7 @@ export const adminEn = {
 
   "admin.settings.title": "Settings",
   "admin.settings.clinic": "Clinic prices",
-  "admin.settings.hours": "Clinic hours",
+  "admin.settings.hours": "Booking settings",
   "admin.settings.theme": "Dashboard theme",
   "admin.settings.contact": "Contact",
   "admin.settings.brand": "Site",
@@ -561,7 +561,7 @@ export const adminEn = {
   "admin.pages.gallery.category": "Category",
   "admin.pages.gallery.image": "Image",
   "admin.pages.homepage.saved": "Homepage sections saved",
-  "admin.pages.hours.saved": "Clinic hours saved — schedule regenerated",
+  "admin.pages.hours.saved": "Booking settings saved",
   "admin.pages.whatsappAi.saved": "AI assistant settings saved",
   "admin.pages.footer.empty": "No footer links yet.",
   "admin.pages.trust.value": "Value",

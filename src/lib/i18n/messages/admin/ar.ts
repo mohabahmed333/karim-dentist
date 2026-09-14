@@ -318,7 +318,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.pages.callout.title": "الإعلان",
   "admin.pages.callout.description": "لافتة الإعلان في الصفحة الرئيسية.",
   "admin.pages.footer.add": "رابط جديد",
-  "admin.pages.hours.save": "حفظ ساعات العيادة",
+  "admin.pages.hours.save": "حفظ إعدادات الحجز",
   "admin.no": "لا",
 
   "admin.reservations.title": "الحجوزات",
@@ -414,7 +414,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
 
   "admin.settings.title": "الإعدادات",
   "admin.settings.clinic": "أسعار العيادة",
-  "admin.settings.hours": "ساعات العيادة",
+  "admin.settings.hours": "إعدادات الحجز",
   "admin.settings.theme": "سمة لوحة التحكم",
   "admin.settings.contact": "التواصل",
   "admin.settings.brand": "الموقع",
@@ -563,7 +563,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.pages.gallery.category": "الفئة",
   "admin.pages.gallery.image": "صورة",
   "admin.pages.homepage.saved": "تم حفظ أقسام الصفحة الرئيسية",
-  "admin.pages.hours.saved": "تم حفظ ساعات العيادة — أُعيد توليد الجدول",
+  "admin.pages.hours.saved": "تم حفظ إعدادات الحجز",
   "admin.pages.whatsappAi.saved": "تم حفظ إعدادات المساعد الذكي",
   "admin.pages.footer.empty": "لا توجد روابط تذييل بعد.",
   "admin.pages.trust.value": "القيمة",
