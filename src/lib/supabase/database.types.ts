@@ -1367,6 +1367,423 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_alerts: {
+        Row: {
+          attempts: number
+          created_at: string
+          dedupe_key: string
+          id: string
+          item_id: string
+          last_error: string | null
+          lease_until: string | null
+          min_stock_level: number
+          payload: Json
+          qty_on_hand: number
+          scheduled_for: string
+          send_started_at: string | null
+          sent_at: string | null
+          skip_reason: string | null
+          status: string
+          suggested_reorder_qty: number
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          dedupe_key: string
+          id?: string
+          item_id: string
+          last_error?: string | null
+          lease_until?: string | null
+          min_stock_level: number
+          payload?: Json
+          qty_on_hand: number
+          scheduled_for?: string
+          send_started_at?: string | null
+          sent_at?: string | null
+          skip_reason?: string | null
+          status?: string
+          suggested_reorder_qty: number
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string
+          id?: string
+          item_id?: string
+          last_error?: string | null
+          lease_until?: string | null
+          min_stock_level?: number
+          payload?: Json
+          qty_on_hand?: number
+          scheduled_for?: string
+          send_started_at?: string | null
+          sent_at?: string | null
+          skip_reason?: string | null
+          status?: string
+          suggested_reorder_qty?: number
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_alerts_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_alerts_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_batches: {
+        Row: {
+          created_at: string
+          expires_on: string | null
+          id: string
+          item_id: string
+          lot_number: string | null
+          qty_received: number
+          qty_remaining: number
+          received_at: string
+          supplier_id: string | null
+          unit_cost_egp: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_on?: string | null
+          id?: string
+          item_id: string
+          lot_number?: string | null
+          qty_received: number
+          qty_remaining: number
+          received_at?: string
+          supplier_id?: string | null
+          unit_cost_egp?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_on?: string | null
+          id?: string
+          item_id?: string
+          lot_number?: string | null
+          qty_received?: number
+          qty_remaining?: number
+          received_at?: string
+          supplier_id?: string | null
+          unit_cost_egp?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_batches_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_batches_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          category: string
+          created_at: string
+          default_supplier_id: string | null
+          deleted_at: string | null
+          id: string
+          last_unit_cost_egp: number | null
+          min_stock_level: number
+          name: string
+          name_ar: string
+          reorder_qty: number
+          sku: string | null
+          tracks_batches: boolean
+          unit: string
+          updated_at: string
+          wastage_approval_threshold_egp: number | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          default_supplier_id?: string | null
+          deleted_at?: string | null
+          id?: string
+          last_unit_cost_egp?: number | null
+          min_stock_level?: number
+          name: string
+          name_ar?: string
+          reorder_qty?: number
+          sku?: string | null
+          tracks_batches?: boolean
+          unit?: string
+          updated_at?: string
+          wastage_approval_threshold_egp?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          default_supplier_id?: string | null
+          deleted_at?: string | null
+          id?: string
+          last_unit_cost_egp?: number | null
+          min_stock_level?: number
+          name?: string
+          name_ar?: string
+          reorder_qty?: number
+          sku?: string | null
+          tracks_batches?: boolean
+          unit?: string
+          updated_at?: string
+          wastage_approval_threshold_egp?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_default_supplier_id_fkey"
+            columns: ["default_supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_settings: {
+        Row: {
+          id: string
+          manager_whatsapp_phone: string | null
+          mode: string
+          realert_after_days: number
+          updated_at: string
+          wastage_approval_threshold_egp: number
+          wastage_photo_threshold_egp: number
+        }
+        Insert: {
+          id?: string
+          manager_whatsapp_phone?: string | null
+          mode?: string
+          realert_after_days?: number
+          updated_at?: string
+          wastage_approval_threshold_egp?: number
+          wastage_photo_threshold_egp?: number
+        }
+        Update: {
+          id?: string
+          manager_whatsapp_phone?: string | null
+          mode?: string
+          realert_after_days?: number
+          updated_at?: string
+          wastage_approval_threshold_egp?: number
+          wastage_photo_threshold_egp?: number
+        }
+        Relationships: []
+      }
+      inventory_transactions: {
+        Row: {
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
+          batch_id: string | null
+          created_at: string
+          created_by: string
+          deduction_group_id: string
+          id: string
+          item_id: string
+          patient_treatment_id: string | null
+          photo_url: string | null
+          qty: number
+          reason_code: string | null
+          reason_note: string
+          reservation_id: string | null
+          total_cost_egp: number
+          type: string
+          unit_cost_egp: number
+        }
+        Insert: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          batch_id?: string | null
+          created_at?: string
+          created_by: string
+          deduction_group_id?: string
+          id?: string
+          item_id: string
+          patient_treatment_id?: string | null
+          photo_url?: string | null
+          qty: number
+          reason_code?: string | null
+          reason_note?: string
+          reservation_id?: string | null
+          total_cost_egp?: number
+          type: string
+          unit_cost_egp?: number
+        }
+        Update: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          batch_id?: string | null
+          created_at?: string
+          created_by?: string
+          deduction_group_id?: string
+          id?: string
+          item_id?: string
+          patient_treatment_id?: string | null
+          photo_url?: string | null
+          qty?: number
+          reason_code?: string | null
+          reason_note?: string
+          reservation_id?: string | null
+          total_cost_egp?: number
+          type?: string
+          unit_cost_egp?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_patient_treatment_id_fkey"
+            columns: ["patient_treatment_id"]
+            isOneToOne: false
+            referencedRelation: "patient_treatments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_recipes: {
+        Row: {
+          created_at: string
+          default_qty: number
+          is_required: boolean
+          item_id: string
+          kind: string
+          notes: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_qty: number
+          is_required?: boolean
+          item_id: string
+          kind?: string
+          notes?: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          default_qty?: number
+          is_required?: boolean
+          item_id?: string
+          kind?: string
+          notes?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_recipes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_recipes_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          contact_name: string
+          created_at: string
+          deleted_at: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string
+          phone: string
+          updated_at: string
+          whatsapp_phone: string | null
+        }
+        Insert: {
+          contact_name?: string
+          created_at?: string
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string
+          phone?: string
+          updated_at?: string
+          whatsapp_phone?: string | null
+        }
+        Update: {
+          contact_name?: string
+          created_at?: string
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string
+          phone?: string
+          updated_at?: string
+          whatsapp_phone?: string | null
+        }
+        Relationships: []
+      }
       notification_feature_switches: {
         Row: {
           enabled: boolean
@@ -3628,6 +4045,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_inventory_transaction: {
+        Args: {
+          p_decision: string
+          p_note: string
+          p_transaction_id: string
+        }
+        Returns: Database["public"]["Tables"]["inventory_transactions"]["Row"]
+      }
       assert_reservation_access: {
         Args: {
           p_phone: string
@@ -3680,6 +4105,21 @@ export type Database = {
       confirm_deposit_paid: {
         Args: { p_decided_by?: string; p_deposit_request_id: string; p_reason?: string }
         Returns: boolean
+      }
+      consume_inventory_stock: {
+        Args: {
+          p_created_by: string
+          p_deduction_group_id: string
+          p_item_id: string
+          p_patient_treatment_id: string | null
+          p_photo_url: string | null
+          p_qty: number
+          p_reason_code: string | null
+          p_reason_note: string | null
+          p_reservation_id: string | null
+          p_type: string
+        }
+        Returns: Database["public"]["Tables"]["inventory_transactions"]["Row"][]
       }
       expire_deposit_hold: {
         Args: { p_deposit_request_id: string }
