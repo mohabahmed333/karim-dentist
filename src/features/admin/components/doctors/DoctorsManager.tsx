@@ -44,8 +44,8 @@ import { DOCTOR_COLOR_PALETTE } from "@/services/profiles/colorPalette";
 import { saveDoctorServices } from "@/services/service_doctors/actions";
 import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
 import {
-  extractPriceRange,
-  isPriceWithinClinicRange,
+  formatPriceRangeLabel,
+  isPriceEgpWithinRange,
 } from "@/services/service_doctors/pricing";
 import type { Service } from "@/services/services";
 import { useTranslations } from "@/lib/i18n";
@@ -129,12 +129,49 @@ function identityFromDoctor(doctor: DoctorProfile): IdentityFormState {
   };
 }
 
+/**
+ * The exact shape each section's save sends to the server, so comparing two
+ * snapshots tells us whether there's anything unsaved — not just whether the
+ * raw form state differs (an emptied-then-retyped field, or a service
+ * unchecked with its stale price text still sitting in priceOverrideForms,
+ * shouldn't count as a change).
+ */
+type DoctorSnapshot = {
+  hours: FormState;
+  identity: { specialty: string | null; bio: string | null; calendar_color: string | null };
+  services: { serviceId: string; priceEgp: number | null }[];
+};
+
+function snapshotFor(
+  form: FormState,
+  identityForm: IdentityFormState,
+  serviceIds: string[],
+  prices: Record<string, string>,
+): DoctorSnapshot {
+  return {
+    hours: form,
+    identity: {
+      specialty: identityForm.specialty.trim() || null,
+      bio: identityForm.bio.trim() || null,
+      calendar_color: identityForm.calendar_color,
+    },
+    services: [...serviceIds].sort().map((serviceId) => {
+      const raw = prices[serviceId]?.trim();
+      return { serviceId, priceEgp: raw ? Number(raw) : null };
+    }),
+  };
+}
+
 type Props = {
   doctors: DoctorProfile[];
   initialHours: Record<string, DoctorHours>;
   services: Service[];
   /** service_id -> its doctors, each with their own price override. Empty/absent = open to every doctor. */
   initialMappings: Record<string, ServiceDoctorMapping[]>;
+  /** Signed-in user's id, to tell "editing my own record" apart from someone else's. */
+  currentUserId: string | null;
+  /** Holds `settings.edit` — can add/save any doctor's data, not just their own. */
+  canEditAny: boolean;
 };
 
 export function DoctorsManager({
@@ -142,12 +179,18 @@ export function DoctorsManager({
   initialHours,
   services,
   initialMappings,
+  currentUserId,
+  canEditAny,
 }: Props) {
   const t = useTranslations();
   const [doctors, setDoctors] = useState(initialDoctors);
   const [hoursByDoctor, setHoursByDoctor] =
     useState<Record<string, DoctorHours>>(initialHours);
-  const [selectedId, setSelectedId] = useState(initialDoctors[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState(() =>
+    currentUserId && initialDoctors.some((d) => d.id === currentUserId)
+      ? currentUserId
+      : (initialDoctors[0]?.id ?? ""),
+  );
   const [forms, setForms] = useState<Record<string, FormState>>(() => {
     const out: Record<string, FormState> = {};
     for (const doctor of initialDoctors) {
@@ -193,7 +236,7 @@ export function DoctorsManager({
       const prices: Record<string, string> = {};
       for (const [serviceId, entries] of Object.entries(initialMappings)) {
         const own = entries.find((e) => e.doctorId === doctor.id);
-        if (own?.priceLabel) prices[serviceId] = own.priceLabel;
+        if (own?.priceEgp != null) prices[serviceId] = String(own.priceEgp);
       }
       out[doctor.id] = prices;
     }
@@ -205,9 +248,33 @@ export function DoctorsManager({
     string | null
   >(null);
 
-  const [pending, setPending] = useState(false);
-  const [savingIdentity, setSavingIdentity] = useState(false);
-  const [savingServices, setSavingServices] = useState(false);
+  // Last-saved snapshot per doctor, to tell the single Save button whether
+  // there's anything unsaved to send. Starts equal to the initial forms
+  // above (nothing's been edited yet) and is replaced after each save.
+  const [baselines, setBaselines] = useState<Record<string, DoctorSnapshot>>(
+    () => {
+      const out: Record<string, DoctorSnapshot> = {};
+      for (const doctor of initialDoctors) {
+        const doctorMappedServiceIds = Object.entries(initialMappings)
+          .filter(([, entries]) => entries.some((e) => e.doctorId === doctor.id))
+          .map(([serviceId]) => serviceId);
+        const doctorPrices: Record<string, string> = {};
+        for (const [serviceId, entries] of Object.entries(initialMappings)) {
+          const own = entries.find((e) => e.doctorId === doctor.id);
+          if (own?.priceEgp != null) doctorPrices[serviceId] = String(own.priceEgp);
+        }
+        out[doctor.id] = snapshotFor(
+          initialHours[doctor.id] ? formFromHours(initialHours[doctor.id]) : defaultForm(),
+          identityFromDoctor(doctor),
+          doctorMappedServiceIds,
+          doctorPrices,
+        );
+      }
+      return out;
+    },
+  );
+
+  const [saving, setSaving] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
@@ -220,6 +287,16 @@ export function DoctorsManager({
     (selectedDoctor ? identityFromDoctor(selectedDoctor) : { specialty: "", bio: "", calendar_color: null });
   const selectedServiceIds = serviceIdForms[selectedId] ?? [];
   const selectedPrices = priceOverrideForms[selectedId] ?? {};
+
+  const currentSnapshot = snapshotFor(form, identityForm, selectedServiceIds, selectedPrices);
+  const baselineSnapshot = baselines[selectedId];
+  const isDirty =
+    Boolean(selectedId) &&
+    JSON.stringify(currentSnapshot) !== JSON.stringify(baselineSnapshot);
+  // Admins can add/save any doctor's data; everyone else can only touch
+  // their own record — so a doctor browsing a colleague's tab sees it, but
+  // read-only.
+  const canEditSelected = canEditAny || (Boolean(currentUserId) && currentUserId === selectedId);
 
   function patchPrice(serviceId: string, priceLabel: string) {
     setPriceOverrideForms((prev) => ({
@@ -276,60 +353,6 @@ export function DoctorsManager({
     patchForm({ time_windows: next });
   }
 
-  async function onSave() {
-    if (!selectedId) return;
-    const parsed = doctorHoursUpsertSchema.safeParse(form);
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? t("admin.doctors.invalidHours"));
-      return;
-    }
-    setPending(true);
-    try {
-      const saved = await saveDoctorHours(selectedId, parsed.data);
-      setHoursByDoctor((prev) => ({ ...prev, [selectedId]: saved }));
-      setForms((prev) => ({ ...prev, [selectedId]: formFromHours(saved) }));
-      toast.success(t("admin.doctors.hoursSaved"));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function onSaveIdentity() {
-    if (!selectedId) return;
-    const parsed = doctorIdentityUpsertSchema.safeParse({
-      specialty: identityForm.specialty.trim() || null,
-      bio: identityForm.bio.trim() || null,
-      calendar_color: identityForm.calendar_color,
-    });
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? t("admin.doctors.invalidProfile"));
-      return;
-    }
-    setSavingIdentity(true);
-    try {
-      await saveDoctorIdentity(selectedId, parsed.data);
-      setDoctors((prev) =>
-        prev.map((d) =>
-          d.id === selectedId
-            ? {
-                ...d,
-                specialty: parsed.data.specialty,
-                bio: parsed.data.bio,
-                calendar_color: parsed.data.calendar_color,
-              }
-            : d,
-        ),
-      );
-      toast.success(t("admin.profile.success"));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
-    } finally {
-      setSavingIdentity(false);
-    }
-  }
-
   function applyServiceToggle(serviceId: string, checked: boolean) {
     setServiceIdForms((prev) => {
       const current = prev[selectedId] ?? [];
@@ -360,39 +383,63 @@ export function DoctorsManager({
     setPendingRestrictServiceId(null);
   }
 
-  async function onSaveServices() {
-    if (!selectedId) return;
-    const serviceIds = serviceIdForms[selectedId] ?? [];
-    const prices = priceOverrideForms[selectedId] ?? {};
-    const entries = serviceIds.map((serviceId) => ({
-      serviceId,
-      priceLabel: prices[serviceId]?.trim() || null,
-    }));
+  /** One Save button for the whole page: profile, services+prices, and hours together. */
+  async function onSaveAll() {
+    if (!selectedId || !isDirty || !canEditSelected) return;
+
+    const identityParsed = doctorIdentityUpsertSchema.safeParse(currentSnapshot.identity);
+    if (!identityParsed.success) {
+      toast.error(identityParsed.error.issues[0]?.message ?? t("admin.doctors.invalidProfile"));
+      return;
+    }
+    const hoursParsed = doctorHoursUpsertSchema.safeParse(form);
+    if (!hoursParsed.success) {
+      toast.error(hoursParsed.error.issues[0]?.message ?? t("admin.doctors.invalidHours"));
+      return;
+    }
+    const entries = currentSnapshot.services;
 
     // The clinic's own price is the floor and ceiling a doctor's price has
-    // to land inside — usually published as a range ("EGP 300-600"). Only
-    // enforced when both sides reduce to comparable number(s); anything
-    // that can't be honestly compared is left alone rather than guessed at.
-    // isPriceWithinClinicRange only ever refuses when the clinic side did
-    // resolve to a range, so extractPriceRange here is never null.
+    // to land inside — real numbers now, not text parsed out of a label, so
+    // this is an exact comparison. Only enforced when the clinic side has
+    // at least one bound on file; a service with no price at all imposes no
+    // constraint.
     for (const entry of entries) {
-      if (!entry.priceLabel) continue;
+      if (entry.priceEgp == null) continue;
       const service = services.find((s) => s.id === entry.serviceId);
-      const clinicPrice = service?.price_label ?? null;
-      if (isPriceWithinClinicRange(entry.priceLabel, clinicPrice)) continue;
-      const range = extractPriceRange(clinicPrice)!;
+      const min = service?.price_min_egp ?? null;
+      const max = service?.price_max_egp ?? null;
+      if (isPriceEgpWithinRange(entry.priceEgp, min, max)) continue;
       toast.error(
         t("admin.doctors.priceOutOfRange")
           .replace("{service}", service?.title ?? t("admin.doctors.thisService"))
-          .replace("{min}", String(range.min))
-          .replace("{max}", String(range.max)),
+          .replace("{min}", String(min ?? max))
+          .replace("{max}", String(max ?? min)),
       );
       return;
     }
 
-    setSavingServices(true);
+    setSaving(true);
     try {
-      await saveDoctorServices(selectedId, entries);
+      const [savedHours] = await Promise.all([
+        saveDoctorHours(selectedId, hoursParsed.data),
+        saveDoctorIdentity(selectedId, identityParsed.data),
+        saveDoctorServices(selectedId, entries),
+      ]);
+      setHoursByDoctor((prev) => ({ ...prev, [selectedId]: savedHours }));
+      setForms((prev) => ({ ...prev, [selectedId]: formFromHours(savedHours) }));
+      setDoctors((prev) =>
+        prev.map((d) =>
+          d.id === selectedId
+            ? {
+                ...d,
+                specialty: identityParsed.data.specialty,
+                bio: identityParsed.data.bio,
+                calendar_color: identityParsed.data.calendar_color,
+              }
+            : d,
+        ),
+      );
       // Mirror the server's delete-then-insert exactly: drop this doctor
       // from every service's list, then add them back to the ones just
       // saved — keeps the cross-doctor badges correct without a refetch.
@@ -405,21 +452,33 @@ export function DoctorsManager({
         for (const entry of entries) {
           next[entry.serviceId] = [
             ...(next[entry.serviceId] ?? []),
-            { doctorId: selectedId, priceLabel: entry.priceLabel },
+            {
+              doctorId: selectedId,
+              priceEgp: entry.priceEgp,
+              priceLabel: formatPriceRangeLabel(entry.priceEgp, entry.priceEgp),
+            },
           ];
         }
         return next;
       });
-      toast.success(t("admin.doctors.servicesSaved"));
+      // What was just sent is now what's saved — the hours side normalizes
+      // through formFromHours(savedHours) rather than reusing `form` as-is,
+      // since the server can round-trip values slightly differently (e.g.
+      // trimming a redundant time window).
+      setBaselines((prev) => ({
+        ...prev,
+        [selectedId]: { ...currentSnapshot, hours: formFromHours(savedHours) },
+      }));
+      toast.success(t("admin.saved"));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
     } finally {
-      setSavingServices(false);
+      setSaving(false);
     }
   }
 
   async function onRegenerate() {
-    if (!selectedId) return;
+    if (!selectedId || !canEditSelected) return;
     setRegenerating(true);
     try {
       const created = await regenerateOneDoctorSlots(selectedId);
@@ -511,33 +570,17 @@ export function DoctorsManager({
           <Button
             type="button"
             variant="outline"
-            disabled={regenerating || !selectedId || !hasHours}
+            disabled={regenerating || !selectedId || !hasHours || !canEditSelected}
             onClick={() => void onRegenerate()}
           >
             {regenerating ? t("admin.doctors.regenerating") : t("admin.doctors.regenerateSlots")}
           </Button>
           <Button
             type="button"
-            variant="outline"
-            disabled={savingIdentity || !selectedId}
-            onClick={() => void onSaveIdentity()}
+            disabled={saving || !selectedId || !isDirty || !canEditSelected}
+            onClick={() => void onSaveAll()}
           >
-            {savingIdentity ? t("admin.saving") : t("admin.profile.save")}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={savingServices || !selectedId}
-            onClick={() => void onSaveServices()}
-          >
-            {savingServices ? t("admin.saving") : t("admin.doctors.saveServices")}
-          </Button>
-          <Button
-            type="button"
-            disabled={pending || !selectedId}
-            onClick={() => void onSave()}
-          >
-            {pending ? t("admin.saving") : t("admin.doctors.saveHours")}
+            {saving ? t("admin.saving") : t("admin.save")}
           </Button>
         </div>
       }
@@ -614,22 +657,25 @@ export function DoctorsManager({
               <label className="flex items-center gap-2 text-xs text-[var(--admin-muted)]">
                 <Checkbox
                   checked={form.is_bookable}
+                  disabled={!canEditSelected}
                   onCheckedChange={(checked) =>
                     patchForm({ is_bookable: checked === true })
                   }
                 />
                 {t("admin.doctors.bookable")}
               </label>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                disabled={removing}
-                onClick={() => setRemoveConfirmOpen(true)}
-              >
-                <Trash2 aria-hidden />
-                {t("admin.doctors.removeDoctor")}
-              </Button>
+              {canEditAny ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={removing}
+                  onClick={() => setRemoveConfirmOpen(true)}
+                >
+                  <Trash2 aria-hidden />
+                  {t("admin.doctors.removeDoctor")}
+                </Button>
+              ) : null}
             </div>
           </div>
 
@@ -642,6 +688,7 @@ export function DoctorsManager({
                 value={identityForm.specialty}
                 placeholder={t("admin.doctors.specialtyPlaceholder")}
                 maxLength={120}
+                disabled={!canEditSelected}
                 onChange={(e) => patchIdentity({ specialty: e.target.value })}
               />
             </label>
@@ -653,6 +700,7 @@ export function DoctorsManager({
                 value={identityForm.bio}
                 maxLength={500}
                 rows={3}
+                disabled={!canEditSelected}
                 onChange={(e) => patchIdentity({ bio: e.target.value })}
               />
             </label>
@@ -669,8 +717,9 @@ export function DoctorsManager({
                       type="button"
                       aria-label={color}
                       aria-pressed={selected}
+                      disabled={!canEditSelected}
                       onClick={() => patchIdentity({ calendar_color: color })}
-                      className="flex size-8 shrink-0 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-primary)]"
+                      className="flex size-8 shrink-0 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-primary)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
                       style={{
                         background: color,
                         boxShadow: selected
@@ -714,6 +763,7 @@ export function DoctorsManager({
                         <Checkbox
                           className="mt-0.5"
                           checked={checked}
+                          disabled={!canEditSelected}
                           onCheckedChange={(next) =>
                             toggleService(service.id, next === true)
                           }
@@ -741,6 +791,9 @@ export function DoctorsManager({
                       </label>
                       {checked ? (
                         <AdminInput
+                          type="number"
+                          min={0}
+                          step={1}
                           value={selectedPrices[service.id] ?? ""}
                           placeholder={
                             service.price_label
@@ -750,7 +803,7 @@ export function DoctorsManager({
                                 )
                               : t("admin.doctors.priceOverridePlaceholderNone")
                           }
-                          maxLength={80}
+                          disabled={!canEditSelected}
                           onChange={(e) => patchPrice(service.id, e.target.value)}
                           className="ms-6 w-[calc(100%-1.5rem)] text-xs"
                         />
@@ -770,8 +823,9 @@ export function DoctorsManager({
                   <button
                     key={day.value}
                     type="button"
+                    disabled={!canEditSelected}
                     onClick={() => toggleDay(day.value)}
-                    className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                       on
                         ? "border-[var(--admin-primary)] bg-[var(--admin-primary)] text-white"
                         : "border-[var(--admin-border)] bg-[var(--admin-panel)] text-[var(--admin-text)]"
@@ -802,6 +856,7 @@ export function DoctorsManager({
                     </span>
                     <AdminSelect
                       value={start}
+                      disabled={!canEditSelected}
                       onValueChange={(value) =>
                         updateWindow(i, "start", String(value))
                       }
@@ -824,6 +879,7 @@ export function DoctorsManager({
                     </span>
                     <AdminSelect
                       value={end}
+                      disabled={!canEditSelected}
                       onValueChange={(value) =>
                         updateWindow(i, "end", String(value))
                       }
@@ -845,6 +901,7 @@ export function DoctorsManager({
                     variant="outline"
                     size="sm"
                     className="shrink-0"
+                    disabled={!canEditSelected}
                     onClick={() =>
                       patchForm({
                         time_windows: form.time_windows.filter(
@@ -858,7 +915,13 @@ export function DoctorsManager({
                 </div>
               );
             })}
-            <Button type="button" variant="outline" size="sm" onClick={addWindow}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!canEditSelected}
+              onClick={addWindow}
+            >
               {t("admin.doctors.addWindow")}
             </Button>
           </SettingsSectionGroup>
@@ -866,6 +929,7 @@ export function DoctorsManager({
           <SettingsSectionGroup title={t("admin.doctors.slotLength")}>
             <AdminSelect
               value={String(form.slot_minutes)}
+              disabled={!canEditSelected}
               onValueChange={(value) =>
                 patchForm({ slot_minutes: Number(value) })
               }

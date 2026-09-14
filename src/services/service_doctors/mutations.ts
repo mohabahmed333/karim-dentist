@@ -1,8 +1,9 @@
 import type { createClient as createServerClient } from "@/lib/supabase/server";
+import { formatPriceRangeLabel } from "./pricing";
 
 type ServerSupabase = Awaited<ReturnType<typeof createServerClient>>;
 
-export type DoctorServiceEntry = { serviceId: string; priceLabel: string | null };
+export type DoctorServiceEntry = { serviceId: string; priceEgp: number | null };
 
 /**
  * Replace-all: this doctor's full set of mapped services, each with its own
@@ -25,10 +26,13 @@ export async function setDoctorServiceIds(
   if (entries.length === 0) return;
 
   const { error: insertError } = await supabase.from("service_doctors").insert(
-    entries.map(({ serviceId, priceLabel }) => ({
+    entries.map(({ serviceId, priceEgp }) => ({
       service_id: serviceId,
       doctor_id: doctorId,
-      price_label: priceLabel,
+      price_egp: priceEgp,
+      // Generated, same as services.price_label — a doctor's own price is
+      // always one figure, never a range, so min and max are the same value.
+      price_label: formatPriceRangeLabel(priceEgp, priceEgp),
     })),
   );
   if (insertError) throw insertError;

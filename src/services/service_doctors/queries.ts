@@ -66,7 +66,11 @@ export async function listServiceIdsForDoctor(
 }
 
 /** One doctor's mapping to one service, with whatever price override they carry. */
-export type ServiceDoctorMapping = { doctorId: string; priceLabel: string | null };
+export type ServiceDoctorMapping = {
+  doctorId: string;
+  priceLabel: string | null;
+  priceEgp: number | null;
+};
 
 /**
  * The whole mapping table, service_id -> its doctors (each with their own
@@ -79,11 +83,15 @@ export async function listAllServiceDoctorMappings(
 ): Promise<Record<string, ServiceDoctorMapping[]>> {
   const { data, error } = await supabase
     .from("service_doctors")
-    .select("service_id, doctor_id, price_label");
+    .select("service_id, doctor_id, price_label, price_egp");
   if (error) throw error;
   const out: Record<string, ServiceDoctorMapping[]> = {};
   for (const row of data ?? []) {
-    (out[row.service_id] ??= []).push({ doctorId: row.doctor_id, priceLabel: row.price_label });
+    (out[row.service_id] ??= []).push({
+      doctorId: row.doctor_id,
+      priceLabel: row.price_label,
+      priceEgp: row.price_egp,
+    });
   }
   return out;
 }
