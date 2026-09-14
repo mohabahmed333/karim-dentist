@@ -16,6 +16,8 @@ import {
   SERVICE_PICKER_CONSULT_VALUE,
   ServicePicker,
 } from "@/features/admin/components/ServicePicker";
+import { PatientCombobox } from "@/features/admin/components/reservations/PatientCombobox";
+import type { PatientSearchResult } from "@/services/patient_profiles/types";
 
 type Props = {
   values: ReservationFormValues;
@@ -90,6 +92,7 @@ export function ReservationFormFields({
   const [slots, setSlots] = useState<SlotDto[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [slotsError, setSlotsError] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -152,6 +155,16 @@ export function ReservationFormFields({
 
   function patch(partial: Partial<ReservationFormValues>) {
     onChange({ ...values, ...partial });
+  }
+
+  function onPatientSelect(patient: PatientSearchResult) {
+    patch({
+      patient_id: patient.id,
+      patient_name: patient.display_name,
+      phone: patient.phone,
+      email: patient.email ?? "",
+    });
+    setSearching(false);
   }
 
   function onServiceChange(serviceValue: string) {
@@ -219,6 +232,44 @@ export function ReservationFormFields({
         </p>
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
+        {values.patient_id ? (
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-hover)]/30 px-3 py-2 sm:col-span-2">
+            <span className="text-xs text-[var(--admin-text)]">
+              {t("admin.reservations.linkedToPatient")}
+            </span>
+            <button
+              type="button"
+              className="text-xs font-medium text-[var(--admin-primary)] hover:underline"
+              disabled={pending}
+              onClick={() => patch({ patient_id: null })}
+            >
+              {t("admin.reservations.unlinkPatient")}
+            </button>
+          </div>
+        ) : searching ? (
+          <div className="grid gap-2 sm:col-span-2">
+            <PatientCombobox disabled={pending} onSelect={onPatientSelect} />
+            <button
+              type="button"
+              className="justify-self-start text-xs text-[var(--admin-muted)] hover:underline"
+              onClick={() => setSearching(false)}
+            >
+              {t("admin.reservations.enterNewPatientInstead")}
+            </button>
+          </div>
+        ) : (
+          <div className="sm:col-span-2">
+            <button
+              type="button"
+              data-showreel-action="reservation-search-existing-patient"
+              className="text-xs font-medium text-[var(--admin-primary)] hover:underline"
+              disabled={pending}
+              onClick={() => setSearching(true)}
+            >
+              {t("admin.reservations.searchExistingPatient")}
+            </button>
+          </div>
+        )}
         <label className="grid gap-2">
           <Label htmlFor="patient_name">{t("admin.reservations.patientName")}</Label>
           <AdminInput

@@ -1140,6 +1140,10 @@ export const adminEn = {
 
 
   "admin.reservations.patientName": "Patient name",
+  "admin.reservations.searchExistingPatient": "Search for an existing patient…",
+  "admin.reservations.linkedToPatient": "Linked to existing patient",
+  "admin.reservations.unlinkPatient": "Unlink",
+  "admin.reservations.enterNewPatientInstead": "Enter a new patient instead",
   "admin.reservations.openSlot": "Open slot",
 
 

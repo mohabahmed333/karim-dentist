@@ -1141,6 +1141,10 @@ export const adminAr: Record<AdminMessageKey, string> = {
 
 
   "admin.reservations.patientName": "اسم المريض",
+  "admin.reservations.searchExistingPatient": "ابحث عن مريض موجود…",
+  "admin.reservations.linkedToPatient": "مرتبط بمريض موجود",
+  "admin.reservations.unlinkPatient": "إلغاء الربط",
+  "admin.reservations.enterNewPatientInstead": "أدخل مريضًا جديدًا بدلاً من ذلك",
   "admin.reservations.openSlot": "موعد متاح",
 
 
