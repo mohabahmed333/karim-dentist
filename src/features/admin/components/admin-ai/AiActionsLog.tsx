@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import type { ProposalStatus } from "@/services/admin_ai/schemas";
 import type { ProposalLogRow } from "@/services/admin_ai/listProposals";
 import { diffFieldLines } from "../chat/reviewCardFormat";
 import { AdminSkeleton } from "../AdminSkeleton";
+import { useCursorLog, type CursorPage } from "../../hooks/useCursorLog";
 
 const STATUS_FILTERS: (ProposalStatus | "all")[] = [
   "all",
@@ -57,68 +58,24 @@ const OUTCOME_LABEL_KEY: Record<string, AdminMessageKey> = {
 async function fetchLog(
   status: ProposalStatus | "all",
   cursor: string | null,
-): Promise<{ rows: ProposalLogRow[]; nextCursor: string | null }> {
+): Promise<CursorPage<ProposalLogRow>> {
   const params = new URLSearchParams();
   if (status !== "all") params.set("status", status);
   if (cursor) params.set("cursor", cursor);
   const res = await fetch(`/api/v1/ai/admin-actions/log?${params.toString()}`);
   if (!res.ok) throw new Error("load failed");
-  return (await res.json()) as { rows: ProposalLogRow[]; nextCursor: string | null };
+  return (await res.json()) as CursorPage<ProposalLogRow>;
 }
-
-type LoadedPage = {
-  status: ProposalStatus | "all";
-  rows: ProposalLogRow[];
-  nextCursor: string | null;
-};
 
 export function AiActionsLog() {
   const t = useTranslations();
   const { locale } = useLocale();
   const [status, setStatus] = useState<ProposalStatus | "all">("all");
-  // `null`, or a page whose `status` doesn't match the current filter, both
-  // read as "loading" — this is what keeps a synchronous setRows(null) out of
-  // the effect below (setState inside an effect body triggers cascading
-  // renders the React lint rule flags).
-  const [page, setPage] = useState<LoadedPage | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    void fetchLog(status, null)
-      .then((result) => {
-        if (alive) setPage({ status, rows: result.rows, nextCursor: result.nextCursor });
-      })
-      .catch(() => {
-        if (alive) {
-          setPage({ status, rows: [], nextCursor: null });
-          toast.error(t("admin.aiActions.loadError"));
-        }
-      });
-    return () => {
-      alive = false;
-    };
-  }, [status, t]);
-
-  const rows = page && page.status === status ? page.rows : null;
-  const nextCursor = page && page.status === status ? page.nextCursor : null;
-
-  async function loadMore() {
-    if (!nextCursor) return;
-    setLoadingMore(true);
-    try {
-      const result = await fetchLog(status, nextCursor);
-      setPage((prev) =>
-        prev && prev.status === status
-          ? { status, rows: [...prev.rows, ...result.rows], nextCursor: result.nextCursor }
-          : prev,
-      );
-    } catch {
-      toast.error(t("admin.aiActions.loadError"));
-    } finally {
-      setLoadingMore(false);
-    }
-  }
+  const { rows, nextCursor, loadingMore, loadMore } = useCursorLog<ProposalLogRow>(
+    status,
+    (cursor) => fetchLog(status, cursor),
+    () => toast.error(t("admin.aiActions.loadError")),
+  );
 
   return (
     <div className="space-y-3" dir={locale === "ar" ? "rtl" : "ltr"}>
@@ -202,7 +159,7 @@ function ProposalCard({
                 {fields.length ? (
                   <ul className="mt-1.5 space-y-1">
                     {fields.map((f) => (
-                      <li key={f.field}>
+                      <li key={f.field} className="text-[11px] text-[var(--admin-text)]">
                         <span className="text-muted-foreground">{f.field}: </span>
                         <span className="text-muted-foreground line-through">{f.before}</span>
                         {" → "}
