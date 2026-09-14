@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/api/requirePermission";
 import {
   adjustmentFormSchema,
   approveWastageSchema,
+  inventorySettingsFormSchema,
   itemFormSchema,
   recipeFormSchema,
   restockFormSchema,
@@ -13,6 +14,7 @@ import {
 import * as mutations from "./mutations";
 import type {
   InventoryItem,
+  InventorySettings,
   InventoryTransaction,
   ServiceRecipe,
   Supplier,
@@ -90,6 +92,13 @@ export async function logWastage(raw: unknown): Promise<InventoryTransaction[]> 
   if (auth.error) throw new Error("Forbidden");
   const parsed = wastageFormSchema.parse(raw);
   return mutations.logWastage(auth.supabase, parsed, auth.session.user.id);
+}
+
+export async function updateInventorySettings(raw: unknown): Promise<InventorySettings> {
+  const auth = await requirePermission("settings.edit");
+  if (auth.error) throw new Error("Forbidden");
+  const parsed = inventorySettingsFormSchema.parse(raw);
+  return mutations.updateInventorySettings(auth.supabase, parsed);
 }
 
 export async function approveWastage(raw: unknown): Promise<InventoryTransaction> {

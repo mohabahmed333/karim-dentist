@@ -2,6 +2,7 @@ import type { createClient as createServerClient } from "@/lib/supabase/server";
 import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type {
   AdjustmentFormValues,
+  InventorySettingsFormValues,
   ItemFormValues,
   RecipeFormValues,
   RestockFormValues,
@@ -12,10 +13,14 @@ import type {
   ConsumableUsage,
   InventoryBatch,
   InventoryItem,
+  InventorySettings,
   InventoryTransaction,
   ServiceRecipe,
   Supplier,
 } from "./types";
+
+/** Fixed singleton row id from 20260915180000_inventory_low_stock_alerts.sql. */
+const INVENTORY_SETTINGS_ID = "00000000-0000-4000-8000-0000000000c1";
 
 type AnySupabase =
   | Awaited<ReturnType<typeof createServerClient>>
@@ -328,6 +333,32 @@ export async function approveWastageTransaction(
   });
   if (error) throw error;
   return data as unknown as InventoryTransaction;
+}
+
+// ---------------------------------------------------------------------------
+// Settings — singleton row, drives the low-stock WhatsApp dispatcher's mode
+// (off/dry_run/send) and the wastage dual-control/photo thresholds.
+// ---------------------------------------------------------------------------
+
+export async function updateInventorySettings(
+  supabase: AnySupabase,
+  input: InventorySettingsFormValues,
+): Promise<InventorySettings> {
+  const { data, error } = await supabase
+    .from("inventory_settings")
+    .update({
+      mode: input.mode,
+      manager_whatsapp_phone: input.manager_whatsapp_phone || null,
+      wastage_approval_threshold_egp: input.wastage_approval_threshold_egp,
+      wastage_photo_threshold_egp: input.wastage_photo_threshold_egp,
+      realert_after_days: input.realert_after_days,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", INVENTORY_SETTINGS_ID)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 // ---------------------------------------------------------------------------
