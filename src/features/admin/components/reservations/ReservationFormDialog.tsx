@@ -12,8 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { PatientHistorySnippet } from "@/features/admin/components/PatientHistorySnippet";
 import { ReservationFormFields } from "@/features/admin/components/ReservationFormFields";
-import { useAdminThemeVars } from "@/features/admin/hooks/useAdminThemeVars";
-import { adminThemeStyle } from "@/features/admin/lib/adminThemeVars";
 import { useTranslations } from "@/lib/i18n";
 import { formatReservationWhen } from "@/services/reservations/stats";
 import type { ReservationFormValues } from "@/services/reservations/schemas";
@@ -55,7 +53,6 @@ export function ReservationFormDialog({
   onSaveModeChange,
 }: Props) {
   const t = useTranslations();
-  const themeVars = useAdminThemeVars(open);
   const showModeChoice = Boolean(replaceTarget && onSaveModeChange);
 
   return (
@@ -63,7 +60,6 @@ export function ReservationFormDialog({
       <DialogContent
         data-showreel-action="reservation-form-modal"
         className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
-        style={adminThemeStyle(themeVars)}
       >
         <DialogHeader className="shrink-0 space-y-1 px-4 pt-4 pe-12">
           <DialogTitle className="text-[var(--admin-text)]">
