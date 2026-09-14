@@ -46,11 +46,15 @@ export function phonesMatch(a: string, b: string): boolean {
   return da === db || da.endsWith(db) || db.endsWith(da);
 }
 
-export function patientKeyFromReservation(reservation: Reservation): string {
-  const digits = canonicalPhoneDigits(reservation.phone);
+export function patientKeyFromNamePhone(name: string, phone: string): string {
+  const digits = canonicalPhoneDigits(phone);
   if (digits) return `phone:${digits}`;
-  const name = reservation.patient_name.trim().toLowerCase();
-  return `name:${name || reservation.id}`;
+  return `name:${name.trim().toLowerCase()}`;
+}
+
+export function patientKeyFromReservation(reservation: Reservation): string {
+  const key = patientKeyFromNamePhone(reservation.patient_name, reservation.phone);
+  return key === "name:" ? `name:${reservation.id}` : key;
 }
 
 export function encodePatientKey(patientKey: string): string {

@@ -10,6 +10,7 @@ import {
   findPatientGroupByPhone,
   groupReservationsByPatient,
   normalizePhone,
+  patientKeyFromNamePhone,
   patientKeyFromReservation,
   phonesMatch,
 } from "./patientHistory.ts";
@@ -137,5 +138,26 @@ describe("patient history", () => {
     assert.equal(detail.stats.visitCount, 3);
     assert.equal(detail.services.length, 1);
     assert.equal(detail.cancelledVisits.length, 1);
+  });
+});
+
+describe("patientKeyFromNamePhone", () => {
+  it("keys by canonical phone digits when a phone is given", () => {
+    assert.equal(
+      patientKeyFromNamePhone("Sara Mohamed", "+20 101 234 5678"),
+      "phone:201012345678",
+    );
+  });
+
+  it("falls back to lowercased name when there is no phone", () => {
+    assert.equal(patientKeyFromNamePhone("Sara Mohamed", ""), "name:sara mohamed");
+  });
+
+  it("matches patientKeyFromReservation for the same inputs", () => {
+    const reservation = row("r1", "Omar Ali", "01023456789", "2026-07-01T10:00:00.000Z");
+    assert.equal(
+      patientKeyFromNamePhone(reservation.patient_name, reservation.phone),
+      patientKeyFromReservation(reservation),
+    );
   });
 });
