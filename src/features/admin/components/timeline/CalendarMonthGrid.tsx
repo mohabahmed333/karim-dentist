@@ -4,6 +4,7 @@ import type { Reservation } from "@/services/reservations/types";
 import { type CalendarGridDay } from "@/services/reservations/timeline";
 import { useLocale } from "@/lib/i18n";
 import { CalendarDayCell } from "./CalendarDayCell";
+import type { ChipDoctorInfo } from "./CalendarEventChip";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 type Props = {
@@ -13,7 +14,7 @@ type Props = {
   selectedReservationId: string | null;
   eventLabel: (reservation: Reservation) => string;
   doctorColorById?: Record<string, string>;
-  doctorNameById?: Record<string, string>;
+  doctorInfoById?: Record<string, ChipDoctorInfo>;
   onSelectDay: (iso: string) => void;
   onSelectReservation: (id: string) => void;
   onMoveReservation: (reservationId: string, targetDate: string) => void;
@@ -40,7 +41,7 @@ export function CalendarMonthGrid({
   selectedReservationId,
   eventLabel,
   doctorColorById,
-  doctorNameById,
+  doctorInfoById,
   onSelectDay,
   onSelectReservation,
   onMoveReservation,
@@ -72,7 +73,7 @@ export function CalendarMonthGrid({
               selectedReservationId={selectedReservationId}
               eventLabel={eventLabel}
               doctorColorById={doctorColorById}
-              doctorNameById={doctorNameById}
+              doctorInfoById={doctorInfoById}
               onSelectDay={onSelectDay}
               onSelectReservation={onSelectReservation}
               onMoveReservation={onMoveReservation}

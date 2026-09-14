@@ -13,6 +13,7 @@ import { ReservationFormDrawer } from "@/features/admin/components/reservations/
 import { ReservationsPageSkeleton } from "@/features/admin/components/reservations/ReservationsPageSkeleton";
 import { ReservationsTodayRail } from "@/features/admin/components/reservations/ReservationsTodayRail";
 import { CalendarMonthGrid } from "@/features/admin/components/timeline/CalendarMonthGrid";
+import type { ChipDoctorInfo } from "@/features/admin/components/timeline/CalendarEventChip";
 import { useReservationEditor } from "@/features/admin/hooks/useReservationEditor";
 import { useReservationFormShowreel } from "@/features/admin/hooks/useReservationFormShowreel";
 import {
@@ -138,10 +139,15 @@ export function ReservationsPageView({
     }
     return out;
   }, [doctors]);
-  const doctorNameById = useMemo(() => {
-    const out: Record<string, string> = {};
+  const doctorInfoById = useMemo(() => {
+    const out: Record<string, ChipDoctorInfo> = {};
     for (const doctor of doctors) {
-      if (doctor.display_name) out[doctor.id] = doctor.display_name;
+      if (!doctor.display_name) continue;
+      out[doctor.id] = {
+        name: doctor.display_name,
+        avatarUrl: doctor.avatar_url,
+        specialty: doctor.specialty,
+      };
     }
     return out;
   }, [doctors]);
@@ -333,7 +339,7 @@ export function ReservationsPageView({
                     movingReservationId={movingId}
                     eventLabel={(r) => r.patient_name}
                     doctorColorById={doctorColorById}
-                    doctorNameById={doctorNameById}
+                    doctorInfoById={doctorInfoById}
                     onSelectDay={onCalendarDayClick}
                     onSelectReservation={editor.openRow}
                     onMoveReservation={(id, date) => {

@@ -6,8 +6,19 @@ import {
   formatCalendarTime,
 } from "@/services/reservations/timeline";
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  PreviewCard,
+  PreviewCardContent,
+  PreviewCardTrigger,
+} from "@/components/ui/preview-card";
+import { AdminUserAvatar } from "@/features/admin/components/AdminUserAvatar";
 import { CALENDAR_RESERVATION_DRAG_TYPE } from "./calendarDrag";
+
+export type ChipDoctorInfo = {
+  name: string;
+  avatarUrl: string | null;
+  specialty: string | null;
+};
 
 type Props = {
   reservation: Reservation;
@@ -15,7 +26,7 @@ type Props = {
   isActive?: boolean;
   isMoving?: boolean;
   doctorColor?: string | null;
-  doctorName?: string | null;
+  doctor?: ChipDoctorInfo | null;
   onSelect: (id: string) => void;
 };
 
@@ -25,7 +36,7 @@ export function CalendarEventChip({
   isActive,
   isMoving,
   doctorColor,
-  doctorName,
+  doctor,
   onSelect,
 }: Props) {
   return (
@@ -53,9 +64,9 @@ export function CalendarEventChip({
       )}
     >
       {doctorColor ? (
-        doctorName ? (
-          <Tooltip>
-            <TooltipTrigger
+        doctor ? (
+          <PreviewCard>
+            <PreviewCardTrigger
               delay={200}
               closeDelay={0}
               render={
@@ -65,10 +76,26 @@ export function CalendarEventChip({
                 />
               }
             />
-            <TooltipContent side="top" sideOffset={6}>
-              {doctorName}
-            </TooltipContent>
-          </Tooltip>
+            <PreviewCardContent side="top" sideOffset={6} className="w-56 p-2.5">
+              <span className="flex items-center gap-2.5">
+                <AdminUserAvatar
+                  name={doctor.name}
+                  avatarUrl={doctor.avatarUrl}
+                  size="sm"
+                />
+                <span className="min-w-0">
+                  <span className="block truncate text-[13px] font-semibold">
+                    {doctor.name}
+                  </span>
+                  {doctor.specialty ? (
+                    <span className="block truncate text-[11px] text-[var(--admin-muted)]">
+                      {doctor.specialty}
+                    </span>
+                  ) : null}
+                </span>
+              </span>
+            </PreviewCardContent>
+          </PreviewCard>
         ) : (
           <span
             aria-hidden

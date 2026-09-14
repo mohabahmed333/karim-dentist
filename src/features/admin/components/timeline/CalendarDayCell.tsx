@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Reservation } from "@/services/reservations/types";
 import type { CalendarGridDay } from "@/services/reservations/timeline";
 import { cn } from "@/lib/utils";
-import { CalendarEventChip } from "./CalendarEventChip";
+import { CalendarEventChip, type ChipDoctorInfo } from "./CalendarEventChip";
 import { CALENDAR_RESERVATION_DRAG_TYPE } from "./calendarDrag";
 
 const MAX_VISIBLE = 3;
@@ -17,7 +17,7 @@ type Props = {
   movingReservationId: string | null;
   eventLabel: (reservation: Reservation) => string;
   doctorColorById?: Record<string, string>;
-  doctorNameById?: Record<string, string>;
+  doctorInfoById?: Record<string, ChipDoctorInfo>;
   onSelectDay: (iso: string) => void;
   onSelectReservation: (id: string) => void;
   onMoveReservation: (reservationId: string, targetDate: string) => void;
@@ -31,7 +31,7 @@ export function CalendarDayCell({
   movingReservationId,
   eventLabel,
   doctorColorById,
-  doctorNameById,
+  doctorInfoById,
   onSelectDay,
   onSelectReservation,
   onMoveReservation,
@@ -110,9 +110,9 @@ export function CalendarDayCell({
                 ? (doctorColorById?.[reservation.doctor_id] ?? null)
                 : null
             }
-            doctorName={
+            doctor={
               reservation.doctor_id
-                ? (doctorNameById?.[reservation.doctor_id] ?? null)
+                ? (doctorInfoById?.[reservation.doctor_id] ?? null)
                 : null
             }
             onSelect={onSelectReservation}
