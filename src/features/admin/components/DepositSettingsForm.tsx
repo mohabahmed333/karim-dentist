@@ -53,7 +53,7 @@ export function DepositSettingsForm() {
         setNames((next?.recipient_names ?? []).join(", "));
       })
       .catch(() => {
-        if (alive) toast.error("Failed to load deposit settings");
+        if (alive) toast.error(t("admin.deposits.loadSettingsFailed"));
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -100,13 +100,11 @@ export function DepositSettingsForm() {
 
     const amount = numberFor("amount_egp", 0);
     if (!Number.isFinite(amount)) {
-      setProblem("Enter a deposit amount.");
+      setProblem(t("admin.deposits.enterAmount"));
       return;
     }
     if (settings.enabled && amount <= 0) {
-      setProblem(
-        "Set a deposit amount above zero before switching deposits on.",
-      );
+      setProblem(t("admin.deposits.amountRequired"));
       return;
     }
     if (
@@ -114,9 +112,7 @@ export function DepositSettingsForm() {
       !settings.instapay_handle.trim() &&
       !settings.wallet_number.trim()
     ) {
-      setProblem(
-        "Add an InstaPay handle or a wallet number before switching deposits on.",
-      );
+      setProblem(t("admin.deposits.payoutRequired"));
       return;
     }
 
@@ -147,12 +143,12 @@ export function DepositSettingsForm() {
         settings?: DepositSettings;
         error?: string;
       };
-      if (!res.ok) throw new Error(body.error ?? "Save failed");
+      if (!res.ok) throw new Error(body.error ?? t("admin.saveFailed"));
       setSettings(body.settings ?? settings);
       setDrafts({});
-      toast.success("Deposit settings saved");
+      toast.success(t("admin.deposits.settingsSaved"));
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Save failed";
+      const message = err instanceof Error ? err.message : t("admin.saveFailed");
       setProblem(message);
       toast.error(message);
     } finally {
@@ -192,8 +188,8 @@ export function DepositSettingsForm() {
       <div className="space-y-6">
         {header}
         <p className="max-w-3xl text-sm text-[var(--admin-muted)]">
-          Deposit settings are unavailable — the database may not have the
-          deposit tables yet. Run <code>supabase db push --linked</code>.
+          {t("admin.deposits.unavailable")}{" "}
+          <code>supabase db push --linked</code>.
         </p>
       </div>
     );
@@ -209,13 +205,9 @@ export function DepositSettingsForm() {
           right edge rather than the card's. The fields stay in a narrow
           column to stay readable. justify-between flips under dir="rtl". */}
       <div className="max-w-3xl space-y-6">
-        <SettingsHintBanner>
-          A slot booked over WhatsApp is held, not confirmed, until the patient
-          sends a receipt for the deposit. Unpaid holds are released
-          automatically and offered to the waitlist.
-        </SettingsHintBanner>
+        <SettingsHintBanner>{t("admin.deposits.hintBanner")}</SettingsHintBanner>
 
-        <SettingsSectionGroup title="Deposit">
+        <SettingsSectionGroup title={t("admin.deposits.sectionDeposit")}>
           <div className="space-y-4">
             <label className="flex items-start gap-2.5">
               <Checkbox
@@ -224,16 +216,16 @@ export function DepositSettingsForm() {
                 className="mt-0.5"
               />
               <span className="text-sm">
-                Ask for a deposit on WhatsApp bookings
+                {t("admin.deposits.askForDeposit")}
                 <span className="block text-xs text-[var(--admin-muted)]">
-                  Staff and website bookings are unaffected.
+                  {t("admin.deposits.askForDepositHint")}
                 </span>
               </span>
             </label>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="deposit-amount">Deposit amount (EGP)</Label>
+                <Label htmlFor="deposit-amount">{t("admin.deposits.amountLabel")}</Label>
                 <Input
                   id="deposit-amount"
                   type="number"
@@ -244,7 +236,7 @@ export function DepositSettingsForm() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="deposit-hold">
-                  Hold the slot for (minutes)
+                  {t("admin.deposits.holdMinutesLabel")}
                 </Label>
                 <Input
                   id="deposit-hold"
@@ -256,7 +248,7 @@ export function DepositSettingsForm() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="deposit-instapay">InstaPay handle</Label>
+                <Label htmlFor="deposit-instapay">{t("admin.deposits.instapayLabel")}</Label>
                 <Input
                   id="deposit-instapay"
                   value={settings.instapay_handle}
@@ -265,7 +257,7 @@ export function DepositSettingsForm() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="deposit-wallet">Wallet number</Label>
+                <Label htmlFor="deposit-wallet">{t("admin.deposits.walletLabel")}</Label>
                 <Input
                   id="deposit-wallet"
                   value={settings.wallet_number}
@@ -280,8 +272,8 @@ export function DepositSettingsForm() {
                 htmlFor="deposit-names"
                 className="flex items-center gap-1.5"
               >
-                Account name as it prints on a receipt
-                <HelpTip text="Without this, every receipt fails the check on who was paid and waits for staff — the feature looks like it is working while collecting nothing automatically. Add the Arabic spelling too if that is how it appears. Separate several with commas." />
+                {t("admin.deposits.namesLabel")}
+                <HelpTip text={t("admin.deposits.namesHelp")} />
               </Label>
               <Input
                 id="deposit-names"
@@ -293,7 +285,7 @@ export function DepositSettingsForm() {
           </div>
         </SettingsSectionGroup>
 
-        <SettingsSectionGroup title="Confirmation">
+        <SettingsSectionGroup title={t("admin.deposits.sectionConfirmation")}>
           <label className="flex items-start gap-2.5">
             <Checkbox
               checked={settings.auto_confirm}
@@ -301,13 +293,9 @@ export function DepositSettingsForm() {
               className="mt-0.5"
             />
             <span className="text-sm">
-              Confirm clean receipts automatically
+              {t("admin.deposits.autoConfirm")}
               <span className="block text-xs text-[var(--admin-muted)]">
-                Leave this off until the deposits queue shows the readings are
-                right. A screenshot is a picture of a claim, not proof of
-                payment: every check here raises the effort of a forgery but
-                none makes one impossible, and the deposit amount is the cap on
-                what one costs you.
+                {t("admin.deposits.autoConfirmHint")}
               </span>
             </span>
           </label>
@@ -320,25 +308,22 @@ export function DepositSettingsForm() {
               disabled={!settings.auto_confirm}
             />
             <span className="text-sm">
-              Read every receipt a second time before confirming it
+              {t("admin.deposits.ocrCrossCheck")}
               <span className="block text-xs text-[var(--admin-muted)]">
-                An offline reader checks that the amount and reference the AI
-                reported are really printed on the image, and sends it here
-                instead if it cannot find them. This catches the AI inventing a
-                number. It does <strong>not</strong> detect a forged screenshot
-                — a forgery reads consistently to both. Adds a few seconds, and
-                only runs when a receipt is about to be confirmed automatically.
+                {t("admin.deposits.ocrCrossCheckHintPre")}{" "}
+                <strong>{t("admin.deposits.ocrCrossCheckNot")}</strong>{" "}
+                {t("admin.deposits.ocrCrossCheckHintPost")}
               </span>
             </span>
           </label>
 
           <details className="mt-3 rounded-lg border border-[var(--admin-border)] px-3 py-2">
             <summary className="cursor-pointer text-sm">
-              Reading receipts — fine tuning
+              {t("admin.deposits.fineTuning")}
             </summary>
             <div className="mt-3 grid gap-4 sm:grid-cols-3">
               <div className="space-y-1.5">
-                <Label htmlFor="deposit-confidence">Minimum confidence</Label>
+                <Label htmlFor="deposit-confidence">{t("admin.deposits.minConfidence")}</Label>
                 <Input
                   id="deposit-confidence"
                   type="number"
@@ -351,7 +336,7 @@ export function DepositSettingsForm() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="deposit-tolerance">
-                  Amount tolerance (EGP)
+                  {t("admin.deposits.amountTolerance")}
                 </Label>
                 <Input
                   id="deposit-tolerance"
@@ -365,7 +350,7 @@ export function DepositSettingsForm() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="deposit-age">
-                  Receipt no older than (hours)
+                  {t("admin.deposits.maxAgeHours")}
                 </Label>
                 <Input
                   id="deposit-age"

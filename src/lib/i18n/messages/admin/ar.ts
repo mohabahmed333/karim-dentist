@@ -495,6 +495,72 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.doctors.thisService": "هذه الخدمة",
   "admin.doctors.restrictConfirm": "تقييدها",
 
+  "admin.deposits.statusInReview": "بانتظارك",
+  "admin.deposits.statusAwaitingReceipt": "بانتظار المريض",
+  "admin.deposits.statusPaid": "مدفوع",
+  "admin.deposits.statusExpired": "منتهي",
+  "admin.deposits.statusRejected": "مرفوض",
+  "admin.deposits.statusCancelled": "ملغى",
+  "admin.deposits.filterAll": "الكل",
+  "admin.deposits.loadFailed": "تعذّر تحميل العرابين",
+  "admin.deposits.applyFailed": "تعذّر تنفيذ الإجراء",
+  "admin.deposits.confirmed": "تم تأكيد العربون",
+  "admin.deposits.rejected": "تم رفض العربون",
+  "admin.deposits.reasonPlaceholder": "السبب (اختياري، يُحفظ في السجل)",
+  "admin.deposits.reject": "رفض",
+  "admin.deposits.forgeryWarning":
+    "لقطة الشاشة صورة لادعاء، لا إثبات دفع. الفحوصات هنا تمنع استخدام الإيصال مرتين وتكتشف مبلغًا أو مستلمًا خاطئًا، لكن تزويرًا متقنًا قد يمر. راجع كشف حساب العيادة نفسه قبل اعتبار عرابين يوم مزدحم أموالًا مؤكدة.",
+  "admin.deposits.openReceipt": "فتح الإيصال كاملًا",
+  "admin.deposits.receiptAlt": "إيصال الدفع الذي أرسله المريض",
+  "admin.deposits.noReceiptYet": "لا يوجد إيصال بعد",
+  "admin.deposits.asked": "المطلوب",
+  "admin.deposits.onReceipt": "في الإيصال",
+  "admin.deposits.difference": "الفرق",
+  "admin.deposits.reference": "المرجع",
+  "admin.deposits.paidTo": "دُفع إلى",
+  "admin.deposits.transferred": "تاريخ التحويل",
+  "admin.deposits.confidence": "الثقة",
+  "admin.deposits.holdExpires": "ينتهي الحجز",
+  "admin.deposits.whyHere": "سبب وجوده هنا",
+  "admin.deposits.receiptsSent":
+    "أُرسلت {count} إيصالات لهذا العربون — المعروض هو الأحدث.",
+  "admin.deposits.suspiciousText":
+    "احتوت هذه الصورة على نص موجَّه إلى المساعد، تم تسجيله دون التصرف بناءً عليه: «{text}»",
+  "admin.deposits.loadSettingsFailed": "فشل تحميل إعدادات العربون",
+  "admin.deposits.enterAmount": "أدخل مبلغ العربون.",
+  "admin.deposits.amountRequired": "حدّد مبلغ عربون أكبر من صفر قبل تفعيل العرابين.",
+  "admin.deposits.payoutRequired":
+    "أضف حساب InstaPay أو رقم محفظة قبل تفعيل العرابين.",
+  "admin.deposits.settingsSaved": "تم حفظ إعدادات العربون",
+  "admin.deposits.unavailable":
+    "إعدادات العربون غير متاحة — قد لا تحتوي قاعدة البيانات على جداول العرابين بعد. شغّل",
+  "admin.deposits.hintBanner":
+    "أي موعد يُحجز عبر واتساب يبقى معلَّقًا لا مؤكَّدًا حتى يرسل المريض إيصال العربون. تُفرج الحجوزات غير المدفوعة تلقائيًا وتُعرض على قائمة الانتظار.",
+  "admin.deposits.sectionDeposit": "العربون",
+  "admin.deposits.askForDeposit": "طلب عربون لحجوزات واتساب",
+  "admin.deposits.askForDepositHint": "لا يتأثر حجز الموظفين أو حجوزات الموقع.",
+  "admin.deposits.amountLabel": "مبلغ العربون (جنيه)",
+  "admin.deposits.holdMinutesLabel": "مدة حجز الموعد (بالدقائق)",
+  "admin.deposits.instapayLabel": "حساب InstaPay",
+  "admin.deposits.walletLabel": "رقم المحفظة",
+  "admin.deposits.namesLabel": "اسم الحساب كما يظهر في الإيصال",
+  "admin.deposits.namesHelp":
+    "بدون هذا، يفشل كل إيصال في فحص هوية المستلم وينتظر مراجعة الموظفين — تبدو الميزة تعمل بينما لا تجمع شيئًا تلقائيًا. أضف الاسم بالعربية أيضًا إن كان يظهر هكذا. افصل بين عدة أسماء بفواصل.",
+  "admin.deposits.sectionConfirmation": "التأكيد",
+  "admin.deposits.autoConfirm": "تأكيد الإيصالات السليمة تلقائيًا",
+  "admin.deposits.autoConfirmHint":
+    "اترك هذا مغلقًا حتى تُظهر قائمة العرابين أن القراءات صحيحة. لقطة الشاشة صورة لادعاء، لا إثبات دفع: كل فحص هنا يرفع تكلفة التزوير دون أن يمنعه تمامًا، ومبلغ العربون هو السقف الأقصى لما قد يكلفك.",
+  "admin.deposits.ocrCrossCheck": "قراءة كل إيصال مرة ثانية قبل تأكيده",
+  "admin.deposits.ocrCrossCheckHintPre":
+    "تتحقق أداة قراءة مستقلة من أن المبلغ والمرجع اللذين أفاد بهما الذكاء الاصطناعي مطبوعان فعلًا على الصورة، وترسله هنا بدلًا من ذلك إن تعذّر إيجادهما. هذا يكتشف اختلاق الذكاء الاصطناعي لرقم. هذا الفحص",
+  "admin.deposits.ocrCrossCheckNot": "لا",
+  "admin.deposits.ocrCrossCheckHintPost":
+    "يكتشف لقطة شاشة مزوَّرة — فالتزوير يبدو متسقًا للطرفين. يضيف ثوانٍ قليلة، ولا يعمل إلا عندما يُوشك إيصال على التأكيد تلقائيًا.",
+  "admin.deposits.fineTuning": "قراءة الإيصالات — ضبط دقيق",
+  "admin.deposits.minConfidence": "الحد الأدنى للثقة",
+  "admin.deposits.amountTolerance": "هامش تفاوت المبلغ (جنيه)",
+  "admin.deposits.maxAgeHours": "لا يتجاوز عمر الإيصال (بالساعات)",
+
   "admin.settings.description":
     "ساعات العيادة وسمة اللوحة وعلامة الموقع وأسعار العلاجات.",
   "admin.settings.account": "الحساب",

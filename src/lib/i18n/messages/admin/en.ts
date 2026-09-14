@@ -493,6 +493,73 @@ export const adminEn = {
   "admin.doctors.thisService": "This service",
   "admin.doctors.restrictConfirm": "Restrict it",
 
+  "admin.deposits.statusInReview": "Waiting for you",
+  "admin.deposits.statusAwaitingReceipt": "Waiting for the patient",
+  "admin.deposits.statusPaid": "Paid",
+  "admin.deposits.statusExpired": "Lapsed",
+  "admin.deposits.statusRejected": "Rejected",
+  "admin.deposits.statusCancelled": "Cancelled",
+  "admin.deposits.filterAll": "All",
+  "admin.deposits.loadFailed": "Could not load deposits",
+  "admin.deposits.applyFailed": "Could not apply",
+  "admin.deposits.confirmed": "Deposit confirmed",
+  "admin.deposits.rejected": "Deposit rejected",
+  "admin.deposits.reasonPlaceholder": "Reason (optional, kept on the record)",
+  "admin.deposits.reject": "Reject",
+  "admin.deposits.forgeryWarning":
+    "A screenshot is a picture of a claim, not proof of payment. The checks here stop a receipt being used twice and catch an amount or recipient that is wrong, but a well-made forgery will pass. Reconcile against the clinic's own statement before treating a busy day's deposits as money in hand.",
+  "admin.deposits.openReceipt": "Open the full receipt",
+  "admin.deposits.receiptAlt": "Payment receipt the patient sent",
+  "admin.deposits.noReceiptYet": "No receipt yet",
+  "admin.deposits.asked": "Asked",
+  "admin.deposits.onReceipt": "On the receipt",
+  "admin.deposits.difference": "Difference",
+  "admin.deposits.reference": "Reference",
+  "admin.deposits.paidTo": "Paid to",
+  "admin.deposits.transferred": "Transferred",
+  "admin.deposits.confidence": "Confidence",
+  "admin.deposits.holdExpires": "Hold expires",
+  "admin.deposits.whyHere": "Why it is here",
+  "admin.deposits.receiptsSent":
+    "{count} receipts sent for this deposit — the latest is shown.",
+  "admin.deposits.suspiciousText":
+    "This image contained text addressed to the assistant, which was recorded and not acted on: “{text}”",
+  "admin.deposits.loadSettingsFailed": "Failed to load deposit settings",
+  "admin.deposits.enterAmount": "Enter a deposit amount.",
+  "admin.deposits.amountRequired":
+    "Set a deposit amount above zero before switching deposits on.",
+  "admin.deposits.payoutRequired":
+    "Add an InstaPay handle or a wallet number before switching deposits on.",
+  "admin.deposits.settingsSaved": "Deposit settings saved",
+  "admin.deposits.unavailable":
+    "Deposit settings are unavailable — the database may not have the deposit tables yet. Run",
+  "admin.deposits.hintBanner":
+    "A slot booked over WhatsApp is held, not confirmed, until the patient sends a receipt for the deposit. Unpaid holds are released automatically and offered to the waitlist.",
+  "admin.deposits.sectionDeposit": "Deposit",
+  "admin.deposits.askForDeposit": "Ask for a deposit on WhatsApp bookings",
+  "admin.deposits.askForDepositHint": "Staff and website bookings are unaffected.",
+  "admin.deposits.amountLabel": "Deposit amount (EGP)",
+  "admin.deposits.holdMinutesLabel": "Hold the slot for (minutes)",
+  "admin.deposits.instapayLabel": "InstaPay handle",
+  "admin.deposits.walletLabel": "Wallet number",
+  "admin.deposits.namesLabel": "Account name as it prints on a receipt",
+  "admin.deposits.namesHelp":
+    "Without this, every receipt fails the check on who was paid and waits for staff — the feature looks like it is working while collecting nothing automatically. Add the Arabic spelling too if that is how it appears. Separate several with commas.",
+  "admin.deposits.sectionConfirmation": "Confirmation",
+  "admin.deposits.autoConfirm": "Confirm clean receipts automatically",
+  "admin.deposits.autoConfirmHint":
+    "Leave this off until the deposits queue shows the readings are right. A screenshot is a picture of a claim, not proof of payment: every check here raises the effort of a forgery but none makes one impossible, and the deposit amount is the cap on what one costs you.",
+  "admin.deposits.ocrCrossCheck": "Read every receipt a second time before confirming it",
+  "admin.deposits.ocrCrossCheckHintPre":
+    "An offline reader checks that the amount and reference the AI reported are really printed on the image, and sends it here instead if it cannot find them. This catches the AI inventing a number. It does",
+  "admin.deposits.ocrCrossCheckNot": "not",
+  "admin.deposits.ocrCrossCheckHintPost":
+    "detect a forged screenshot — a forgery reads consistently to both. Adds a few seconds, and only runs when a receipt is about to be confirmed automatically.",
+  "admin.deposits.fineTuning": "Reading receipts — fine tuning",
+  "admin.deposits.minConfidence": "Minimum confidence",
+  "admin.deposits.amountTolerance": "Amount tolerance (EGP)",
+  "admin.deposits.maxAgeHours": "Receipt no older than (hours)",
+
   "admin.settings.description":
     "Clinic hours, dashboard theme, site brand, and treatment prices.",
   "admin.settings.account": "Account",

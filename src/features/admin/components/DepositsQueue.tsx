@@ -8,15 +8,18 @@ import { Input } from "@/components/ui/input";
 import type { DepositQueueRow } from "@/services/deposits/queries";
 import { AdminSkeleton } from "./AdminSkeleton";
 import { DepositReceiptCard } from "./DepositReceiptCard";
+import { useTranslations } from "@/lib/i18n";
+import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 
-const FILTERS = [
-  { key: "in_review", label: "Waiting for you" },
-  { key: "awaiting_receipt", label: "Waiting for the patient" },
-  { key: "paid", label: "Paid" },
-  { key: "", label: "All" },
-] as const;
+const FILTERS: { key: string; labelKey: AdminMessageKey }[] = [
+  { key: "in_review", labelKey: "admin.deposits.statusInReview" },
+  { key: "awaiting_receipt", labelKey: "admin.deposits.statusAwaitingReceipt" },
+  { key: "paid", labelKey: "admin.deposits.statusPaid" },
+  { key: "", labelKey: "admin.deposits.filterAll" },
+];
 
 export function DepositsQueue() {
+  const t = useTranslations();
   const [status, setStatus] = useState<string>("in_review");
   // Keyed by the filter it belongs to, so switching filters shows the skeleton
   // without a synchronous setState inside the effect.
@@ -24,13 +27,16 @@ export function DepositsQueue() {
   const [pending, setPending] = useState<string | null>(null);
   const [reasons, setReasons] = useState<Record<string, string>>({});
 
-  const load = useCallback(async (next: string) => {
-    const query = next ? `?status=${next}` : "";
-    const res = await fetch(`/api/v1/deposits${query}`);
-    if (!res.ok) throw new Error("Could not load deposits");
-    const body = (await res.json()) as { deposits: DepositQueueRow[] };
-    return body.deposits;
-  }, []);
+  const load = useCallback(
+    async (next: string) => {
+      const query = next ? `?status=${next}` : "";
+      const res = await fetch(`/api/v1/deposits${query}`);
+      if (!res.ok) throw new Error(t("admin.deposits.loadFailed"));
+      const body = (await res.json()) as { deposits: DepositQueueRow[] };
+      return body.deposits;
+    },
+    [t],
+  );
 
   useEffect(() => {
     let alive = true;
@@ -41,13 +47,13 @@ export function DepositsQueue() {
       .catch(() => {
         if (alive) {
           setLoaded({ status, rows: [] });
-          toast.error("Could not load deposits");
+          toast.error(t("admin.deposits.loadFailed"));
         }
       });
     return () => {
       alive = false;
     };
-  }, [load, status]);
+  }, [load, status, t]);
 
   const rows = loaded?.status === status ? loaded.rows : null;
 
@@ -60,15 +66,19 @@ export function DepositsQueue() {
         body: JSON.stringify({ action, reason: reasons[id] ?? "" }),
       });
       const body = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(body.error ?? "Could not apply");
+      if (!res.ok) throw new Error(body.error ?? t("admin.deposits.applyFailed"));
       // Drop it from the list rather than refetching: staff work down a queue,
       // and a reordering jump loses their place.
       setLoaded((current) =>
         current ? { ...current, rows: current.rows.filter((row) => row.id !== id) } : current,
       );
-      toast.success(action === "confirm" ? "Deposit confirmed" : "Deposit rejected");
+      toast.success(
+        action === "confirm"
+          ? t("admin.deposits.confirmed")
+          : t("admin.deposits.rejected"),
+      );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not apply");
+      toast.error(err instanceof Error ? err.message : t("admin.deposits.applyFailed"));
     } finally {
       setPending(null);
     }
@@ -85,7 +95,7 @@ export function DepositsQueue() {
             variant={status === filter.key ? "default" : "outline"}
             onClick={() => setStatus(filter.key)}
           >
-            {filter.label}
+            {t(filter.labelKey)}
           </Button>
         ))}
       </div>
@@ -97,7 +107,7 @@ export function DepositsQueue() {
         </div>
       ) : rows.length === 0 ? (
         <p className="rounded-lg border border-[var(--admin-border,#e5e7eb)] px-4 py-8 text-center text-sm text-[var(--admin-muted)]">
-          Nothing here.
+          {t("admin.empty")}
         </p>
       ) : (
         <ul className="space-y-3">
@@ -108,7 +118,7 @@ export function DepositsQueue() {
                   <div className="flex flex-wrap items-center gap-2 border-t border-[var(--admin-border,#e5e7eb)] px-3 py-2">
                     <Input
                       value={reasons[row.id] ?? ""}
-                      placeholder="Reason (optional, kept on the record)"
+                      placeholder={t("admin.deposits.reasonPlaceholder")}
                       className="h-8 min-w-0 flex-1"
                       onChange={(e) =>
                         setReasons((current) => ({ ...current, [row.id]: e.target.value }))
@@ -120,7 +130,7 @@ export function DepositsQueue() {
                       disabled={pending === row.id}
                       onClick={() => void decide(row.id, "confirm")}
                     >
-                      Confirm
+                      {t("admin.confirm")}
                     </Button>
                     <Button
                       type="button"
@@ -129,7 +139,7 @@ export function DepositsQueue() {
                       disabled={pending === row.id}
                       onClick={() => void decide(row.id, "reject")}
                     >
-                      Reject
+                      {t("admin.deposits.reject")}
                     </Button>
                   </div>
                 ) : null}
@@ -141,12 +151,7 @@ export function DepositsQueue() {
 
       <p className="flex items-start gap-2 rounded-lg border border-[#FCD34D] bg-[#FFFBEB] px-3 py-2 text-xs text-[#92400E]">
         <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
-        <span>
-          A screenshot is a picture of a claim, not proof of payment. The checks here stop a receipt
-          being used twice and catch an amount or recipient that is wrong, but a well-made forgery
-          will pass. Reconcile against the clinic&apos;s own statement before treating a busy day&apos;s
-          deposits as money in hand.
-        </span>
+        <span>{t("admin.deposits.forgeryWarning")}</span>
       </p>
     </section>
   );

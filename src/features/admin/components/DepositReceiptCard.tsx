@@ -3,14 +3,16 @@
 import type { ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import type { DepositQueueRow } from "@/services/deposits/queries";
+import { useTranslations } from "@/lib/i18n";
+import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 
-const STATUS: Record<string, { label: string; className: string }> = {
-  awaiting_receipt: { label: "Waiting for the patient", className: "border-[var(--admin-border)] text-[var(--admin-muted)]" },
-  in_review: { label: "Waiting for you", className: "border-[#FCD34D] bg-[#FFFBEB] text-[#B45309]" },
-  paid: { label: "Paid", className: "border-[#86EFAC] bg-[#F0FDF4] text-[#15803D]" },
-  expired: { label: "Lapsed", className: "border-[var(--admin-border)] text-[var(--admin-muted)]" },
-  rejected: { label: "Rejected", className: "border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]" },
-  cancelled: { label: "Cancelled", className: "border-[var(--admin-border)] text-[var(--admin-muted)]" },
+const STATUS: Record<string, { labelKey: AdminMessageKey; className: string }> = {
+  awaiting_receipt: { labelKey: "admin.deposits.statusAwaitingReceipt", className: "border-[var(--admin-border)] text-[var(--admin-muted)]" },
+  in_review: { labelKey: "admin.deposits.statusInReview", className: "border-[#FCD34D] bg-[#FFFBEB] text-[#B45309]" },
+  paid: { labelKey: "admin.deposits.statusPaid", className: "border-[#86EFAC] bg-[#F0FDF4] text-[#15803D]" },
+  expired: { labelKey: "admin.deposits.statusExpired", className: "border-[var(--admin-border)] text-[var(--admin-muted)]" },
+  rejected: { labelKey: "admin.deposits.statusRejected", className: "border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]" },
+  cancelled: { labelKey: "admin.deposits.statusCancelled", className: "border-[var(--admin-border)] text-[var(--admin-muted)]" },
 };
 
 const money = (value: number | null) =>
@@ -49,9 +51,13 @@ export function DepositReceiptCard({
   row: DepositQueueRow;
   children?: ReactNode;
 }) {
-  const status = STATUS[row.status] ?? {
-    label: row.status,
-    className: "border-[var(--admin-border)] text-[var(--admin-muted)]",
+  const t = useTranslations();
+  const statusEntry = STATUS[row.status];
+  const status = {
+    label: statusEntry ? t(statusEntry.labelKey) : row.status,
+    className:
+      statusEntry?.className ??
+      "border-[var(--admin-border)] text-[var(--admin-muted)]",
   };
   const read = row.receipt?.amountEgp ?? null;
   const short = read !== null && read < row.amountAskedEgp;
@@ -75,44 +81,48 @@ export function DepositReceiptCard({
             target="_blank"
             rel="noreferrer"
             className="shrink-0"
-            title="Open the full receipt"
+            title={t("admin.deposits.openReceipt")}
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- a vendor-hosted
                 receipt on an arbitrary host; the image optimiser would need it
                 allow-listed and there is no value in optimising a screenshot. */}
             <img
               src={row.receipt.imageUrl}
-              alt="Payment receipt the patient sent"
+              alt={t("admin.deposits.receiptAlt")}
               className="h-40 w-32 rounded border border-[var(--admin-border,#e5e7eb)] object-cover"
             />
           </a>
         ) : (
           <div className="flex h-40 w-32 shrink-0 items-center justify-center rounded border border-dashed border-[var(--admin-border,#e5e7eb)] text-xs text-[var(--admin-muted)]">
-            No receipt yet
+            {t("admin.deposits.noReceiptYet")}
           </div>
         )}
 
         <div className="min-w-0 flex-1 space-y-2.5">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
-            <Field label="Asked" value={money(row.amountAskedEgp)} />
-            <Field label="On the receipt" value={money(read)} warn={short} />
+            <Field label={t("admin.deposits.asked")} value={money(row.amountAskedEgp)} />
+            <Field label={t("admin.deposits.onReceipt")} value={money(read)} warn={short} />
             <Field
-              label="Difference"
+              label={t("admin.deposits.difference")}
               value={read === null ? "—" : money(read - row.amountAskedEgp)}
               warn={short}
             />
-            <Field label="Reference" value={row.receipt?.reference ?? "—"} />
-            <Field label="Paid to" value={row.receipt?.recipientHandle ?? row.receipt?.recipientName ?? "—"} />
-            <Field label="From" value={row.receipt?.senderName ?? "—"} />
-            <Field label="Transferred" value={when(row.receipt?.transferredAt ?? null)} />
+            <Field label={t("admin.deposits.reference")} value={row.receipt?.reference ?? "—"} />
+            <Field label={t("admin.deposits.paidTo")} value={row.receipt?.recipientHandle ?? row.receipt?.recipientName ?? "—"} />
+            <Field label={t("admin.from")} value={row.receipt?.senderName ?? "—"} />
+            <Field label={t("admin.deposits.transferred")} value={when(row.receipt?.transferredAt ?? null)} />
             <Field
-              label="Confidence"
+              label={t("admin.deposits.confidence")}
               value={row.receipt?.confidence === null || row.receipt?.confidence === undefined
                 ? "—"
                 : `${Math.round(row.receipt.confidence * 100)}%`}
             />
             <Field
-              label={row.status === "awaiting_receipt" ? "Hold expires" : "Why it is here"}
+              label={
+                row.status === "awaiting_receipt"
+                  ? t("admin.deposits.holdExpires")
+                  : t("admin.deposits.whyHere")
+              }
               value={
                 row.status === "awaiting_receipt"
                   ? when(row.expiresAt)
@@ -123,7 +133,10 @@ export function DepositReceiptCard({
 
           {row.receiptCount > 1 ? (
             <p className="text-xs text-[var(--admin-muted)]">
-              {row.receiptCount} receipts sent for this deposit — the latest is shown.
+              {t("admin.deposits.receiptsSent").replace(
+                "{count}",
+                String(row.receiptCount),
+              )}
             </p>
           ) : null}
 
@@ -131,8 +144,10 @@ export function DepositReceiptCard({
             <p className="flex items-start gap-2 rounded border border-[#FCA5A5] bg-[#FEF2F2] px-2 py-1.5 text-xs text-[#B91C1C]">
               <AlertTriangle aria-hidden className="mt-0.5 size-3.5 shrink-0" />
               <span>
-                This image contained text addressed to the assistant, which was recorded and not
-                acted on: “{row.receipt.suspiciousText}”
+                {t("admin.deposits.suspiciousText").replace(
+                  "{text}",
+                  row.receipt.suspiciousText,
+                )}
               </span>
             </p>
           ) : null}
