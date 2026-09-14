@@ -1,4 +1,5 @@
 import { AdminSkeleton as Block } from "@/features/admin/components/AdminSkeleton";
+import { CollectionTableSkeleton } from "@/features/admin/components/CollectionTableSkeleton";
 import { CALENDAR_GRID_DAYS } from "@/services/reservations/timeline";
 
 type Props = {
@@ -68,25 +69,7 @@ export function ReservationsPageSkeleton({ includeHeader = true }: Props) {
           <Block className="h-4 w-32" />
           <Block className="h-3 w-16" />
         </div>
-        <div className="overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)]">
-          <div className="flex flex-wrap items-center gap-2 border-b border-[var(--admin-border)] px-3 py-2.5">
-            <Block className="h-9 w-44 rounded-md" />
-            <Block className="ms-auto h-9 w-24 rounded-md" />
-            <Block className="size-9 rounded-md" />
-          </div>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-4 border-b border-[var(--admin-border)] px-4 py-3 last:border-0"
-            >
-              <Block className="h-4 w-28" />
-              <Block className="h-4 w-24" />
-              <Block className="h-4 w-28" />
-              <Block className="h-4 w-32" />
-              <Block className="h-5 w-16 rounded-full" />
-            </div>
-          ))}
-        </div>
+        <CollectionTableSkeleton columns={6} rows={8} rowActions />
       </section>
     </div>
   );

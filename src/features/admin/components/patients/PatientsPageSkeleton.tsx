@@ -1,4 +1,5 @@
 import { AdminSkeleton as Block } from "@/features/admin/components/AdminSkeleton";
+import { CollectionTableSkeleton } from "@/features/admin/components/CollectionTableSkeleton";
 
 export function PatientsPageSkeleton({
   tableOnly = false,
@@ -13,23 +14,7 @@ export function PatientsPageSkeleton({
           <Block className="h-9 w-56 rounded-md" />
         </div>
       )}
-      <div className="overflow-hidden rounded-2xl border border-[var(--admin-border)]">
-        <div className="space-y-0">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-4 border-b border-[var(--admin-border)] px-4 py-3 last:border-0"
-            >
-              <Block className="h-4 w-36" />
-              <Block className="h-4 w-28" />
-              <Block className="h-4 w-12" />
-              <Block className="h-4 w-24" />
-              <Block className="h-4 w-24" />
-              <Block className="h-8 w-20" />
-            </div>
-          ))}
-        </div>
-      </div>
+      <CollectionTableSkeleton columns={5} rows={8} rowActions />
     </div>
   );
 }
