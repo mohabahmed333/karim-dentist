@@ -15,10 +15,7 @@ import {
 } from "@/features/admin/ui";
 import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
 import { ConfirmDeleteDialog } from "@/features/admin/components/ConfirmDeleteDialog";
-import {
-  SettingsSaveRow,
-  SettingsSectionGroup,
-} from "@/features/admin/components/SettingsSectionGroup";
+import { SettingsSectionGroup } from "@/features/admin/components/SettingsSectionGroup";
 import {
   suggestNonOverlappingWindow,
   timeWindowsIssue,
@@ -249,13 +246,23 @@ export function DoctorsManager({
     <LocalizedAdminPageHeader
       titleKey="admin.settings.doctors"
       actions={
-        <Button
-          type="button"
-          disabled={pending || !selectedId}
-          onClick={() => void onSave()}
-        >
-          {pending ? "Saving…" : "Save hours"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={regenerating || !selectedId || !hasHours}
+            onClick={() => void onRegenerate()}
+          >
+            {regenerating ? "Regenerating…" : "Regenerate slots"}
+          </Button>
+          <Button
+            type="button"
+            disabled={pending || !selectedId}
+            onClick={() => void onSave()}
+          >
+            {pending ? "Saving…" : "Save hours"}
+          </Button>
+        </div>
       }
     />
   );
@@ -264,7 +271,7 @@ export function DoctorsManager({
     return (
       <div className="space-y-4">
         {header}
-        <Card className="max-w-3xl gap-0 p-6 text-sm text-[var(--admin-muted)]">
+        <Card className="max-w-3xl gap-0 bg-transparent p-6 text-sm text-[var(--admin-muted)]">
           No staff accounts are marked as doctors yet. Give an account the
           Doctor role (or flag another role as a doctor role) in Roles, then
           come back here to set their hours.
@@ -276,7 +283,7 @@ export function DoctorsManager({
   return (
     <div className="space-y-4">
       {header}
-      <Card className="grid max-w-3xl grid-cols-1 gap-6 p-6 lg:grid-cols-[220px_1fr]">
+      <Card className="grid max-w-3xl grid-cols-1 gap-6 bg-transparent p-6 lg:grid-cols-[220px_1fr]">
         <div className="space-y-1">
           {doctors.map((doctor) => (
             <button
@@ -450,17 +457,6 @@ export function DoctorsManager({
               </AdminSelectContent>
             </AdminSelect>
           </SettingsSectionGroup>
-
-          <SettingsSaveRow>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={regenerating || !hasHours}
-              onClick={() => void onRegenerate()}
-            >
-              {regenerating ? "Regenerating…" : "Regenerate this doctor's slots"}
-            </Button>
-          </SettingsSaveRow>
         </div>
       ) : null}
       </Card>

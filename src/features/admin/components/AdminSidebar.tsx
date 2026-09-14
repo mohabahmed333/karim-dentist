@@ -1,8 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useMemo, useState } from "react";
 import { FolderOpen } from "lucide-react";
-import { adminNavSections, filterAdminNavSections } from "@/features/admin/lib/adminNav";
+import {
+  adminNavSections,
+  filterAdminNavSections,
+  findActiveAdminNavGroupId,
+} from "@/features/admin/lib/adminNav";
 import { useTranslations } from "@/lib/i18n";
 import { AdminAccountMenu } from "./AdminAccountMenu";
 import { AdminNavSectionBlock } from "./AdminNavSectionBlock";
@@ -20,8 +26,32 @@ export function AdminSidebar({
   permissions,
 }: Props) {
   const t = useTranslations();
+  const pathname = usePathname();
   const permissionSet = permissions ? new Set(permissions) : null;
   const sections = filterAdminNavSections(adminNavSections, permissionSet);
+
+  // Accordion, not independent toggles: whichever group the current page
+  // lives under is the one that's open, and navigating elsewhere closes it
+  // in favour of the new page's group (or closes everything, on a page with
+  // no group). A manual click still overrides this until the route changes.
+  //
+  // Adjusted during render rather than in an effect — React's documented
+  // pattern for "reset state when a prop changes" — so the old group never
+  // has a chance to paint open on the new page.
+  const activeGroupId = useMemo(
+    () => findActiveAdminNavGroupId(sections, pathname),
+    [sections, pathname],
+  );
+  const [openGroupId, setOpenGroupId] = useState(activeGroupId);
+  const [renderedForPathname, setRenderedForPathname] = useState(pathname);
+  if (pathname !== renderedForPathname) {
+    setRenderedForPathname(pathname);
+    setOpenGroupId(activeGroupId);
+  }
+
+  function toggleGroup(groupId: string) {
+    setOpenGroupId((prev) => (prev === groupId ? null : groupId));
+  }
 
   return (
     <aside
@@ -44,6 +74,8 @@ export function AdminSidebar({
           key={section.id}
           section={section}
           pendingCount={pendingCount}
+          openGroupId={openGroupId}
+          onToggleGroup={toggleGroup}
         />
       ))}
       <div className="mt-auto space-y-0.5 border-t border-[var(--admin-border)] px-1 pt-3">

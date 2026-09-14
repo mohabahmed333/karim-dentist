@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import {
@@ -17,24 +17,30 @@ import { cn } from "@/lib/utils";
 type Props = {
   section: AdminNavSection;
   pendingCount?: number;
+  /** Which group is expanded, shared across every section — accordion, not per-group state. */
+  openGroupId: string | null;
+  onToggleGroup: (groupId: string) => void;
 };
 
 function NavGroup({
   group,
   isLast,
+  isOpen,
+  onToggle,
   pendingCount,
 }: {
   group: AdminNavGroup;
   isLast: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
   pendingCount?: number;
 }) {
   const t = useTranslations();
-  const [open, setOpen] = useState(group.defaultOpen ?? true);
   const label = t(group.labelKey);
 
   return (
     <>
-      <AdminNavTreeRow isLast={isLast && !open} depth={0}>
+      <AdminNavTreeRow isLast={isLast && !isOpen} depth={0}>
         <div className="flex w-full items-center gap-1">
           {group.href ? (
             <AdminNavLink href={group.href} label={label} className="flex-1" />
@@ -42,7 +48,7 @@ function NavGroup({
             <button
               type="button"
               className="flex-1 truncate px-2 py-1 text-start text-[13px] text-[var(--admin-text)]"
-              onClick={() => setOpen((value) => !value)}
+              onClick={onToggle}
             >
               {label}
             </button>
@@ -50,14 +56,14 @@ function NavGroup({
           <button
             type="button"
             aria-label={label}
-            aria-expanded={open}
-            onClick={() => setOpen((value) => !value)}
+            aria-expanded={isOpen}
+            onClick={onToggle}
             className="flex size-6 shrink-0 items-center justify-center rounded text-[var(--admin-muted)] hover:bg-[var(--admin-hover)]"
           >
             <ChevronDown
               className={cn(
                 "size-3.5 shrink-0 transition-transform",
-                open ? "rotate-180" : "",
+                isOpen ? "rotate-180" : "",
               )}
               aria-hidden
             />
@@ -65,7 +71,7 @@ function NavGroup({
         </div>
       </AdminNavTreeRow>
       <AnimatePresence initial={false}>
-        {open ? (
+        {isOpen ? (
           <motion.div
             key="children"
             initial={{ height: 0, opacity: 0 }}
@@ -88,7 +94,12 @@ function NavGroup({
   );
 }
 
-export function AdminNavSectionBlock({ section, pendingCount = 0 }: Props) {
+export function AdminNavSectionBlock({
+  section,
+  pendingCount = 0,
+  openGroupId,
+  onToggleGroup,
+}: Props) {
   const t = useTranslations();
   const title = t(section.titleKey);
 
@@ -110,6 +121,8 @@ export function AdminNavSectionBlock({ section, pendingCount = 0 }: Props) {
             key={entry.id}
             group={entry}
             isLast={index === section.entries!.length - 1}
+            isOpen={entry.id === openGroupId}
+            onToggle={() => onToggleGroup(entry.id)}
             pendingCount={pendingCount}
           />,
         );
@@ -135,6 +148,8 @@ export function AdminNavSectionBlock({ section, pendingCount = 0 }: Props) {
           key={group.id}
           group={group}
           isLast={index === groups.length - 1}
+          isOpen={group.id === openGroupId}
+          onToggle={() => onToggleGroup(group.id)}
           pendingCount={pendingCount}
         />,
       );

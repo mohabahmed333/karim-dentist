@@ -404,3 +404,31 @@ export function flattenAdminNavItems(): AdminNavItem[] {
     ];
   });
 }
+
+function hrefMatches(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/**
+ * Which collapsible group (if any) the current page lives under — the
+ * sidebar opens that one and closes every other group, so drilling into
+ * Settings doesn't leave Reservations/Messaging sitting open behind it.
+ */
+export function findActiveAdminNavGroupId(
+  sections: AdminNavSection[],
+  pathname: string,
+): string | null {
+  for (const section of sections) {
+    const groups =
+      section.groups ??
+      (section.entries?.filter(isAdminNavGroup) as AdminNavGroup[] | undefined) ??
+      [];
+    for (const group of groups) {
+      if (group.href && hrefMatches(pathname, group.href)) return group.id;
+      if (group.items.some((item) => hrefMatches(pathname, item.href))) {
+        return group.id;
+      }
+    }
+  }
+  return null;
+}
