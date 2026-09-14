@@ -8,9 +8,7 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   CalendarDays,
   CornerDownLeft,
@@ -26,6 +24,7 @@ import {
 import { useTranslations } from "@/lib/i18n";
 import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { adminPageLabelKeys, adminPagePermissions } from "@/features/admin/lib/adminNav";
 import {
   buildStaticCommandHits,
@@ -39,12 +38,6 @@ import {
 } from "@/features/admin/lib/commandPalette";
 import { scoreCommandHit, shouldUseAiSearch } from "@/features/admin/lib/commandSearch";
 import { mergeAiHitOrder } from "@/features/admin/lib/commandSearchExtract";
-import {
-  COMMAND_LAYOUT_ID,
-  commandBackdropTransition,
-  commandResultsTransition,
-  commandShellTransition,
-} from "@/features/admin/lib/commandPaletteMotion";
 import { SECTION_LABEL_KEYS } from "@/features/customize/sectionRegistry";
 import { isCustomizeSection } from "@/features/customize/types";
 import { useOptionalQuickBook } from "@/features/admin/components/quick-book/QuickBookContext";
@@ -98,14 +91,11 @@ export function CommandPalette({ permissions }: Props = {}) {
   );
   const router = useRouter();
   const quickBook = useOptionalQuickBook();
-  const reduced = useReducedMotion();
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const [dynamicHits, setDynamicHits] = useState<CommandHit[]>([]);
-  const [resultsReady, setResultsReady] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [aiIds, setAiIds] = useState<string[]>([]);
   const [aiUsed, setAiUsed] = useState(false);
   const [demoLocked, setDemoLocked] = useState(false);
@@ -152,8 +142,8 @@ export function CommandPalette({ permissions }: Props = {}) {
   );
 
   const recents = useMemo(
-    () => (mounted ? recentHits(allHits, window.localStorage) : []),
-    [allHits, mounted, open],
+    () => (open ? recentHits(allHits, window.localStorage) : []),
+    [allHits, open],
   );
 
   const groups = useMemo(
@@ -167,20 +157,14 @@ export function CommandPalette({ permissions }: Props = {}) {
     setOpen(false);
     setQuery("");
     setActive(0);
-    setResultsReady(false);
     setAiIds([]);
     setAiUsed(false);
     setDemoLocked(false);
   }, []);
 
   const openPalette = useCallback(() => {
-    setResultsReady(Boolean(reduced));
     setOpen(true);
     setActive(0);
-  }, [reduced]);
-
-  useEffect(() => {
-    setMounted(true);
   }, []);
 
   useEffect(() => {
@@ -289,14 +273,12 @@ export function CommandPalette({ permissions }: Props = {}) {
         setDemoLocked(true);
         setQuery(detail.query);
         setOpen(true);
-        setResultsReady(true);
         setActive(0);
         return;
       }
       if (detail.type === "demo-hits" || detail.type === "seed-demo") {
         setDemoLocked(true);
         setOpen(true);
-        setResultsReady(true);
         setAiUsed(true);
         const seed =
           detail.type === "demo-hits"
@@ -325,11 +307,6 @@ export function CommandPalette({ permissions }: Props = {}) {
         event.preventDefault();
         if (open) close();
         else openPalette();
-        return;
-      }
-      if (event.key === "Escape" && open) {
-        event.preventDefault();
-        close();
       }
     }
     window.addEventListener("keydown", onKey);
@@ -339,12 +316,7 @@ export function CommandPalette({ permissions }: Props = {}) {
   useEffect(() => {
     if (!open) return;
     const id = window.requestAnimationFrame(() => inputRef.current?.focus());
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.cancelAnimationFrame(id);
-      document.body.style.overflow = prev;
-    };
+    return () => window.cancelAnimationFrame(id);
   }, [open]);
 
   function go(hit: CommandHit) {
@@ -387,13 +359,8 @@ export function CommandPalette({ permissions }: Props = {}) {
     }
   }
 
-  const shellTransition = commandShellTransition(reduced);
   const shortcut = shortcutLabel();
-  const showResults = open && (reduced || resultsReady);
   const activeHit = flat[active];
-
-  const shellClass =
-    "relative overflow-hidden bg-[var(--admin-canvas)] text-[var(--admin-text)]";
 
   const aiTag = (
     <span
@@ -411,164 +378,120 @@ export function CommandPalette({ permissions }: Props = {}) {
   );
 
   return (
-    <>
-      <div className="relative h-8 w-full">
-        {!open ? (
-          <motion.button
-            type="button"
-            layoutId={COMMAND_LAYOUT_ID}
-            transition={shellTransition}
-            onClick={openPalette}
-            data-showreel-action="command-palette-open"
-            aria-label={t("admin.search.open")}
-            className={cn(
-              shellClass,
-              "flex h-8 w-full items-center justify-start gap-2 rounded-lg border border-[var(--admin-border)] px-2.5",
-            )}
-          >
-            <Search className="size-3.5 shrink-0 text-[var(--admin-muted)]" />
-            <span className="min-w-0 flex-1 truncate text-start text-[13px] text-[var(--admin-muted)]">
-              {t("admin.search")}
-            </span>
-            {aiTag}
-            <kbd className="hidden shrink-0 rounded-md bg-[var(--admin-panel)] px-1.5 py-0.5 text-[10px] text-[var(--admin-muted)] sm:inline">
-              {shortcut}
-            </kbd>
-          </motion.button>
-        ) : (
-          <div className="h-8 w-full rounded-lg border border-transparent" aria-hidden />
-        )}
-      </div>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (next) openPalette();
+        else close();
+      }}
+    >
+      <button
+        type="button"
+        onClick={openPalette}
+        data-showreel-action="command-palette-open"
+        aria-label={t("admin.search.open")}
+        className="flex h-8 w-full items-center justify-start gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-canvas)] px-2.5 text-[var(--admin-text)]"
+      >
+        <Search className="size-3.5 shrink-0 text-[var(--admin-muted)]" />
+        <span className="min-w-0 flex-1 truncate text-start text-[13px] text-[var(--admin-muted)]">
+          {t("admin.search")}
+        </span>
+        {aiTag}
+        <kbd className="hidden shrink-0 rounded-md bg-[var(--admin-panel)] px-1.5 py-0.5 text-[10px] text-[var(--admin-muted)] sm:inline">
+          {shortcut}
+        </kbd>
+      </button>
 
-      {mounted
-        ? createPortal(
-            <AnimatePresence>
-              {open ? (
-                <>
-                  <motion.button
-                    key="cmdk-backdrop"
-                    type="button"
-                    aria-label={t("admin.search.close")}
-                    className="fixed inset-0 z-[90] bg-[#111111]/20"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, pointerEvents: "none" }}
-                    transition={commandBackdropTransition(reduced)}
-                    onClick={close}
-                  />
-                  <div className="pointer-events-none fixed inset-x-0 top-[4.25rem] z-[91] flex justify-center px-3">
-                    <motion.div
-                      key="cmdk-shell"
-                      layoutId={COMMAND_LAYOUT_ID}
-                      role="dialog"
-                      aria-modal="true"
-                      aria-label={t("admin.search")}
-                      transition={shellTransition}
-                      onLayoutAnimationComplete={() => setResultsReady(true)}
-                      className={cn(
-                        shellClass,
-                        "pointer-events-auto relative z-[91] flex min-h-[20rem] w-[min(36rem,calc(100vw-1.5rem))] flex-col rounded-lg shadow-[0_18px_50px_rgba(15,23,42,0.14)]",
-                      )}
-                    >
-                      <div className="flex items-center gap-2 border-b border-[var(--admin-border)] px-3 py-2.5">
-                        <Search className="size-4 shrink-0 text-[var(--admin-muted)]" />
-                        <input
-                          ref={inputRef}
-                          value={query}
-                          data-showreel-action="command-palette-input"
-                          onChange={(event) => {
-                            setQuery(event.target.value);
-                            setActive(0);
-                          }}
-                          onKeyDown={onInputKey}
-                          placeholder={t("admin.search.hint")}
-                          className="h-7 min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[var(--admin-muted)]"
-                        />
-                        {aiTag}
-                        {query ? (
-                          <button
-                            type="button"
-                            onClick={() => setQuery("")}
-                            className="flex size-5 items-center justify-center rounded-md bg-[var(--admin-muted)] text-white"
-                            aria-label={t("admin.close")}
-                          >
-                            <X className="size-3" />
-                          </button>
-                        ) : (
-                          <CornerDownLeft className="size-3.5 text-[var(--admin-muted)]" />
-                        )}
-                      </div>
-                      <motion.div
-                        initial={reduced ? false : { opacity: 0, y: 8 }}
-                        animate={
-                          showResults ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }
-                        }
-                        transition={commandResultsTransition(reduced)}
-                        className="max-h-[min(26rem,58vh)] overflow-y-auto py-2"
-                      >
-                        {flat.length === 0 ? (
-                          <p className="px-4 py-8 text-center text-[13px] text-[var(--admin-muted)]">
-                            {t("admin.search.empty")}
-                          </p>
-                        ) : (
-                          groups.map((group, groupIndex) => (
-                            <section key={`${group.kind}-${groupIndex}`}>
-                              <div className="flex items-center gap-2 px-3 py-1.5">
-                                <div className="h-px flex-1 bg-[var(--admin-border)]" />
-                                <p className="text-[10px] font-medium tracking-wide text-[var(--admin-muted)] uppercase">
-                                  {group.recent
-                                    ? t("admin.search.recent")
-                                    : t(GROUP_KEYS[group.kind])}
-                                </p>
-                                <div className="h-px flex-1 bg-[var(--admin-border)]" />
-                              </div>
-                              <ul>
-                                {group.items.map((item) => {
-                                  const Icon = KIND_ICON[item.kind];
-                                  const selected = item.id === activeHit?.id;
-                                  return (
-                                    <li key={item.id}>
-                                      <button
-                                        type="button"
-                                        data-showreel-action="command-hit"
-                                        data-showreel-hit={item.id}
-                                        onMouseEnter={() =>
-                                          setActive(flat.findIndex((row) => row.id === item.id))
-                                        }
-                                        onClick={() => go(item)}
-                                        className={cn(
-                                          "flex w-full items-center gap-2.5 px-3 py-2 text-start text-[13px]",
-                                          selected
-                                            ? "bg-[var(--admin-hover)]"
-                                            : "hover:bg-[var(--admin-hover)]",
-                                        )}
-                                      >
-                                        <Icon className="size-4 shrink-0 text-[var(--admin-muted)]" />
-                                        <span className="min-w-0 flex-1 truncate font-medium">
-                                          {item.title}
-                                        </span>
-                                        {item.subtitle ? (
-                                          <span className="hidden max-w-[40%] truncate text-[12px] text-[var(--admin-muted)] sm:inline">
-                                            {item.subtitle}
-                                          </span>
-                                        ) : null}
-                                      </button>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            </section>
-                          ))
-                        )}
-                      </motion.div>
-                    </motion.div>
-                  </div>
-                </>
-              ) : null}
-            </AnimatePresence>,
-            document.body,
-          )
-        : null}
-    </>
+      <DialogContent
+        showCloseButton={false}
+        aria-label={t("admin.search")}
+        className="top-[4.25rem] flex max-h-[min(30rem,70vh)] w-[min(36rem,calc(100vw-1.5rem))] max-w-none translate-y-0 flex-col gap-0 overflow-hidden bg-[var(--admin-canvas)] p-0 text-[var(--admin-text)]"
+      >
+        <div className="flex items-center gap-2 border-b border-[var(--admin-border)] px-3 py-2.5">
+          <Search className="size-4 shrink-0 text-[var(--admin-muted)]" />
+          <input
+            ref={inputRef}
+            value={query}
+            data-showreel-action="command-palette-input"
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setActive(0);
+            }}
+            onKeyDown={onInputKey}
+            placeholder={t("admin.search.hint")}
+            className="h-7 min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[var(--admin-muted)]"
+          />
+          {aiTag}
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="flex size-5 items-center justify-center rounded-md bg-[var(--admin-muted)] text-white"
+              aria-label={t("admin.close")}
+            >
+              <X className="size-3" />
+            </button>
+          ) : (
+            <CornerDownLeft className="size-3.5 text-[var(--admin-muted)]" />
+          )}
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto py-2">
+          {flat.length === 0 ? (
+            <p className="px-4 py-8 text-center text-[13px] text-[var(--admin-muted)]">
+              {t("admin.search.empty")}
+            </p>
+          ) : (
+            groups.map((group, groupIndex) => (
+              <section key={`${group.kind}-${groupIndex}`}>
+                <div className="flex items-center gap-2 px-3 py-1.5">
+                  <div className="h-px flex-1 bg-[var(--admin-border)]" />
+                  <p className="text-[10px] font-medium tracking-wide text-[var(--admin-muted)] uppercase">
+                    {group.recent
+                      ? t("admin.search.recent")
+                      : t(GROUP_KEYS[group.kind])}
+                  </p>
+                  <div className="h-px flex-1 bg-[var(--admin-border)]" />
+                </div>
+                <ul>
+                  {group.items.map((item) => {
+                    const Icon = KIND_ICON[item.kind];
+                    const selected = item.id === activeHit?.id;
+                    return (
+                      <li key={item.id}>
+                        <button
+                          type="button"
+                          data-showreel-action="command-hit"
+                          data-showreel-hit={item.id}
+                          onMouseEnter={() =>
+                            setActive(flat.findIndex((row) => row.id === item.id))
+                          }
+                          onClick={() => go(item)}
+                          className={cn(
+                            "flex w-full items-center gap-2.5 px-3 py-2 text-start text-[13px]",
+                            selected
+                              ? "bg-[var(--admin-hover)]"
+                              : "hover:bg-[var(--admin-hover)]",
+                          )}
+                        >
+                          <Icon className="size-4 shrink-0 text-[var(--admin-muted)]" />
+                          <span className="min-w-0 flex-1 truncate font-medium">
+                            {item.title}
+                          </span>
+                          {item.subtitle ? (
+                            <span className="hidden max-w-[40%] truncate text-[12px] text-[var(--admin-muted)] sm:inline">
+                              {item.subtitle}
+                            </span>
+                          ) : null}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
