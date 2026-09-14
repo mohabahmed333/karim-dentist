@@ -22,10 +22,10 @@ export function CollectionRowAction({
   const tone = danger
     ? active
       ? "text-white/80 hover:bg-white/15 hover:text-white"
-      : "text-[#b42318] hover:bg-[#b42318]/10"
+      : "text-red-700 dark:text-red-400 hover:bg-[#b42318]/10"
     : active
       ? "text-white/75 hover:bg-white/15 hover:text-white"
-      : "text-[#6b6b6b] hover:bg-[#efefef] hover:text-[#1a1a1a]";
+      : "text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]";
 
   return (
     <button

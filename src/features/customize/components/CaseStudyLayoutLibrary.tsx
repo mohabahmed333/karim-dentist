@@ -44,10 +44,10 @@ export function CaseStudyLayoutLibrary({ onAdd, busy }: Props) {
                   <LayoutPreviewThumb preview={item.preview} large />
                   <div>
                     <p className="text-sm font-semibold">{item.label}</p>
-                    <p className="mt-1 text-[12px] leading-snug text-[#6b6b6b]">
+                    <p className="mt-1 text-[12px] leading-snug text-[var(--admin-muted)]">
                       {item.description}
                     </p>
-                    <p className="mt-2 text-[10px] uppercase tracking-wide text-[#9a9a9a]">
+                    <p className="mt-2 text-[10px] uppercase tracking-wide text-[var(--admin-muted)]">
                       Click card to add
                     </p>
                   </div>

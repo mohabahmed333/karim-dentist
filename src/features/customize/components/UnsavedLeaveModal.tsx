@@ -28,15 +28,15 @@ export function UnsavedLeaveModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="unsaved-title"
-        className="relative z-[1] w-full max-w-md rounded-xl border border-[#e5e5e5] bg-white p-5 shadow-[0_20px_60px_rgba(0,0,0,0.25)]"
+        className="relative z-[1] w-full max-w-md rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.25)]"
       >
         <h2
           id="unsaved-title"
-          className="text-base font-semibold text-[#1a1a1a]"
+          className="text-base font-semibold text-[var(--admin-text)]"
         >
           Unsaved changes
         </h2>
-        <p className="mt-2 text-sm leading-relaxed text-[#6b6b6b]">
+        <p className="mt-2 text-sm leading-relaxed text-[var(--admin-muted)]">
           You have unsaved edits. If you leave now, all changes will be
           discarded. Save before leaving to keep them.
         </p>
@@ -61,7 +61,7 @@ export function UnsavedLeaveModal({
           </Button>
           <Button
             type="button"
-            className="h-8 bg-[#1a1a1a] text-white hover:bg-[#333]"
+            className="h-8 bg-[var(--admin-text)] text-[var(--admin-panel)] hover:opacity-90"
             disabled={busy}
             onClick={() => void onSave()}
           >

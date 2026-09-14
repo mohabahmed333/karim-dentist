@@ -27,7 +27,7 @@ export function HeroPanel({ focusField }: Props) {
   const rootRef = useFocusEditorField(focusField, "hero");
   const hero = data.hero;
   if (!hero) {
-    return <p className="text-sm text-[#8a8a8a]">{t("admin.customize.noHero")}</p>;
+    return <p className="text-sm text-[var(--admin-muted)]">{t("admin.customize.noHero")}</p>;
   }
 
   return (

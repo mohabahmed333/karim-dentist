@@ -47,7 +47,7 @@ export function BuilderSectionsList({
               key={section.id}
               className={
                 index < sections.length - 1
-                  ? "border-b border-[#f0f0f0]"
+                  ? "border-b border-[var(--admin-border)]"
                   : undefined
               }
             >
@@ -67,7 +67,7 @@ export function BuilderSectionsList({
             </li>
           ))}
           {sections.length === 0 ? (
-            <li className="px-3 py-6 text-center text-[12px] text-[#8a8a8a]">
+            <li className="px-3 py-6 text-center text-[12px] text-[var(--admin-muted)]">
               No sections yet.
             </li>
           ) : null}

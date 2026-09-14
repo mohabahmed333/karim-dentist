@@ -46,7 +46,7 @@ export function FeaturedPageBuilderPanel({
 
   if (!project) {
     return (
-      <p className="text-sm text-[#8a8a8a]">Featured project not found.</p>
+      <p className="text-sm text-[var(--admin-muted)]">Featured project not found.</p>
     );
   }
 
@@ -106,7 +106,7 @@ export function FeaturedPageBuilderPanel({
                 collection="featured"
               />
             ) : (
-              <p className="px-0.5 text-[11px] text-[#8a8a8a]">
+              <p className="px-0.5 text-[11px] text-[var(--admin-muted)]">
                 Select a section to edit its content and layout.
               </p>
             )}

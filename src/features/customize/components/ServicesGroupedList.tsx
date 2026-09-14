@@ -81,7 +81,7 @@ function ServiceKindGroupList({
         <Button
           type="button"
           size="sm"
-          className="h-7 shrink-0 rounded-[6px] bg-[#1a1a1a] px-2.5 text-[11px] text-white hover:bg-[#333]"
+          className="h-7 shrink-0 rounded-[6px] bg-[var(--admin-text)] px-2.5 text-[11px] text-[var(--admin-panel)] hover:opacity-90"
           onClick={() => onAdd(kind)}
         >
           Add
@@ -147,7 +147,7 @@ export function ServicesGroupedList({ query, onQueryChange }: Props) {
         placeholder="Search services…"
         aria-label="Search services"
         data-tour="collection-search"
-        className="h-8 rounded-[6px] border-[#e5e5e5] bg-white text-xs shadow-none"
+        className="h-8 rounded-[6px] border-[var(--admin-border)] bg-[var(--admin-panel)] text-xs shadow-none"
       />
       {groups.map((group) => (
         <ServiceKindGroupList

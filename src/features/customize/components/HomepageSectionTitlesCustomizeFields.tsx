@@ -28,7 +28,7 @@ export function HomepageSectionTitlesCustomizeFields({
   return (
     <section className="space-y-2">
       <EditorSectionHeader title="Section titles" />
-      <p className="text-[11px] leading-4 text-[#8a8a8a]">
+      <p className="text-[11px] leading-4 text-[var(--admin-muted)]">
         Override section labels and headlines. Leave blank to use language
         defaults.
       </p>
@@ -37,7 +37,7 @@ export function HomepageSectionTitlesCustomizeFields({
         if (!fields.length) return null;
         return (
         <EditorFieldCard key={sectionKey}>
-          <p className="text-[11px] font-medium text-[#1a1a1a]">
+          <p className="text-[11px] font-medium text-[var(--admin-text)]">
             {HOMEPAGE_SECTION_LABELS[sectionKey]}
           </p>
           {fields.map((field) => {

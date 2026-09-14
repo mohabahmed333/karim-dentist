@@ -41,7 +41,7 @@ export function FooterColumnList({ title, columnKey, items }: Props) {
           <Button
             type="button"
             size="sm"
-            className="h-7 rounded-[6px] bg-[#1a1a1a] px-2.5 text-[11px] text-white hover:bg-[#333]"
+            className="h-7 rounded-[6px] bg-[var(--admin-text)] px-2.5 text-[11px] text-[var(--admin-panel)] hover:opacity-90"
             onClick={() => {
               void addFooterLink(columnKey).then((id) => {
                 if (id) navigate({ section: "footer", itemId: id });
@@ -61,7 +61,7 @@ export function FooterColumnList({ title, columnKey, items }: Props) {
                 key={item.id}
                 className={
                   index < items.length - 1
-                    ? "border-b border-[#f0f0f0]"
+                    ? "border-b border-[var(--admin-border)]"
                     : undefined
                 }
               >
@@ -108,7 +108,7 @@ export function FooterColumnList({ title, columnKey, items }: Props) {
             );
           })}
           {items.length === 0 ? (
-            <li className="px-3 py-6 text-center text-[12px] text-[#8a8a8a]">
+            <li className="px-3 py-6 text-center text-[12px] text-[var(--admin-muted)]">
               No links yet.
             </li>
           ) : null}

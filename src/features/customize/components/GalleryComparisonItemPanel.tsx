@@ -24,7 +24,7 @@ export function GalleryComparisonItemPanel({ id, focusField }: Props) {
   const rootRef = useFocusEditorField(focusField, id);
 
   if (!item) {
-    return <p className="text-sm text-[#8a8a8a]">Comparison not found.</p>;
+    return <p className="text-sm text-[var(--admin-muted)]">Comparison not found.</p>;
   }
 
   return (

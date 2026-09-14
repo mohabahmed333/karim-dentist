@@ -34,7 +34,7 @@ export function FooterPanel({ focusField }: Props) {
   }, [focusField]);
 
   if (!data.settings) {
-    return <p className="text-sm text-[#8a8a8a]">No settings row.</p>;
+    return <p className="text-sm text-[var(--admin-muted)]">No settings row.</p>;
   }
 
   const linksCol = FOOTER_COLUMNS[0];
@@ -59,7 +59,7 @@ export function FooterPanel({ focusField }: Props) {
         />
         {tab === "script" ? (
           <div className="space-y-2">
-            <p className="px-0.5 text-[10px] leading-relaxed text-[#8a8a8a]">
+            <p className="px-0.5 text-[10px] leading-relaxed text-[var(--admin-muted)]">
               Click the script keyword in the preview, or edit it here. Column
               titles stay fixed on the site.
             </p>

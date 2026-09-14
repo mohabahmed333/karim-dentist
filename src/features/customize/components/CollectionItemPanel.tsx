@@ -47,7 +47,7 @@ export function CollectionItemPanel({ section, id, focusField }: Props) {
   );
 
   if (!item) {
-    return <p className="text-sm text-[#8a8a8a]">Item not found.</p>;
+    return <p className="text-sm text-[var(--admin-muted)]">Item not found.</p>;
   }
 
   const viewHref = publicItemHref(section, item);
@@ -70,7 +70,7 @@ export function CollectionItemPanel({ section, id, focusField }: Props) {
           </Button>
           <EditorFieldCard>
             <p className="text-[12px] font-medium">Contact</p>
-            <p className="text-[11px] leading-relaxed text-[#8a8a8a]">
+            <p className="text-[11px] leading-relaxed text-[var(--admin-muted)]">
               This footer link always opens the contact form. Edit contact
               details in Settings → Contact.
             </p>

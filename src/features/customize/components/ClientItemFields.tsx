@@ -28,7 +28,7 @@ export function ClientItemFields({ item, onPatch }: Props) {
         value={(item.logo_url as string | null) ?? null}
         onChange={(logo_url) => onPatch({ logo_url })}
       />
-      <p className="text-[11px] leading-relaxed text-[#8a8a8a]">
+      <p className="text-[11px] leading-relaxed text-[var(--admin-muted)]">
         Logo shows when uploaded. Name is used as the fallback label.
       </p>
     </div>

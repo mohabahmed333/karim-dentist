@@ -33,8 +33,8 @@ export function HomepageVisibilityRow({
   return (
     <li
       className={[
-        "flex items-center gap-2 border-b border-[#f3f3f3] px-2 py-2.5 last:border-b-0",
-        dragging ? "bg-[#f5f5f5] opacity-70" : "",
+        "flex items-center gap-2 border-b border-[var(--admin-border)] px-2 py-2.5 last:border-b-0",
+        dragging ? "bg-[var(--admin-hover)] opacity-70" : "",
         dropTarget ? "ring-1 ring-inset ring-[#6cb6ff]" : "",
         isHidden ? "opacity-60" : "",
       ]
@@ -47,12 +47,12 @@ export function HomepageVisibilityRow({
         type="button"
         aria-label={`Drag ${label}`}
         title="Drag to reorder"
-        className="h-7 w-5 shrink-0 cursor-grab text-[11px] tracking-tighter text-[#b0b0b0] hover:text-[#1a1a1a] active:cursor-grabbing"
+        className="h-7 w-5 shrink-0 cursor-grab text-[11px] tracking-tighter text-[var(--admin-muted)] hover:text-[var(--admin-text)] active:cursor-grabbing"
         {...drag.getHandleProps(index)}
       >
         ⋮⋮
       </button>
-      <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-[#1a1a1a]">
+      <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-[var(--admin-text)]">
         {label}
       </span>
       <VisibilitySwitch on={!isHidden} label={label} onToggle={onToggle} />

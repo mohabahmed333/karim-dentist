@@ -70,9 +70,9 @@ export function CaseStudySectionInspector({
   };
 
   return (
-    <div className="space-y-2.5 border-t border-[#ececec] pt-3">
+    <div className="space-y-2.5 border-t border-[var(--admin-border)] pt-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-[#8a8a8a]">
+        <p className="text-xs font-medium uppercase tracking-wide text-[var(--admin-muted)]">
           Section settings
         </p>
         <div className="flex gap-1">
@@ -396,7 +396,7 @@ function TextGridFields({
       />
       {content.items.map((item, index) => (
         <div key={`tg-item-${index}`} className="space-y-1.5 rounded border p-2">
-          <p className="text-[11px] font-medium text-[#6b6b6b]">
+          <p className="text-[11px] font-medium text-[var(--admin-muted)]">
             Grid image {index + 1}
           </p>
           <MediaUploadField
@@ -451,7 +451,7 @@ function GridFields({
       />
       {content.items.map((item, index) => (
         <div key={`grid-item-${index}`} className="space-y-1.5 rounded border p-2">
-          <p className="text-[11px] font-medium text-[#6b6b6b]">
+          <p className="text-[11px] font-medium text-[var(--admin-muted)]">
             Item {index + 1}
           </p>
           <MediaUploadField

@@ -22,7 +22,7 @@ export function CollectionListRow({
 }: CollectionListRowProps) {
   if (locked) {
     return (
-      <div className="flex items-center gap-1 px-2 py-1.5 text-[#8a8a8a]">
+      <div className="flex items-center gap-1 px-2 py-1.5 text-[var(--admin-muted)]">
         <span className="min-w-0 flex-1 truncate text-start text-[12px] font-medium">
           {label}
         </span>
@@ -33,20 +33,20 @@ export function CollectionListRow({
   const rowClass = [
     "group flex items-center gap-0.5 px-1.5 py-1",
     dragging
-      ? "bg-[#e8e8e8] text-[#1a1a1a]"
+      ? "bg-[var(--admin-hover)] text-[var(--admin-text)]"
       : active
         ? "bg-[#1a1a1a] text-white"
-        : "bg-white hover:bg-[#f6f6f6]",
+        : "bg-[var(--admin-panel)] hover:bg-[var(--admin-hover)]",
     dropTarget ? "ring-1 ring-inset ring-[#6cb6ff]" : "",
   ]
     .filter(Boolean)
     .join(" ");
 
   const handleTone = dragging
-    ? "cursor-grabbing text-[#1a1a1a]"
+    ? "cursor-grabbing text-[var(--admin-text)]"
     : active
       ? "cursor-grab text-white/70 active:cursor-grabbing"
-      : "cursor-grab text-[#b0b0b0] hover:text-[#1a1a1a] active:cursor-grabbing";
+      : "cursor-grab text-[var(--admin-muted)] hover:text-[var(--admin-text)] active:cursor-grabbing";
 
   return (
     <div className={rowClass} data-sortable-row="" {...dragItemProps}>
@@ -70,7 +70,7 @@ export function CollectionListRow({
           <span
             className={
               dragging || !active
-                ? "ms-1.5 text-[10px] tabular-nums text-[#8a8a8a]"
+                ? "ms-1.5 text-[10px] tabular-nums text-[var(--admin-muted)]"
                 : "ms-1.5 text-[10px] tabular-nums text-white/55"
             }
           >

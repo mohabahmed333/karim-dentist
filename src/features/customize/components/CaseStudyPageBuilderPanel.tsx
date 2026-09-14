@@ -44,7 +44,7 @@ export function CaseStudyPageBuilderPanel({
   );
 
   if (!study) {
-    return <p className="text-sm text-[#8a8a8a]">Case study not found.</p>;
+    return <p className="text-sm text-[var(--admin-muted)]">Case study not found.</p>;
   }
 
   const handleAdd = (item: LayoutCatalogItem) => {
@@ -104,7 +104,7 @@ export function CaseStudyPageBuilderPanel({
                 collection="case-studies"
               />
             ) : (
-              <p className="px-0.5 text-[11px] text-[#8a8a8a]">
+              <p className="px-0.5 text-[11px] text-[var(--admin-muted)]">
                 Select a section to edit its content and layout.
               </p>
             )}

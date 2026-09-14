@@ -83,7 +83,7 @@ export function CollectionPageIntroFields({ section }: Props) {
   const titleArKey = `${config.titleKey}_ar` as keyof SiteSettings;
 
   return (
-    <section ref={rootRef} className="space-y-2.5 border-b border-[#e8e8e8] pb-3">
+    <section ref={rootRef} className="space-y-2.5 border-b border-[var(--admin-border)] pb-3">
       <EditorSectionHeader title="Page intro" />
       <CollectionPreviewTabs
         indexPreview={route.indexPreview}

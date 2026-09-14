@@ -51,7 +51,7 @@ export function CustomizeToolbarMenu({
           role="dialog"
           aria-labelledby={labelledBy}
           className={[
-            "absolute top-[calc(100%+6px)] z-[520] overflow-hidden rounded-xl border border-[#e5e5e5] bg-white shadow-[0_16px_40px_rgba(0,0,0,0.18)]",
+            "absolute top-[calc(100%+6px)] z-[520] overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)] shadow-[0_16px_40px_rgba(0,0,0,0.18)]",
             align === "end" ? "end-0" : "start-0",
             panelClassName,
           ].join(" ")}

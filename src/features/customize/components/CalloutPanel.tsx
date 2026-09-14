@@ -20,7 +20,7 @@ export function CalloutPanel() {
   const rootRef = useFocusEditorField(route.focusField, "callout");
 
   if (!callout) {
-    return <p className="text-sm text-[#8a8a8a]">No callout row.</p>;
+    return <p className="text-sm text-[var(--admin-muted)]">No callout row.</p>;
   }
 
   const { lead, accent } = splitCalloutBody(callout.body);
@@ -54,7 +54,7 @@ export function CalloutPanel() {
               multiline
               idPrefix="callout-lead"
             />
-            <p className="mt-1 text-[10px] leading-relaxed text-[#8a8a8a]">
+            <p className="mt-1 text-[10px] leading-relaxed text-[var(--admin-muted)]">
               One line per script row, or leave as one line to auto-wrap.
             </p>
           </div>
@@ -72,7 +72,7 @@ export function CalloutPanel() {
               multiline
               idPrefix="callout-accent"
             />
-            <p className="mt-1 text-[10px] leading-relaxed text-[#8a8a8a]">
+            <p className="mt-1 text-[10px] leading-relaxed text-[var(--admin-muted)]">
               Smaller white line that sits over the script.
             </p>
           </div>

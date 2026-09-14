@@ -15,7 +15,7 @@ export function SettingsContactCustomizeFields({
 }: Props) {
   return (
     <div className="space-y-2">
-      <p className="text-[10px] leading-relaxed text-[#8a8a8a]">
+      <p className="text-[10px] leading-relaxed text-[var(--admin-muted)]">
         These fields power the contact popup across the site.
       </p>
       {CONTACT_SETTING_FIELDS.map((field) => (

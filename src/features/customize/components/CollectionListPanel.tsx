@@ -84,13 +84,13 @@ export function CollectionListPanel({ section }: Props) {
               placeholder="Search items…"
               aria-label="Search items"
               data-tour="collection-search"
-              className="h-8 rounded-[6px] border-[#e5e5e5] bg-white text-xs shadow-none"
+              className="h-8 rounded-[6px] border-[var(--admin-border)] bg-[var(--admin-panel)] text-xs shadow-none"
             />
             <Button
               type="button"
               size="sm"
               data-tour="collection-add"
-              className="h-8 shrink-0 rounded-[6px] bg-[#1a1a1a] px-3 text-xs text-white hover:bg-[#333]"
+              className="h-8 shrink-0 rounded-[6px] bg-[var(--admin-text)] px-3 text-xs text-[var(--admin-panel)] hover:opacity-90"
               onClick={() => {
                 void addCollectionItem(section).then((id) => {
                   if (id) navigate({ section, itemId: id });

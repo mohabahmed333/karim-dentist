@@ -26,7 +26,7 @@ export function CollectionPreviewTabs({
         onChange={(next) => onChange(next === "index")}
       />
       <div className="flex items-center justify-between gap-2 px-0.5">
-        <p className="text-[10px] leading-snug text-[#8a8a8a]">
+        <p className="text-[10px] leading-snug text-[var(--admin-muted)]">
           Fields apply to the selected preview.
         </p>
         <EditorOpenPageLink href={viewHref} />

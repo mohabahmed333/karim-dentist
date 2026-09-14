@@ -17,7 +17,7 @@ export function VisibilitySwitch({ on, label, onToggle }: Props) {
       className={
         on
           ? "relative h-5 w-9 shrink-0 rounded-full bg-[#2f6fed] transition-colors"
-          : "relative h-5 w-9 shrink-0 rounded-full bg-[#d4d4d4] transition-colors"
+          : "relative h-5 w-9 shrink-0 rounded-full bg-[var(--admin-border)] transition-colors"
       }
     >
       <span

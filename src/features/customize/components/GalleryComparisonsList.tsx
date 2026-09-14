@@ -46,7 +46,7 @@ export function GalleryComparisonsList() {
         <Button
           type="button"
           size="sm"
-          className="h-8 shrink-0 rounded-[6px] bg-[#1a1a1a] px-3 text-xs text-white hover:bg-[#333]"
+          className="h-8 shrink-0 rounded-[6px] bg-[var(--admin-text)] px-3 text-xs text-[var(--admin-panel)] hover:opacity-90"
           onClick={() => {
             void addGalleryComparison().then((id) => {
               if (id) navigate({ section: "gallery", itemId: id });

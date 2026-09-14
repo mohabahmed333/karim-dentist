@@ -30,7 +30,7 @@ export function CaseStudyColumnFields({ content, onPatch }: Props) {
     <div className="space-y-2">
       {content.slots.map((slot, index) => (
         <div key={`col-${index}`} className="space-y-1.5 rounded border p-2">
-          <p className="text-[11px] font-medium text-[#6b6b6b]">
+          <p className="text-[11px] font-medium text-[var(--admin-muted)]">
             Column {index + 1}
           </p>
           <div className="flex flex-wrap gap-1">

@@ -184,12 +184,19 @@ html:has(.customize-shell.dark),
 }
 
 /* .customize-shell isn't driven by AdminShell's JS (no live DB-customized colors), so unlike
-   .admin-shell its canvas/panel/content don't flip via inline style — set the dark values here. */
+   .admin-shell its canvas/panel/content don't flip via inline style — set the dark values here.
+   Declared on `html:has(...)` too, because the unsaved-changes modal, the tour card and the drag
+   ghost portal to <body>, outside the shell: without this they'd read --admin-panel from the light
+   block above and render a white surface under dark text. */
+html:has(.customize-shell.dark),
 .customize-shell.dark {
-  color-scheme: dark;
   --admin-canvas: #18191b;
   --admin-content: #18191b;
   --admin-panel: #202124;
+}
+
+.customize-shell.dark {
+  color-scheme: dark;
 }
 
 .admin-shell {

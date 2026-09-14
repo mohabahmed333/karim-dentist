@@ -32,13 +32,13 @@ export function TranslateModuleChecklist({
   return (
     <ul className="max-h-64 overflow-y-auto py-1">
       <li>
-        <label className="flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-[#f5f5f5]">
+        <label className="flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-[var(--admin-hover)]">
           <Checkbox
             checked={allSelected}
             onCheckedChange={() => onToggleAll()}
             disabled={disabled}
           />
-          <span className="text-[12px] font-medium text-[#1a1a1a]">
+          <span className="text-[12px] font-medium text-[var(--admin-text)]">
             {t("admin.customize.allModules")}
           </span>
         </label>
@@ -51,8 +51,8 @@ export function TranslateModuleChecklist({
           <li key={value}>
             <label
               className={[
-                "flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-[#f5f5f5]",
-                checked ? "bg-[#f7f7f7]" : "",
+                "flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-[var(--admin-hover)]",
+                checked ? "bg-[var(--admin-active)]" : "",
               ].join(" ")}
             >
               <Checkbox
@@ -60,7 +60,7 @@ export function TranslateModuleChecklist({
                 onCheckedChange={() => onToggleModule(value)}
                 disabled={disabled}
               />
-              <span className="text-[12px] text-[#1a1a1a]">
+              <span className="text-[12px] text-[var(--admin-text)]">
                 {labelKey ? t(labelKey) : option.label}
               </span>
             </label>

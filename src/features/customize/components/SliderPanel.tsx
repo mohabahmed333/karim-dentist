@@ -17,7 +17,7 @@ export function SliderPanel({ focusField }: Props) {
   const copyRef = useFocusEditorField(focusField, "slider");
   const settings = data.settings;
   if (!settings) {
-    return <p className="text-sm text-[#8a8a8a]">No settings row.</p>;
+    return <p className="text-sm text-[var(--admin-muted)]">No settings row.</p>;
   }
 
   return (

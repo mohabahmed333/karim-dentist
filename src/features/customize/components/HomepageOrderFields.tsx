@@ -37,7 +37,7 @@ export function HomepageOrderFields() {
     <section className="space-y-6" data-tour="homepage-order">
       <div className="space-y-2">
         <EditorSectionHeader title="Homepage order" />
-        <p className="text-[11px] leading-4 text-[#8a8a8a]">
+        <p className="text-[11px] leading-4 text-[var(--admin-muted)]">
           Hero stays first. Drag sections below it, hide any you do not need, then Save.
         </p>
         <EditorFieldCard>

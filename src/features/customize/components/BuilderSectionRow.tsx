@@ -36,20 +36,20 @@ export function BuilderSectionRow({
   const rowClass = [
     "group flex items-center gap-0.5 px-1.5 py-1",
     dragging
-      ? "bg-[#e8e8e8] text-[#1a1a1a]"
+      ? "bg-[var(--admin-hover)] text-[var(--admin-text)]"
       : active
         ? "bg-[#1a1a1a] text-white"
-        : "bg-white hover:bg-[#f6f6f6]",
+        : "bg-[var(--admin-panel)] hover:bg-[var(--admin-hover)]",
     dropTarget ? "ring-1 ring-inset ring-[#6cb6ff]" : "",
   ]
     .filter(Boolean)
     .join(" ");
 
   const handleTone = dragging
-    ? "cursor-grabbing text-[#1a1a1a]"
+    ? "cursor-grabbing text-[var(--admin-text)]"
     : active
       ? "cursor-grab text-white/70 active:cursor-grabbing"
-      : "cursor-grab text-[#b0b0b0] hover:text-[#1a1a1a] active:cursor-grabbing";
+      : "cursor-grab text-[var(--admin-muted)] hover:text-[var(--admin-text)] active:cursor-grabbing";
 
   return (
     <div className={rowClass} data-sortable-row="" {...dragItemProps}>
@@ -71,7 +71,7 @@ export function BuilderSectionRow({
         {hidden ? (
           <span
             className={
-              active ? "ms-1.5 text-[10px] text-white/55" : "ms-1.5 text-[10px] text-[#8a8a8a]"
+              active ? "ms-1.5 text-[10px] text-white/55" : "ms-1.5 text-[10px] text-[var(--admin-muted)]"
             }
           >
             hidden
@@ -85,7 +85,7 @@ export function BuilderSectionRow({
         className={
           active
             ? "h-7 w-6 rounded-[4px] px-0 text-[11px] text-white/75 hover:bg-white/15 hover:text-white"
-            : "h-7 w-6 rounded-[4px] px-0 text-[11px] text-[#6b6b6b]"
+            : "h-7 w-6 rounded-[4px] px-0 text-[11px] text-[var(--admin-muted)]"
         }
         disabled={index === 0}
         onClick={() => onMove("up")}
@@ -99,7 +99,7 @@ export function BuilderSectionRow({
         className={
           active
             ? "h-7 w-6 rounded-[4px] px-0 text-[11px] text-white/75 hover:bg-white/15 hover:text-white"
-            : "h-7 w-6 rounded-[4px] px-0 text-[11px] text-[#6b6b6b]"
+            : "h-7 w-6 rounded-[4px] px-0 text-[11px] text-[var(--admin-muted)]"
         }
         disabled={index === total - 1}
         onClick={() => onMove("down")}

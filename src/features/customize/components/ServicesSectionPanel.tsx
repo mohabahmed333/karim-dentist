@@ -53,7 +53,7 @@ export function ServicesSectionPanel({ focusPanelId, focusField }: Props) {
 
   const settings = data.settings;
   if (!settings) {
-    return <p className="text-sm text-[#8a8a8a]">No settings row.</p>;
+    return <p className="text-sm text-[var(--admin-muted)]">No settings row.</p>;
   }
 
   return (
@@ -90,7 +90,7 @@ export function ServicesSectionPanel({ focusPanelId, focusField }: Props) {
             <div
               key={panel.id}
               data-editor-item={panel.id}
-              className="space-y-2 rounded-md border border-[#ececec] p-3"
+              className="space-y-2 rounded-md border border-[var(--admin-border)] p-3"
             >
               <EditorFieldShell field="title">
                 <BilingualField

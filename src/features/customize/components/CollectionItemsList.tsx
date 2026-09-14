@@ -41,12 +41,12 @@ export function CollectionItemsList({
   onSelect,
 }: Props) {
   return (
-    <ul className="overflow-hidden rounded-[8px] border border-[#ebebeb] bg-white">
+    <ul className="overflow-hidden rounded-[8px] border border-[var(--admin-border)] bg-[var(--admin-panel)]">
       {items.map((item, index) => (
         <li
           key={item.id}
           className={
-            index < items.length - 1 ? "border-b border-[#f0f0f0]" : undefined
+            index < items.length - 1 ? "border-b border-[var(--admin-border)]" : undefined
           }
         >
           <CollectionListRow
@@ -68,7 +68,7 @@ export function CollectionItemsList({
         </li>
       ))}
       {items.length === 0 ? (
-        <li className="px-3 py-6 text-center text-[12px] text-[#8a8a8a]">
+        <li className="px-3 py-6 text-center text-[12px] text-[var(--admin-muted)]">
           {filtering ? "No matches for this search." : "No items yet."}
         </li>
       ) : null}

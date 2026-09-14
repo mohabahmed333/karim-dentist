@@ -16,11 +16,11 @@ export function SolutionsPanel() {
         <EditorSectionHeader title="Solution panels" count={panels.length} />
         <EditorOpenPageLink href="/#services" />
       </div>
-      <p className="text-[10px] leading-relaxed text-[#8a8a8a]">
+      <p className="text-[10px] leading-relaxed text-[var(--admin-muted)]">
         Solution highlight panels appear above the service cards grid.
       </p>
       {panels.map((panel) => (
-        <div key={panel.id} className="space-y-2 rounded-md border border-[#e8e8e8] p-3">
+        <div key={panel.id} className="space-y-2 rounded-md border border-[var(--admin-border)] p-3">
           <ControlledField label="Title" value={panel.title} onChange={() => undefined} />
           <ControlledField
             label="Body"

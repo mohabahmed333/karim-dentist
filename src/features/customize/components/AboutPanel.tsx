@@ -52,7 +52,7 @@ export function AboutPanel({ focusTrustId, focusField }: Props) {
   }, [focusField]);
 
   if (!about || !settings) {
-    return <p className="text-sm text-[#8a8a8a]">No about row.</p>;
+    return <p className="text-sm text-[var(--admin-muted)]">No about row.</p>;
   }
 
   return (
@@ -135,7 +135,7 @@ export function AboutPanel({ focusTrustId, focusField }: Props) {
               <div
                 key={item.id}
                 data-editor-item={item.id}
-                className="space-y-2 rounded-md border border-[#ececec] p-3"
+                className="space-y-2 rounded-md border border-[var(--admin-border)] p-3"
               >
                 <EditorFieldShell field="value">
                   <BilingualField
