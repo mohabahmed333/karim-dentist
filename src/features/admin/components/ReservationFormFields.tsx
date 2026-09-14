@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ReservationFormValues } from "@/services/reservations/schemas";
+import {
+  splitStartsAt,
+  type ReservationFormValues,
+} from "@/services/reservations/schemas";
 import { RESERVATION_STATUSES } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
 import type { DoctorProfile } from "@/services/profiles";
@@ -173,6 +176,7 @@ export function ReservationFormFields({
   async function onPatientSelect(patient: PatientSearchResult) {
     setNameDropdownOpen(false);
     const last = await getLatestReservationForPatient(patient.id).catch(() => null);
+    const lastSlot = last ? splitStartsAt(last.starts_at) : null;
     patch({
       patient_id: patient.id,
       patient_name: patient.display_name,
@@ -181,6 +185,9 @@ export function ReservationFormFields({
       service_id: last?.service_id ?? values.service_id,
       service_label: last?.service_label ?? values.service_label,
       doctor_id: last?.doctor_id ?? values.doctor_id,
+      date: lastSlot?.date ?? values.date,
+      time: lastSlot?.time ?? values.time,
+      slot_id: lastSlot ? null : values.slot_id,
     });
   }
 
@@ -207,7 +214,7 @@ export function ReservationFormFields({
       date: dayKey(slot.starts_at),
       time: timeKey(slot.starts_at),
       // The slot is authoritative for who this booking is with.
-      doctor_id: slot.doctor_id ?? null,
+      doctor_id: slot.doctor_id ?? values.doctor_id,
     });
   }
 
@@ -216,7 +223,7 @@ export function ReservationFormFields({
     // may not exist for the new doctor — clear it and let the slot list
     // re-narrow instead of silently keeping a mismatched selection.
     patch({
-      doctor_id: doctorId || null,
+      doctor_id: doctorId,
       date: "",
       time: "",
       slot_id: null,
@@ -318,11 +325,13 @@ export function ReservationFormFields({
             <Label htmlFor="doctor">{t("admin.reservations.doctor")}</Label>
             <AdminNativeSelect
               id="doctor"
-              value={values.doctor_id ?? ""}
+              value={values.doctor_id}
               disabled={pending}
               onChange={(event) => onDoctorChange(event.target.value)}
             >
-              <option value="">{t("admin.reservations.anyDoctor")}</option>
+              <option value="" disabled>
+                {t("admin.reservations.selectDoctor")}
+              </option>
               {doctors.map((doctor) => (
                 <option key={doctor.id} value={doctor.id}>
                   {doctor.display_name ?? doctor.id}
@@ -437,7 +446,7 @@ export function emptyReservationForm(): ReservationFormValues {
     date: "",
     time: "",
     slot_id: null,
-    doctor_id: null,
+    doctor_id: "",
     notes: "",
     status: "pending",
   };
@@ -460,7 +469,7 @@ export function reservationToForm(
     date,
     time: `${hours}:${minutes}`,
     slot_id: null,
-    doctor_id: reservation.doctor_id ?? null,
+    doctor_id: reservation.doctor_id ?? "",
     notes: reservation.notes,
     status: reservation.status,
   };

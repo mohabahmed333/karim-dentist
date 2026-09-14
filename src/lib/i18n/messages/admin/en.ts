@@ -485,7 +485,7 @@ export const adminEn = {
   "admin.reservations.patient": "Patient",
   "admin.reservations.service": "Service",
   "admin.reservations.doctor": "Doctor",
-  "admin.reservations.anyDoctor": "Any doctor",
+  "admin.reservations.selectDoctor": "Select doctor",
   "admin.reservations.allDoctors": "All doctors",
   "admin.reservations.date": "Date",
   "admin.reservations.time": "Time",

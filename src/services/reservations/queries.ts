@@ -20,11 +20,14 @@ export async function listReservations(): Promise<Reservation[]> {
 
 export async function getLatestReservationForPatient(
   patientId: string,
-): Promise<Pick<Reservation, "service_id" | "service_label" | "doctor_id"> | null> {
+): Promise<Pick<
+  Reservation,
+  "service_id" | "service_label" | "doctor_id" | "starts_at"
+> | null> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("reservations")
-    .select("service_id, service_label, doctor_id")
+    .select("service_id, service_label, doctor_id, starts_at")
     .eq("patient_id", patientId)
     .is("deleted_at", null)
     .order("starts_at", { ascending: false })

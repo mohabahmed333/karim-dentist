@@ -487,7 +487,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.reservations.patient": "المريض",
   "admin.reservations.service": "الخدمة",
   "admin.reservations.doctor": "الطبيب",
-  "admin.reservations.anyDoctor": "أي طبيب",
+  "admin.reservations.selectDoctor": "اختر الطبيب",
   "admin.reservations.allDoctors": "كل الأطباء",
   "admin.reservations.date": "التاريخ",
   "admin.reservations.time": "الوقت",
