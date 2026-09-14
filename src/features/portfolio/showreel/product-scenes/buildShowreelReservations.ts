@@ -9,6 +9,7 @@ export function buildShowreelReservations(): Reservation[] {
     id: row.id,
     deposit_hold: false,
     doctor_id: null,
+    patient_id: null,
     patient_name: row.patientName,
     phone: row.phone,
     phone_suffix: phoneSuffixForLookup(row.phone) ?? "",

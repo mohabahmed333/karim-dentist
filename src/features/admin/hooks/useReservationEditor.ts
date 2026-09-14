@@ -216,6 +216,7 @@ export function useReservationEditor(initial: Reservation[]) {
         id: crypto.randomUUID(),
         deposit_hold: false,
         doctor_id: null,
+        patient_id: null,
         patient_name: form.patient_name || "New patient",
         phone: form.phone,
         phone_suffix: phoneSuffixForLookup(form.phone) ?? "",
