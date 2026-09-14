@@ -138,6 +138,13 @@ export function ReservationsPageView({
     }
     return out;
   }, [doctors]);
+  const doctorNameById = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const doctor of doctors) {
+      if (doctor.display_name) out[doctor.id] = doctor.display_name;
+    }
+    return out;
+  }, [doctors]);
 
   function shiftCalendarMonth(delta: -1 | 1) {
     setMonthDir(delta);
@@ -326,6 +333,7 @@ export function ReservationsPageView({
                     movingReservationId={movingId}
                     eventLabel={(r) => r.patient_name}
                     doctorColorById={doctorColorById}
+                    doctorNameById={doctorNameById}
                     onSelectDay={onCalendarDayClick}
                     onSelectReservation={editor.openRow}
                     onMoveReservation={(id, date) => {

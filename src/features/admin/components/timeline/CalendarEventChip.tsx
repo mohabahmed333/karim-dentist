@@ -6,6 +6,7 @@ import {
   formatCalendarTime,
 } from "@/services/reservations/timeline";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CALENDAR_RESERVATION_DRAG_TYPE } from "./calendarDrag";
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
   isActive?: boolean;
   isMoving?: boolean;
   doctorColor?: string | null;
+  doctorName?: string | null;
   onSelect: (id: string) => void;
 };
 
@@ -23,6 +25,7 @@ export function CalendarEventChip({
   isActive,
   isMoving,
   doctorColor,
+  doctorName,
   onSelect,
 }: Props) {
   return (
@@ -50,11 +53,29 @@ export function CalendarEventChip({
       )}
     >
       {doctorColor ? (
-        <span
-          aria-hidden
-          className="size-1.5 shrink-0 rounded-full"
-          style={{ background: doctorColor }}
-        />
+        doctorName ? (
+          <Tooltip>
+            <TooltipTrigger
+              delay={200}
+              closeDelay={0}
+              render={
+                <span
+                  className="size-1.5 shrink-0 rounded-full"
+                  style={{ background: doctorColor }}
+                />
+              }
+            />
+            <TooltipContent side="top" sideOffset={6}>
+              {doctorName}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <span
+            aria-hidden
+            className="size-1.5 shrink-0 rounded-full"
+            style={{ background: doctorColor }}
+          />
+        )
       ) : null}
       <span className="shrink-0 font-semibold text-[var(--admin-text)]">
         {formatCalendarTime(reservation.starts_at)}

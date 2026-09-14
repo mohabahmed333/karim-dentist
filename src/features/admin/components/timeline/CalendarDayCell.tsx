@@ -17,6 +17,7 @@ type Props = {
   movingReservationId: string | null;
   eventLabel: (reservation: Reservation) => string;
   doctorColorById?: Record<string, string>;
+  doctorNameById?: Record<string, string>;
   onSelectDay: (iso: string) => void;
   onSelectReservation: (id: string) => void;
   onMoveReservation: (reservationId: string, targetDate: string) => void;
@@ -30,6 +31,7 @@ export function CalendarDayCell({
   movingReservationId,
   eventLabel,
   doctorColorById,
+  doctorNameById,
   onSelectDay,
   onSelectReservation,
   onMoveReservation,
@@ -106,6 +108,11 @@ export function CalendarDayCell({
             doctorColor={
               reservation.doctor_id
                 ? (doctorColorById?.[reservation.doctor_id] ?? null)
+                : null
+            }
+            doctorName={
+              reservation.doctor_id
+                ? (doctorNameById?.[reservation.doctor_id] ?? null)
                 : null
             }
             onSelect={onSelectReservation}
