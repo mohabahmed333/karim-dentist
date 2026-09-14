@@ -47,6 +47,30 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createClient();
+
+  // Defensive only: the reservation's doctor always comes from the slot
+  // itself (book_open_appointment_slot copies it), never from this field —
+  // but if the doctor the patient picked no longer matches the slot they're
+  // about to book (someone else took that doctor's last open time in the
+  // gap between the form loading and this submit), say so plainly instead
+  // of surfacing the generic "slot no longer available".
+  if (parsed.data.doctor_id) {
+    const { data: slot } = await supabase
+      .from("appointment_slots")
+      .select("doctor_id")
+      .eq("id", parsed.data.slot_id)
+      .maybeSingle();
+    if (slot && slot.doctor_id !== parsed.data.doctor_id) {
+      return NextResponse.json(
+        {
+          error:
+            "That doctor's time just changed — please pick a time again.",
+        },
+        { status: 409, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+  }
+
   const { data, error } = await supabase.rpc("book_open_appointment_slot", {
     p_slot_id: parsed.data.slot_id,
     p_patient_name: parsed.data.patient_name,

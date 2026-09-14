@@ -130,6 +130,13 @@ export const en = {
   bookingService: "Service",
   bookingServicePlaceholder: "Select a service",
   bookingServiceConsult: "General consultation",
+  bookingDoctor: "Doctor",
+  bookingDoctorAny: "No preference — earliest available",
+  bookingDoctorLoading: "Loading doctors…",
+  bookingDoctorNextAvailable: "Next available: {when}",
+  bookingDoctorFullyBooked: "Fully booked",
+  bookingDoctorNoneAvailable:
+    "No doctors are currently available for this service. Please contact us directly.",
   bookingDate: "Choose a date",
   bookingDatePlaceholder: "Select a date",
   bookingTime: "Choose a time",

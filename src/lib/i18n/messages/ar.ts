@@ -131,6 +131,13 @@ export const ar: Record<MessageKey, string> = {
   bookingService: "الخدمة",
   bookingServicePlaceholder: "اختر خدمة",
   bookingServiceConsult: "استشارة عامة",
+  bookingDoctor: "الطبيب",
+  bookingDoctorAny: "بدون تفضيل — أقرب موعد متاح",
+  bookingDoctorLoading: "جارٍ تحميل الأطباء…",
+  bookingDoctorNextAvailable: "أقرب موعد: {when}",
+  bookingDoctorFullyBooked: "محجوز بالكامل",
+  bookingDoctorNoneAvailable:
+    "لا يوجد أطباء متاحون حاليًا لهذه الخدمة. يرجى التواصل معنا مباشرة.",
   bookingDate: "اختر التاريخ",
   bookingDatePlaceholder: "اختر تاريخًا",
   bookingTime: "اختر الوقت",

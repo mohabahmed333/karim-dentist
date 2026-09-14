@@ -17,6 +17,15 @@ type SlotDto = {
   starts_at: string;
   ends_at: string;
   status: "open" | "booked";
+  /** Optional so the showreel demo's own local SlotDto (no doctor concept) still fits. */
+  doctor_id?: string | null;
+};
+
+type DoctorOption = {
+  id: string;
+  displayName: string | null;
+  specialty: string | null;
+  nextSlot: { id: string; startsAt: string } | null;
 };
 
 function dayKey(iso: string): string {
@@ -43,10 +52,38 @@ export function BookingForm({ services }: BookingFormProps) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [serviceId, setServiceId] = useState("");
+  const [doctors, setDoctors] = useState<DoctorOption[]>([]);
+  const [doctorsLoading, setDoctorsLoading] = useState(false);
+  // "" = no preference (show every eligible doctor's times together — see
+  // decision #5 in the Stage 2 plan, deliberately different from WhatsApp's
+  // eager resolve-to-one-doctor).
+  const [selectedDoctorId, setSelectedDoctorId] = useState("");
 
   useEffect(() => {
     setShowreel(document.documentElement.dataset.showreelDemo === "1");
   }, []);
+
+  // "consultation" is a sentinel with no real row; everything else must
+  // resolve to a real service id or nothing at all. Shared between the
+  // doctor fetch below and onSubmit so they can never disagree about which
+  // service is actually selected.
+  const resolvedServiceId = useMemo(() => {
+    if (!serviceId || serviceId === "consultation") return null;
+    return services.some((s) => s.id === serviceId) ? serviceId : null;
+  }, [serviceId, services]);
+
+  // A previously picked doctor may not be eligible for a newly picked
+  // service — clear it the moment the service changes, so it can never be
+  // submitted stale while the new doctor list is still loading. Adjusted
+  // during render (React's documented "reset state when a prop/dependency
+  // changes" pattern) rather than in the fetch effect below, so this reset
+  // is never tangled up with that effect's own async work.
+  const [doctorsLoadedForService, setDoctorsLoadedForService] =
+    useState(resolvedServiceId);
+  if (resolvedServiceId !== doctorsLoadedForService) {
+    setDoctorsLoadedForService(resolvedServiceId);
+    setSelectedDoctorId("");
+  }
 
   const ourServices = useMemo(
     () =>
@@ -92,6 +129,43 @@ export function BookingForm({ services }: BookingFormProps) {
     void loadSlots();
   }, []);
 
+  // Refetched whenever the resolved service changes — eligibility is
+  // per-service, so a doctor list fetched for the last service would be
+  // silently wrong for this one. Skipped entirely in showreel mode: the
+  // demo's slots carry no doctor_id (buildShowreelBookingSlots predates
+  // this feature), so there is nothing real to offer, and nothing in the
+  // scripted showreel flow ever depends on a doctor being picked.
+  useEffect(() => {
+    // Nothing to fetch — doctors already starts at [], which is exactly
+    // what showreel mode wants (the section stays hidden), so there is
+    // nothing to reset here.
+    if (showreel) return;
+    let alive = true;
+    setDoctorsLoading(true);
+    (async () => {
+      try {
+        const params = resolvedServiceId
+          ? `?service_id=${encodeURIComponent(resolvedServiceId)}`
+          : "";
+        const res = await fetch(`/api/v1/booking/doctors${params}`);
+        const body = (await res.json()) as {
+          doctors?: DoctorOption[];
+          error?: string;
+        };
+        if (!alive) return;
+        if (body.error) throw new Error(body.error);
+        setDoctors(body.doctors ?? []);
+      } catch {
+        if (alive) setDoctors([]);
+      } finally {
+        if (alive) setDoctorsLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [resolvedServiceId, showreel]);
+
   useBookingFormShowreel({
     enabled: showreel,
     slots,
@@ -110,9 +184,22 @@ export function BookingForm({ services }: BookingFormProps) {
     setServiceId,
   });
 
+  // No preference (selectedDoctorId === "") shows every doctor's times
+  // together, unfiltered — the existing calendar view, unchanged. Picking a
+  // specific doctor narrows to just theirs. Either way the doctor is
+  // already correct server-side (a slot carries its own doctor_id), this
+  // is purely which times the patient sees.
+  const doctorFilteredSlots = useMemo(
+    () =>
+      selectedDoctorId
+        ? slots.filter((slot) => slot.doctor_id === selectedDoctorId)
+        : slots,
+    [slots, selectedDoctorId],
+  );
+
   const dates = useMemo((): BookingDateOption[] => {
     const byDay = new Map<string, BookingDateOption>();
-    for (const slot of slots) {
+    for (const slot of doctorFilteredSlots) {
       const day = dayKey(slot.starts_at);
       const existing = byDay.get(day);
       if (existing) {
@@ -133,11 +220,12 @@ export function BookingForm({ services }: BookingFormProps) {
       });
     }
     return [...byDay.values()];
-  }, [slots, locale]);
+  }, [doctorFilteredSlots, locale]);
 
   const daySlots = useMemo(
-    () => slots.filter((slot) => dayKey(slot.starts_at) === selectedDate),
-    [slots, selectedDate],
+    () =>
+      doctorFilteredSlots.filter((slot) => dayKey(slot.starts_at) === selectedDate),
+    [doctorFilteredSlots, selectedDate],
   );
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -183,6 +271,10 @@ export function BookingForm({ services }: BookingFormProps) {
           email: email.trim(),
           service_id: service?.id ?? null,
           service_label: service?.title ?? "General consultation",
+          // The slot's own doctor, not necessarily selectedDoctorId — with
+          // "no preference" a patient can still click any doctor's time
+          // from the unfiltered list, and that's who this booking is with.
+          doctor_id: selected.doctor_id ?? null,
           notes: String(
             new FormData(event.currentTarget).get("notes") || "",
           ).trim(),
@@ -191,7 +283,11 @@ export function BookingForm({ services }: BookingFormProps) {
       const body = (await res.json()) as { error?: string };
       if (!res.ok) {
         if (res.status === 409) {
-          setError(t("bookingSlotTaken"));
+          // Two different 409s share this status: the plain race (someone
+          // else took the slot) and the doctor-mismatch guard above. The
+          // server's own message already says which one plainly — prefer
+          // it when present, falling back to the generic translated copy.
+          setError(body.error || t("bookingSlotTaken"));
           await loadSlots();
           setSelectedSlotId("");
           return;
@@ -303,6 +399,106 @@ export function BookingForm({ services }: BookingFormProps) {
           </select>
         </label>
       </div>
+
+      {/* Service first, doctor second — the step order the plan settled on.
+          The fetch above still runs regardless of whether a service is
+          picked (so the list is warm the moment it's needed); this just
+          keeps it out of view until there's a service to show it for. */}
+      {!serviceId ? null : doctorsLoading ? (
+        <p className="text-sm text-[#6b7280]">{t("bookingDoctorLoading")}</p>
+      ) : doctors.length === 0 ? (
+        // Only worth telling the patient when a real, restricted service is
+        // the reason — before any service is chosen (or for an unrestricted
+        // one) an empty list here just means "nothing to narrow by yet",
+        // not "nobody can see you", so stay silent rather than alarm them.
+        resolvedServiceId ? (
+          <p className="text-sm text-red-600" role="alert">
+            {t("bookingDoctorNoneAvailable")}
+          </p>
+        ) : null
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2">
+          <span className="sm:col-span-2 text-sm text-[#0f2744]">
+            {t("bookingDoctor")}
+          </span>
+          <label
+            className={`flex cursor-pointer items-center gap-2 rounded-[16px] border px-4 py-3 text-sm transition-colors ${
+              selectedDoctorId === ""
+                ? "border-[#0f2744] bg-[#0f2744] text-white"
+                : "border-[#e6e8ec] text-[#0f2744] hover:border-[#0f2744]/40"
+            }`}
+          >
+            <input
+              type="radio"
+              name="doctor"
+              className="sr-only"
+              checked={selectedDoctorId === ""}
+              onChange={() => {
+                setSelectedDoctorId("");
+                setSelectedDate("");
+                setSelectedSlotId("");
+              }}
+            />
+            {t("bookingDoctorAny")}
+          </label>
+          {doctors.map((doctor) => {
+            const selected = selectedDoctorId === doctor.id;
+            return (
+              <label
+                key={doctor.id}
+                className={`flex cursor-pointer flex-col gap-0.5 rounded-[16px] border px-4 py-3 text-sm transition-colors ${
+                  selected
+                    ? "border-[#0f2744] bg-[#0f2744] text-white"
+                    : "border-[#e6e8ec] text-[#0f2744] hover:border-[#0f2744]/40"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="doctor"
+                    className="sr-only"
+                    checked={selected}
+                    onChange={() => {
+                      setSelectedDoctorId(doctor.id);
+                      setSelectedDate("");
+                      setSelectedSlotId("");
+                    }}
+                  />
+                  <span className="font-medium">
+                    {doctor.displayName ?? doctor.id}
+                  </span>
+                </span>
+                {doctor.specialty ? (
+                  <span
+                    className={
+                      selected ? "text-white/80" : "text-[#6b7280]"
+                    }
+                  >
+                    {doctor.specialty}
+                  </span>
+                ) : null}
+                <span className={selected ? "text-white/80" : "text-[#6b7280]"}>
+                  {doctor.nextSlot
+                    ? t("bookingDoctorNextAvailable").replace(
+                        "{when}",
+                        new Date(doctor.nextSlot.startsAt).toLocaleString(
+                          locale,
+                          {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        ),
+                      )
+                    : t("bookingDoctorFullyBooked")}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      )}
 
       <BookingSchedulePicker
         dates={dates}
