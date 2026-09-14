@@ -64,29 +64,34 @@ export type BuiltPrompt = {
 };
 
 /**
- * What the clinic takes up front, if anything.
+ * What the consultation costs.
  *
- * This is the only price in the assistant's world. A service row has no price
- * column, so every fee figure it could produce would be invented — but the
- * deposit is real, it is what the patient is asked for at the end of a booking
- * anyway, and "how much?" deserves a better answer than silence.
+ * The clinic takes its deposit as the fee for the كشف — the general
+ * consultation — paid up front to hold the chair. So this is not a part
+ * payment towards an unknown total: for that one appointment it is the price,
+ * and the assistant can answer "الكشف بكام؟" outright instead of promising a
+ * call back.
  *
- * The wording matters: it is a deposit towards the visit, not the cost of it.
+ * It remains the only price in the assistant's world. No service row carries a
+ * fee, so every other figure it could produce would be invented.
  */
 function depositBlock(
   deposit: { amountEgp: number; currency: string } | null,
 ): string {
   if (!deposit || !(deposit.amountEgp > 0)) {
-    return "Booking deposit: none. You have no price information at all — every question about cost goes to a colleague.";
+    return "Consultation fee: not set. You have no price information at all — every question about cost goes to a colleague.";
   }
   return [
-    `Booking deposit: ${deposit.amountEgp} ${deposit.currency}, taken to confirm an appointment.`,
-    "This is the ONE money figure you may state, and only as a deposit —",
-    "never as the price of a treatment or of the visit. The full cost is",
-    "confirmed by a colleague.",
+    `Consultation fee (الكشف): ${deposit.amountEgp} ${deposit.currency}.`,
+    "Paid up front to confirm the appointment, and it is the whole fee for",
+    "that visit — not a part payment. Asked what the كشف costs, answer with",
+    "this figure plainly; no handoff is needed for that one question.",
     `Use the number exactly: ${deposit.amountEgp}. Write the currency the way a`,
     "patient reads it in their own language — \"جنيه\" in Arabic, \"EGP\" in",
     "English — never the two mixed.",
+    "This is the ONLY price you have. Any other treatment — a crown, whitening,",
+    "an implant, orthodontics — has no price on file: never guess one, never",
+    "give a range, and never add anything to this figure.",
   ].join("\n");
 }
 

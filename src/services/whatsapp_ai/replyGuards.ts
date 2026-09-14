@@ -152,17 +152,28 @@ const PRICE_FIGURES = [
 const FREE_CLAIMS = [/مجان/, /ببلاش/, /بدون\s*مقابل/, /free\s+of\s+charge/i, /\bno\s+charge\b/i];
 
 /**
- * Words that make a figure a deposit rather than a fee.
+ * Words that tie a figure to the one thing the clinic has a price for.
  *
- * `normalizeArabic` has already folded the hamza and the ta marbuta, so
- * "مُقدَّم", "مقدم" and "المقدم" all arrive here the same.
+ * The fee is taken up front to hold the chair, so it is spoken of both ways —
+ * as the price of the كشف and as the deposit that confirms the booking — and
+ * both are true. `normalizeArabic` has already folded the hamza and the ta
+ * marbuta, so "مُقدَّم", "مقدم" and "المقدم" all arrive here the same, as do
+ * "الكشف" and "كشف".
  */
-const DEPOSIT_MARKERS = [/مقدم/, /عربون/, /\bdeposit\b/i];
+const CONSULTATION_MARKERS = [
+  /مقدم/,
+  /عربون/,
+  /كشف/,
+  /استشار/,
+  /\bdeposit\b/i,
+  /\bconsultation\b/i,
+  /\bcheck[\s-]?up\b/i,
+];
 
 export type MoneyGuardOptions = {
   /**
-   * The booking deposit the server itself supplied to the prompt, if any. The
-   * one figure the assistant is allowed to repeat.
+   * The consultation fee the server itself supplied to the prompt, if any. The
+   * one figure the assistant is allowed to state.
    */
   depositEgp?: number | null;
 };
@@ -186,11 +197,13 @@ function figuresIn(probe: string): number[] {
  * invented — and a patient acts on a quoted price. The prompt sends money
  * questions to a person; this is what makes that true rather than hoped for.
  *
- * The one exception is the booking deposit, because the server put it in the
- * prompt itself. It is allowed through only when every figure in the reply is
- * that exact amount *and* the reply calls it a deposit: "المقدم ٢٠٠ جنيه" is
- * the answer we want, while "الكشف ٢٠٠ جنيه" is the claim we are stopping,
- * and the two differ by one word.
+ * The one exception is the consultation fee, because the server put it in the
+ * prompt itself: the clinic takes it up front to hold the chair, so it is both
+ * the price of the كشف and the deposit that confirms the booking. It is
+ * allowed through only when every figure in the reply is that exact amount
+ * *and* the reply ties it to the consultation or to the deposit. So "الكشف بـ
+ * ٢٠٠ جنيه" and "مقدم ٢٠٠ جنيه" both send, while "التقويم بـ ٢٠٠ جنيه" —
+ * a treatment nothing on file carries a price for — is drafted for staff.
  *
  * A figure is refused even inside a question — "الكشف بـ ٢٠٠ جنيه، تحب أحجز؟"
  * has already told them the price. A claim that something is free is refused
@@ -208,12 +221,12 @@ export function quotesMoney(reply: string, options: MoneyGuardOptions = {}): boo
   const figures = figuresIn(probe);
   if (figures.length > 0) {
     const deposit = options.depositEgp;
-    const quotesOnlyTheDeposit =
+    const quotesOnlyTheFee =
       typeof deposit === "number" &&
       deposit > 0 &&
       figures.every((n) => n === deposit) &&
-      DEPOSIT_MARKERS.some((re) => re.test(probe));
-    if (!quotesOnlyTheDeposit) return true;
+      CONSULTATION_MARKERS.some((re) => re.test(probe));
+    if (!quotesOnlyTheFee) return true;
   }
 
   const asks = OFFER_MARKERS.some((re) => re.test(probe));

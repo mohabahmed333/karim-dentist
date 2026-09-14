@@ -211,37 +211,43 @@ describe("quotesMoney", () => {
   }
 
   /**
-   * The booking deposit is the one figure the server itself put in the prompt,
-   * so repeating it is not inventing anything — as long as the reply calls it a
-   * deposit. "المقدم ٢٠٠ جنيه" is the answer we want; "الكشف ٢٠٠ جنيه" is the
-   * claim we are stopping, and the two differ by one word.
+   * The consultation fee is the one figure the server itself put in the
+   * prompt. The clinic takes it up front to hold the chair, so it is both the
+   * price of the كشف and the deposit that confirms the booking — and the
+   * assistant may say it either way. Every other treatment has no price on
+   * file, so a figure attached to one was invented.
    */
-  describe("the booking deposit, which the server supplied", () => {
-    const dep = { depositEgp: 200 };
+  describe("the consultation fee, which the server supplied", () => {
+    const fee = { depositEgp: 200 };
 
     for (const reply of [
-      "عشان نأكد الميعاد بناخد مقدم 200 جنيه، والزميل هيأكدلك التكلفة",
+      "الكشف بـ 200 جنيه، بيتدفعوا مقدم عشان نأكد الميعاد",
+      "الكشف بـ ٢٠٠ جنيه. تحب أحجزلك؟",
+      "الاستشارة ٢٠٠ جنيه",
       "عشان نأكد الميعاد بناخد مقدم ٢٠٠ جنيه",
+      "The consultation is 200 EGP, paid up front to confirm the appointment",
       "There is a deposit of 200 EGP to confirm the appointment",
     ]) {
-      it(`allows "${reply}"`, () => assert.equal(quotesMoney(reply, dep), false));
+      it(`allows "${reply}"`, () => assert.equal(quotesMoney(reply, fee), false));
     }
 
-    it("refuses the same figure presented as the price of the visit", () => {
-      assert.equal(quotesMoney("الكشف بـ 200 جنيه", dep), true);
+    /** Nothing on file prices a treatment, whatever figure it is given. */
+    it("refuses the fee attached to a treatment instead", () => {
+      assert.equal(quotesMoney("التقويم بـ 200 جنيه", fee), true);
+      assert.equal(quotesMoney("The crown is 200 EGP", fee), true);
     });
 
-    it("refuses a figure that is not the deposit", () => {
-      assert.equal(quotesMoney("المقدم 350 جنيه", dep), true);
+    it("refuses a figure that is not the fee", () => {
+      assert.equal(quotesMoney("الكشف بـ 350 جنيه", fee), true);
     });
 
-    it("refuses a total built around the deposit", () => {
-      assert.equal(quotesMoney("المقدم 200 جنيه والباقي 300 جنيه", dep), true);
+    it("refuses a total built around the fee", () => {
+      assert.equal(quotesMoney("الكشف 200 جنيه والباقي 300 جنيه", fee), true);
     });
 
-    it("refuses the deposit when the clinic takes none", () => {
-      assert.equal(quotesMoney("مقدم 200 جنيه", {}), true);
-      assert.equal(quotesMoney("مقدم 200 جنيه", { depositEgp: 0 }), true);
+    it("refuses any figure when no fee is configured", () => {
+      assert.equal(quotesMoney("الكشف بـ 200 جنيه", {}), true);
+      assert.equal(quotesMoney("الكشف بـ 200 جنيه", { depositEgp: 0 }), true);
     });
   });
 
