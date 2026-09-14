@@ -932,26 +932,28 @@ EOF
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Start the app**
+**Deviation from plan:** no browser-automation tool was available in this session, and the repo's Playwright e2e suite is deliberately scoped to a separate local Supabase instance (`supabase start`), not the production-linked project this whole plan operates against — redirecting it at production would be the wrong move, and standing up local Supabase via Docker just for this one check was judged out of proportion. Substituted read-only SQL verification against production instead. **Steps 2-4 (actually clicking through the form) still need a human pass** — see report to user.
+
+- [x] **Step 1: Start the app** — a dev server was already running on :3000 (concurrent session), confirmed responsive (HTTP 200).
 
 Run: `yarn dev` and sign in at `/admin/login`.
 
-- [ ] **Step 2: New-patient booking**
+- [~] **Step 2: New-patient booking** — not click-tested (no browser tool). Verified indirectly: `resolvePatientId`'s logic is unit-covered via `patientKeyFromNamePhone` (Task 4), and read-only production queries confirm the underlying join works (see Step 5 below).
 
 Open the reservation form (Reservations page → New, or Quick Book), leave the patient picker untouched, type a brand-new name/phone, and save. Confirm in the Supabase dashboard that a new `patients` row was created with the matching `patient_key`, and the reservation's `patient_id` points to it.
 
-- [ ] **Step 3: Existing-patient booking**
+- [~] **Step 3: Existing-patient booking** — not click-tested (no browser tool); needs a human pass.
 
 Open the reservation form again, click "Search for an existing patient…", search by the name or phone just created, select it. Confirm the name/phone/email fields prefill, and after saving the reservation's `patient_id` matches the same `patients.id` (no duplicate row created).
 
-- [ ] **Step 4: Collision on the "new patient" path**
+- [~] **Step 4: Collision on the "new patient" path** — not click-tested (no browser tool); needs a human pass.
 
 Open the form, leave it in new-patient mode, but type the same phone number used in Step 2 under a different name. Save. Confirm the reservation links to the Step 2 patient's existing `patients.id` rather than erroring or creating a duplicate.
 
-- [ ] **Step 5: Confirm unrelated features still work against the renamed table**
+- [x] **Step 5: Confirm unrelated features still work against the renamed table** — verified via read-only production queries instead of clicking through each surface: `select ... from public.patients` succeeds (36 rows), and `reservations join patients on patient_id` correctly groups multiple visits from the same person under one `patients.id` (confirmed for a returning patient with 2 reservations). All 2313 unit tests pass (covering `admin_ai/patientAdapters`, `system_log/revertPolicy`, `system_log/listActions` against the renamed table). Full click-through of `ClientProfileDrawer` / reception flows / admin AI tools in the browser still needs a human pass.
 
 Spot-check: the patient chairside profile drawer (`ClientProfileDrawer`), reception flows quick-reply context, admin AI "get patient summary" / "search patients" tools, and the system-log revert action for a patient-profile edit. All of these read/write the table by its literal name and were updated in Task 3 — confirm none throw a "relation patient_profiles does not exist" error.
 
-- [ ] **Step 6: Report results to the user**
+**Pre-existing data-quality note (not caused by this work, out of scope to fix):** a few patients (e.g. "Ahmed Hassan") have duplicate `patients` rows because some old seed data stored `patient_key` with a `+` prefix (`phone:+201...`) while the live key algorithm always strips it (`phone:201...`). The migration only backfills missing keys — it doesn't touch or dedupe pre-existing rows.
 
-Summarize what was checked and any issues found — do not mark the plan complete if any manual check fails.
+- [x] **Step 6: Report results to the user** — done, see chat.
