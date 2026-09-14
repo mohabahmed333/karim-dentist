@@ -18,6 +18,22 @@ export async function listReservations(): Promise<Reservation[]> {
   return data ?? [];
 }
 
+export async function getLatestReservationForPatient(
+  patientId: string,
+): Promise<Pick<Reservation, "service_id" | "service_label" | "doctor_id"> | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("reservations")
+    .select("service_id, service_label, doctor_id")
+    .eq("patient_id", patientId)
+    .is("deleted_at", null)
+    .order("starts_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export async function getReservation(id: string): Promise<Reservation | null> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -60,7 +76,9 @@ function applyReservationFilters(
     query = query.in("service_id", filters.serviceIds);
   }
   if (filters?.doctorId && filters.doctorId !== "all") {
-    query = query.eq("doctor_id", filters.doctorId);
+    query = filters.includeUnassigned
+      ? query.or(`doctor_id.eq.${filters.doctorId},doctor_id.is.null`)
+      : query.eq("doctor_id", filters.doctorId);
   }
   if (filters?.q) {
     const safe = sanitizeIlike(filters.q);

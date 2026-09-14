@@ -18,6 +18,7 @@ import {
 } from "@/features/admin/components/ServicePicker";
 import { PatientCombobox } from "@/features/admin/components/reservations/PatientCombobox";
 import type { PatientSearchResult } from "@/services/patient_profiles/types";
+import { getLatestReservationForPatient } from "@/services/reservations/queries";
 
 type Props = {
   values: ReservationFormValues;
@@ -169,14 +170,18 @@ export function ReservationFormFields({
     onChange({ ...values, ...partial });
   }
 
-  function onPatientSelect(patient: PatientSearchResult) {
+  async function onPatientSelect(patient: PatientSearchResult) {
+    setNameDropdownOpen(false);
+    const last = await getLatestReservationForPatient(patient.id).catch(() => null);
     patch({
       patient_id: patient.id,
       patient_name: patient.display_name,
       phone: patient.phone,
       email: patient.email ?? "",
+      service_id: last?.service_id ?? values.service_id,
+      service_label: last?.service_label ?? values.service_label,
+      doctor_id: last?.doctor_id ?? values.doctor_id,
     });
-    setNameDropdownOpen(false);
   }
 
   function onServiceChange(serviceValue: string) {
