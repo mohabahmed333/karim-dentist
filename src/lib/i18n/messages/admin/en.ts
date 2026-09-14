@@ -639,9 +639,9 @@ export const adminEn = {
   "admin.doctors.removeConfirmDesc":
     "{name}’s account will be deactivated — their past reservations and notes stay on record, and an admin can reactivate the account from Settings > Accounts.",
   "admin.doctors.thisDoctor": "This doctor",
-  "admin.doctors.restrictTitle": "Restrict this service?",
+  "admin.doctors.restrictTitle": "Restrict this service to selected doctors?",
   "admin.doctors.restrictDesc":
-    "{service} is currently open to every doctor. Checking {doctor} will restrict it to just the doctor(s) you check here — everyone else stops being offered it until you uncheck it or add them back.",
+    "{service} is currently open to every doctor. Checking {doctor} narrows it to just the doctor(s) checked here — everyone else stops being offered it. This isn't final: you can still add more doctors afterward from their own tab, so it doesn't have to end up limited to {doctor} alone.",
   "admin.doctors.thisService": "This service",
   "admin.doctors.restrictConfirm": "Restrict it",
 

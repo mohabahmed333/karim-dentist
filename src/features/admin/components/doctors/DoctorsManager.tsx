@@ -849,12 +849,12 @@ export function DoctorsManager({
             <DialogTitle>{t("admin.doctors.restrictTitle")}</DialogTitle>
             <DialogDescription>
               {t("admin.doctors.restrictDesc")
-                .replace(
+                .replaceAll(
                   "{service}",
                   services.find((s) => s.id === pendingRestrictServiceId)
                     ?.title ?? t("admin.doctors.thisService"),
                 )
-                .replace(
+                .replaceAll(
                   "{doctor}",
                   selectedDoctor?.display_name ?? t("admin.doctors.thisDoctor"),
                 )}

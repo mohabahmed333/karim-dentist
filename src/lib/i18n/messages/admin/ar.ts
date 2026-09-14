@@ -641,9 +641,9 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.doctors.removeConfirmDesc":
     "سيتم إلغاء تفعيل حساب {name} — تبقى حجوزاته وملاحظاته السابقة في السجل، ويمكن لأي مسؤول إعادة تفعيل الحساب من الإعدادات > الحسابات.",
   "admin.doctors.thisDoctor": "هذا الطبيب",
-  "admin.doctors.restrictTitle": "تقييد هذه الخدمة؟",
+  "admin.doctors.restrictTitle": "تقييد هذه الخدمة على أطباء مختارين؟",
   "admin.doctors.restrictDesc":
-    "{service} متاحة حاليًا لكل الأطباء. تحديد {doctor} سيقيّدها على الأطباء المحدَّدين هنا فقط — يتوقف عرضها على البقية حتى تُلغي التحديد أو تضيفهم مرة أخرى.",
+    "{service} متاحة حاليًا لكل الأطباء. تحديد {doctor} سيقصرها على الأطباء المحدَّدين هنا فقط — يتوقف عرضها على البقية. هذا ليس نهائيًا: يمكنك إضافة أطباء آخرين لاحقًا من تبويب كل منهم، فلا داعي لأن تبقى مقتصرة على {doctor} وحده.",
   "admin.doctors.thisService": "هذه الخدمة",
   "admin.doctors.restrictConfirm": "تقييدها",
 
