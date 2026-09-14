@@ -29,6 +29,7 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
       kind: String(form.get("kind") ?? "our_services"),
       tags,
       image_url: String(form.get("image_url") ?? "") || null,
+      price_label: String(form.get("price_label") ?? "").trim() || null,
       is_published: form.get("is_published") === "on",
     });
   }
@@ -109,6 +110,18 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
           name="image_url"
           defaultValue={item.image_url ?? ""}
           key={item.id + "image_url"}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="price_label">
+          Price (shown to patients, e.g. on WhatsApp)
+        </Label>
+        <Input
+          id="price_label"
+          name="price_label"
+          placeholder="e.g. From EGP 800, or EGP 300–600"
+          defaultValue={item.price_label ?? ""}
+          key={item.id + "price_label"}
         />
       </div>
       <label className="flex items-center gap-2 text-sm">

@@ -251,7 +251,7 @@ export async function processAutoReplyJob(
       // whatever order the database happens to return them.
       db
         .from("services")
-        .select("title,title_ar")
+        .select("title,title_ar,price_label")
         .eq("is_published", true)
         .is("deleted_at", null)
         .order("sort_order")
@@ -366,6 +366,7 @@ export async function processAutoReplyJob(
           .map((s) => ({
             title: s.title as string,
             title_ar: (s.title_ar as string) || null,
+            price: (s.price_label as string) || null,
           })),
         // The clinic's own deposit, so "how much?" has an honest answer instead
         // of a dead end. It is the only money figure the assistant may state,

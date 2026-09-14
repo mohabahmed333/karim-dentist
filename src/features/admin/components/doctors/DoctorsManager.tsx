@@ -15,6 +15,14 @@ import {
   AdminSelectTrigger,
   AdminSelectValue,
 } from "@/features/admin/ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
 import { ConfirmDeleteDialog } from "@/features/admin/components/ConfirmDeleteDialog";
 import { SettingsSectionGroup } from "@/features/admin/components/SettingsSectionGroup";
@@ -32,6 +40,8 @@ import type { DoctorProfile } from "@/services/profiles";
 import { saveDoctorIdentity } from "@/services/profiles/actions";
 import { doctorIdentityUpsertSchema } from "@/services/profiles/schemas";
 import { DOCTOR_COLOR_PALETTE } from "@/services/profiles/colorPalette";
+import { saveDoctorServices } from "@/services/service_doctors/actions";
+import type { Service } from "@/services/services";
 
 const DAY_LABELS = [
   { value: 0, label: "Sun" },
@@ -114,11 +124,16 @@ function identityFromDoctor(doctor: DoctorProfile): IdentityFormState {
 type Props = {
   doctors: DoctorProfile[];
   initialHours: Record<string, DoctorHours>;
+  services: Service[];
+  /** service_id -> doctor_ids currently mapped to it. Empty/absent = open to every doctor. */
+  initialMappings: Record<string, string[]>;
 };
 
 export function DoctorsManager({
   doctors: initialDoctors,
   initialHours,
+  services,
+  initialMappings,
 }: Props) {
   const [doctors, setDoctors] = useState(initialDoctors);
   const [hoursByDoctor, setHoursByDoctor] =
@@ -142,8 +157,32 @@ export function DoctorsManager({
     }
     return out;
   });
+  // service_id -> doctor_ids currently mapped, kept in sync with the DB only
+  // on a successful save (mirrors hoursByDoctor/doctors elsewhere in this
+  // file) — this is what the "open to all / restricted to N" badge reads,
+  // deliberately separate from the in-progress, unsaved serviceIdForms.
+  const [mappings, setMappings] =
+    useState<Record<string, string[]>>(initialMappings);
+  const [serviceIdForms, setServiceIdForms] = useState<
+    Record<string, string[]>
+  >(() => {
+    const out: Record<string, string[]> = {};
+    for (const doctor of initialDoctors) {
+      out[doctor.id] = Object.entries(initialMappings)
+        .filter(([, doctorIds]) => doctorIds.includes(doctor.id))
+        .map(([serviceId]) => serviceId);
+    }
+    return out;
+  });
+  // The one service checkbox awaiting the "this will restrict it" confirm —
+  // null means no confirm is showing.
+  const [pendingRestrictServiceId, setPendingRestrictServiceId] = useState<
+    string | null
+  >(null);
+
   const [pending, setPending] = useState(false);
   const [savingIdentity, setSavingIdentity] = useState(false);
+  const [savingServices, setSavingServices] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
@@ -154,6 +193,7 @@ export function DoctorsManager({
   const identityForm =
     identityForms[selectedId] ??
     (selectedDoctor ? identityFromDoctor(selectedDoctor) : { specialty: "", bio: "", calendar_color: null });
+  const selectedServiceIds = serviceIdForms[selectedId] ?? [];
 
   function patchIdentity(partial: Partial<IdentityFormState>) {
     setIdentityForms((prev) => ({
@@ -257,6 +297,64 @@ export function DoctorsManager({
     }
   }
 
+  function applyServiceToggle(serviceId: string, checked: boolean) {
+    setServiceIdForms((prev) => {
+      const current = prev[selectedId] ?? [];
+      const next = checked
+        ? [...current, serviceId]
+        : current.filter((id) => id !== serviceId);
+      return { ...prev, [selectedId]: next };
+    });
+  }
+
+  /**
+   * Checking a box is only risky the moment it makes a currently-open
+   * service *exclusive* — every other doctor is silently narrowed out.
+   * Unchecking, or checking a service that's already restricted to someone,
+   * needs no warning. See the plan's decision on this: badges + a one-time
+   * confirm, not a silent checkbox.
+   */
+  function toggleService(serviceId: string, checked: boolean) {
+    if (checked && (mappings[serviceId] ?? []).length === 0) {
+      setPendingRestrictServiceId(serviceId);
+      return;
+    }
+    applyServiceToggle(serviceId, checked);
+  }
+
+  function confirmRestrict() {
+    if (pendingRestrictServiceId) applyServiceToggle(pendingRestrictServiceId, true);
+    setPendingRestrictServiceId(null);
+  }
+
+  async function onSaveServices() {
+    if (!selectedId) return;
+    const serviceIds = serviceIdForms[selectedId] ?? [];
+    setSavingServices(true);
+    try {
+      await saveDoctorServices(selectedId, serviceIds);
+      // Mirror the server's delete-then-insert exactly: drop this doctor
+      // from every service's list, then add them back to the ones just
+      // saved — keeps the cross-doctor badges correct without a refetch.
+      setMappings((prev) => {
+        const next: Record<string, string[]> = {};
+        for (const [svcId, docIds] of Object.entries(prev)) {
+          const filtered = docIds.filter((id) => id !== selectedId);
+          if (filtered.length > 0) next[svcId] = filtered;
+        }
+        for (const svcId of serviceIds) {
+          next[svcId] = [...(next[svcId] ?? []), selectedId];
+        }
+        return next;
+      });
+      toast.success("Services saved");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSavingServices(false);
+    }
+  }
+
   async function onRegenerate() {
     if (!selectedId) return;
     setRegenerating(true);
@@ -301,6 +399,22 @@ export function DoctorsManager({
         delete next[removedId];
         return next;
       });
+      setServiceIdForms((prev) => {
+        const next = { ...prev };
+        delete next[removedId];
+        return next;
+      });
+      // list_bookable_doctors_for_service already filters deleted_at IS NULL,
+      // so a removed doctor stops being offered regardless — this just keeps
+      // the badge counts on screen from still counting them.
+      setMappings((prev) => {
+        const next: Record<string, string[]> = {};
+        for (const [svcId, docIds] of Object.entries(prev)) {
+          const filtered = docIds.filter((id) => id !== removedId);
+          if (filtered.length > 0) next[svcId] = filtered;
+        }
+        return next;
+      });
       setSelectedId((prev) =>
         prev === removedId
           ? (doctors.find((d) => d.id !== removedId)?.id ?? "")
@@ -335,6 +449,14 @@ export function DoctorsManager({
             onClick={() => void onSaveIdentity()}
           >
             {savingIdentity ? "Saving…" : "Save profile"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={savingServices || !selectedId}
+            onClick={() => void onSaveServices()}
+          >
+            {savingServices ? "Saving…" : "Save services"}
           </Button>
           <Button
             type="button"
@@ -462,6 +584,57 @@ export function DoctorsManager({
                 ))}
               </div>
             </div>
+          </SettingsSectionGroup>
+
+          <SettingsSectionGroup
+            title="Services this doctor offers"
+            hint="Leave everything unchecked to let this doctor take any service. A service isn't restricted until at least one doctor is checked for it."
+            className="space-y-2"
+          >
+            {services.length === 0 ? (
+              <p className="text-[13px] text-[var(--admin-muted)]">
+                No services on file yet.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {services.map((service) => {
+                  const restrictedTo = mappings[service.id] ?? [];
+                  const checked = selectedServiceIds.includes(service.id);
+                  return (
+                    <label
+                      key={service.id}
+                      className="flex items-start gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] p-2.5 text-sm"
+                    >
+                      <Checkbox
+                        className="mt-0.5"
+                        checked={checked}
+                        onCheckedChange={(next) =>
+                          toggleService(service.id, next === true)
+                        }
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[var(--admin-text)]">
+                          {service.title}
+                        </span>
+                        <span
+                          className={`block text-[11px] ${
+                            restrictedTo.length === 0
+                              ? "text-[var(--admin-muted)]"
+                              : "text-amber-700"
+                          }`}
+                        >
+                          {restrictedTo.length === 0
+                            ? "Open to all doctors"
+                            : `Restricted to ${restrictedTo.length} doctor${
+                                restrictedTo.length === 1 ? "" : "s"
+                              }`}
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
           </SettingsSectionGroup>
 
           <SettingsSectionGroup title="Open days">
@@ -596,6 +769,38 @@ export function DoctorsManager({
         description={`${selectedDoctor?.display_name ?? "This doctor"}'s account will be deactivated — their past reservations and notes stay on record, and an admin can reactivate the account from Settings > Accounts.`}
         onConfirm={() => void onRemoveDoctor()}
       />
+
+      <Dialog
+        open={pendingRestrictServiceId !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingRestrictServiceId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Restrict this service?</DialogTitle>
+            <DialogDescription>
+              {services.find((s) => s.id === pendingRestrictServiceId)?.title ??
+                "This service"}{" "}
+              is currently open to every doctor. Checking {selectedDoctor?.display_name ?? "this doctor"} will
+              restrict it to just the doctor(s) you check here — everyone else
+              stops being offered it until you uncheck it or add them back.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPendingRestrictServiceId(null)}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={confirmRestrict}>
+              Restrict it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

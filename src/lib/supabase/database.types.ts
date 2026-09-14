@@ -2350,6 +2350,39 @@ export type Database = {
         }
         Relationships: []
       }
+      service_doctors: {
+        Row: {
+          created_at: string
+          doctor_id: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_id: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          doctor_id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_doctors_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_doctors_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           created_at: string
@@ -2361,6 +2394,7 @@ export type Database = {
           is_published: boolean
           kind: "our_services" | "laser"
           media_type: "image" | "video"
+          price_label: string | null
           slug: string | null
           sort_order: number
           tags: string[]
@@ -2378,6 +2412,7 @@ export type Database = {
           is_published?: boolean
           kind?: "our_services" | "laser"
           media_type?: "image" | "video"
+          price_label?: string | null
           slug?: string | null
           sort_order?: number
           tags?: string[]
@@ -2395,6 +2430,7 @@ export type Database = {
           is_published?: boolean
           kind?: "our_services" | "laser"
           media_type?: "image" | "video"
+          price_label?: string | null
           slug?: string | null
           sort_order?: number
           tags?: string[]
@@ -3491,6 +3527,19 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      list_bookable_doctors_for_service: {
+        Args: { p_from?: string; p_service_id?: string | null }
+        Returns: {
+          avatar_url: string
+          bio: string
+          calendar_color: string
+          display_name: string
+          id: string
+          next_slot_id: string
+          next_slot_starts_at: string
+          specialty: string
+        }[]
+      }
       offer_slot_to_waitlist: {
         Args: { p_slot_id: string }
         Returns: number

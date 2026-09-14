@@ -62,6 +62,7 @@ export function buildShowreelServices(): Service[] {
     tags: [],
     image_url: null,
     media_type: "image",
+    price_label: null,
     sort_order: row.sort_order,
     is_published: true,
     created_at: now,

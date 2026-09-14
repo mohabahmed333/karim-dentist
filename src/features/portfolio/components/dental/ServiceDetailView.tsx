@@ -47,6 +47,15 @@ export function ServiceDetailView({ service }: Props) {
           </div>
         </section>
       ) : null}
+      {service.price_label ? (
+        <section className="cs-block cs-title">
+          <div className="cs-block-inner">
+            <p className="text-sm font-medium text-[#6b7280]">
+              {locale === "ar" ? "السعر" : "Price"}: {service.price_label}
+            </p>
+          </div>
+        </section>
+      ) : null}
       {service.tags.length > 0 ? (
         <section className="cs-block cs-title">
           <div className="cs-block-inner flex flex-wrap gap-2">
