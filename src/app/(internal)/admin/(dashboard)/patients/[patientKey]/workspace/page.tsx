@@ -7,6 +7,7 @@ import {
   groupReservationsByPatient,
 } from "@/services/reservations/patientHistory";
 import { listReservationsServer } from "@/services/reservations/queries";
+import { resolvePatientDirectoryGroupFallback } from "@/services/patient_profiles/queries";
 import { listPatientImagingServer } from "@/services/patient_imaging";
 import { listToothNotesServer } from "@/services/patient_tooth_notes/queries";
 import { listPatientTreatmentsServer } from "@/services/patient_treatments";
@@ -29,7 +30,9 @@ export default async function PatientWorkspacePage({ params }: Props) {
   const supabase = await createClient();
   const reservations = await listReservationsServer(supabase).catch(() => []);
   const directory = groupReservationsByPatient(reservations);
-  const group = getPatientGroup(directory, patientKey);
+  const group =
+    getPatientGroup(directory, patientKey) ??
+    (await resolvePatientDirectoryGroupFallback(supabase, patientKey));
   if (!group) notFound();
 
   const [notes, imaging, treatments, servicesResult, doctors, serviceDoctorMappings, ledger] =
