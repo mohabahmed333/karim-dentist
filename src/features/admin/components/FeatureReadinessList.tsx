@@ -99,7 +99,9 @@ export function FeatureReadinessList({
                 className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-3 pr-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
               >
                 <span className="min-w-0 flex-1 truncate">{feature.title}</span>
-                <span className="shrink-0 text-xs tabular-nums text-[var(--admin-muted)]">
+                {/* Fixed width, so the badges beside them line up down the
+                    column instead of stepping left and right with the digits. */}
+                <span className="w-10 shrink-0 text-right text-xs tabular-nums text-[var(--admin-muted)]">
                   {met}/{feature.conditions.length}
                 </span>
                 <span className={`min-w-[88px] shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-center text-xs ${state.className}`}>
@@ -110,19 +112,24 @@ export function FeatureReadinessList({
                   className={`size-4 shrink-0 text-[var(--admin-muted)] transition-transform ${open ? "rotate-90" : ""}`}
                 />
               </button>
-              {onToggle && switchOf(feature) ? (
-                // On the row itself, because "we do not want this" is a
-                // different question from "why can this not run", and the
-                // answer to the first should not be three clicks deep.
-                <span className="pl-1">
+              {/* On the row itself, because "we do not want this" is a
+                  different question from "why can this not run", and the
+                  answer to the first should not be three clicks deep.
+
+                  The slot keeps its width when a feature has no switch of its
+                  own: the button beside it is what flexes, so a missing
+                  checkbox used to push that row's count, badge and chevron
+                  right and break the column. */}
+              <span className="flex w-7 shrink-0 justify-center">
+                {onToggle && switchOf(feature) ? (
                   <Checkbox
                     aria-label={`Switch ${feature.title} on or off`}
                     checked={switchOf(feature)!.met === true}
                     disabled={pending === feature.key}
                     onCheckedChange={(next) => void toggle(feature, next === true)}
                   />
-                </span>
-              ) : null}
+                ) : null}
+              </span>
               <span className="pr-3">
                 <HelpTip label={`To make “${feature.title}” work`} text={featureFix(feature)} />
               </span>
