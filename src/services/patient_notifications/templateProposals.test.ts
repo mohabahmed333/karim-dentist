@@ -19,6 +19,7 @@ describe("template proposals", () => {
     const proposed = TEMPLATE_PROPOSALS.map((p: { kind: string }) => p.kind);
     assert.deepEqual(proposed, [
       "cancellation", "reschedule", "waitlist_offer", "followup", "recall_6m", "review_request",
+      "treatment_proposal",
     ]);
     // A kind that already has a template must not also be proposed.
     for (const kind of proposed) assert.equal(approved.has(kind), false, kind);

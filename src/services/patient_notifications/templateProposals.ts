@@ -78,6 +78,15 @@ export const TEMPLATE_PROPOSALS: readonly TemplateProposal[] = [
     bodyEn: "Thank you, {{1}}! If you have a moment, a review helps other patients find us: {{2}}",
     bodyAr: "شكراً يا {{1}}! لو عندك دقيقة، رأيك بيساعد ناس تانية تلاقينا: {{2}}",
   },
+  {
+    kind: "treatment_proposal",
+    title: "Treatment proposals",
+    names: { en: "treatment_proposal_en", ar: "treatment_proposal_ar" },
+    category: "UTILITY",
+    params: ["patient name", "proposed services and total"],
+    bodyEn: "Hi {{1}}, your doctor has proposed: {{2}}. Reply here if you'd like to go ahead.",
+    bodyAr: "أهلاً {{1}}، دكتورك اقترح: {{2}}. ابعتلنا هنا لو موافق.",
+  },
 ];
 
 export function proposalForKind(kind: string): TemplateProposal | null {

@@ -243,6 +243,15 @@ Thank you, {{1}}! If you have a moment, a review helps other patients find us: {
 شكراً يا {{1}}! لو عندك دقيقة، رأيك بيساعد ناس تانية تلاقينا: {{2}}
 ```
 
+**Treatment proposals** — `treatment_proposal_en` and `treatment_proposal_ar` · UTILITY
+
+`{{1}}` patient name · `{{2}}` proposed services and total
+
+```
+Hi {{1}}, your doctor has proposed: {{2}}. Reply here if you'd like to go ahead.
+أهلاً {{1}}، دكتورك اقترح: {{2}}. ابعتلنا هنا لو موافق.
+```
+
 <!-- /generated -->
 
 ## If nothing is being sent
