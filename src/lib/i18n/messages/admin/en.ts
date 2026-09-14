@@ -1318,6 +1318,7 @@ export const adminEn = {
   "admin.chat.reviewExisting": "Review existing",
   "admin.chat.reviewWizard": "Review in wizard",
   "admin.chat.bookAppointment": "Book appointment",
+  "admin.chat.proposeToPatient": "Propose to patient",
   "admin.chat.continueDatesFailed": "Could not continue to dates",
   "admin.poll.phone": "Phone",
 

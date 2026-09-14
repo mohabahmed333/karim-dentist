@@ -10,6 +10,8 @@ import type { ProposalReviewState } from "@/features/admin/components/chat/Actio
 import type { usePatientTreatments } from "../usePatientTreatments";
 import { WorkspaceTreatmentsPane } from "./WorkspaceTreatmentsPane";
 import type { WizardLaunch } from "./wizardModel";
+import type { PriceableDoctor } from "@/services/service_doctors/pricing";
+import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
 
 type Props = {
   group: PatientGroup;
@@ -27,6 +29,9 @@ type Props = {
   ) => void;
   demoReview?: ProposalReviewState | null;
   localOnly?: boolean;
+  doctors: PriceableDoctor[];
+  serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
+  canPropose: boolean;
 };
 
 export function WorkspaceRightPane(props: Props) {
@@ -45,6 +50,9 @@ export function WorkspaceRightPane(props: Props) {
         onApplyAiDraft={props.onApplyAiDraft}
         demoReview={props.demoReview}
         localOnly={props.localOnly}
+        doctors={props.doctors}
+        serviceDoctorMappings={props.serviceDoctorMappings}
+        canPropose={props.canPropose}
       />
     </div>
   );

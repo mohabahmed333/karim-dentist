@@ -5,6 +5,8 @@ import type { PatientImaging } from "@/services/patient_imaging";
 import type { PatientToothNote } from "@/services/patient_tooth_notes";
 import type { PatientTreatmentRow } from "@/services/patient_treatments";
 import type { Service } from "@/services/services/types";
+import type { PriceableDoctor } from "@/services/service_doctors/pricing";
+import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
 import { PatientWorkspaceView } from "./workspace/PatientWorkspaceView";
 
 type Props = {
@@ -14,6 +16,11 @@ type Props = {
   treatments: PatientTreatmentRow[];
   services: Service[];
   directory: PatientGroup[];
+  doctors: PriceableDoctor[];
+  serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
+  canPropose: boolean;
+  canEditBilling: boolean;
+  billingBalance: number;
 };
 
 export function PatientProfileView({
@@ -23,6 +30,11 @@ export function PatientProfileView({
   treatments,
   services,
   directory,
+  doctors,
+  serviceDoctorMappings,
+  canPropose,
+  canEditBilling,
+  billingBalance,
 }: Props) {
   return (
     <PatientWorkspaceView
@@ -32,6 +44,11 @@ export function PatientProfileView({
       treatments={treatments}
       services={services}
       directory={directory}
+      doctors={doctors}
+      serviceDoctorMappings={serviceDoctorMappings}
+      canPropose={canPropose}
+      canEditBilling={canEditBilling}
+      billingBalance={billingBalance}
     />
   );
 }

@@ -88,6 +88,8 @@ type Props = {
     draft: TreatmentAiDraft,
     files: PendingFile[],
   ) => Promise<string | null>;
+  /** Opens the send-to-patient proposal form, pre-filled from this draft. */
+  onProposeDraft: (draft: TreatmentAiDraft) => void;
   onBook: (treatmentId: string) => void;
   onScheduleAt: (treatmentId: string, startsAtIso: string) => Promise<void>;
   demoReview?: ProposalReviewState | null;
@@ -108,6 +110,7 @@ export function AiTreatmentChatPanel({
   existing,
   onApplyDraft,
   onCreateDraft,
+  onProposeDraft,
   onBook,
   onScheduleAt,
   demoReview = null,
@@ -677,6 +680,9 @@ export function AiTreatmentChatPanel({
             onCreate={() => void handleCreate()}
             onReview={() => {
               if (draft) onApplyDraft(draft, existingForDraftId);
+            }}
+            onPropose={() => {
+              if (draft) onProposeDraft(draft);
             }}
             onBook={() => {
               if (bookedAppointment) openReschedulePicker();

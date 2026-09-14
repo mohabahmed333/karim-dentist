@@ -84,6 +84,11 @@ export function ClinicalAiScene({ active }: Props) {
         forcedToothFdi={forcedToothFdi}
         demoReview={demoReview}
         localOnly
+        doctors={[]}
+        serviceDoctorMappings={{}}
+        canPropose={false}
+        canEditBilling={false}
+        billingBalance={0}
       />
     </ShowreelAdminSceneFrame>
   );

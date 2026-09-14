@@ -35,6 +35,9 @@ import {
 } from "@/services/clinic_schedule";
 import { useLocale } from "@/lib/i18n";
 import { serviceDisplayName } from "@/features/admin/lib/serviceDisplayName";
+import type { PriceableDoctor } from "@/services/service_doctors/pricing";
+import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
+import { ProposeServicesForm } from "../billing/ProposeServicesForm";
 
 type Chart = ReturnType<typeof usePatientTreatments>;
 
@@ -54,6 +57,10 @@ type Props = {
   ) => void;
   demoReview?: ProposalReviewState | null;
   localOnly?: boolean;
+  /** For the "Propose to patient" action on an AI draft. */
+  doctors: PriceableDoctor[];
+  serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
+  canPropose: boolean;
 };
 
 export function WorkspaceTreatmentsPane({
@@ -69,6 +76,9 @@ export function WorkspaceTreatmentsPane({
   onApplyAiDraft,
   demoReview = null,
   localOnly = false,
+  doctors,
+  serviceDoctorMappings,
+  canPropose,
 }: Props) {
   const { locale } = useLocale();
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -76,11 +86,16 @@ export function WorkspaceTreatmentsPane({
   const [wizardTreatmentId, setWizardTreatmentId] = useState<
     string | "new" | null
   >(null);
+  const [proposalDraft, setProposalDraft] = useState<{
+    description: string;
+    amount: string;
+  } | null>(null);
 
   useEffect(() => {
     setWizardOpen(false);
     setWizardSeed(null);
     setWizardTreatmentId(null);
+    setProposalDraft(null);
     chart.closeEditor();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset on tooth change only
   }, [selectedFdi]);
@@ -189,6 +204,35 @@ export function WorkspaceTreatmentsPane({
     );
   }
 
+  if (proposalDraft) {
+    return (
+      <Shell tone="wizard">
+        <div className="overflow-y-auto p-3">
+          <button
+            type="button"
+            onClick={() => setProposalDraft(null)}
+            className="mb-2 text-[11px] font-semibold text-[#70758A] hover:text-[#111111]"
+          >
+            ← Back to chat
+          </button>
+          <ProposeServicesForm
+            patientKey={group.patientKey}
+            patientPhone={group.phone}
+            patientName={group.displayName}
+            services={services}
+            doctors={doctors}
+            serviceDoctorMappings={serviceDoctorMappings}
+            reservations={group.visits}
+            initialItems={[
+              { serviceId: "", description: proposalDraft.description, amount: proposalDraft.amount },
+            ]}
+            onSent={() => setProposalDraft(null)}
+          />
+        </div>
+      </Shell>
+    );
+  }
+
   if (wizardOpen) {
     const savedRow =
       wizardTreatmentId && wizardTreatmentId !== "new"
@@ -279,6 +323,16 @@ export function WorkspaceTreatmentsPane({
           toothFdi: row.toothFdi,
         }))}
         onApplyDraft={onApplyAiDraft}
+        onProposeDraft={(aiDraft) => {
+          if (!canPropose) {
+            toast.error("You don't have permission to propose treatments");
+            return;
+          }
+          setProposalDraft({
+            description: `${aiDraft.ai_title || "Proposed treatment"} — Tooth ${selectedFdi} (FDI)`,
+            amount: String(aiDraft.fee_amount ?? ""),
+          });
+        }}
         demoReview={demoReview}
         localOnly={localOnly}
         onCreateDraft={async (aiDraft, files: PendingFile[]) => {

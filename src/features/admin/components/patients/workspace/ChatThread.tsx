@@ -32,6 +32,7 @@ type Props = {
   onCreate: () => void;
   onReview: () => void;
   onBook: () => void;
+  onPropose: () => void;
 };
 
 export function ChatThread({
@@ -46,6 +47,7 @@ export function ChatThread({
   onCreate,
   onReview,
   onBook,
+  onPropose,
 }: Props) {
   const t = useTranslations();
   const lastAssistantIndex = (() => {
@@ -87,6 +89,7 @@ export function ChatThread({
                     onCreate={onCreate}
                     onReview={onReview}
                     onBook={onBook}
+                    onPropose={onPropose}
                   />
                 ) : null
               }
@@ -153,6 +156,7 @@ function MessageExtras({
   onCreate,
   onReview,
   onBook,
+  onPropose,
 }: {
   draft: TreatmentAiDraft | null;
   activePoll: TreatmentAiPoll | null;
@@ -164,6 +168,7 @@ function MessageExtras({
   onCreate: () => void;
   onReview: () => void;
   onBook: () => void;
+  onPropose: () => void;
 }) {
   const t = useTranslations();
   const alreadyBooked = Boolean(bookedAppointment);
@@ -211,6 +216,14 @@ function MessageExtras({
               className="rounded-lg border border-[#E8EAED] bg-transparent px-3 py-1.5 text-[11px] font-semibold text-[#111111]"
             >
               {createdTreatmentId ? t("admin.chat.reviewExisting") : t("admin.chat.reviewWizard")}
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={onPropose}
+              className="rounded-lg border border-[#E8EAED] bg-transparent px-3 py-1.5 text-[11px] font-semibold text-[#111111]"
+            >
+              {t("admin.chat.proposeToPatient")}
             </button>
             {createdTreatmentId || draft.appointment?.book || alreadyBooked ? (
               <button

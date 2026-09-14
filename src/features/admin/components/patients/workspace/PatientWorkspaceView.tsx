@@ -21,6 +21,11 @@ import {
   wizardDraftFromTreatment,
   type WizardLaunch,
 } from "./wizardModel";
+import type { PriceableDoctor } from "@/services/service_doctors/pricing";
+import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
+import { AddChargeForm } from "../billing/AddChargeForm";
+import { formatEgp } from "@/services/deposits/receiptMessages";
+import { useLocale } from "@/lib/i18n";
 
 type Props = {
   group: PatientGroup;
@@ -37,6 +42,12 @@ type Props = {
   demoReview?: ProposalReviewState | null;
   /** Showreel: ActionReviewCard skips confirm API. */
   localOnly?: boolean;
+  /** For the AI tooth draft's "Propose to patient" action, and the manual billing card. */
+  doctors: PriceableDoctor[];
+  serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
+  canPropose: boolean;
+  canEditBilling: boolean;
+  billingBalance: number;
 };
 
 export function PatientWorkspaceView(props: Props) {
@@ -47,7 +58,15 @@ export function PatientWorkspaceView(props: Props) {
     forcedToothFdi = null,
     demoReview = null,
     localOnly = false,
+    doctors,
+    serviceDoctorMappings,
+    canPropose,
+    canEditBilling,
+    billingBalance,
   } = props;
+  const { locale } = useLocale();
+  const [balance, setBalance] = useState(billingBalance);
+  const [billingOpen, setBillingOpen] = useState(false);
   const [wizardLaunch, setWizardLaunch] = useState<WizardLaunch | null>(null);
   const w = usePatientWorkspace(
     group,
@@ -129,9 +148,40 @@ export function PatientWorkspaceView(props: Props) {
             onApplyAiDraft={applyAiDraft}
             demoReview={demoReview}
             localOnly={localOnly}
+            doctors={doctors}
+            serviceDoctorMappings={serviceDoctorMappings}
+            canPropose={canPropose}
           />
         </div>
       </div>
+      {!embedded && canEditBilling ? (
+        <div className="border-t border-[#e5e7eb] px-4 py-4 md:px-6 md:py-5">
+          <button
+            type="button"
+            onClick={() => setBillingOpen((prev) => !prev)}
+            className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--admin-muted)]"
+          >
+            {billingOpen ? "▾" : "▸"} Billing —{" "}
+            <span className={balance > 0 ? "text-red-600" : "text-emerald-600"}>
+              {formatEgp(Math.abs(balance), locale)}
+              {balance > 0 ? " owed" : balance < 0 ? " credit" : ""}
+            </span>
+          </button>
+          {billingOpen ? (
+            <div className="mt-3">
+              <AddChargeForm
+                patientKey={group.patientKey}
+                services={services}
+                doctors={doctors}
+                serviceDoctorMappings={serviceDoctorMappings}
+                reservations={group.visits}
+                balance={balance}
+                onRecorded={(entry) => setBalance(entry.balanceAfter)}
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <WorkspaceOverlays group={group} services={services} w={w} />
     </div>
   );

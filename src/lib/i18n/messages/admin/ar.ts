@@ -1319,6 +1319,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.chat.reviewExisting": "مراجعة الموجود",
   "admin.chat.reviewWizard": "مراجعة في المعالج",
   "admin.chat.bookAppointment": "حجز موعد",
+  "admin.chat.proposeToPatient": "اقتراح للمريض",
   "admin.chat.continueDatesFailed": "تعذرت المتابعة إلى التواريخ",
   "admin.poll.phone": "الهاتف",
 
