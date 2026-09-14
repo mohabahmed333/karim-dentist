@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Permission, Role } from "@/services/roles/queries";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   initialRoles: Role[];
@@ -18,6 +19,7 @@ export function RolesManager({
   permissions,
   initialRolePermissions,
 }: Props) {
+  const t = useTranslations();
   const [roles, setRoles] = useState(initialRoles);
   const [rolePermissions, setRolePermissions] = useState(
     initialRolePermissions,
@@ -55,7 +57,7 @@ export function RolesManager({
 
   async function handleCreateRole() {
     if (!newRoleKey || !newRoleName) {
-      toast.error("Key and name are required");
+      toast.error(t("admin.roles.keyNameRequired"));
       return;
     }
     setBusy(true);
@@ -71,7 +73,7 @@ export function RolesManager({
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Create failed");
+        throw new Error(body.error ?? t("admin.roles.createFailed"));
       }
       const { id } = (await res.json()) as { id: string };
       setNewRoleKey("");
@@ -79,7 +81,7 @@ export function RolesManager({
       await refresh();
       setSelectedRoleId(id);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Create failed");
+      toast.error(error instanceof Error ? error.message : t("admin.roles.createFailed"));
     } finally {
       setBusy(false);
     }
@@ -104,9 +106,9 @@ export function RolesManager({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ permissionKeys: Array.from(nextKeys) }),
       });
-      if (!res.ok) throw new Error("Update failed");
+      if (!res.ok) throw new Error(t("admin.roles.updateFailed"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Update failed");
+      toast.error(error instanceof Error ? error.message : t("admin.roles.updateFailed"));
       await refresh();
     } finally {
       setBusy(false);
@@ -127,9 +129,9 @@ export function RolesManager({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isDoctor: checked }),
       });
-      if (!res.ok) throw new Error("Update failed");
+      if (!res.ok) throw new Error(t("admin.roles.updateFailed"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Update failed");
+      toast.error(error instanceof Error ? error.message : t("admin.roles.updateFailed"));
       await refresh();
     } finally {
       setBusy(false);
@@ -152,9 +154,9 @@ export function RolesManager({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dashboardScope: scope }),
       });
-      if (!res.ok) throw new Error("Update failed");
+      if (!res.ok) throw new Error(t("admin.roles.updateFailed"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Update failed");
+      toast.error(error instanceof Error ? error.message : t("admin.roles.updateFailed"));
       await refresh();
     } finally {
       setBusy(false);
@@ -170,12 +172,12 @@ export function RolesManager({
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Delete failed");
+        throw new Error(body.error ?? t("admin.roles.deleteFailed"));
       }
       setSelectedRoleId(roles[0]?.id ?? "");
       await refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Delete failed");
+      toast.error(error instanceof Error ? error.message : t("admin.roles.deleteFailed"));
     } finally {
       setBusy(false);
     }
@@ -199,7 +201,7 @@ export function RolesManager({
               {role.name}
               {role.is_system ? (
                 <span className="ml-2 text-xs text-muted-foreground">
-                  system
+                  {t("admin.roles.systemBadge")}
                 </span>
               ) : null}
             </button>
@@ -208,20 +210,20 @@ export function RolesManager({
 
         <div className="space-y-2 rounded-lg border p-3">
           <h3 className="text-xs font-semibold uppercase text-muted-foreground">
-            New role
+            {t("admin.roles.newRole")}
           </h3>
           <Input
-            placeholder="key (e.g. front-desk)"
+            placeholder={t("admin.roles.keyPlaceholder")}
             value={newRoleKey}
             onChange={(e) => setNewRoleKey(e.target.value)}
           />
           <Input
-            placeholder="Name"
+            placeholder={t("admin.name")}
             value={newRoleName}
             onChange={(e) => setNewRoleName(e.target.value)}
           />
           <Button size="sm" onClick={handleCreateRole} disabled={busy}>
-            Create role
+            {t("admin.roles.createRole")}
           </Button>
         </div>
       </div>
@@ -244,11 +246,11 @@ export function RolesManager({
                     void toggleIsDoctor(checked === true)
                   }
                 />
-                Doctor role — grants a doctor picker + own hours
+                {t("admin.roles.doctorRoleHint")}
               </label>
               {selectedRole.is_doctor ? (
                 <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                  Dashboard:
+                  {t("admin.roles.dashboardLabel")}
                   <div className="inline-flex overflow-hidden rounded-md border">
                     <button
                       type="button"
@@ -260,7 +262,7 @@ export function RolesManager({
                           : "hover:bg-muted/50"
                       }`}
                     >
-                      Clinic-wide
+                      {t("admin.roles.clinicWide")}
                     </button>
                     <button
                       type="button"
@@ -272,7 +274,7 @@ export function RolesManager({
                           : "hover:bg-muted/50"
                       }`}
                     >
-                      Own patients only
+                      {t("admin.roles.ownPatientsOnly")}
                     </button>
                   </div>
                 </div>
@@ -285,13 +287,13 @@ export function RolesManager({
                 onClick={handleDeleteRole}
                 disabled={busy}
               >
-                Delete role
+                {t("admin.roles.deleteRole")}
               </Button>
             )}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Select or create a role.
+            {t("admin.roles.selectOrCreate")}
           </p>
         )}
 

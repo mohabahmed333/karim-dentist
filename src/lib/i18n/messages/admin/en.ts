@@ -416,6 +416,12 @@ export const adminEn = {
 
   "admin.billing.patientTitle": "Billing",
   "admin.billing.patientDescription": "Charges, payments, and this patient's running balance.",
+  "admin.nav.billing": "Billing",
+  "admin.billing.clinicDescription": "Patients with an outstanding balance, sorted by amount owed.",
+  "admin.billing.patient": "Patient",
+  "admin.billing.phone": "Phone",
+  "admin.billing.balance": "Balance",
+  "admin.billing.empty": "No outstanding balances.",
   "admin.patients.chat": "Chat",
   "admin.patients.attachments": "Attachments",
   "admin.patients.details": "Details",

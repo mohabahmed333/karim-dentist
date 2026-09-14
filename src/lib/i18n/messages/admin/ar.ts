@@ -418,6 +418,12 @@ export const adminAr: Record<AdminMessageKey, string> = {
 
   "admin.billing.patientTitle": "الفواتير",
   "admin.billing.patientDescription": "الرسوم والمدفوعات والرصيد الجاري لهذا المريض.",
+  "admin.nav.billing": "الفواتير",
+  "admin.billing.clinicDescription": "المرضى الذين عليهم رصيد مستحق، مرتبين حسب المبلغ.",
+  "admin.billing.patient": "المريض",
+  "admin.billing.phone": "الهاتف",
+  "admin.billing.balance": "الرصيد",
+  "admin.billing.empty": "لا توجد أرصدة مستحقة.",
   "admin.patients.chat": "محادثة",
   "admin.patients.attachments": "المرفقات",
   "admin.patients.details": "التفاصيل",
