@@ -1,10 +1,13 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { useAdminDrawerSide } from "@/features/admin/hooks/useAdminDrawerSide";
-import { cn } from "@/lib/utils";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 type Props = {
   open: boolean;
@@ -15,56 +18,34 @@ type Props = {
 
 export function SideDrawer({ open, title, onClose, children }: Props) {
   const drawer = useAdminDrawerSide();
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return null;
-
-  return createPortal(
-    <AnimatePresence>
-      {open ? (
-        <div
-          className={cn("fixed inset-0 flex", drawer.shellClass)}
-          dir={drawer.shellDir}
-        >
-          <motion.button
-            type="button"
-            aria-label="Close drawer"
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
-          <motion.aside
-            dir={drawer.contentDir}
-            initial={{ x: drawer.offscreenX }}
-            animate={{ x: 0 }}
-            exit={{ x: drawer.offscreenX }}
-            transition={{ type: "spring", stiffness: 380, damping: 36 }}
-            className={cn(
-              "relative flex h-full w-full max-w-md flex-col bg-[var(--admin-panel,#ffffff)]",
-              drawer.panelClass,
-            )}
-          >
-            <div className="flex items-center justify-between px-5 py-4">
-              <h3 className="text-base font-semibold text-[var(--admin-text,#111827)]">
-                {title}
-              </h3>
+  return (
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <SheetContent
+        side={drawer.rtl ? "right" : "left"}
+        dir={drawer.contentDir}
+        showCloseButton={false}
+      >
+        <SheetHeader className="flex-row items-center justify-between gap-3">
+          <SheetTitle className="truncate">{title}</SheetTitle>
+          <SheetClose
+            render={
               <button
                 type="button"
-                onClick={onClose}
                 className="rounded-full bg-[var(--admin-hover,#f3f4f6)] px-3 py-1 text-sm text-[var(--admin-muted,#4b5563)]"
-              >
-                Close
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
-          </motion.aside>
-        </div>
-      ) : null}
-    </AnimatePresence>,
-    document.body,
+              />
+            }
+          >
+            Close
+          </SheetClose>
+        </SheetHeader>
+        <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+      </SheetContent>
+    </Sheet>
   );
 }
