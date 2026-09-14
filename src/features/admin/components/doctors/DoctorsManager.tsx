@@ -42,16 +42,18 @@ import { doctorIdentityUpsertSchema } from "@/services/profiles/schemas";
 import { DOCTOR_COLOR_PALETTE } from "@/services/profiles/colorPalette";
 import { saveDoctorServices } from "@/services/service_doctors/actions";
 import type { Service } from "@/services/services";
+import { useTranslations } from "@/lib/i18n";
+import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 
-const DAY_LABELS = [
-  { value: 0, label: "Sun" },
-  { value: 1, label: "Mon" },
-  { value: 2, label: "Tue" },
-  { value: 3, label: "Wed" },
-  { value: 4, label: "Thu" },
-  { value: 5, label: "Fri" },
-  { value: 6, label: "Sat" },
-] as const;
+const DAY_LABELS: { value: number; labelKey: AdminMessageKey }[] = [
+  { value: 0, labelKey: "admin.date.weekdayShort.sun" },
+  { value: 1, labelKey: "admin.date.weekdayShort.mon" },
+  { value: 2, labelKey: "admin.date.weekdayShort.tue" },
+  { value: 3, labelKey: "admin.date.weekdayShort.wed" },
+  { value: 4, labelKey: "admin.date.weekdayShort.thu" },
+  { value: 5, labelKey: "admin.date.weekdayShort.fri" },
+  { value: 6, labelKey: "admin.date.weekdayShort.sat" },
+];
 
 const TIME_OPTIONS: string[] = (() => {
   const out: string[] = [];
@@ -135,6 +137,7 @@ export function DoctorsManager({
   services,
   initialMappings,
 }: Props) {
+  const t = useTranslations();
   const [doctors, setDoctors] = useState(initialDoctors);
   const [hoursByDoctor, setHoursByDoctor] =
     useState<Record<string, DoctorHours>>(initialHours);
@@ -247,7 +250,7 @@ export function DoctorsManager({
     if (!selectedId) return;
     const parsed = doctorHoursUpsertSchema.safeParse(form);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Invalid hours");
+      toast.error(parsed.error.issues[0]?.message ?? t("admin.doctors.invalidHours"));
       return;
     }
     setPending(true);
@@ -255,9 +258,9 @@ export function DoctorsManager({
       const saved = await saveDoctorHours(selectedId, parsed.data);
       setHoursByDoctor((prev) => ({ ...prev, [selectedId]: saved }));
       setForms((prev) => ({ ...prev, [selectedId]: formFromHours(saved) }));
-      toast.success("Hours saved");
+      toast.success(t("admin.doctors.hoursSaved"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
+      toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
     } finally {
       setPending(false);
     }
@@ -271,7 +274,7 @@ export function DoctorsManager({
       calendar_color: identityForm.calendar_color,
     });
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Invalid profile");
+      toast.error(parsed.error.issues[0]?.message ?? t("admin.doctors.invalidProfile"));
       return;
     }
     setSavingIdentity(true);
@@ -289,9 +292,9 @@ export function DoctorsManager({
             : d,
         ),
       );
-      toast.success("Profile saved");
+      toast.success(t("admin.profile.success"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
+      toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
     } finally {
       setSavingIdentity(false);
     }
@@ -347,9 +350,9 @@ export function DoctorsManager({
         }
         return next;
       });
-      toast.success("Services saved");
+      toast.success(t("admin.doctors.servicesSaved"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
+      toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
     } finally {
       setSavingServices(false);
     }
@@ -360,9 +363,15 @@ export function DoctorsManager({
     setRegenerating(true);
     try {
       const created = await regenerateOneDoctorSlots(selectedId);
-      toast.success(`${created} open slot${created === 1 ? "" : "s"} generated`);
+      toast.success(
+        t(
+          created === 1
+            ? "admin.doctors.slotsGeneratedOne"
+            : "admin.doctors.slotsGenerated",
+        ).replace("{count}", String(created)),
+      );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Regenerate failed");
+      toast.error(err instanceof Error ? err.message : t("admin.doctors.regenerateFailed"));
     } finally {
       setRegenerating(false);
     }
@@ -385,7 +394,7 @@ export function DoctorsManager({
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Remove failed");
+        throw new Error(body.error ?? t("admin.doctors.removeFailed"));
       }
       const removedId = selectedId;
       setDoctors((prev) => prev.filter((d) => d.id !== removedId));
@@ -421,9 +430,9 @@ export function DoctorsManager({
           : prev,
       );
       setRemoveConfirmOpen(false);
-      toast.success("Doctor removed");
+      toast.success(t("admin.doctors.doctorRemoved"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Remove failed");
+      toast.error(err instanceof Error ? err.message : t("admin.doctors.removeFailed"));
     } finally {
       setRemoving(false);
     }
@@ -440,7 +449,7 @@ export function DoctorsManager({
             disabled={regenerating || !selectedId || !hasHours}
             onClick={() => void onRegenerate()}
           >
-            {regenerating ? "Regenerating…" : "Regenerate slots"}
+            {regenerating ? t("admin.doctors.regenerating") : t("admin.doctors.regenerateSlots")}
           </Button>
           <Button
             type="button"
@@ -448,7 +457,7 @@ export function DoctorsManager({
             disabled={savingIdentity || !selectedId}
             onClick={() => void onSaveIdentity()}
           >
-            {savingIdentity ? "Saving…" : "Save profile"}
+            {savingIdentity ? t("admin.saving") : t("admin.profile.save")}
           </Button>
           <Button
             type="button"
@@ -456,14 +465,14 @@ export function DoctorsManager({
             disabled={savingServices || !selectedId}
             onClick={() => void onSaveServices()}
           >
-            {savingServices ? "Saving…" : "Save services"}
+            {savingServices ? t("admin.saving") : t("admin.doctors.saveServices")}
           </Button>
           <Button
             type="button"
             disabled={pending || !selectedId}
             onClick={() => void onSave()}
           >
-            {pending ? "Saving…" : "Save hours"}
+            {pending ? t("admin.saving") : t("admin.doctors.saveHours")}
           </Button>
         </div>
       }
@@ -475,9 +484,7 @@ export function DoctorsManager({
       <div className="space-y-4">
         {header}
         <Card className="max-w-3xl gap-0 bg-transparent p-6 text-sm text-[var(--admin-muted)]">
-          No staff accounts are marked as doctors yet. Give an account the
-          Doctor role (or flag another role as a doctor role) in Roles, then
-          come back here to set their hours.
+          {t("admin.doctors.emptyState")}
         </Card>
       </div>
     );
@@ -500,11 +507,11 @@ export function DoctorsManager({
               }`}
             >
               <span className="truncate">
-                {doctor.display_name ?? "Unnamed"}
+                {doctor.display_name ?? t("admin.doctors.unnamed")}
               </span>
               {!hoursByDoctor[doctor.id] ? (
                 <span className="ml-2 shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
-                  No hours
+                  {t("admin.doctors.noHoursBadge")}
                 </span>
               ) : null}
             </button>
@@ -525,7 +532,7 @@ export function DoctorsManager({
                     patchForm({ is_bookable: checked === true })
                   }
                 />
-                Bookable
+                {t("admin.doctors.bookable")}
               </label>
               <Button
                 type="button"
@@ -535,26 +542,26 @@ export function DoctorsManager({
                 onClick={() => setRemoveConfirmOpen(true)}
               >
                 <Trash2 aria-hidden />
-                Remove doctor
+                {t("admin.doctors.removeDoctor")}
               </Button>
             </div>
           </div>
 
-          <SettingsSectionGroup title="Profile" className="space-y-3">
+          <SettingsSectionGroup title={t("admin.doctors.profile")} className="space-y-3">
             <label className="grid gap-1">
               <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                Specialty
+                {t("admin.profile.specialty")}
               </span>
               <AdminInput
                 value={identityForm.specialty}
-                placeholder="e.g. Orthodontics"
+                placeholder={t("admin.doctors.specialtyPlaceholder")}
                 maxLength={120}
                 onChange={(e) => patchIdentity({ specialty: e.target.value })}
               />
             </label>
             <label className="grid gap-1">
               <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                Bio
+                {t("admin.profile.bio")}
               </span>
               <Textarea
                 value={identityForm.bio}
@@ -565,7 +572,7 @@ export function DoctorsManager({
             </label>
             <div className="grid gap-1">
               <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                Calendar color
+                {t("admin.profile.calendarColor")}
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {DOCTOR_COLOR_PALETTE.map((color) => (
@@ -587,13 +594,13 @@ export function DoctorsManager({
           </SettingsSectionGroup>
 
           <SettingsSectionGroup
-            title="Services this doctor offers"
-            hint="Leave everything unchecked to let this doctor take any service. A service isn't restricted until at least one doctor is checked for it."
+            title={t("admin.doctors.servicesTitle")}
+            hint={t("admin.doctors.servicesHint")}
             className="space-y-2"
           >
             {services.length === 0 ? (
               <p className="text-[13px] text-[var(--admin-muted)]">
-                No services on file yet.
+                {t("admin.doctors.noServices")}
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -624,10 +631,12 @@ export function DoctorsManager({
                           }`}
                         >
                           {restrictedTo.length === 0
-                            ? "Open to all doctors"
-                            : `Restricted to ${restrictedTo.length} doctor${
-                                restrictedTo.length === 1 ? "" : "s"
-                              }`}
+                            ? t("admin.doctors.openToAll")
+                            : t(
+                                restrictedTo.length === 1
+                                  ? "admin.doctors.restrictedToOne"
+                                  : "admin.doctors.restrictedToMany",
+                              ).replace("{count}", String(restrictedTo.length))}
                         </span>
                       </span>
                     </label>
@@ -637,7 +646,7 @@ export function DoctorsManager({
             )}
           </SettingsSectionGroup>
 
-          <SettingsSectionGroup title="Open days">
+          <SettingsSectionGroup title={t("admin.doctors.openDays")}>
             <div className="flex flex-wrap gap-2">
               {DAY_LABELS.map((day) => {
                 const on = form.open_weekdays.includes(day.value);
@@ -652,7 +661,7 @@ export function DoctorsManager({
                         : "border-[var(--admin-border)] bg-[var(--admin-panel)] text-[var(--admin-text)]"
                     }`}
                   >
-                    {day.label}
+                    {t(day.labelKey)}
                   </button>
                 );
               })}
@@ -660,8 +669,8 @@ export function DoctorsManager({
           </SettingsSectionGroup>
 
           <SettingsSectionGroup
-            title="Time windows"
-            hint="Choose From / To times from the lists — no typing."
+            title={t("admin.doctors.timeWindows")}
+            hint={t("admin.doctors.timeWindowsHint")}
             className="space-y-3"
           >
             {form.time_windows.map((w, i) => {
@@ -673,7 +682,7 @@ export function DoctorsManager({
                 >
                   <label className="grid min-w-[8rem] flex-1 gap-1">
                     <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                      From
+                      {t("admin.from")}
                     </span>
                     <AdminSelect
                       value={start}
@@ -695,7 +704,7 @@ export function DoctorsManager({
                   </label>
                   <label className="grid min-w-[8rem] flex-1 gap-1">
                     <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                      To
+                      {t("admin.to")}
                     </span>
                     <AdminSelect
                       value={end}
@@ -728,17 +737,17 @@ export function DoctorsManager({
                       })
                     }
                   >
-                    Remove
+                    {t("admin.remove")}
                   </Button>
                 </div>
               );
             })}
             <Button type="button" variant="outline" size="sm" onClick={addWindow}>
-              Add window
+              {t("admin.doctors.addWindow")}
             </Button>
           </SettingsSectionGroup>
 
-          <SettingsSectionGroup title="Slot length">
+          <SettingsSectionGroup title={t("admin.doctors.slotLength")}>
             <AdminSelect
               value={String(form.slot_minutes)}
               onValueChange={(value) =>
@@ -751,7 +760,7 @@ export function DoctorsManager({
               <AdminSelectContent>
                 {[15, 30, 45, 60, 90, 120].map((m) => (
                   <AdminSelectItem key={m} value={String(m)}>
-                    {m} minutes
+                    {t("admin.doctors.minutes").replace("{count}", String(m))}
                   </AdminSelectItem>
                 ))}
               </AdminSelectContent>
@@ -765,8 +774,11 @@ export function DoctorsManager({
         open={removeConfirmOpen}
         onOpenChange={setRemoveConfirmOpen}
         pending={removing}
-        title="Remove this doctor?"
-        description={`${selectedDoctor?.display_name ?? "This doctor"}'s account will be deactivated — their past reservations and notes stay on record, and an admin can reactivate the account from Settings > Accounts.`}
+        title={t("admin.doctors.removeConfirmTitle")}
+        description={t("admin.doctors.removeConfirmDesc").replace(
+          "{name}",
+          selectedDoctor?.display_name ?? t("admin.doctors.thisDoctor"),
+        )}
         onConfirm={() => void onRemoveDoctor()}
       />
 
@@ -778,13 +790,18 @@ export function DoctorsManager({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Restrict this service?</DialogTitle>
+            <DialogTitle>{t("admin.doctors.restrictTitle")}</DialogTitle>
             <DialogDescription>
-              {services.find((s) => s.id === pendingRestrictServiceId)?.title ??
-                "This service"}{" "}
-              is currently open to every doctor. Checking {selectedDoctor?.display_name ?? "this doctor"} will
-              restrict it to just the doctor(s) you check here — everyone else
-              stops being offered it until you uncheck it or add them back.
+              {t("admin.doctors.restrictDesc")
+                .replace(
+                  "{service}",
+                  services.find((s) => s.id === pendingRestrictServiceId)
+                    ?.title ?? t("admin.doctors.thisService"),
+                )
+                .replace(
+                  "{doctor}",
+                  selectedDoctor?.display_name ?? t("admin.doctors.thisDoctor"),
+                )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -793,10 +810,10 @@ export function DoctorsManager({
               variant="outline"
               onClick={() => setPendingRestrictServiceId(null)}
             >
-              Cancel
+              {t("admin.cancel")}
             </Button>
             <Button type="button" onClick={confirmRestrict}>
-              Restrict it
+              {t("admin.doctors.restrictConfirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
