@@ -188,9 +188,17 @@ export const adminNavSections: AdminNavSection[] = [
       { href: "/admin/customize", labelKey: "admin.nav.customize", permission: "customize.view" },
       { href: "/admin/usage", labelKey: "admin.nav.usage", permission: "usage.view" },
       { href: "/admin/assist-analytics", labelKey: "admin.nav.assistAnalytics", permission: "assist-analytics.view" },
-      { href: "/admin/ai-actions", labelKey: "admin.nav.aiActions", permission: "ai-actions.view" },
     ],
     groups: [
+      {
+        id: "logs",
+        labelKey: "admin.nav.logs",
+        defaultOpen: false,
+        items: [
+          { href: "/admin/system-log", labelKey: "admin.nav.systemLog", permission: "system-log.view" },
+          { href: "/admin/ai-actions", labelKey: "admin.nav.aiActions", permission: "ai-actions.view" },
+        ],
+      },
       {
         id: "settings",
         labelKey: "admin.nav.settings",
@@ -243,6 +251,7 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin/usage": "admin.nav.usage",
   "/admin/assist-analytics": "admin.nav.assistAnalytics",
   "/admin/ai-actions": "admin.nav.aiActions",
+  "/admin/system-log": "admin.nav.systemLog",
   "/admin/settings": "admin.nav.settings",
   "/admin/settings/clinic-hours": "admin.settings.hours",
   "/admin/settings/site": "admin.settings.brand",
@@ -293,6 +302,7 @@ export const adminPagePermissions: Record<string, string> = {
   "/admin/usage": "usage.view",
   "/admin/assist-analytics": "assist-analytics.view",
   "/admin/ai-actions": "ai-actions.view",
+  "/admin/system-log": "system-log.view",
   "/admin/settings": "settings.view",
   "/admin/settings/clinic-hours": "settings.view",
   "/admin/settings/site": "settings.view",

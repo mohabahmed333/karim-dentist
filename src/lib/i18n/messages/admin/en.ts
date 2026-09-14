@@ -79,6 +79,8 @@ export const adminEn = {
   "admin.nav.usage": "Usage",
   "admin.nav.assistAnalytics": "Assist analytics",
   "admin.nav.aiActions": "AI actions log",
+  "admin.nav.logs": "Logs",
+  "admin.nav.systemLog": "System log",
   "admin.nav.clinic": "Clinic",
   "admin.nav.site": "Site",
   "admin.nav.sitePages": "Site pages",

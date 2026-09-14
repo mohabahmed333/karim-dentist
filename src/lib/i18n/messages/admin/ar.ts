@@ -81,6 +81,8 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.nav.usage": "الاستخدام",
   "admin.nav.assistAnalytics": "إحصاءات المساعد",
   "admin.nav.aiActions": "سجل إجراءات الذكاء الاصطناعي",
+  "admin.nav.logs": "السجلات",
+  "admin.nav.systemLog": "سجل النظام",
   "admin.nav.clinic": "العيادة",
   "admin.nav.site": "الموقع",
   "admin.nav.sitePages": "صفحات الموقع",
