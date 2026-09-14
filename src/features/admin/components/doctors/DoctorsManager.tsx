@@ -522,7 +522,7 @@ export function DoctorsManager({
     return (
       <div className="space-y-4">
         {header}
-        <Card className="max-w-3xl gap-0 bg-transparent p-6 text-sm text-[var(--admin-muted)]">
+        <Card className="gap-0 bg-transparent p-6 text-sm text-[var(--admin-muted)]">
           {t("admin.doctors.emptyState")}
         </Card>
       </div>
@@ -532,28 +532,27 @@ export function DoctorsManager({
   return (
     <div className="space-y-4">
       {header}
-      <Card className="grid max-w-3xl grid-cols-1 gap-6 bg-[var(--admin-canvas)] p-6 lg:grid-cols-[240px_1fr]">
-        <div className="space-y-1 lg:border-e lg:border-[var(--admin-border)] lg:pe-5">
+      <Card className="w-full gap-6 bg-[var(--admin-canvas)] p-6">
+        {/* Row 1: doctor picker */}
+        <div className="flex flex-wrap gap-2 border-b border-[var(--admin-border)] pb-5">
           {doctors.map((doctor) => (
             <button
               key={doctor.id}
               type="button"
               onClick={() => setSelectedId(doctor.id)}
-              className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors ${
+              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-left text-sm transition-colors ${
                 doctor.id === selectedId
-                  ? "bg-[var(--admin-hover)] font-medium text-[var(--admin-text)]"
-                  : "text-[var(--admin-muted)] hover:bg-[var(--admin-hover)]/60"
+                  ? "border-[var(--admin-primary)] bg-[var(--admin-hover)] font-medium text-[var(--admin-text)]"
+                  : "border-[var(--admin-border)] bg-[var(--admin-panel)] text-[var(--admin-muted)] hover:bg-[var(--admin-hover)]/60"
               }`}
             >
-              <span className="flex min-w-0 items-center gap-2">
-                <AdminUserAvatar
-                  name={doctor.display_name}
-                  avatarUrl={doctor.avatar_url}
-                  size="xs"
-                />
-                <span className="truncate">
-                  {doctor.display_name ?? t("admin.doctors.unnamed")}
-                </span>
+              <AdminUserAvatar
+                name={doctor.display_name}
+                avatarUrl={doctor.avatar_url}
+                size="xs"
+              />
+              <span className="max-w-[10rem] truncate">
+                {doctor.display_name ?? t("admin.doctors.unnamed")}
               </span>
               {!hoursByDoctor[doctor.id] ? (
                 <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
@@ -564,6 +563,7 @@ export function DoctorsManager({
           ))}
         </div>
 
+        {/* Row 2: selected doctor's settings */}
         {selectedDoctor ? (
           <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--admin-border)] pb-4">
@@ -675,7 +675,7 @@ export function DoctorsManager({
                 {t("admin.doctors.noServices")}
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {services.map((service) => {
                   const restrictedTo = mappings[service.id] ?? [];
                   const checked = selectedServiceIds.includes(service.id);
