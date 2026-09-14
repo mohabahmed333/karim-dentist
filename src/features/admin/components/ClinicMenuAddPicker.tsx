@@ -1,6 +1,7 @@
 "use client";
 
 import { addableCatalog, GROUP_LABELS, GROUP_ORDER } from "@/services/cdt";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   menuCodes: ReadonlySet<string>;
@@ -9,12 +10,13 @@ type Props = {
 };
 
 export function ClinicMenuAddPicker({ menuCodes, disabled, onAdd }: Props) {
+  const t = useTranslations();
   const addable = addableCatalog(menuCodes);
   return (
     <div className="flex items-center justify-between gap-3">
-      <p className="text-sm font-semibold text-[#1E293B]">Clinic prices</p>
+      <p className="text-sm font-semibold text-[#1E293B]">{t("admin.settings.clinic")}</p>
       <select
-        aria-label="Add treatment"
+        aria-label={t("admin.clinicMenu.addTreatment")}
         disabled={disabled || addable.length === 0}
         value=""
         onChange={(event) => {
@@ -24,7 +26,9 @@ export function ClinicMenuAddPicker({ menuCodes, disabled, onAdd }: Props) {
         className="h-9 max-w-56 rounded-md border border-input bg-background px-2 text-sm"
       >
         <option value="">
-          {addable.length === 0 ? "All added" : "Add treatment"}
+          {addable.length === 0
+            ? t("admin.clinicMenu.allAdded")
+            : t("admin.clinicMenu.addTreatment")}
         </option>
         {GROUP_ORDER.map((group) => {
           const rows = addable.filter((row) => row.group === group);

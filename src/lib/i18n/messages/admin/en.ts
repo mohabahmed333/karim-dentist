@@ -133,6 +133,19 @@ export const adminEn = {
     "Leave both empty for \"any time\". They will only be offered slots inside this window.",
   "admin.waitlist.adding": "Adding…",
   "admin.waitlist.addToWaitlist": "Add to waitlist",
+
+  "admin.clinicMenu.addTreatment": "Add treatment",
+  "admin.clinicMenu.allAdded": "All added",
+
+  "admin.richText.write": "Write…",
+  "admin.richText.linkUrl": "Link URL",
+  "admin.richText.bold": "Bold",
+  "admin.richText.italic": "Italic",
+  "admin.richText.underline": "Underline",
+  "admin.richText.heading": "Heading",
+  "admin.richText.bulletList": "Bullet list",
+  "admin.richText.orderedList": "Ordered list",
+  "admin.richText.link": "Link",
   "admin.pages.profile.title": "My profile",
   "admin.pages.profile.description":
     "Your name, photo and contact details, as other staff see them.",

@@ -135,6 +135,19 @@ export const adminAr: Record<AdminMessageKey, string> = {
     "اترك الحقلين فارغين لـ«أي وقت». لن يُعرض عليه إلا مواعيد داخل هذه الفترة.",
   "admin.waitlist.adding": "جارٍ الإضافة…",
   "admin.waitlist.addToWaitlist": "إضافة إلى قائمة الانتظار",
+
+  "admin.clinicMenu.addTreatment": "إضافة علاج",
+  "admin.clinicMenu.allAdded": "أُضيف الكل",
+
+  "admin.richText.write": "اكتب…",
+  "admin.richText.linkUrl": "رابط",
+  "admin.richText.bold": "غامق",
+  "admin.richText.italic": "مائل",
+  "admin.richText.underline": "تسطير",
+  "admin.richText.heading": "عنوان",
+  "admin.richText.bulletList": "قائمة نقطية",
+  "admin.richText.orderedList": "قائمة مرقّمة",
+  "admin.richText.link": "رابط",
   "admin.pages.profile.title": "ملفي الشخصي",
   "admin.pages.profile.description":
     "اسمك وصورتك وبيانات التواصل كما يراها بقية الفريق.",
