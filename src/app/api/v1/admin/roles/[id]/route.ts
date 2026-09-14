@@ -15,6 +15,7 @@ const patchSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
   isDoctor: z.boolean().optional(),
+  dashboardScope: z.enum(["clinic", "own"]).optional(),
   permissionKeys: z.array(z.string()).optional(),
 });
 
@@ -36,12 +37,14 @@ export async function PATCH(request: Request, context: Params) {
     if (
       parsed.data.name !== undefined ||
       parsed.data.description !== undefined ||
-      parsed.data.isDoctor !== undefined
+      parsed.data.isDoctor !== undefined ||
+      parsed.data.dashboardScope !== undefined
     ) {
       await updateRoleDetails(auth.supabase, id, {
         name: parsed.data.name,
         description: parsed.data.description,
         isDoctor: parsed.data.isDoctor,
+        dashboardScope: parsed.data.dashboardScope,
       });
     }
 

@@ -16,6 +16,7 @@ import type {
 import type { Service } from "@/services/services/types";
 import type { WhatsappConversation } from "@/services/whatsapp/types";
 import type { SiteSettings } from "@/services/site_settings/types";
+import type { DoctorProduction } from "@/services/patient_treatments/queries";
 import { AdminReservationFilters } from "@/features/admin/components/AdminReservationFilters";
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
 import { useDashboardLayoutEditor } from "@/features/admin/hooks/useDashboardLayoutEditor";
@@ -61,6 +62,9 @@ type Props = {
   demoMode?: boolean;
   /** Showreel: clinical imaging/notes for Day Schedule drawer. */
   demoClinical?: AdminDemoClinical | null;
+  /** True when the signed-in doctor's role has dashboard_scope "own" — reservations are already filtered to just them. */
+  scopeToDoctor?: boolean;
+  doctorProduction?: DoctorProduction | null;
 };
 
 export function ClinicDashboard({
@@ -79,6 +83,8 @@ export function ClinicDashboard({
   initialLayout,
   demoMode = false,
   demoClinical = null,
+  scopeToDoctor = false,
+  doctorProduction = null,
 }: Props) {
   const [clinicReservation, setClinicReservation] =
     useState<Reservation | null>(null);
@@ -104,18 +110,26 @@ export function ClinicDashboard({
     conversations,
     onPatientSelect: setClinicReservation,
     conversationsLive: !demoMode,
+    doctorProduction,
   };
 
   return (
     <>
       <AdminPageMotion className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <DashboardGreeting
-            email={email}
-            displayName={displayName}
-            avatarUrl={avatarUrl}
-            reservations={reservations}
-          />
+          <div className="space-y-1.5">
+            <DashboardGreeting
+              email={email}
+              displayName={displayName}
+              avatarUrl={avatarUrl}
+              reservations={reservations}
+            />
+            {scopeToDoctor ? (
+              <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[var(--admin-border)] bg-[var(--admin-panel)] px-2.5 py-1 text-[11px] font-medium text-[var(--admin-muted)]">
+                {t("admin.overview.scopedToOwn")}
+              </span>
+            ) : null}
+          </div>
           <div className="flex flex-col items-stretch gap-2 sm:items-end">
             <AdminReservationFilters
               services={services}

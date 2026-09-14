@@ -16,6 +16,7 @@ type Props = {
   selectedReservationId: string | null;
   movingReservationId: string | null;
   eventLabel: (reservation: Reservation) => string;
+  doctorColorById?: Record<string, string>;
   onSelectDay: (iso: string) => void;
   onSelectReservation: (id: string) => void;
   onMoveReservation: (reservationId: string, targetDate: string) => void;
@@ -28,6 +29,7 @@ export function CalendarDayCell({
   selectedReservationId,
   movingReservationId,
   eventLabel,
+  doctorColorById,
   onSelectDay,
   onSelectReservation,
   onMoveReservation,
@@ -74,17 +76,19 @@ export function CalendarDayCell({
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
       className={cn(
-        "flex h-[6.5rem] cursor-pointer flex-col overflow-hidden border-b border-e border-[#e6e8ec] p-2 text-start transition",
+        "flex h-[6.5rem] cursor-pointer flex-col overflow-hidden border-b border-e border-[var(--admin-border)] p-2 text-start transition",
         isSelected && "bg-[#7c5cff]/8",
-        !day.isCurrentMonth && "bg-white",
-        day.isToday && !isSelected && "bg-[#0f2744]/[0.03]",
+        !day.isCurrentMonth && "bg-[var(--admin-panel)]",
+        day.isToday && !isSelected && "bg-[var(--admin-hover)]",
         isDragOver && "bg-[#7c5cff]/15 ring-2 ring-inset ring-[#7c5cff]/40",
       )}
     >
       <span
         className={cn(
           "mb-1.5 self-end text-xs font-medium",
-          day.isCurrentMonth ? "text-[#0f2744]" : "text-[#9ca3af]",
+          day.isCurrentMonth
+            ? "text-[var(--admin-text)]"
+            : "text-[var(--admin-muted)]",
           day.isToday &&
             "flex size-6 items-center justify-center rounded-full bg-[#7c5cff] text-white",
         )}
@@ -99,6 +103,11 @@ export function CalendarDayCell({
             label={eventLabel(reservation)}
             isActive={selectedReservationId === reservation.id}
             isMoving={movingReservationId === reservation.id}
+            doctorColor={
+              reservation.doctor_id
+                ? (doctorColorById?.[reservation.doctor_id] ?? null)
+                : null
+            }
             onSelect={onSelectReservation}
           />
         ))}

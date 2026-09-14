@@ -410,7 +410,7 @@ export function calendarEventAccent(status: ReservationStatus): string {
     case "no_show":
       return "border-l-orange-400 bg-orange-400/10";
     default:
-      return "border-l-[#6b7280] bg-[#f6f7f9]";
+      return "border-l-[#6b7280] bg-[var(--admin-hover)]";
   }
 }
 

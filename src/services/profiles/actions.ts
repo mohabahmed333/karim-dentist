@@ -1,10 +1,16 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requirePermission } from "@/lib/api/requirePermission";
 import {
   updateProfileDetails,
+  updateDoctorIdentity,
   type ProfileDetailsInput,
 } from "./mutations";
+import {
+  doctorIdentityUpsertSchema,
+  type DoctorIdentityUpsertValues,
+} from "./schemas";
 
 /**
  * Saves the signed-in user's own profile.
@@ -22,4 +28,21 @@ export async function updateMyProfile(input: ProfileDetailsInput): Promise<void>
   if (!user) throw new Error("Unauthorized");
 
   await updateProfileDetails(supabase, user.id, input);
+}
+
+/**
+ * Admin-side edit of another doctor's specialty/bio/calendar color, from the
+ * settings/doctors page. Gated the same way as saveDoctorHours.
+ */
+export async function saveDoctorIdentity(
+  doctorId: string,
+  input: DoctorIdentityUpsertValues,
+): Promise<void> {
+  const auth = await requirePermission("settings.edit");
+  if (auth.error) throw new Error("Forbidden");
+
+  const parsed = doctorIdentityUpsertSchema.safeParse(input);
+  if (!parsed.success) throw new Error("Invalid input");
+
+  await updateDoctorIdentity(auth.supabase, doctorId, parsed.data);
 }

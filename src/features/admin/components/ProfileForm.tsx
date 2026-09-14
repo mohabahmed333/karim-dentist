@@ -13,8 +13,10 @@ import {
   IMAGE_FILE_ACCEPT,
   prepareMediaFile,
 } from "@/lib/supabase/uploadHelpers";
+import { DOCTOR_COLOR_PALETTE } from "@/services/profiles/colorPalette";
 import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { AdminInput } from "@/features/admin/ui";
 import { AdminUserAvatar } from "./AdminUserAvatar";
 import { LocalizedAdminPageHeader } from "./LocalizedAdminPageHeader";
@@ -29,6 +31,9 @@ export type ProfileFormValues = {
   phone: string | null;
   jobTitle: string | null;
   avatarUrl: string | null;
+  specialty: string | null;
+  bio: string | null;
+  calendarColor: string | null;
 };
 
 type Props = {
@@ -38,6 +43,7 @@ type Props = {
   memberSince: string | null;
   lastUpdated: string | null;
   isActive: boolean;
+  isDoctor: boolean;
   patients: ServedPatient[];
   initial: ProfileFormValues;
 };
@@ -58,6 +64,7 @@ export function ProfileForm({
   memberSince,
   lastUpdated,
   isActive,
+  isDoctor,
   patients,
   initial,
 }: Props) {
@@ -107,6 +114,9 @@ export function ProfileForm({
       phone: trimmed("phone"),
       job_title: trimmed("jobTitle"),
       avatar_url: values.avatarUrl,
+      specialty: isDoctor ? trimmed("specialty") : values.specialty,
+      bio: isDoctor ? trimmed("bio") : values.bio,
+      calendar_color: values.calendarColor,
     };
 
     try {
@@ -116,6 +126,9 @@ export function ProfileForm({
         phone: next.phone,
         jobTitle: next.job_title,
         avatarUrl: next.avatar_url,
+        specialty: next.specialty,
+        bio: next.bio,
+        calendarColor: next.calendar_color,
       });
       setEditing(false);
       updateProfileStore({
@@ -313,6 +326,68 @@ export function ProfileForm({
             </Link>
           </ProfileDetailRow>
         </ProfileDetailCard>
+
+        {isDoctor ? (
+          <ProfileDetailCard title={t("admin.profile.doctorProfile")}>
+            <ProfileDetailRow label={t("admin.profile.specialty")}>
+              {editing ? (
+                <AdminInput
+                  name="specialty"
+                  defaultValue={values.specialty ?? ""}
+                  maxLength={120}
+                  aria-label={t("admin.profile.specialty")}
+                />
+              ) : (
+                (values.specialty ?? "—")
+              )}
+            </ProfileDetailRow>
+            <ProfileDetailRow label={t("admin.profile.bio")}>
+              {editing ? (
+                <Textarea
+                  name="bio"
+                  defaultValue={values.bio ?? ""}
+                  maxLength={500}
+                  rows={3}
+                  aria-label={t("admin.profile.bio")}
+                />
+              ) : (
+                (values.bio ?? "—")
+              )}
+            </ProfileDetailRow>
+            <ProfileDetailRow label={t("admin.profile.calendarColor")}>
+              {editing ? (
+                <div className="flex flex-wrap justify-end gap-1.5">
+                  {DOCTOR_COLOR_PALETTE.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      aria-label={color}
+                      onClick={() =>
+                        setValues((prev) => ({ ...prev, calendarColor: color }))
+                      }
+                      className={`size-6 rounded-full ${
+                        values.calendarColor === color
+                          ? "ring-2 ring-offset-2 ring-(--admin-text)"
+                          : ""
+                      }`}
+                      style={{ background: color }}
+                    />
+                  ))}
+                </div>
+              ) : values.calendarColor ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className="size-3 rounded-full"
+                    style={{ background: values.calendarColor }}
+                  />
+                  {values.calendarColor}
+                </span>
+              ) : (
+                "—"
+              )}
+            </ProfileDetailRow>
+          </ProfileDetailCard>
+        ) : null}
 
         <ProfileDetailCard
           title={t("admin.profile.patients")}

@@ -10,6 +10,7 @@ export type Role = {
   is_admin_role: boolean;
   is_system: boolean;
   is_doctor: boolean;
+  dashboard_scope: "clinic" | "own";
 };
 
 export type Permission = {
@@ -23,7 +24,9 @@ export type Permission = {
 export async function listRoles(supabase: ServerSupabase): Promise<Role[]> {
   const { data, error } = await supabase
     .from("roles")
-    .select("id, key, name, description, is_admin_role, is_system, is_doctor")
+    .select(
+      "id, key, name, description, is_admin_role, is_system, is_doctor, dashboard_scope",
+    )
     .is("deleted_at", null)
     .order("name", { ascending: true });
   if (error) throw error;

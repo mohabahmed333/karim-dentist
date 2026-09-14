@@ -13,6 +13,7 @@ type Props = {
   label: string;
   isActive?: boolean;
   isMoving?: boolean;
+  doctorColor?: string | null;
   onSelect: (id: string) => void;
 };
 
@@ -21,6 +22,7 @@ export function CalendarEventChip({
   label,
   isActive,
   isMoving,
+  doctorColor,
   onSelect,
 }: Props) {
   return (
@@ -47,10 +49,17 @@ export function CalendarEventChip({
         isMoving && "pointer-events-none opacity-50",
       )}
     >
-      <span className="shrink-0 font-semibold text-[#0f2744]">
+      {doctorColor ? (
+        <span
+          aria-hidden
+          className="size-1.5 shrink-0 rounded-full"
+          style={{ background: doctorColor }}
+        />
+      ) : null}
+      <span className="shrink-0 font-semibold text-[var(--admin-text)]">
         {formatCalendarTime(reservation.starts_at)}
       </span>
-      <span className="truncate text-[#4b5563]">{label}</span>
+      <span className="truncate text-[var(--admin-muted)]">{label}</span>
     </button>
   );
 }

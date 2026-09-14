@@ -9,6 +9,7 @@ import type {
 import type { Service } from "@/services/services/types";
 import type { WhatsappConversation } from "@/services/whatsapp/types";
 import type { DashboardWidgetId } from "@/features/admin/lib/dashboardLayout";
+import type { DoctorProduction } from "@/services/patient_treatments/queries";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { renderDashboardWidget } from "./renderDashboardWidget";
@@ -25,6 +26,7 @@ export type DashboardWidgetHostProps = {
   conversations: WhatsappConversation[];
   onPatientSelect: (reservation: Reservation) => void;
   conversationsLive?: boolean;
+  doctorProduction?: DoctorProduction | null;
   className?: string;
 };
 

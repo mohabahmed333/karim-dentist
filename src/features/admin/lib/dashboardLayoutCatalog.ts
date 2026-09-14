@@ -32,6 +32,7 @@ export const DASHBOARD_WIDGET_IDS = [
   "chartWeekCompare",
   "chartCancelRate",
   "chartServiceRank",
+  "myProductionWeek",
 ] as const;
 
 export type DashboardWidgetId = (typeof DASHBOARD_WIDGET_IDS)[number];
@@ -252,6 +253,11 @@ export const DASHBOARD_WIDGET_CATALOG: readonly DashboardWidgetMeta[] = [
     id: "chartServiceRank",
     labelKey: "admin.overview.widget.chartServiceRank",
     ...CHART,
+  },
+  {
+    id: "myProductionWeek",
+    labelKey: "admin.overview.widget.myProductionWeek",
+    ...CARD,
   },
 ];
 

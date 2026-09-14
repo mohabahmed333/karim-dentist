@@ -22,7 +22,7 @@ export default async function AdminProfilePage() {
     supabase
       .from("profiles")
       .select(
-        "display_name, phone, job_title, avatar_url, created_at, updated_at, deleted_at, roles(name)",
+        "display_name, phone, job_title, avatar_url, specialty, bio, calendar_color, created_at, updated_at, deleted_at, roles(name, is_doctor)",
       )
       .eq("id", user.id)
       .maybeSingle(),
@@ -38,12 +38,16 @@ export default async function AdminProfilePage() {
         memberSince={profile?.created_at ?? null}
         lastUpdated={profile?.updated_at ?? null}
         isActive={!profile?.deleted_at}
+        isDoctor={Boolean(profile?.roles?.is_doctor)}
         patients={patients}
         initial={{
           displayName: profile?.display_name ?? null,
           phone: profile?.phone ?? null,
           jobTitle: profile?.job_title ?? null,
           avatarUrl: profile?.avatar_url ?? null,
+          specialty: profile?.specialty ?? null,
+          bio: profile?.bio ?? null,
+          calendarColor: profile?.calendar_color ?? null,
         }}
       />
     </AdminPageMotion>

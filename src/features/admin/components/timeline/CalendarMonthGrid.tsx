@@ -11,6 +11,7 @@ type Props = {
   selectedDayIso: string | null;
   selectedReservationId: string | null;
   eventLabel: (reservation: Reservation) => string;
+  doctorColorById?: Record<string, string>;
   onSelectDay: (iso: string) => void;
   onSelectReservation: (id: string) => void;
   onMoveReservation: (reservationId: string, targetDate: string) => void;
@@ -36,6 +37,7 @@ export function CalendarMonthGrid({
   selectedDayIso,
   selectedReservationId,
   eventLabel,
+  doctorColorById,
   onSelectDay,
   onSelectReservation,
   onMoveReservation,
@@ -45,12 +47,12 @@ export function CalendarMonthGrid({
   const labels = weekdayLabels(locale);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#e6e8ec] bg-white">
-      <div className="grid grid-cols-7 border-b border-[#e6e8ec] bg-white">
+    <div className="overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-panel)]">
+      <div className="grid grid-cols-7 border-b border-[var(--admin-border)] bg-[var(--admin-panel)]">
         {labels.map((label) => (
           <div
             key={label}
-            className="border-e border-[#e6e8ec] px-2 py-2.5 text-center text-xs font-medium text-[#6b7280] last:border-e-0"
+            className="border-e border-[var(--admin-border)] px-2 py-2.5 text-center text-xs font-medium text-[var(--admin-muted)] last:border-e-0"
           >
             {label}
           </div>
@@ -65,6 +67,7 @@ export function CalendarMonthGrid({
             isSelected={selectedDayIso === day.iso}
             selectedReservationId={selectedReservationId}
             eventLabel={eventLabel}
+            doctorColorById={doctorColorById}
             onSelectDay={onSelectDay}
             onSelectReservation={onSelectReservation}
             onMoveReservation={onMoveReservation}

@@ -136,6 +136,31 @@ export function RolesManager({
     }
   }
 
+  async function setDashboardScope(scope: "clinic" | "own") {
+    if (!selectedRoleId) return;
+    setRoles((prev) =>
+      prev.map((role) =>
+        role.id === selectedRoleId
+          ? { ...role, dashboard_scope: scope }
+          : role,
+      ),
+    );
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/v1/admin/roles/${selectedRoleId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dashboardScope: scope }),
+      });
+      if (!res.ok) throw new Error("Update failed");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Update failed");
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleDeleteRole() {
     if (!selectedRoleId) return;
     setBusy(true);
@@ -221,6 +246,37 @@ export function RolesManager({
                 />
                 Doctor role — grants a doctor picker + own hours
               </label>
+              {selectedRole.is_doctor ? (
+                <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                  Dashboard:
+                  <div className="inline-flex overflow-hidden rounded-md border">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void setDashboardScope("clinic")}
+                      className={`px-2 py-1 ${
+                        selectedRole.dashboard_scope === "clinic"
+                          ? "bg-muted font-medium text-foreground"
+                          : "hover:bg-muted/50"
+                      }`}
+                    >
+                      Clinic-wide
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void setDashboardScope("own")}
+                      className={`border-l px-2 py-1 ${
+                        selectedRole.dashboard_scope === "own"
+                          ? "bg-muted font-medium text-foreground"
+                          : "hover:bg-muted/50"
+                      }`}
+                    >
+                      Own patients only
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
             {!selectedRole.is_system && (
               <Button
@@ -242,7 +298,7 @@ export function RolesManager({
         {selectedRole && (
           <div className="space-y-4">
             {grouped.map(([category, items]) => (
-              <div key={category} className="rounded-lg border p-3">
+              <div key={category} className="rounded-lg p-3">
                 <h3 className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
                   {category}
                 </h3>

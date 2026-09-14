@@ -13,9 +13,13 @@ export type SessionUser = {
   email?: string | null;
 };
 
+export type DashboardScope = "clinic" | "own";
+
 export type SessionPermissions = {
   user: SessionUser | null;
   isAdmin: boolean;
+  isDoctor: boolean;
+  dashboardScope: DashboardScope;
   roleId: string | null;
   roleKey: string | null;
   permissions: Set<string>;
@@ -26,6 +30,8 @@ export type AuthorizedSession = SessionPermissions & { user: SessionUser };
 
 const EMPTY: Omit<SessionPermissions, "user"> = {
   isAdmin: false,
+  isDoctor: false,
+  dashboardScope: "clinic",
   roleId: null,
   roleKey: null,
   permissions: new Set(),
@@ -54,13 +60,16 @@ export async function resolveSessionPermissions(
 
   const { data: role, error: roleError } = await supabase
     .from("roles")
-    .select("id, key, is_admin_role, deleted_at")
+    .select("id, key, is_admin_role, is_doctor, dashboard_scope, deleted_at")
     .eq("id", profile.role_id)
     .maybeSingle();
 
   if (roleError || !role || role.deleted_at) {
     return { user, ...EMPTY };
   }
+
+  const dashboardScope: DashboardScope =
+    role.dashboard_scope === "own" ? "own" : "clinic";
 
   const { data: rolePermissions, error: permissionsError } = await supabase
     .from("role_permissions")
@@ -71,6 +80,8 @@ export async function resolveSessionPermissions(
     return {
       user,
       isAdmin: role.is_admin_role,
+      isDoctor: role.is_doctor,
+      dashboardScope,
       roleId: role.id,
       roleKey: role.key,
       permissions: new Set(),
@@ -86,6 +97,8 @@ export async function resolveSessionPermissions(
   return {
     user,
     isAdmin: role.is_admin_role,
+    isDoctor: role.is_doctor,
+    dashboardScope,
     roleId: role.id,
     roleKey: role.key,
     permissions,

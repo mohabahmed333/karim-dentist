@@ -10,7 +10,9 @@ import type {
 import type { Service } from "@/services/services/types";
 import type { WhatsappConversation } from "@/services/whatsapp/types";
 import type { DashboardWidgetId } from "@/features/admin/lib/dashboardLayout";
+import type { DoctorProduction } from "@/services/patient_treatments/queries";
 import { DashboardAttentionCard } from "./DashboardAttentionCard";
+import { DashboardDoctorProductionCard } from "./DashboardDoctorProductionCard";
 import { DashboardKpiCard } from "./DashboardKpiCard";
 import { DashboardUnreadChatsKpi } from "./DashboardUnreadChatsKpi";
 import { DashboardBookingsPanel } from "./DashboardBookingsPanel";
@@ -48,6 +50,8 @@ export type DashboardWidgetRenderCtx = {
   emptyAttention: string;
   /** When false, message widgets stay on fixture rows (showreel). */
   conversationsLive?: boolean;
+  /** Doctor's own fee total for the current week — null unless dashboard is doctor-scoped. */
+  doctorProduction?: DoctorProduction | null;
 };
 
 const KPI_BY_WIDGET: Partial<
@@ -188,6 +192,12 @@ export function renderDashboardWidget(
       );
     case "chartServiceRank":
       return <ChartServiceRank serviceMix={ctx.stats.serviceMix} />;
+    case "myProductionWeek":
+      return (
+        <DashboardDoctorProductionCard
+          production={ctx.doctorProduction ?? null}
+        />
+      );
     default:
       return null;
   }

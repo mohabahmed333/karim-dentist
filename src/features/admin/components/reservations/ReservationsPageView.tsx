@@ -45,6 +45,7 @@ import {
 import type { Reservation } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
 import type { DoctorProfile } from "@/services/profiles";
+import { fallbackDoctorColor } from "@/services/profiles/colorPalette";
 import {
   calendarDayBookingBlockReason,
   localTodayIso,
@@ -130,6 +131,13 @@ export function ReservationsPageView({
     () => groupReservationsByDay(editor.items),
     [editor.items],
   );
+  const doctorColorById = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const doctor of doctors) {
+      out[doctor.id] = doctor.calendar_color ?? fallbackDoctorColor(doctor.id);
+    }
+    return out;
+  }, [doctors]);
 
   function shiftCalendarMonth(delta: -1 | 1) {
     setMonthDir(delta);
@@ -317,6 +325,7 @@ export function ReservationsPageView({
                     }
                     movingReservationId={movingId}
                     eventLabel={(r) => r.patient_name}
+                    doctorColorById={doctorColorById}
                     onSelectDay={onCalendarDayClick}
                     onSelectReservation={editor.openRow}
                     onMoveReservation={(id, date) => {

@@ -6,7 +6,9 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import {
+  AdminInput,
   AdminSelect,
   AdminSelectContent,
   AdminSelectItem,
@@ -27,6 +29,9 @@ import {
   saveDoctorHours,
 } from "@/services/doctor_schedule/actions";
 import type { DoctorProfile } from "@/services/profiles";
+import { saveDoctorIdentity } from "@/services/profiles/actions";
+import { doctorIdentityUpsertSchema } from "@/services/profiles/schemas";
+import { DOCTOR_COLOR_PALETTE } from "@/services/profiles/colorPalette";
 
 const DAY_LABELS = [
   { value: 0, label: "Sun" },
@@ -92,6 +97,20 @@ function formFromHours(hours: DoctorHours): FormState {
   };
 }
 
+type IdentityFormState = {
+  specialty: string;
+  bio: string;
+  calendar_color: string | null;
+};
+
+function identityFromDoctor(doctor: DoctorProfile): IdentityFormState {
+  return {
+    specialty: doctor.specialty ?? "",
+    bio: doctor.bio ?? "",
+    calendar_color: doctor.calendar_color,
+  };
+}
+
 type Props = {
   doctors: DoctorProfile[];
   initialHours: Record<string, DoctorHours>;
@@ -114,7 +133,17 @@ export function DoctorsManager({
     }
     return out;
   });
+  const [identityForms, setIdentityForms] = useState<
+    Record<string, IdentityFormState>
+  >(() => {
+    const out: Record<string, IdentityFormState> = {};
+    for (const doctor of initialDoctors) {
+      out[doctor.id] = identityFromDoctor(doctor);
+    }
+    return out;
+  });
   const [pending, setPending] = useState(false);
+  const [savingIdentity, setSavingIdentity] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
@@ -122,6 +151,16 @@ export function DoctorsManager({
   const selectedDoctor = doctors.find((d) => d.id === selectedId);
   const form = forms[selectedId] ?? defaultForm();
   const hasHours = Boolean(hoursByDoctor[selectedId]);
+  const identityForm =
+    identityForms[selectedId] ??
+    (selectedDoctor ? identityFromDoctor(selectedDoctor) : { specialty: "", bio: "", calendar_color: null });
+
+  function patchIdentity(partial: Partial<IdentityFormState>) {
+    setIdentityForms((prev) => ({
+      ...prev,
+      [selectedId]: { ...identityForm, ...partial },
+    }));
+  }
 
   function patchForm(partial: Partial<FormState>) {
     setForms((prev) => ({
@@ -181,6 +220,40 @@ export function DoctorsManager({
       toast.error(err instanceof Error ? err.message : "Save failed");
     } finally {
       setPending(false);
+    }
+  }
+
+  async function onSaveIdentity() {
+    if (!selectedId) return;
+    const parsed = doctorIdentityUpsertSchema.safeParse({
+      specialty: identityForm.specialty.trim() || null,
+      bio: identityForm.bio.trim() || null,
+      calendar_color: identityForm.calendar_color,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Invalid profile");
+      return;
+    }
+    setSavingIdentity(true);
+    try {
+      await saveDoctorIdentity(selectedId, parsed.data);
+      setDoctors((prev) =>
+        prev.map((d) =>
+          d.id === selectedId
+            ? {
+                ...d,
+                specialty: parsed.data.specialty,
+                bio: parsed.data.bio,
+                calendar_color: parsed.data.calendar_color,
+              }
+            : d,
+        ),
+      );
+      toast.success("Profile saved");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSavingIdentity(false);
     }
   }
 
@@ -254,6 +327,14 @@ export function DoctorsManager({
             onClick={() => void onRegenerate()}
           >
             {regenerating ? "Regenerating…" : "Regenerate slots"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={savingIdentity || !selectedId}
+            onClick={() => void onSaveIdentity()}
+          >
+            {savingIdentity ? "Saving…" : "Save profile"}
           </Button>
           <Button
             type="button"
@@ -336,6 +417,52 @@ export function DoctorsManager({
               </Button>
             </div>
           </div>
+
+          <SettingsSectionGroup title="Profile" className="space-y-3">
+            <label className="grid gap-1">
+              <span className="text-[11px] font-medium text-[var(--admin-muted)]">
+                Specialty
+              </span>
+              <AdminInput
+                value={identityForm.specialty}
+                placeholder="e.g. Orthodontics"
+                maxLength={120}
+                onChange={(e) => patchIdentity({ specialty: e.target.value })}
+              />
+            </label>
+            <label className="grid gap-1">
+              <span className="text-[11px] font-medium text-[var(--admin-muted)]">
+                Bio
+              </span>
+              <Textarea
+                value={identityForm.bio}
+                maxLength={500}
+                rows={3}
+                onChange={(e) => patchIdentity({ bio: e.target.value })}
+              />
+            </label>
+            <div className="grid gap-1">
+              <span className="text-[11px] font-medium text-[var(--admin-muted)]">
+                Calendar color
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {DOCTOR_COLOR_PALETTE.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    aria-label={color}
+                    onClick={() => patchIdentity({ calendar_color: color })}
+                    className={`size-6 rounded-full ${
+                      identityForm.calendar_color === color
+                        ? "ring-2 ring-offset-2 ring-(--admin-text)"
+                        : ""
+                    }`}
+                    style={{ background: color }}
+                  />
+                ))}
+              </div>
+            </div>
+          </SettingsSectionGroup>
 
           <SettingsSectionGroup title="Open days">
             <div className="flex flex-wrap gap-2">

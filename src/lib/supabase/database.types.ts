@@ -2132,6 +2132,8 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
+          calendar_color: string | null
           created_at: string
           deleted_at: string | null
           display_name: string | null
@@ -2140,10 +2142,13 @@ export type Database = {
           phone: string | null
           role: "admin" | "viewer"
           role_id: string | null
+          specialty: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
+          calendar_color?: string | null
           created_at?: string
           deleted_at?: string | null
           display_name?: string | null
@@ -2152,10 +2157,13 @@ export type Database = {
           phone?: string | null
           role?: "admin" | "viewer"
           role_id?: string | null
+          specialty?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
+          calendar_color?: string | null
           created_at?: string
           deleted_at?: string | null
           display_name?: string | null
@@ -2164,6 +2172,7 @@ export type Database = {
           phone?: string | null
           role?: "admin" | "viewer"
           role_id?: string | null
+          specialty?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2302,6 +2311,7 @@ export type Database = {
       roles: {
         Row: {
           created_at: string
+          dashboard_scope: "clinic" | "own"
           deleted_at: string | null
           description: string | null
           id: string
@@ -2314,6 +2324,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dashboard_scope?: "clinic" | "own"
           deleted_at?: string | null
           description?: string | null
           id?: string
@@ -2326,6 +2337,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dashboard_scope?: "clinic" | "own"
           deleted_at?: string | null
           description?: string | null
           id?: string

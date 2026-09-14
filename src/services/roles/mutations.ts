@@ -30,12 +30,23 @@ export async function createRole(
 export async function updateRoleDetails(
   supabase: ServerSupabase,
   roleId: string,
-  input: { name?: string; description?: string; isDoctor?: boolean },
+  input: {
+    name?: string;
+    description?: string;
+    isDoctor?: boolean;
+    dashboardScope?: "clinic" | "own";
+  },
 ): Promise<void> {
-  const update: { name?: string; description?: string | null; is_doctor?: boolean } = {};
+  const update: {
+    name?: string;
+    description?: string | null;
+    is_doctor?: boolean;
+    dashboard_scope?: "clinic" | "own";
+  } = {};
   if (input.name !== undefined) update.name = input.name;
   if (input.description !== undefined) update.description = input.description || null;
   if (input.isDoctor !== undefined) update.is_doctor = input.isDoctor;
+  if (input.dashboardScope !== undefined) update.dashboard_scope = input.dashboardScope;
   if (Object.keys(update).length === 0) return;
 
   const { error } = await supabase.from("roles").update(update).eq("id", roleId);

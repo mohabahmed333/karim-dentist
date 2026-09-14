@@ -27,6 +27,10 @@ export async function listStaffProfiles(
 export type DoctorProfile = {
   id: string;
   display_name: string | null;
+  specialty: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  calendar_color: string | null;
 };
 
 /** Staff accounts whose role is flagged `is_doctor` — the assignable doctors. */
@@ -35,7 +39,9 @@ export async function listDoctors(
 ): Promise<DoctorProfile[]> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, display_name, roles!inner(is_doctor)")
+    .select(
+      "id, display_name, specialty, bio, avatar_url, calendar_color, roles!inner(is_doctor)",
+    )
     .eq("roles.is_doctor", true)
     .is("deleted_at", null)
     .order("display_name", { ascending: true, nullsFirst: false });
@@ -43,5 +49,9 @@ export async function listDoctors(
   return (data ?? []).map((row) => ({
     id: row.id,
     display_name: row.display_name,
+    specialty: row.specialty,
+    bio: row.bio,
+    avatar_url: row.avatar_url,
+    calendar_color: row.calendar_color,
   }));
 }
