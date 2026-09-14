@@ -89,6 +89,8 @@ export function WorkspaceTreatmentsPane({
   const [proposalDraft, setProposalDraft] = useState<{
     description: string;
     amount: string;
+    /** Pre-selects the matching catalog service, when the AI draft named one — still editable. */
+    serviceId: string;
   } | null>(null);
 
   useEffect(() => {
@@ -224,7 +226,11 @@ export function WorkspaceTreatmentsPane({
             serviceDoctorMappings={serviceDoctorMappings}
             reservations={group.visits}
             initialItems={[
-              { serviceId: "", description: proposalDraft.description, amount: proposalDraft.amount },
+              {
+                serviceId: proposalDraft.serviceId,
+                description: proposalDraft.description,
+                amount: proposalDraft.amount,
+              },
             ]}
             onSent={() => setProposalDraft(null)}
           />
@@ -331,6 +337,7 @@ export function WorkspaceTreatmentsPane({
           setProposalDraft({
             description: `${aiDraft.ai_title || "Proposed treatment"} — Tooth ${selectedFdi} (FDI)`,
             amount: String(aiDraft.fee_amount ?? ""),
+            serviceId: aiDraft.service_id ?? "",
           });
         }}
         demoReview={demoReview}

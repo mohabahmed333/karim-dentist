@@ -30,6 +30,7 @@ Rules:
     "ai_description": "findings / diagnosis narrative",
     "ai_confidence": "0-100 as string, or empty",
     "ai_recommendation": "next clinical step",
+    "service_id": "id of a matching entry from Bookable services in context, ONLY if it clearly matches — omit entirely rather than guess",
     "appointment": {
       "book": false,
       "service_label": "",

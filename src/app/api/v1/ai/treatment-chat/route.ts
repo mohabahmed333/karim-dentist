@@ -88,24 +88,38 @@ export async function POST(request: Request) {
     ];
 
     const nowIso = new Date().toISOString();
-    const [{ data: openSlotRows }, { data: takenSlotRows }] = await Promise.all([
-      auth.supabase
-        .from("appointment_slots")
-        .select("starts_at")
-        .eq("status", "open")
-        .gte("starts_at", nowIso)
-        .order("starts_at", { ascending: true })
-        .limit(12),
-      auth.supabase
-        .from("appointment_slots")
-        .select("starts_at")
-        .eq("status", "booked")
-        .gte("starts_at", nowIso)
-        .order("starts_at", { ascending: true })
-        .limit(12),
-    ]);
+    const [{ data: openSlotRows }, { data: takenSlotRows }, { data: serviceRows }] =
+      await Promise.all([
+        auth.supabase
+          .from("appointment_slots")
+          .select("starts_at")
+          .eq("status", "open")
+          .gte("starts_at", nowIso)
+          .order("starts_at", { ascending: true })
+          .limit(12),
+        auth.supabase
+          .from("appointment_slots")
+          .select("starts_at")
+          .eq("status", "booked")
+          .gte("starts_at", nowIso)
+          .order("starts_at", { ascending: true })
+          .limit(12),
+        auth.supabase
+          .from("services")
+          .select("id, title, price_min_egp, price_max_egp")
+          .eq("is_published", true)
+          .is("deleted_at", null)
+          .order("sort_order", { ascending: true })
+          .limit(60),
+      ]);
     const openSlots = (openSlotRows ?? []).map((row) => row.starts_at);
     const takenSlots = (takenSlotRows ?? []).map((row) => row.starts_at);
+    const services = (serviceRows ?? []).map((row) => ({
+      id: row.id,
+      title: row.title,
+      priceMin: row.price_min_egp,
+      priceMax: row.price_max_egp,
+    }));
 
     const result = await runTreatmentChat({
       messages: parsed.data.messages,
@@ -119,6 +133,7 @@ export async function POST(request: Request) {
         existing: parsed.data.existing,
         openSlots,
         takenSlots,
+        services,
       },
     });
 

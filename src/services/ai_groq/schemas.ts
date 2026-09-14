@@ -9,6 +9,14 @@ export const treatmentAiDraftSchema = z.object({
   ai_description: z.string().optional().default(""),
   ai_confidence: z.string().optional().default(""),
   ai_recommendation: z.string().optional().default(""),
+  /**
+   * Which catalog service this draft matches, when it clearly does — checked
+   * against the services actually listed in context (buildTreatmentContext),
+   * same "server offered it or it doesn't count" discipline the WhatsApp
+   * side already applies to slot/doctor ids. Lets "Propose to patient" open
+   * pre-selected instead of always starting blank.
+   */
+  service_id: z.string().uuid().optional(),
   appointment: z
     .object({
       book: z.boolean().optional().default(false),
