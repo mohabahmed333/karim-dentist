@@ -1,5 +1,5 @@
 import { AdminSkeleton as Block } from "@/features/admin/components/AdminSkeleton";
-import { colSpanClass } from "@/features/admin/lib/dashboardLayout";
+import { colSpanClass } from "@/features/admin/lib/overview/overviewDashboardLayout";
 
 // Mirrors DEFAULT_DASHBOARD_LAYOUT (dashboardLayoutCatalog.ts) packed into rows
 // of 12 columns, so this stays close to what a fresh (non-customized) dashboard

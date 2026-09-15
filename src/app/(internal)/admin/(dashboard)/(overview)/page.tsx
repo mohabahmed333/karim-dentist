@@ -22,7 +22,7 @@ import { hasPermission } from "@/lib/auth/permissions";
 import {
   DEFAULT_DASHBOARD_LAYOUT,
   normalizeDashboardLayout,
-} from "@/features/admin/lib/dashboardLayout";
+} from "@/features/admin/lib/overview/overviewDashboardLayout";
 import {
   listPatientBalances,
   listWeekPayments,

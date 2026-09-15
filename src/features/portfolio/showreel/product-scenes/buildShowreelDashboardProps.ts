@@ -5,7 +5,7 @@ import {
 import {
   DEFAULT_DASHBOARD_LAYOUT,
   cloneDashboardLayout,
-} from "@/features/admin/lib/dashboardLayout";
+} from "@/features/admin/lib/overview/overviewDashboardLayout";
 import { buildReservationStats } from "@/services/reservations/stats";
 import { buildShowreelConversations } from "./buildShowreelConversations";
 import {
