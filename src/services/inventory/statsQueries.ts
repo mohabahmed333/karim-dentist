@@ -101,3 +101,108 @@ export async function listWeekConsumptionRows(
   if (error) throw error;
   return (data ?? []).map((row) => ({ date: row.created_at, cost: row.total_cost_egp }));
 }
+
+export type ExpiringBatch = {
+  batchId: string;
+  itemName: string;
+  itemNameAr: string;
+  qtyRemaining: number;
+  expiresOn: string;
+  daysUntilExpiry: number;
+};
+
+/** Whole days from `now` until `isoDate`, floored at 0 for a date already past. */
+export function daysUntil(isoDate: string, now = new Date()): number {
+  const ms = new Date(isoDate).getTime() - now.getTime();
+  return Math.max(0, Math.floor(ms / (24 * 60 * 60 * 1000)));
+}
+
+/** Batches with stock left, expiring within `withinDays` (default 30), soonest first. */
+export async function listExpiringSoonBatches(
+  supabase: ServerSupabase,
+  now = new Date(),
+  withinDays = 30,
+): Promise<ExpiringBatch[]> {
+  const cutoff = new Date(now);
+  cutoff.setDate(cutoff.getDate() + withinDays);
+  const { data, error } = await supabase
+    .from("inventory_batches")
+    .select("id, qty_remaining, expires_on, item:inventory_items(name, name_ar)")
+    .gt("qty_remaining", 0)
+    .not("expires_on", "is", null)
+    .lte("expires_on", cutoff.toISOString())
+    .order("expires_on", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    batchId: row.id,
+    itemName: row.item?.name ?? "",
+    itemNameAr: row.item?.name_ar ?? "",
+    qtyRemaining: row.qty_remaining,
+    expiresOn: row.expires_on!,
+    daysUntilExpiry: daysUntil(row.expires_on!, now),
+  }));
+}
+
+export type ReorderSuggestion = {
+  itemId: string;
+  itemName: string;
+  itemNameAr: string;
+  qtyOnHand: number;
+  minStockLevel: number;
+  reorderQty: number;
+  supplierName: string | null;
+};
+
+type ReorderItemRow = {
+  id: string;
+  name: string;
+  name_ar: string;
+  min_stock_level: number;
+  reorder_qty: number;
+  default_supplier: { name: string } | null;
+};
+type ReorderBatchRow = { item_id: string; qty_remaining: number };
+
+/** Items at/below their minimum stock level, with on-hand qty and a suggested reorder amount — pure, no I/O. */
+export function buildReorderSuggestions(
+  items: ReorderItemRow[],
+  batches: ReorderBatchRow[],
+): ReorderSuggestion[] {
+  const onHand = new Map<string, number>();
+  for (const batch of batches) {
+    onHand.set(batch.item_id, (onHand.get(batch.item_id) ?? 0) + batch.qty_remaining);
+  }
+  return items
+    .filter((item) => item.min_stock_level > 0)
+    .map((item) => ({ item, qtyOnHand: onHand.get(item.id) ?? 0 }))
+    .filter(({ item, qtyOnHand }) => qtyOnHand <= item.min_stock_level)
+    .map(({ item, qtyOnHand }) => ({
+      itemId: item.id,
+      itemName: item.name,
+      itemNameAr: item.name_ar,
+      qtyOnHand,
+      minStockLevel: item.min_stock_level,
+      reorderQty: item.reorder_qty,
+      supplierName: item.default_supplier?.name ?? null,
+    }));
+}
+
+/** Items at/below their minimum stock level, clinic-wide, with a suggested reorder quantity. */
+export async function listReorderSuggestions(
+  supabase: ServerSupabase,
+): Promise<ReorderSuggestion[]> {
+  const [itemsRes, batchesRes] = await Promise.all([
+    supabase
+      .from("inventory_items")
+      .select("id, name, name_ar, min_stock_level, reorder_qty, default_supplier:suppliers(name)")
+      .is("deleted_at", null)
+      .gt("min_stock_level", 0),
+    supabase.from("inventory_batches").select("item_id, qty_remaining"),
+  ]);
+  if (itemsRes.error) throw itemsRes.error;
+  if (batchesRes.error) throw batchesRes.error;
+  return buildReorderSuggestions(
+    (itemsRes.data ?? []) as unknown as ReorderItemRow[],
+    batchesRes.data ?? [],
+  );
+}
