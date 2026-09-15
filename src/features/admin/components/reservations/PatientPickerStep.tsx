@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { CornerDownLeft, Plus, Search, User, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { searchPatients } from "@/services/patient_profiles/queries";
 import type {
   PatientProfile,
@@ -22,14 +22,22 @@ type Props = {
 };
 
 export function PatientPickerStep({ onPatientChosen }: Props) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PatientSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [active, setActive] = useState(0);
   const [addOpen, setAddOpen] = useState(false);
   const requestId = useRef(0);
 
   useEffect(() => {
+    const id = window.requestAnimationFrame(() => inputRef.current?.focus());
+    return () => window.cancelAnimationFrame(id);
+  }, []);
+
+  useEffect(() => {
     const term = query.trim();
+    setActive(0);
     if (!term) {
       setResults([]);
       setLoading(false);
@@ -62,52 +70,95 @@ export function PatientPickerStep({ onPatientChosen }: Props) {
     });
   }
 
+  function onInputKey(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActive((value) => Math.min(value + 1, Math.max(results.length - 1, 0)));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActive((value) => Math.max(value - 1, 0));
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      const hit = results[active];
+      if (hit) onPatientChosen(hit);
+    }
+  }
+
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] px-3 py-2">
+    <div className="overflow-hidden rounded-lg border border-[var(--admin-border)]">
+      <div className="flex items-center gap-2 border-b border-[var(--admin-border)] px-3 py-2.5">
         <Search className="size-4 shrink-0 text-[var(--admin-muted)]" />
-        <Input
-          autoFocus
+        <input
+          ref={inputRef}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={onInputKey}
           placeholder="Search patients by name or phone…"
-          className="h-8 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+          className="h-7 min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[var(--admin-muted)]"
         />
+        {query ? (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            className="flex size-5 items-center justify-center rounded-md bg-[var(--admin-muted)] text-white"
+            aria-label="Clear"
+          >
+            <X className="size-3" />
+          </button>
+        ) : (
+          <CornerDownLeft className="size-3.5 text-[var(--admin-muted)]" />
+        )}
       </div>
 
-      <ul className="max-h-64 divide-y divide-[var(--admin-border)] overflow-y-auto rounded-lg border border-[var(--admin-border)]">
+      <div className="max-h-64 overflow-y-auto py-2">
         {loading ? (
-          <li className="px-3 py-3 text-sm text-[var(--admin-muted)]">Searching…</li>
+          <p className="px-4 py-6 text-center text-[13px] text-[var(--admin-muted)]">
+            Searching…
+          </p>
         ) : query.trim() && results.length === 0 ? (
-          <li className="px-3 py-3 text-sm text-[var(--admin-muted)]">
+          <p className="px-4 py-6 text-center text-[13px] text-[var(--admin-muted)]">
             No matching patients
-          </li>
+          </p>
+        ) : results.length > 0 ? (
+          <ul>
+            {results.map((patient, index) => (
+              <li key={patient.id}>
+                <button
+                  type="button"
+                  onMouseEnter={() => setActive(index)}
+                  onClick={() => onPatientChosen(patient)}
+                  className={cn(
+                    "flex w-full items-center gap-2.5 px-3 py-2 text-start text-[13px]",
+                    index === active
+                      ? "bg-[var(--admin-hover)]"
+                      : "hover:bg-[var(--admin-hover)]",
+                  )}
+                >
+                  <User className="size-4 shrink-0 text-[var(--admin-muted)]" />
+                  <span className="min-w-0 flex-1 truncate font-medium">
+                    {patient.display_name || "Unnamed"}
+                  </span>
+                  <span className="hidden max-w-[40%] truncate text-[12px] text-[var(--admin-muted)] sm:inline">
+                    {patient.phone}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
         ) : (
-          results.map((patient) => (
-            <li key={patient.id}>
-              <button
-                type="button"
-                className="w-full px-3 py-2 text-start text-sm hover:bg-[var(--admin-hover)]"
-                onClick={() => onPatientChosen(patient)}
-              >
-                <span className="block font-medium text-[var(--admin-text)]">
-                  {patient.display_name || "Unnamed"}
-                </span>
-                <span className="block text-xs text-[var(--admin-muted)]">
-                  {patient.phone}
-                </span>
-              </button>
-            </li>
-          ))
+          <p className="px-4 py-6 text-center text-[13px] text-[var(--admin-muted)]">
+            Type a name or phone to search
+          </p>
         )}
-      </ul>
+      </div>
 
       <button
         type="button"
-        className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2 text-sm font-medium text-[var(--admin-text)] hover:bg-[var(--admin-hover)]"
+        className="flex w-full items-center gap-2.5 border-t border-[var(--admin-border)] px-3 py-2.5 text-start text-[13px] font-medium text-[var(--admin-primary)] hover:bg-[var(--admin-hover)]"
         onClick={() => setAddOpen(true)}
       >
-        + Add new patient
+        <Plus className="size-4 shrink-0" />
+        Add new patient
       </button>
 
       <AddPatientDialog
