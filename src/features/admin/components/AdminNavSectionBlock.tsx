@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Minus, Plus } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import {
   isAdminNavGroup,
   type AdminNavGroup,
@@ -82,11 +82,13 @@ function NavGroup({
             onClick={onToggle}
             className="flex size-6 shrink-0 items-center justify-center rounded text-[var(--admin-muted)] hover:bg-[var(--admin-hover)]"
           >
-            {isOpen ? (
-              <Minus className="size-3.5 shrink-0" aria-hidden />
-            ) : (
-              <Plus className="size-3.5 shrink-0" aria-hidden />
-            )}
+            <ChevronRight
+              className={cn(
+                "size-3.5 shrink-0 transition-transform",
+                isOpen ? "rotate-90" : "",
+              )}
+              aria-hidden
+            />
           </button>
         </div>
       </AdminNavTreeRow>
