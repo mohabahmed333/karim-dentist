@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Label } from "@/components/ui/label";
 import { AdminInput, AdminTextarea } from "@/features/admin/ui";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "@/lib/i18n";
 import type {
   PatientGender,
   PatientProfileUpsertValues,
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export function ClientProfileForm({ value, onChange, readOnly, errors }: Props) {
+  const t = useTranslations();
   if (readOnly) return <ClientProfileSummary value={value} />;
 
   function set<K extends keyof PatientProfileUpsertValues>(
@@ -43,22 +45,22 @@ export function ClientProfileForm({ value, onChange, readOnly, errors }: Props) 
 
   return (
     <div className="space-y-5 px-5 pb-6 pt-1">
-      <Section title="Identity">
-        <Field label="Full name" required error={errors?.display_name}>
+      <Section title={t("admin.patients.profile.sectionIdentity")}>
+        <Field label={t("admin.patients.profile.fullName")} required error={errors?.display_name}>
           <AdminInput
             value={value.display_name}
             onChange={(e) => set("display_name", e.target.value)}
             className={cn(errors?.display_name && errorInputClass)}
           />
         </Field>
-        <Field label="Phone" required error={errors?.phone}>
+        <Field label={t("admin.patients.phone")} required error={errors?.phone}>
           <AdminInput
             value={value.phone}
             onChange={(e) => set("phone", e.target.value)}
             className={cn(errors?.phone && errorInputClass)}
           />
         </Field>
-        <Field label="Email" error={errors?.email}>
+        <Field label={t("admin.patients.email")} error={errors?.email}>
           <AdminInput
             type="email"
             value={value.email ?? ""}
@@ -68,8 +70,8 @@ export function ClientProfileForm({ value, onChange, readOnly, errors }: Props) 
         </Field>
       </Section>
 
-      <Section title="Demographics">
-        <Field label="Age (years)">
+      <Section title={t("admin.patients.profile.sectionDemographics")}>
+        <Field label={t("admin.patients.profile.ageYears")}>
           <AdminInput
             type="number"
             min={0}
@@ -88,14 +90,14 @@ export function ClientProfileForm({ value, onChange, readOnly, errors }: Props) 
           selected={value.age_years != null ? String(value.age_years) : ""}
           onToggle={(chip) => set("age_years", Number(chip))}
         />
-        <Field label="Date of birth">
+        <Field label={t("admin.patients.profile.dob")}>
           <AdminInput
             type="date"
             value={value.date_of_birth ?? ""}
             onChange={(e) => set("date_of_birth", e.target.value || null)}
           />
         </Field>
-        <Field label="Gender">
+        <Field label={t("admin.patients.profile.gender")}>
           <ClientProfileChips
             options={GENDER_CHIPS}
             selected={value.gender}
@@ -109,7 +111,7 @@ export function ClientProfileForm({ value, onChange, readOnly, errors }: Props) 
         </Field>
       </Section>
 
-      <Section title="Medical history">
+      <Section title={t("admin.patients.profile.sectionMedicalHistory")}>
         <ClientProfileChips
           options={[...MEDICAL_HISTORY_CHIPS]}
           selected={value.medical_history}
@@ -117,7 +119,7 @@ export function ClientProfileForm({ value, onChange, readOnly, errors }: Props) 
         />
       </Section>
 
-      <Section title="Allergies">
+      <Section title={t("admin.patients.profile.sectionAllergies")}>
         <ClientProfileChips
           options={[...ALLERGY_CHIPS]}
           selected={value.allergies}
@@ -125,19 +127,19 @@ export function ClientProfileForm({ value, onChange, readOnly, errors }: Props) 
         />
       </Section>
 
-      <Section title="Medications">
+      <Section title={t("admin.patients.profile.sectionMedications")}>
         <AdminTextarea
           rows={3}
-          placeholder="Current medications…"
+          placeholder={t("admin.patients.profile.medicationsPlaceholder")}
           value={value.medications}
           onChange={(e) => set("medications", e.target.value)}
         />
       </Section>
 
-      <Section title="Reception notes">
+      <Section title={t("admin.patients.profile.sectionNotes")}>
         <AdminTextarea
           rows={4}
-          placeholder="Intake notes for the clinician…"
+          placeholder={t("admin.patients.profile.notesPlaceholder")}
           value={value.notes}
           onChange={(e) => set("notes", e.target.value)}
         />

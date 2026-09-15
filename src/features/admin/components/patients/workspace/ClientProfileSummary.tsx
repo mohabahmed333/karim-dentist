@@ -2,13 +2,13 @@
 
 import type { ReactNode } from "react";
 import type { PatientGender, PatientProfileUpsertValues } from "@/services/patient_profiles";
+import { useTranslations, type AdminMessageKey } from "@/lib/i18n";
 
-const GENDER_LABEL: Record<PatientGender, string> = {
-  "": "—",
-  female: "Female",
-  male: "Male",
-  other: "Other",
-  prefer_not: "Prefer not",
+const GENDER_LABEL_KEYS: Record<Exclude<PatientGender, "">, AdminMessageKey> = {
+  female: "admin.patients.profile.genderFemale",
+  male: "admin.patients.profile.genderMale",
+  other: "admin.patients.profile.genderOther",
+  prefer_not: "admin.patients.profile.genderPreferNot",
 };
 
 export function ClientProfileSummary({
@@ -16,33 +16,35 @@ export function ClientProfileSummary({
 }: {
   value: PatientProfileUpsertValues;
 }) {
+  const t = useTranslations();
+  const genderLabel = value.gender ? t(GENDER_LABEL_KEYS[value.gender]) : "—";
   return (
     <div className="space-y-5 px-5 pb-6 pt-1">
-      <Section title="Identity">
-        <Row label="Full name" text={value.display_name} />
-        <Row label="Phone" text={value.phone} />
-        <Row label="Email" text={value.email} />
+      <Section title={t("admin.patients.profile.sectionIdentity")}>
+        <Row label={t("admin.patients.profile.fullName")} text={value.display_name} />
+        <Row label={t("admin.patients.phone")} text={value.phone} />
+        <Row label={t("admin.patients.email")} text={value.email} />
       </Section>
-      <Section title="Demographics">
+      <Section title={t("admin.patients.profile.sectionDemographics")}>
         <Row
-          label="Age"
+          label={t("admin.patients.profile.age")}
           text={value.age_years != null ? String(value.age_years) : null}
         />
-        <Row label="Date of birth" text={value.date_of_birth} />
-        <Row label="Gender" text={GENDER_LABEL[value.gender]} />
+        <Row label={t("admin.patients.profile.dob")} text={value.date_of_birth} />
+        <Row label={t("admin.patients.profile.gender")} text={genderLabel} />
       </Section>
-      <Section title="Medical history">
+      <Section title={t("admin.patients.profile.sectionMedicalHistory")}>
         <ChipList items={value.medical_history} />
       </Section>
-      <Section title="Allergies">
+      <Section title={t("admin.patients.profile.sectionAllergies")}>
         <ChipList items={value.allergies} />
       </Section>
-      <Section title="Medications">
+      <Section title={t("admin.patients.profile.sectionMedications")}>
         <p className="whitespace-pre-wrap text-[13px] text-[#111111]">
           {value.medications.trim() || "—"}
         </p>
       </Section>
-      <Section title="Reception notes">
+      <Section title={t("admin.patients.profile.sectionNotes")}>
         <p className="whitespace-pre-wrap text-[13px] text-[#111111]">
           {value.notes.trim() || "—"}
         </p>
