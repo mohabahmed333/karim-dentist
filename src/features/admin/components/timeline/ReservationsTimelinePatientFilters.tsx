@@ -9,12 +9,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AdminSearchInput } from "@/features/admin/ui";
 import { cn } from "@/lib/utils";
+import { useTranslations, type AdminMessageKey } from "@/lib/i18n";
 
-const labels: Record<PatientTimelineFilter, string> = {
-  all: "All patients",
-  returning: "Returning",
-  new: "New patients",
-  upcoming: "Has upcoming",
+const LABEL_KEYS: Record<PatientTimelineFilter, AdminMessageKey> = {
+  all: "admin.reservations.allPatients",
+  returning: "admin.reservations.returning",
+  new: "admin.reservations.newPatients",
+  upcoming: "admin.reservations.hasUpcoming",
 };
 
 type Props = {
@@ -30,6 +31,7 @@ export function ReservationsTimelinePatientFilters({
   filter,
   onFilterChange,
 }: Props) {
+  const t = useTranslations();
   const isFiltered = filter !== "all";
 
   return (
@@ -38,7 +40,7 @@ export function ReservationsTimelinePatientFilters({
         containerClassName="min-w-[10rem] flex-1 sm:min-w-[12rem]"
         value={search}
         onChange={(event) => onSearchChange(event.target.value)}
-        placeholder="Search patient or phone"
+        placeholder={t("admin.reservations.searchPatientPhone")}
       />
       <DropdownMenu>
         <DropdownMenuTrigger
@@ -49,12 +51,12 @@ export function ReservationsTimelinePatientFilters({
               : "border-[#e6e8ec] bg-white text-[#0f2744] hover:bg-white",
           )}
         >
-          Patients
+          {t("admin.nav.patients")}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-44">
-          {(Object.keys(labels) as PatientTimelineFilter[]).map((key) => (
+          {(Object.keys(LABEL_KEYS) as PatientTimelineFilter[]).map((key) => (
             <DropdownMenuItem key={key} onClick={() => onFilterChange(key)}>
-              {labels[key]}
+              {t(LABEL_KEYS[key])}
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>

@@ -10,14 +10,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useTranslations, type AdminMessageKey } from "@/lib/i18n";
 
-const labels: Record<TimelineStatusFilter, string> = {
-  all: "All statuses",
-  pending: "Pending",
-  confirmed: "Confirmed",
-  completed: "Completed",
-  cancelled: "Cancelled",
-  no_show: "No-show",
+const LABEL_KEYS: Record<TimelineStatusFilter, AdminMessageKey> = {
+  all: "admin.reservations.allStatuses",
+  pending: "admin.reservations.pending",
+  confirmed: "admin.reservations.confirmed",
+  completed: "admin.reservations.completed",
+  cancelled: "admin.reservations.cancelled",
+  no_show: "admin.reservations.noShow",
 };
 
 type Props = {
@@ -31,6 +32,7 @@ export function ReservationsTimelineFilters({
   onChange,
   activeCount,
 }: Props) {
+  const t = useTranslations();
   const isFiltered = value !== "all";
 
   return (
@@ -44,7 +46,7 @@ export function ReservationsTimelineFilters({
         )}
       >
         <SlidersHorizontal className="size-4" aria-hidden />
-        Filter
+        {t("admin.reservations.filter")}
         {isFiltered ? (
           <span className="rounded-full bg-[#c9a962] px-1.5 py-0.5 text-[10px] text-white">
             {activeCount}
@@ -53,11 +55,11 @@ export function ReservationsTimelineFilters({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-44">
         <DropdownMenuItem onClick={() => onChange("all")}>
-          {labels.all}
+          {t(LABEL_KEYS.all)}
         </DropdownMenuItem>
         {RESERVATION_STATUSES.map((status) => (
           <DropdownMenuItem key={status} onClick={() => onChange(status)}>
-            {labels[status]}
+            {t(LABEL_KEYS[status])}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

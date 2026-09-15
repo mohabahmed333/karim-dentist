@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useTranslations, type AdminMessageKey } from "@/lib/i18n";
 
 export type TimelineViewMode = "patient" | "appointment";
 
@@ -9,12 +10,13 @@ type Props = {
   onChange: (value: TimelineViewMode) => void;
 };
 
-const options: { value: TimelineViewMode; label: string }[] = [
-  { value: "patient", label: "By patient" },
-  { value: "appointment", label: "By appointment" },
+const options: { value: TimelineViewMode; labelKey: AdminMessageKey }[] = [
+  { value: "patient", labelKey: "admin.reservations.byPatient" },
+  { value: "appointment", labelKey: "admin.reservations.byAppointment" },
 ];
 
 export function ReservationsTimelineViewToggle({ value, onChange }: Props) {
+  const t = useTranslations();
   return (
     <div className="inline-flex rounded-full border border-[#e6e8ec] bg-white p-0.5 text-sm">
       {options.map((option) => (
@@ -29,7 +31,7 @@ export function ReservationsTimelineViewToggle({ value, onChange }: Props) {
           )}
           onClick={() => onChange(option.value)}
         >
-          {option.label}
+          {t(option.labelKey)}
         </button>
       ))}
     </div>

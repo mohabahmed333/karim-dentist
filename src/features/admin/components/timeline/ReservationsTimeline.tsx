@@ -28,7 +28,7 @@ import {
   type TimelineStatusFilter,
 } from "@/services/reservations/timeline";
 import { useEffect, useMemo, useState } from "react";
-import { useLocale } from "@/lib/i18n";
+import { useLocale, useTranslations } from "@/lib/i18n";
 import {
   calendarMonthGridVariants,
   calendarMonthMotionKey,
@@ -53,11 +53,11 @@ type Props = {
 
 export function ReservationsTimeline({
   reservations,
-  title = "Appointments",
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const t = useTranslations();
   const { dir: localeDir } = useLocale();
   const reduced = useReducedMotion();
   const rtl = localeDir === "rtl";
@@ -227,9 +227,9 @@ export function ReservationsTimeline({
       params.set("selected", updated.id);
       params.set("date", targetDate);
       router.replace(`${basePath}?${params.toString()}`);
-      toast.success("Appointment moved");
+      toast.success(t("admin.reservations.moved"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Move failed");
+      toast.error(error instanceof Error ? error.message : t("admin.reservations.moveFailed"));
     } finally {
       setMovingReservationId(null);
     }
@@ -249,7 +249,7 @@ export function ReservationsTimeline({
             type="button"
             className="rounded-lg border border-[#e6e8ec] p-2 text-[#6b7280] hover:bg-white"
             onClick={() => shiftCalendarMonth(-1)}
-            aria-label="Previous month"
+            aria-label={t("admin.reservations.prevMonth")}
           >
             <ChevronLeft className="size-4 rtl:rotate-180" />
           </button>
@@ -272,7 +272,7 @@ export function ReservationsTimeline({
             type="button"
             className="rounded-lg border border-[#e6e8ec] p-2 text-[#6b7280] hover:bg-white"
             onClick={() => shiftCalendarMonth(1)}
-            aria-label="Next month"
+            aria-label={t("admin.reservations.nextMonth")}
           >
             <ChevronRight className="size-4 rtl:rotate-180" />
           </button>
@@ -284,12 +284,12 @@ export function ReservationsTimeline({
             className="inline-flex items-center gap-1.5 rounded-xl bg-[#7c5cff] px-4 py-2 text-sm font-medium text-white hover:bg-[#6b4fe6]"
           >
             <Plus className="size-4" />
-            New appointment
+            {t("admin.reservations.newAppointment")}
           </Link>
           <Link
             href="/admin/patients"
             className="rounded-lg border border-[#e6e8ec] p-2 text-[#6b7280] hover:bg-white"
-            aria-label="All patients"
+            aria-label={t("admin.reservations.allPatients")}
           >
             <LayoutGrid className="size-4" />
           </Link>
