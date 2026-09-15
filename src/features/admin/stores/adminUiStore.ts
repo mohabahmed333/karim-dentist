@@ -66,10 +66,14 @@ type AdminUiState = LegacyAdminUiState & {
    *  on the same page restores them instead of collapsing back to just
    *  whatever the current page auto-opens. */
   openGroupIds: string[];
+  /** Where each floating team note was last dragged to, by note id — a
+   *  per-browser UI preference, separate from the note's shared DB content. */
+  noteWidgetPositions: Record<string, { x: number; y: number }>;
   toggleDarkMode: () => void;
   toggleSidebar: () => void;
   setWaThemePreference: (id: WaThemePreference) => void;
   setOpenGroupIds: (ids: string[]) => void;
+  setNoteWidgetPosition: (id: string, pos: { x: number; y: number }) => void;
   hydrateComplete: () => void;
 };
 
@@ -88,10 +92,15 @@ export const useAdminUiStore = create<AdminUiState>()(
       waThemePreference: "light",
       hasHydrated: false,
       openGroupIds: [],
+      noteWidgetPositions: {},
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       setWaThemePreference: (id) => set({ waThemePreference: id }),
       setOpenGroupIds: (ids) => set({ openGroupIds: ids }),
+      setNoteWidgetPosition: (id, pos) =>
+        set((state) => ({
+          noteWidgetPositions: { ...state.noteWidgetPositions, [id]: pos },
+        })),
       hydrateComplete: () => set({ hasHydrated: true }),
     }),
     {
@@ -102,6 +111,7 @@ export const useAdminUiStore = create<AdminUiState>()(
         sidebarCollapsed: state.sidebarCollapsed,
         waThemePreference: state.waThemePreference,
         openGroupIds: state.openGroupIds,
+        noteWidgetPositions: state.noteWidgetPositions,
       }),
       onRehydrateStorage: () => (state) => {
         state?.hydrateComplete();

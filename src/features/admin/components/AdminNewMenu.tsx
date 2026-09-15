@@ -8,6 +8,7 @@ import {
   ChevronDown,
   NotebookPen,
   Plus,
+  StickyNote,
   Stethoscope,
   UserPlus,
   Wrench,
@@ -36,6 +37,8 @@ import {
 } from "@/services/services";
 import { listRolesAction } from "@/services/roles/actions";
 import type { Role } from "@/services/roles/queries";
+import { useAdminNotesStore } from "@/features/admin/stores/adminNotesStore";
+import { createAdminNote } from "@/services/admin_notes/actions";
 import { useQuickBook } from "./quick-book/QuickBookContext";
 
 export function AdminNewMenu() {
@@ -48,7 +51,20 @@ export function AdminNewMenu() {
   const [roles, setRoles] = useState<Role[] | null>(null);
   const [rolesLoading, setRolesLoading] = useState(false);
   const [serviceDeleteOpen, setServiceDeleteOpen] = useState(false);
+  const [creatingNote, setCreatingNote] = useState(false);
+  const addNote = useAdminNotesStore((state) => state.addNote);
   const showClinicalNote = canAddClinicalNote(pathname);
+
+  async function handleAddNoteClick() {
+    setCreatingNote(true);
+    try {
+      addNote(await createAdminNote(""));
+    } catch {
+      toast.error(t("admin.notes.addFail"));
+    } finally {
+      setCreatingNote(false);
+    }
+  }
 
   const servicesBoard = useBoardCrud<Service>({
     initial: [],
@@ -117,6 +133,13 @@ export function AdminNewMenu() {
           <AdminDropdownMenuItem onClick={() => void servicesBoard.addItem()}>
             <Wrench aria-hidden />
             {t("admin.new.menu.service")}
+          </AdminDropdownMenuItem>
+          <AdminDropdownMenuItem
+            disabled={creatingNote}
+            onClick={() => void handleAddNoteClick()}
+          >
+            <StickyNote aria-hidden />
+            {t("admin.new.menu.note")}
           </AdminDropdownMenuItem>
 
           {showClinicalNote ? (

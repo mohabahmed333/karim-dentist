@@ -5,12 +5,14 @@ import { adminNoteContentSchema } from "./schemas";
 import type { AdminNote } from "./types";
 import * as mutations from "./mutations";
 
+/** Unlike updateAdminNoteContent, empty is allowed here — a freshly created
+ * note starts blank and is filled in afterward, unlike an edit to one that
+ * already has content. */
 export async function createAdminNote(content: string): Promise<AdminNote> {
   const auth = await requirePermission("notes.manage");
   if (auth.error) throw new Error("Forbidden");
-  const parsed = adminNoteContentSchema.parse({ content });
   return mutations.createAdminNote(auth.supabase, {
-    content: parsed.content,
+    content: content.trim().slice(0, 2000),
     createdBy: auth.session?.user.id ?? null,
   });
 }

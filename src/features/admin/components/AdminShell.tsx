@@ -9,6 +9,7 @@ import { AdminIconRail } from "./AdminIconRail";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminTopbar } from "./AdminTopbar";
 import { AdminFloatingBubbles } from "./AdminFloatingBubbles";
+import { AdminFloatingNotes } from "./notes/AdminFloatingNotes";
 import { WhatsappLiveBoot } from "./WhatsappLiveBoot";
 import { QuickBookProvider } from "./quick-book/QuickBookProvider";
 import { useAdminSidebarCollapse } from "@/features/admin/hooks/useAdminSidebarCollapse";
@@ -334,6 +335,7 @@ export function AdminShell({
           demoAssistPanel={demoAssistPanel}
         />
       ) : null}
+      <AdminFloatingNotes />
     </div>
     </QuickBookProvider>
   );
