@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ClinicDashboard } from "@/features/admin/components/overview/ClinicDashboard";
 import {
   buildAttentionItems,
+  buildBillingInventoryKpis,
   buildDashboardKpis,
   DASHBOARD_LIST_LIMIT,
   firstNameFromEmail,
@@ -17,10 +18,34 @@ import { buildReservationStats } from "@/services/reservations/stats";
 import { listConversations } from "@/services/whatsapp/queries";
 import { listDoctorProductionThisWeek } from "@/services/patient_treatments/queries";
 import { requirePagePermission } from "@/lib/auth/pageGuard";
+import { hasPermission } from "@/lib/auth/permissions";
 import {
   DEFAULT_DASHBOARD_LAYOUT,
   normalizeDashboardLayout,
 } from "@/features/admin/lib/dashboardLayout";
+import {
+  listPatientBalances,
+  listWeekPayments,
+  sumOutstandingBalance,
+} from "@/services/patient_billing/queries";
+import type {
+  PatientBalance,
+  WeekPaymentRow,
+} from "@/services/patient_billing/types";
+import {
+  listPendingBillingPayments,
+  type BillingPaymentQueueRow,
+} from "@/services/billing_payments/queries";
+import {
+  countLowStockItems,
+  countPendingApprovals,
+  getStockValueByCategory,
+  listWeekConsumptionRows,
+  type CategoryStockValue,
+  type WeekConsumptionRow,
+} from "@/services/inventory/statsQueries";
+import { buildBillingWeekRevenue, buildPaymentMethodMix } from "@/features/admin/lib/dashboardBillingStats";
+import { buildWeekConsumptionChart } from "@/features/admin/lib/dashboardInventoryStats";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +67,8 @@ function thisWeekRange(now = new Date()): { from: string; to: string } {
 export default async function AdminOverviewPage({ searchParams }: PageProps) {
   const session = await requirePagePermission("dashboard.view");
   const scopeToDoctor = session.isDoctor && session.dashboardScope === "own";
+  const canViewBilling = hasPermission(session, "patients.view");
+  const canViewInventory = hasPermission(session, "inventory.view");
   const raw = await reservationFiltersCache.parse(searchParams);
   const filters = resolveReservationFilters(raw, defaultOverviewFromTo());
   // Even when the date filter is "Today", load through day+2 so Day Schedule
@@ -54,15 +81,26 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
     // Forced server-side regardless of query params — a scoped doctor can't
     // switch back to "all doctors" by editing the URL.
     doctorId: scopeToDoctor ? session.user!.id : filters.doctorId,
+    // Unassigned reservations (no doctor picked yet) stay visible to every
+    // scoped doctor rather than disappearing until someone assigns one.
+    includeUnassigned: scopeToDoctor,
   };
 
   const supabase = await createClient();
+  const week = thisWeekRange();
   const [
     { data: auth },
     reservations,
     servicesRes,
     conversations,
     settingsRes,
+    weekPayments,
+    patientBalances,
+    pendingBillingPayments,
+    stockValueByCategory,
+    weekConsumptionRows,
+    lowStockCount,
+    pendingApprovalsCount,
   ] = await Promise.all([
     supabase.auth.getUser(),
     listReservationsServer(supabase, listFilters).catch(() => []),
@@ -78,11 +116,31 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
       limit: DASHBOARD_LIST_LIMIT,
     }).catch(() => []),
     supabase.from("site_settings").select("*").limit(1).maybeSingle(),
+    canViewBilling
+      ? listWeekPayments(supabase, week.from, week.to).catch(() => [] as WeekPaymentRow[])
+      : Promise.resolve([] as WeekPaymentRow[]),
+    canViewBilling
+      ? listPatientBalances(supabase).catch(() => [] as PatientBalance[])
+      : Promise.resolve([] as PatientBalance[]),
+    canViewBilling
+      ? listPendingBillingPayments(supabase).catch(() => [] as BillingPaymentQueueRow[])
+      : Promise.resolve([] as BillingPaymentQueueRow[]),
+    canViewInventory
+      ? getStockValueByCategory(supabase).catch(() => [] as CategoryStockValue[])
+      : Promise.resolve([] as CategoryStockValue[]),
+    canViewInventory
+      ? listWeekConsumptionRows(supabase, week.from, week.to).catch(() => [] as WeekConsumptionRow[])
+      : Promise.resolve([] as WeekConsumptionRow[]),
+    canViewInventory
+      ? countLowStockItems(supabase).catch(() => 0)
+      : Promise.resolve(0),
+    canViewInventory
+      ? countPendingApprovals(supabase).catch(() => 0)
+      : Promise.resolve(0),
   ]);
 
   let doctorProduction = null;
   if (scopeToDoctor) {
-    const week = thisWeekRange();
     doctorProduction = await listDoctorProductionThisWeek(
       supabase,
       session.user!.id,
@@ -90,6 +148,19 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
       week.to,
     ).catch(() => null);
   }
+
+  const billingStats = canViewBilling
+    ? {
+        weekRevenue: buildBillingWeekRevenue(weekPayments),
+        methodMix: buildPaymentMethodMix(weekPayments),
+      }
+    : null;
+  const inventoryStats = canViewInventory
+    ? {
+        stockValueByCategory,
+        weekConsumption: buildWeekConsumptionChart(weekConsumptionRows),
+      }
+    : null;
 
   const email = auth.user?.email ?? null;
   // Prefer the name the user set on their profile; fall back to guessing it
@@ -112,6 +183,17 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
   const initialLayout = normalizeDashboardLayout(
     settings?.dashboard_layout ?? DEFAULT_DASHBOARD_LAYOUT,
   );
+  const kpis = [
+    ...buildDashboardKpis(reservations, publishedCount, unreadChats),
+    ...buildBillingInventoryKpis({
+      outstandingBalance: canViewBilling
+        ? sumOutstandingBalance(patientBalances)
+        : null,
+      pendingPaymentsCount: canViewBilling ? pendingBillingPayments.length : null,
+      lowStockCount: canViewInventory ? lowStockCount : null,
+      pendingApprovalsCount: canViewInventory ? pendingApprovalsCount : null,
+    }),
+  ];
 
   return (
     <ClinicDashboard
@@ -123,13 +205,17 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
       coverageTo={coverage.to}
       services={servicesRes.data ?? []}
       attention={buildAttentionItems(reservations)}
-      kpis={buildDashboardKpis(reservations, publishedCount, unreadChats)}
+      kpis={kpis}
       stats={stats}
       conversations={conversations}
       settings={settings}
       initialLayout={initialLayout}
       scopeToDoctor={scopeToDoctor}
       doctorProduction={doctorProduction}
+      canViewBilling={canViewBilling}
+      canViewInventory={canViewInventory}
+      billingStats={billingStats}
+      inventoryStats={inventoryStats}
     />
   );
 }
