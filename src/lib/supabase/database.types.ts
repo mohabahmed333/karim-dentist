@@ -728,6 +728,145 @@ export type Database = {
           },
         ]
       }
+      billing_payment_receipts: {
+        Row: {
+          amount_egp: number | null
+          billing_payment_request_id: string
+          confidence: number | null
+          created_at: string
+          extracted: Json
+          id: string
+          image_sha256: string
+          image_url: string
+          latency_ms: number | null
+          message_id: string
+          model: string
+          prompt_version: string
+          recipient_handle: string | null
+          recipient_name: string | null
+          reference: string | null
+          sender_name: string | null
+          transferred_at: string | null
+          verdict: string
+          verdict_reason: string
+        }
+        Insert: {
+          amount_egp?: number | null
+          billing_payment_request_id: string
+          confidence?: number | null
+          created_at?: string
+          extracted?: Json
+          id?: string
+          image_sha256?: string
+          image_url?: string
+          latency_ms?: number | null
+          message_id: string
+          model?: string
+          prompt_version?: string
+          recipient_handle?: string | null
+          recipient_name?: string | null
+          reference?: string | null
+          sender_name?: string | null
+          transferred_at?: string | null
+          verdict: string
+          verdict_reason?: string
+        }
+        Update: {
+          amount_egp?: number | null
+          billing_payment_request_id?: string
+          confidence?: number | null
+          created_at?: string
+          extracted?: Json
+          id?: string
+          image_sha256?: string
+          image_url?: string
+          latency_ms?: number | null
+          message_id?: string
+          model?: string
+          prompt_version?: string
+          recipient_handle?: string | null
+          recipient_name?: string | null
+          reference?: string | null
+          sender_name?: string | null
+          transferred_at?: string | null
+          verdict?: string
+          verdict_reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_payment_receipts_billing_payment_request_id_fkey"
+            columns: ["billing_payment_request_id"]
+            isOneToOne: false
+            referencedRelation: "billing_payment_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_payment_requests: {
+        Row: {
+          amount_egp: number
+          conversation_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string
+          description: string
+          id: string
+          patient_key: string
+          patient_name: string
+          phone: string
+          proposal_id: string
+          reservation_id: string | null
+          settings_snapshot: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_egp: number
+          conversation_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string
+          description?: string
+          id?: string
+          patient_key: string
+          patient_name?: string
+          phone: string
+          proposal_id: string
+          reservation_id?: string | null
+          settings_snapshot?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_egp?: number
+          conversation_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string
+          description?: string
+          id?: string
+          patient_key?: string
+          patient_name?: string
+          phone?: string
+          proposal_id?: string
+          reservation_id?: string | null
+          settings_snapshot?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_payment_requests_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deposit_receipts: {
         Row: {
           amount_egp: number | null
@@ -4102,6 +4241,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      confirm_billing_payment: {
+        Args: { p_billing_payment_request_id: string; p_decided_by?: string; p_reason?: string }
+        Returns: boolean
+      }
       confirm_deposit_paid: {
         Args: { p_decided_by?: string; p_deposit_request_id: string; p_reason?: string }
         Returns: boolean
@@ -4157,6 +4300,10 @@ export type Database = {
         Returns: undefined
       }
       record_canned_reply_use: { Args: { p_id: string }; Returns: undefined }
+      reject_billing_payment: {
+        Args: { p_billing_payment_request_id: string; p_decided_by?: string; p_reason?: string }
+        Returns: boolean
+      }
       reject_deposit: {
         Args: { p_decided_by?: string; p_deposit_request_id: string; p_reason?: string }
         Returns: boolean
