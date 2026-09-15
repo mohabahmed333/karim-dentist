@@ -96,7 +96,7 @@ export default async function AdminMyDayPage() {
     // No page header: the topbar breadcrumb already says "My Day", and this
     // screen is a cockpit rather than a document — the ~80px a title band
     // costs is better spent on the chart.
-    <AdminPageMotion className="flex min-h-0 flex-1 flex-col">
+    <AdminPageMotion className="flex min-h-0 flex-1 flex-col" stretchLast>
       <MyDayView
         todaysReservations={todaysReservations}
         directory={directory}
