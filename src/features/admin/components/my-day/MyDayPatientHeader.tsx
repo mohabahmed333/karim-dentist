@@ -1,9 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Clock, ExternalLink, Phone, Stethoscope } from "lucide-react";
+import {
+  Clock,
+  ExternalLink,
+  MessageCircle,
+  Phone,
+  Stethoscope,
+} from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { patientWorkspacePath, type PatientGroup } from "@/services/reservations/patientHistory";
+import {
+  patientWorkspacePath,
+  whatsappChatHref,
+  type PatientGroup,
+} from "@/services/reservations/patientHistory";
 import type { Reservation } from "@/services/reservations/types";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -37,6 +47,8 @@ export function MyDayPatientHeader({
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(reservation.starts_at));
+
+  const whatsappHref = whatsappChatHref(group.phone);
 
   const meta: { Icon: typeof Phone; label: string }[] = [
     { Icon: Clock, label: time },
@@ -76,6 +88,17 @@ export function MyDayPatientHeader({
           <Button type="button" size="sm" onClick={onBill}>
             {t("admin.billing.billVisit")}
           </Button>
+        ) : null}
+        {whatsappHref ? (
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            <MessageCircle className="size-3.5" />
+            {t("admin.myDay.openWhatsapp")}
+          </a>
         ) : null}
         <Link
           href={patientWorkspacePath(group.patientKey)}

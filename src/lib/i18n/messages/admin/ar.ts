@@ -2200,6 +2200,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.myDay.balanceOwed": "رصيد مستحق",
   "admin.myDay.settled": "الرصيد مسدّد",
   "admin.myDay.openWorkspace": "فتح مساحة العمل",
+  "admin.myDay.openWhatsapp": "واتساب",
   "admin.myDay.now": "الآن",
   "admin.myDay.appointments": "موعد",
   "admin.myDay.upcoming": "القادمة",

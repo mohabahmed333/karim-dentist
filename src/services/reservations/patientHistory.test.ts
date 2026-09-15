@@ -13,6 +13,7 @@ import {
   patientKeyFromNamePhone,
   patientKeyFromReservation,
   patientKeysForDoctor,
+  whatsappChatHref,
   phonesMatch,
 } from "./patientHistory.ts";
 // @ts-expect-error -- Node strip-types needs the extension.
@@ -56,6 +57,35 @@ function docRow(
 ): Reservation {
   return { ...row(id, patientName, phone, "2026-09-05T10:00:00.000Z"), doctor_id: doctorId };
 }
+
+describe("whatsappChatHref", () => {
+  it("sends a local Egyptian number in international form", () => {
+    // wa.me rejects a leading 0; 01001234567 has to dial as 201001234567.
+    assert.equal(
+      whatsappChatHref("01001234567"),
+      "https://wa.me/201001234567",
+    );
+  });
+
+  it("keeps an already-international number and drops punctuation", () => {
+    assert.equal(
+      whatsappChatHref("+20 100 123 4567"),
+      "https://wa.me/201001234567",
+    );
+  });
+
+  it("strips a 00 international prefix", () => {
+    assert.equal(
+      whatsappChatHref("0020 100 123 4567"),
+      "https://wa.me/201001234567",
+    );
+  });
+
+  it("returns empty for a number with no digits", () => {
+    assert.equal(whatsappChatHref(""), "");
+    assert.equal(whatsappChatHref("n/a"), "");
+  });
+});
 
 describe("patientKeysForDoctor", () => {
   const ME = "doctor-me";

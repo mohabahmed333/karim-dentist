@@ -39,6 +39,21 @@ export function canonicalPhoneDigits(phone: string): string {
   return digits;
 }
 
+/**
+ * A `wa.me` link to this patient's WhatsApp thread, or "" when their number
+ * has no digits to dial.
+ *
+ * Built on `canonicalPhoneDigits` rather than a plain digit-strip because
+ * wa.me only accepts the full international form: a stored local Egyptian
+ * `01xxxxxxxxx` has to reach WhatsApp as `201xxxxxxxxx` or the link opens an
+ * "invalid number" page. That is the same normalization used to match a
+ * patient to their inbox conversation, so both agree on who is being opened.
+ */
+export function whatsappChatHref(phone: string): string {
+  const digits = canonicalPhoneDigits(phone);
+  return digits ? `https://wa.me/${digits}` : "";
+}
+
 export function phonesMatch(a: string, b: string): boolean {
   const da = canonicalPhoneDigits(a);
   const db = canonicalPhoneDigits(b);
