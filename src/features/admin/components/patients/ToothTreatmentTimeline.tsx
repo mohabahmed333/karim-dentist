@@ -9,6 +9,12 @@ import type { TreatmentItem } from "@/services/patient_treatments";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { TOOTH_GLYPHS, TOOTH_SCALE } from "./toothPaths";
+import {
+  RecordTimeline,
+  RecordTimelineDate,
+  RecordTimelineEntry,
+  RecordTimelineField,
+} from "./RecordTimeline";
 
 type Props = {
   selectedFdi: string | null;
@@ -87,100 +93,73 @@ export function ToothTreatmentTimeline({
           {t("admin.toothTimeline.empty")}
         </p>
       ) : (
-        <ol className="space-y-3">
+        <RecordTimeline>
           {rows.map((item, index) => {
             const done = item.status === "done";
             const at = new Date(item.createdAt);
             return (
-              <li key={item.id} className="flex gap-3">
-                {/* Rail: a dot per entry, joined by a line that stops at the
-                    last one so the column does not trail off. */}
-                <div
-                  aria-hidden
-                  className="relative flex w-3 shrink-0 justify-center pt-8"
-                >
-                  <span className="size-2.5 shrink-0 rounded-full bg-[var(--admin-muted)]" />
-                  {index < rows.length - 1 ? (
-                    <span className="absolute top-11 bottom-[-1.25rem] w-px bg-[var(--admin-border)]" />
-                  ) : null}
+              <RecordTimelineEntry
+                key={item.id}
+                connected={index < rows.length - 1}
+                accent={!done}
+              >
+                <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
+                  <RecordTimelineDate
+                    month={month.format(at)}
+                    day={day.format(at)}
+                  />
+                  <RecordTimelineField
+                    label={t("admin.toothTimeline.condition")}
+                    value={item.aiInsight?.title || item.severity}
+                  />
+                  <RecordTimelineField
+                    label={t("admin.toothTimeline.treatment")}
+                    value={item.lastTreatment || item.cdtCode || "—"}
+                  />
+                  <RecordTimelineField
+                    label={t("admin.toothTimeline.dentist")}
+                    value={
+                      (item.doctorId ? doctorNameById[item.doctorId] : "") || "—"
+                    }
+                  />
+
+                  <span
+                    className={cn(
+                      "ms-auto inline-flex shrink-0 items-center gap-1.5 text-sm font-medium",
+                      done ? "text-[#16A34A]" : "text-[#D97706]",
+                    )}
+                  >
+                    {done ? (
+                      <CircleCheck className="size-4" />
+                    ) : (
+                      <Hourglass className="size-4" />
+                    )}
+                    {t(
+                      done
+                        ? "admin.toothTimeline.done"
+                        : "admin.toothTimeline.pending",
+                    )}
+                  </span>
                 </div>
 
-                <article className="min-w-0 flex-1 rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-panel)] p-4">
-                  <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
-                    <div className="shrink-0">
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--admin-muted)]">
-                        {month.format(at)}
-                      </p>
-                      <p className="text-xl font-semibold tabular-nums text-[var(--admin-text)]">
-                        {day.format(at)}
-                      </p>
-                    </div>
+                {item.aiInsight?.recommendation ? (
+                  <p className="mt-3 border-s-2 border-[var(--admin-primary)] ps-2 text-sm text-[var(--admin-text)]">
+                    {t("admin.toothTimeline.reason")}:{" "}
+                    {item.aiInsight.recommendation}
+                  </p>
+                ) : null}
 
-                    <Field
-                      label={t("admin.toothTimeline.condition")}
-                      value={item.aiInsight?.title || item.severity}
-                    />
-                    <Field
-                      label={t("admin.toothTimeline.treatment")}
-                      value={item.lastTreatment || item.cdtCode || "—"}
-                    />
-                    <Field
-                      label={t("admin.toothTimeline.dentist")}
-                      value={
-                        (item.doctorId ? doctorNameById[item.doctorId] : "") ||
-                        "—"
-                      }
-                    />
-
-                    <span
-                      className={cn(
-                        "ms-auto inline-flex shrink-0 items-center gap-1.5 text-sm font-medium",
-                        done ? "text-[#16A34A]" : "text-[#D97706]",
-                      )}
-                    >
-                      {done ? (
-                        <CircleCheck className="size-4" />
-                      ) : (
-                        <Hourglass className="size-4" />
-                      )}
-                      {t(
-                        done
-                          ? "admin.toothTimeline.done"
-                          : "admin.toothTimeline.pending",
-                      )}
-                    </span>
+                {item.aiInsight?.description ? (
+                  <div className="mt-3 flex items-start gap-2 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-hover)] px-3 py-2.5 text-sm text-[var(--admin-text)]">
+                    <NotebookPen className="mt-0.5 size-4 shrink-0 text-[var(--admin-muted)]" />
+                    <span className="min-w-0">{item.aiInsight.description}</span>
                   </div>
-
-                  {item.aiInsight?.recommendation ? (
-                    <p className="mt-3 border-s-2 border-[var(--admin-primary)] ps-2 text-sm text-[var(--admin-text)]">
-                      {t("admin.toothTimeline.reason")}:{" "}
-                      {item.aiInsight.recommendation}
-                    </p>
-                  ) : null}
-
-                  {item.aiInsight?.description ? (
-                    <div className="mt-3 flex items-start gap-2 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-hover)] px-3 py-2.5 text-sm text-[var(--admin-text)]">
-                      <NotebookPen className="mt-0.5 size-4 shrink-0 text-[var(--admin-muted)]" />
-                      <span className="min-w-0">{item.aiInsight.description}</span>
-                    </div>
-                  ) : null}
-                </article>
-              </li>
+                ) : null}
+              </RecordTimelineEntry>
             );
           })}
-        </ol>
+        </RecordTimeline>
       )}
-    </div>
-  );
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--admin-muted)]">
-        {label}
-      </p>
-      <p className="truncate text-sm text-[var(--admin-text)]">{value}</p>
     </div>
   );
 }

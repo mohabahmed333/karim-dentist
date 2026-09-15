@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { AdminMessageKey } from "@/lib/i18n";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -20,14 +21,20 @@ const tabs: { id: PatientProfileTab; labelKey: AdminMessageKey }[] = [
 type Props = {
   active: PatientProfileTab;
   onChange: (tab: PatientProfileTab) => void;
+  /**
+   * Sits on the tab row's baseline. Kept inside the bar so the rule underneath
+   * still runs the full width — putting it beside the bar cropped the rule to
+   * the width of the tabs.
+   */
+  actions?: ReactNode;
 };
 
-export function PatientProfileTabs({ active, onChange }: Props) {
+export function PatientProfileTabs({ active, onChange, actions }: Props) {
   const t = useTranslations();
   return (
-    <div className="border-b border-[var(--admin-border)]">
+    <div className="flex items-end gap-4 border-b border-[var(--admin-border)]">
       <nav
-        className="-mb-px flex gap-6 overflow-x-auto"
+        className="-mb-px flex min-w-0 flex-1 gap-8 overflow-x-auto"
         aria-label={t("admin.patientTabs.legend")}
       >
         {tabs.map((tab) => {
@@ -39,7 +46,7 @@ export function PatientProfileTabs({ active, onChange }: Props) {
               onClick={() => onChange(tab.id)}
               aria-current={selected ? "page" : undefined}
               className={cn(
-                "shrink-0 border-b-2 pb-3 text-sm font-medium transition-colors",
+                "shrink-0 border-b-2 pb-3 text-[15px] font-medium transition-colors",
                 selected
                   ? "border-[var(--admin-primary)] text-[var(--admin-primary)]"
                   : "border-transparent text-[var(--admin-muted)] hover:text-[var(--admin-text)]",
@@ -50,6 +57,7 @@ export function PatientProfileTabs({ active, onChange }: Props) {
           );
         })}
       </nav>
+      {actions ? <div className="shrink-0 pb-2">{actions}</div> : null}
     </div>
   );
 }

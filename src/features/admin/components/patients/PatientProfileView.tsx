@@ -49,16 +49,19 @@ export function PatientProfileView({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <PatientProfileTabs active={tab} onChange={setTab} />
-        <Link
-          href={patientWorkspacePath(group.patientKey)}
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-        >
-          <ExternalLink className="size-3.5" />
-          {t("admin.patientTabs.openWorkspace")}
-        </Link>
-      </div>
+      <PatientProfileTabs
+        active={tab}
+        onChange={setTab}
+        actions={
+          <Link
+            href={patientWorkspacePath(group.patientKey)}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            <ExternalLink className="size-3.5" />
+            {t("admin.patientTabs.openWorkspace")}
+          </Link>
+        }
+      />
 
       {tab === "information" ? <PatientInfoTab group={group} /> : null}
       {tab === "history" ? (
