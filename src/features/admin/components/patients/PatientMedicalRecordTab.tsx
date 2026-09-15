@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { PatientToothNote } from "@/services/patient_tooth_notes";
 import { Odontogram } from "./Odontogram";
+import { TOOTH_CHART_HEIGHT } from "./teeth-charts/TeethChartCanvas";
+import { cn } from "@/lib/utils";
 import { ServiceToggle, type ServiceFilter } from "./ServiceToggle";
 import { ToothRecordPanel } from "./ToothRecordPanel";
 
@@ -45,15 +47,21 @@ export function PatientMedicalRecordTab(props: Props) {
           Cosmetic service notes are not available yet.
         </p>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-2">
-          <Odontogram
-            selectedFdi={props.selectedFdi}
-            hoveredFdi={hoveredFdi}
-            commented={props.commented}
-            onSelect={props.onSelect}
-            onHover={setHoveredFdi}
-            onDeselect={props.onDeselect}
-          />
+        <div className="grid items-start gap-5 lg:grid-cols-2">
+          {/* The chart stays put while the record beside it scrolls — it is the
+              thing you keep referring back to, and a fixed height stops it
+              resizing as teeth gain and lose notes. */}
+          <div className={cn("lg:sticky lg:top-4", TOOTH_CHART_HEIGHT)}>
+            <Odontogram
+              fill
+              selectedFdi={props.selectedFdi}
+              hoveredFdi={hoveredFdi}
+              commented={props.commented}
+              onSelect={props.onSelect}
+              onHover={setHoveredFdi}
+              onDeselect={props.onDeselect}
+            />
+          </div>
           <ToothRecordPanel
             {...props}
             notes={props.selectedNotes}
