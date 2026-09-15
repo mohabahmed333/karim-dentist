@@ -1,6 +1,7 @@
 "use client";
 
 import { MediaUploadField } from "./MediaUploadField";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   value: string | null;
@@ -8,21 +9,21 @@ type Props = {
 };
 
 export function CalloutLeadImageField({ value, onChange }: Props) {
+  const t = useTranslations();
   return (
     <div className="space-y-2">
       <MediaUploadField
-        label="Big script image (optional)"
+        label={t("admin.pages.callout.scriptImage")}
         bucket="hero"
         folder="callout"
         mediaType="image"
         onMediaTypeChange={() => undefined}
         value={value}
         onChange={onChange}
-        removeLabel="Remove script image (use text)"
+        removeLabel={t("admin.pages.callout.removeScriptImage")}
       />
       <p className="text-[11px] text-muted-foreground">
-        Replaces the large script text when uploaded. Lead copy stays as fallback
-        and alt text.
+        {t("admin.pages.callout.scriptImageHint")}
       </p>
     </div>
   );
