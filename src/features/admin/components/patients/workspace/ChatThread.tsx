@@ -33,6 +33,8 @@ type Props = {
   onReview: () => void;
   onBook: () => void;
   onPropose: () => void;
+  /** False hides every booking affordance for a role that cannot book. */
+  canBook?: boolean;
 };
 
 export function ChatThread({
@@ -48,6 +50,7 @@ export function ChatThread({
   onReview,
   onBook,
   onPropose,
+  canBook = true,
 }: Props) {
   const t = useTranslations();
   const lastAssistantIndex = (() => {
@@ -90,6 +93,7 @@ export function ChatThread({
                     onReview={onReview}
                     onBook={onBook}
                     onPropose={onPropose}
+                    canBook={canBook}
                   />
                 ) : null
               }
@@ -157,6 +161,7 @@ function MessageExtras({
   onReview,
   onBook,
   onPropose,
+  canBook = true,
 }: {
   draft: TreatmentAiDraft | null;
   activePoll: TreatmentAiPoll | null;
@@ -169,12 +174,15 @@ function MessageExtras({
   onReview: () => void;
   onBook: () => void;
   onPropose: () => void;
+  canBook?: boolean;
 }) {
   const t = useTranslations();
   const alreadyBooked = Boolean(bookedAppointment);
+  // A role that cannot book gets no appointment poll either — picking a slot
+  // only leads to a write the server would refuse.
   const showApptPoll =
     activePoll &&
-    !(activePoll.kind === "appointment" && alreadyBooked);
+    !(activePoll.kind === "appointment" && (alreadyBooked || !canBook));
 
   return (
     <>
@@ -225,7 +233,8 @@ function MessageExtras({
             >
               {t("admin.chat.proposeToPatient")}
             </button>
-            {createdTreatmentId || draft.appointment?.book || alreadyBooked ? (
+            {canBook &&
+            (createdTreatmentId || draft.appointment?.book || alreadyBooked) ? (
               <button
                 type="button"
                 disabled={pending || !createdTreatmentId}

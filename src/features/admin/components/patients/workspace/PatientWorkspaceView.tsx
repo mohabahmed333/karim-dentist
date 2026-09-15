@@ -37,6 +37,11 @@ type Props = {
   directory: PatientGroup[];
   /** Fit inside a drawer instead of full admin page chrome. */
   embedded?: boolean;
+  /**
+   * False when the host already shows the patient's name and bill action, as
+   * My Day does — two identical headers stacked reads as a rendering bug.
+   */
+  showHeader?: boolean;
   /** Showreel: force selected tooth (skips URL). */
   forcedToothFdi?: string | null;
   /** Showreel: seed ActionReviewCard without calling propose API. */
@@ -47,6 +52,10 @@ type Props = {
   doctors: PriceableDoctor[];
   serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
   canPropose: boolean;
+  /** `reservations.create` + `reservations.edit`. Doctors have neither. */
+  canBook?: boolean;
+  /** `patients.edit`. Gates the client profile drawer. */
+  canEditProfile?: boolean;
   canEditBilling: boolean;
   billingBalance: number;
   /** The signed-in doctor, so billing doesn't ask them who they are. */
@@ -59,12 +68,15 @@ export function PatientWorkspaceView(props: Props) {
     group,
     services,
     embedded = false,
+    showHeader = true,
     forcedToothFdi = null,
     demoReview = null,
     localOnly = false,
     doctors,
     serviceDoctorMappings,
     canPropose,
+    canBook = true,
+    canEditProfile = true,
     canEditBilling,
     billingBalance,
     currentDoctorId,
@@ -119,10 +131,12 @@ export function PatientWorkspaceView(props: Props) {
           : `relative -m-4 flex h-[calc(100dvh-4.5rem)] min-h-0 flex-col ${PATIENT_SHELL} md:-m-6`
       }
     >
-      <WorkspaceHeader
-        group={group}
-        onBill={canPropose ? () => setBillDialogOpen(true) : undefined}
-      />
+      {showHeader ? (
+        <WorkspaceHeader
+          group={group}
+          onBill={canPropose ? () => setBillDialogOpen(true) : undefined}
+        />
+      ) : null}
       <div className="relative grid min-h-0 flex-1 items-stretch lg:grid-cols-2">
         <div
           data-showreel-action="clinical-chart"
@@ -161,6 +175,8 @@ export function PatientWorkspaceView(props: Props) {
             doctors={doctors}
             serviceDoctorMappings={serviceDoctorMappings}
             canPropose={canPropose}
+            canBook={canBook}
+            canEditProfile={canEditProfile}
             currentDoctorId={currentDoctorId}
             canPickDoctor={canPickDoctor}
           />

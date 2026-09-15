@@ -10,8 +10,11 @@ import {
   getPatientGroup,
   groupReservationsByPatient,
   patientKeyFromReservation,
+  patientKeysForDoctor,
 } from "@/services/reservations/patientHistory";
 import { listReservationsServer } from "@/services/reservations/queries";
+import { listAllServiceDoctorMappings } from "@/services/service_doctors/queries";
+import type { Service } from "@/services/services/types";
 import { loadMyDayPatientBundle } from "@/services/my_day/actions";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +25,13 @@ export default async function AdminMyDayPage() {
   const today = localTodayIso();
   const scopeToDoctor = session.isDoctor;
 
-  const [todaysReservations, allReservations, doctors] = await Promise.all([
+  const [
+    todaysReservations,
+    allReservations,
+    doctors,
+    services,
+    serviceDoctorMappings,
+  ] = await Promise.all([
     listReservationsServer(supabase, {
       from: today,
       to: today,
@@ -31,15 +40,40 @@ export default async function AdminMyDayPage() {
       includeUnassigned: scopeToDoctor,
       sort: "starts_at",
       dir: "asc",
-      limit: 200,
     }).catch(() => []),
-    // Unfiltered: the patient's whole visit history feeds the EHR timeline and
-    // the billing dialog, not just today.
+    // Unfiltered: the patient's whole visit history feeds the chart, the EHR
+    // timeline and the billing dialog, not just today.
     listReservationsServer(supabase).catch(() => []),
     listDoctors(supabase).catch(() => []),
+    // Clinic-wide, so loaded once here rather than per patient — the workspace
+    // needs them to price and assign a proposed treatment.
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("services")
+          .select("*")
+          .is("deleted_at", null)
+          .order("sort_order", { ascending: true });
+        return (data ?? []) as Service[];
+      } catch {
+        return [] as Service[];
+      }
+    })(),
+    listAllServiceDoctorMappings(supabase).catch(() => ({})),
   ]);
 
-  const directory = groupReservationsByPatient(allReservations);
+  // A doctor's directory is narrowed to patients they have actually seen, or
+  // who are not assigned to anyone. The history *within* such a patient stays
+  // whole — including visits with other doctors — because treating someone
+  // without their full chart is worse than the disclosure.
+  const allGroups = groupReservationsByPatient(allReservations);
+  const directory = scopeToDoctor
+    ? (() => {
+        const mine = patientKeysForDoctor(allReservations, session.user!.id);
+        return allGroups.filter((group) => mine.has(group.patientKey));
+      })()
+    : allGroups;
+
   const current = pickCurrentReservation(todaysReservations, new Date());
   const currentGroup = current
     ? getPatientGroup(directory, patientKeyFromReservation(current))
@@ -50,7 +84,6 @@ export default async function AdminMyDayPage() {
   const initialBundle = currentGroup
     ? await loadMyDayPatientBundle({
         patientKey: currentGroup.patientKey,
-        phone: currentGroup.phone,
         reservationIds: currentGroup.visits.map((v) => v.id),
       }).catch(() => null)
     : null;
@@ -73,8 +106,17 @@ export default async function AdminMyDayPage() {
         currentDoctorId={scopeToDoctor ? session.user!.id : null}
         canPickDoctor={!scopeToDoctor}
         canPropose={session.permissions.has("patients.treatments.edit")}
+        canEditBilling={session.permissions.has("patients.billing.edit")}
+        canBook={
+          session.permissions.has("reservations.create") &&
+          session.permissions.has("reservations.edit")
+        }
+        canEditProfile={session.permissions.has("patients.edit")}
         showDoctor={!scopeToDoctor}
         doctorNameById={doctorNameById}
+        doctors={doctors}
+        services={services}
+        serviceDoctorMappings={serviceDoctorMappings}
       />
     </AdminPageMotion>
   );

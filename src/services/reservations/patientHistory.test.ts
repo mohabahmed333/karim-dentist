@@ -12,6 +12,7 @@ import {
   normalizePhone,
   patientKeyFromNamePhone,
   patientKeyFromReservation,
+  patientKeysForDoctor,
   phonesMatch,
 } from "./patientHistory.ts";
 // @ts-expect-error -- Node strip-types needs the extension.
@@ -45,6 +46,60 @@ function row(
     service_label: "General consultation",
   };
 }
+
+/** A row with an explicit doctor assignment, for the scoping tests. */
+function docRow(
+  id: string,
+  patientName: string,
+  phone: string,
+  doctorId: string | null,
+): Reservation {
+  return { ...row(id, patientName, phone, "2026-09-05T10:00:00.000Z"), doctor_id: doctorId };
+}
+
+describe("patientKeysForDoctor", () => {
+  const ME = "doctor-me";
+  const OTHER = "doctor-other";
+
+  it("includes my patients and unassigned ones, but not another doctor's", () => {
+    const keys = patientKeysForDoctor(
+      [
+        docRow("1", "Mine", "+20 100 111 1111", ME),
+        docRow("2", "Theirs", "+20 100 222 2222", OTHER),
+        docRow("3", "Walk In", "+20 100 333 3333", null),
+      ],
+      ME,
+    );
+
+    assert.equal(keys.size, 2);
+    assert.ok(keys.has(patientKeyFromNamePhone("Mine", "+20 100 111 1111")));
+    assert.ok(keys.has(patientKeyFromNamePhone("Walk In", "+20 100 333 3333")));
+    assert.ok(!keys.has(patientKeyFromNamePhone("Theirs", "+20 100 222 2222")));
+  });
+
+  it("claims a shared patient once any visit is mine", () => {
+    const phone = "+20 100 444 4444";
+    const keys = patientKeysForDoctor(
+      [docRow("1", "Shared", phone, OTHER), docRow("2", "Shared", phone, ME)],
+      ME,
+    );
+
+    assert.ok(keys.has(patientKeyFromNamePhone("Shared", phone)));
+  });
+
+  it("ignores soft-deleted reservations", () => {
+    const keys = patientKeysForDoctor(
+      [{ ...docRow("1", "Deleted", "+20 100 555 5555", ME), deleted_at: "2026-09-01T00:00:00.000Z" }],
+      ME,
+    );
+
+    assert.equal(keys.size, 0);
+  });
+
+  it("grants nothing from an empty schedule", () => {
+    assert.equal(patientKeysForDoctor([], ME).size, 0);
+  });
+});
 
 describe("patient history", () => {
   it("normalizes phone numbers", () => {

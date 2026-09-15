@@ -24,6 +24,8 @@ type Props = {
   onAddFiles: (list: FileList | null) => void;
   onRemoveUpload: (id: string) => void;
   onSlashCommand: (command: ChatSlashCommand) => void;
+  /** Hides the /book and /reschedule verbs when the role cannot book. */
+  canBook?: boolean;
 };
 
 export function ChatComposer({
@@ -36,11 +38,12 @@ export function ChatComposer({
   onAddFiles,
   onRemoveUpload,
   onSlashCommand,
+  canBook = true,
 }: Props) {
   const t = useTranslations();
   const slashCommands = useMemo(
-    () => matchSlashCommands(value, getChatSlashCommands(t)),
-    [t, value],
+    () => matchSlashCommands(value, getChatSlashCommands(t, canBook)),
+    [t, value, canBook],
   );
 
   function onPaste(e: ClipboardEvent<HTMLDivElement>) {

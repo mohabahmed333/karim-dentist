@@ -32,6 +32,10 @@ type Props = {
   doctors: PriceableDoctor[];
   serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
   canPropose: boolean;
+  /** `reservations.create` + `reservations.edit`. Doctors have neither. */
+  canBook?: boolean;
+  /** `patients.edit`. Gates the client profile drawer. */
+  canEditProfile?: boolean;
   currentDoctorId: string | null;
   canPickDoctor: boolean;
 };
@@ -55,6 +59,8 @@ export function WorkspaceRightPane(props: Props) {
         doctors={props.doctors}
         serviceDoctorMappings={props.serviceDoctorMappings}
         canPropose={props.canPropose}
+        canBook={props.canBook}
+        canEditProfile={props.canEditProfile}
         currentDoctorId={props.currentDoctorId}
         canPickDoctor={props.canPickDoctor}
       />

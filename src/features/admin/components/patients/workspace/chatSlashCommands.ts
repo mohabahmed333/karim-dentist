@@ -11,7 +11,16 @@ export type { ChatSlashCommand };
 
 type TFn = (key: AnyMessageKey) => string;
 
-export function getChatSlashCommands(t: TFn): ChatSlashCommand[] {
+/**
+ * @param canBook - false for a role without `reservations.create`/`edit`, which
+ *   drops both booking verbs rather than offering a command that would be
+ *   refused by the server action behind it.
+ */
+export function getChatSlashCommands(
+  t: TFn,
+  canBook = true,
+): ChatSlashCommand[] {
+  if (!canBook) return [];
   return [
     {
       id: "reschedule",

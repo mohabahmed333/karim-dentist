@@ -7,56 +7,46 @@ import type { PatientImaging } from "@/services/patient_imaging";
 import { listToothNotesServer } from "@/services/patient_tooth_notes/queries";
 import type { PatientToothNote } from "@/services/patient_tooth_notes";
 import { listPatientTreatmentsServer } from "@/services/patient_treatments";
-import { toTreatmentItem, type TreatmentItem } from "@/services/patient_treatments";
-import { findConversationForPatient, listMessagesPage } from "@/services/whatsapp/queries";
-import { mapWhatsappToSupportUi } from "@/features/admin/components/support/supportWhatsappMap";
-import type { SupportMessage } from "@/features/admin/components/support/supportDummyData";
-
-/** How far back the read-only thread goes. One screenful of context, not an archive. */
-const CHAT_PAGE_SIZE = 50;
-
-export type MyDayChat = {
-  conversationId: string;
-  contactName: string;
-  messages: SupportMessage[];
-};
+import type { PatientTreatmentRow } from "@/services/patient_treatments";
+import { listReservationsServer } from "@/services/reservations/queries";
+import { patientKeysForDoctor } from "@/services/reservations/patientHistory";
 
 export type MyDayPatientBundle = {
   patientKey: string;
   notes: PatientToothNote[];
   imaging: PatientImaging[];
-  treatments: TreatmentItem[];
+  /**
+   * Raw rows, not mapped `TreatmentItem`s. The embedded clinical workspace
+   * edits these directly; the read-only history tab maps them itself.
+   */
+  treatments: PatientTreatmentRow[];
   balance: number;
-  /** Null when this patient has never messaged the clinic — the common case. */
-  chat: MyDayChat | null;
 };
 
 /**
  * Everything the doctor's day view shows about one patient, in a single round
  * trip.
  *
- * Read server-side rather than from the browser because two of these legs have
- * no browser-safe path: the ledger, and the WhatsApp thread — the front-desk
- * message API is gated on `support.view`, which doctors do not have. RLS on the
- * WhatsApp tables allows any staff profile, so a patient-scoped read here is
- * both permitted and narrow: one patient's thread, never the clinic inbox.
+ * Read server-side rather than from the browser because the ledger has no
+ * browser-safe path — it reconciles deposits against reservations. Gathering
+ * the rest here too keeps a patient switch to one request instead of four.
  *
  * Every leg degrades on its own. A patient with no imaging or no ledger should
  * still get a usable page rather than an error screen.
  */
 export async function loadMyDayPatientBundle(input: {
   patientKey: string;
-  /** Used to find their WhatsApp thread when nothing links it by patient_key yet. */
-  phone: string;
   /** This patient's visits, for the ledger's deposit matching. */
   reservationIds: string[];
 }): Promise<MyDayPatientBundle> {
   const auth = await requirePermission("patients.view");
-  if (auth.error) throw new Error("Forbidden");
+  if (auth.error || !auth.session) throw new Error("Forbidden");
   const supabase = auth.supabase;
-  const { patientKey, phone, reservationIds } = input;
+  const { patientKey, reservationIds } = input;
 
-  const [notes, imaging, treatmentRows, ledger, chat] = await Promise.all([
+  await assertPatientInScope(auth.session, supabase, patientKey);
+
+  const [notes, imaging, treatments, ledger] = await Promise.all([
     listToothNotesServer(supabase, patientKey).catch(() => []),
     listPatientImagingServer(supabase, patientKey).catch(() => []),
     listPatientTreatmentsServer(supabase, patientKey).catch(() => []),
@@ -64,46 +54,36 @@ export async function loadMyDayPatientBundle(input: {
       entries: [],
       balance: 0,
     })),
-    loadChat(supabase, patientKey, phone).catch(() => null),
   ]);
 
-  return {
-    patientKey,
-    notes,
-    imaging,
-    treatments: treatmentRows.map(toTreatmentItem),
-    balance: ledger.balance,
-    chat,
-  };
+  return { patientKey, notes, imaging, treatments, balance: ledger.balance };
 }
 
 type ServerSupabase = Awaited<
   ReturnType<typeof import("@/lib/supabase/server").createClient>
 >;
 
+type Session = { isDoctor: boolean; user: { id: string } };
+
 /**
- * The patient's thread, mapped through the same transform the front-desk inbox
- * uses — `SupportMessage` carries media, reply quotes, interactive cards and
- * voice notes, so a hand-rolled mapper would quietly flatten half of them.
+ * A doctor may only load a patient they have actually seen.
+ *
+ * This is the enforcement point, not a second opinion on the page's filter.
+ * `patientKey` arrives from the browser, and row-level security will not catch
+ * a forged one: the `doctor` role carries `is_admin_role = true`, so every
+ * `USING (is_admin())` policy in the database admits it. Without this check a
+ * doctor could read any patient in the clinic by editing one string.
+ *
+ * Non-doctors (owner, front desk) are clinic-wide by design and skip it.
  */
-async function loadChat(
+async function assertPatientInScope(
+  session: Session,
   supabase: ServerSupabase,
   patientKey: string,
-  phone: string,
-): Promise<MyDayChat | null> {
-  const conversation = await findConversationForPatient(supabase, { patientKey, phone });
-  if (!conversation) return null;
+): Promise<void> {
+  if (!session.isDoctor) return;
 
-  const { messages } = await listMessagesPage(supabase, conversation.id, {
-    limit: CHAT_PAGE_SIZE,
-  });
-  const mapped = mapWhatsappToSupportUi([conversation], {
-    [conversation.id]: messages,
-  });
-
-  return {
-    conversationId: conversation.id,
-    contactName: conversation.contact_name?.trim() || conversation.phone_number,
-    messages: mapped.messagesById[conversation.id] ?? [],
-  };
+  const reservations = await listReservationsServer(supabase).catch(() => []);
+  const allowed = patientKeysForDoctor(reservations, session.user.id);
+  if (!allowed.has(patientKey)) throw new Error("Forbidden");
 }

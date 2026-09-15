@@ -57,6 +57,33 @@ export function patientKeyFromReservation(reservation: Reservation): string {
   return key === "name:" ? `name:${reservation.id}` : key;
 }
 
+/**
+ * The patients a doctor is allowed to see: anyone they have a reservation with,
+ * plus anyone whose reservation has no doctor assigned yet.
+ *
+ * Unassigned counts because public and legacy bookings carry a null
+ * `doctor_id` — excluding them would hide walk-ins from every doctor at once.
+ *
+ * This is a real access boundary, not a convenience filter. Row-level security
+ * cannot express it: the `doctor` role has `is_admin_role = true`, so the RBAC
+ * trigger writes `profiles.role = 'admin'` and every `USING (is_admin())`
+ * policy in the database lets a doctor through. Scoping lives here or nowhere.
+ */
+export function patientKeysForDoctor(
+  reservations: Reservation[],
+  doctorId: string,
+): Set<string> {
+  const keys = new Set<string>();
+  for (const reservation of reservations) {
+    if (reservation.deleted_at !== null) continue;
+    if (reservation.doctor_id !== null && reservation.doctor_id !== doctorId) {
+      continue;
+    }
+    keys.add(patientKeyFromReservation(reservation));
+  }
+  return keys;
+}
+
 export function encodePatientKey(patientKey: string): string {
   return encodeURIComponent(patientKey);
 }

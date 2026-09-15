@@ -94,6 +94,10 @@ type Props = {
   onScheduleAt: (treatmentId: string, startsAtIso: string) => Promise<void>;
   demoReview?: ProposalReviewState | null;
   localOnly?: boolean;
+  /** `reservations.create` + `reservations.edit`. Doctors have neither. */
+  canBook?: boolean;
+  /** `patients.edit`. Gates the client profile drawer. */
+  canEditProfile?: boolean;
 };
 
 export function AiTreatmentChatPanel({
@@ -115,6 +119,8 @@ export function AiTreatmentChatPanel({
   onScheduleAt,
   demoReview = null,
   localOnly = false,
+  canBook = true,
+  canEditProfile = true,
 }: Props) {
   const t = useTranslations();
   const [tab, setTab] = useState<ChatPanelTab>("chat");
@@ -627,7 +633,7 @@ export function AiTreatmentChatPanel({
         subtitle={`Tooth #${toothFdi} · ${toothName}`}
         tab={tab}
         onTabChange={setTab}
-        onViewProfile={() => setProfileOpen(true)}
+        onViewProfile={canEditProfile ? () => setProfileOpen(true) : undefined}
         canClear={messages.length > 0}
         onClear={() => {
           clearChatHistory(patientKey, toothFdi);
@@ -641,7 +647,7 @@ export function AiTreatmentChatPanel({
         }}
       />
       <ClientProfileDrawer
-        open={profileOpen}
+        open={canEditProfile && profileOpen}
         patientKey={patientKey}
         displayName={patientName}
         phone={patientPhone}
@@ -688,6 +694,7 @@ export function AiTreatmentChatPanel({
               if (bookedAppointment) openReschedulePicker();
               else if (existingForDraftId) onBook(existingForDraftId);
             }}
+            canBook={canBook}
           />
           {proposalReview ? (
             <div
@@ -703,7 +710,7 @@ export function AiTreatmentChatPanel({
             </div>
           ) : null}
           <RescheduleDatePopover
-            open={rescheduleOpen}
+            open={canBook && rescheduleOpen}
             pending={pending}
             currentStartsAt={
               (rescheduleTreatmentId
@@ -725,6 +732,7 @@ export function AiTreatmentChatPanel({
             onAddFiles={addFiles}
             onRemoveUpload={removeUpload}
             onSlashCommand={onSlashCommand}
+            canBook={canBook}
           />
         </>
       ) : null}

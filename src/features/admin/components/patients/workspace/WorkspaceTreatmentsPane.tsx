@@ -61,6 +61,10 @@ type Props = {
   doctors: PriceableDoctor[];
   serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
   canPropose: boolean;
+  /** `reservations.create` + `reservations.edit`. Doctors have neither. */
+  canBook?: boolean;
+  /** `patients.edit`. Gates the client profile drawer. */
+  canEditProfile?: boolean;
   currentDoctorId: string | null;
   canPickDoctor: boolean;
 };
@@ -81,6 +85,8 @@ export function WorkspaceTreatmentsPane({
   doctors,
   serviceDoctorMappings,
   canPropose,
+  canBook = true,
+  canEditProfile = true,
   currentDoctorId,
   canPickDoctor,
 }: Props) {
@@ -288,6 +294,8 @@ export function WorkspaceTreatmentsPane({
   return (
     <Shell>
       <AiTreatmentChatPanel
+        canBook={canBook}
+        canEditProfile={canEditProfile}
         key={`${group.patientKey}-${selectedFdi}`}
         patientKey={group.patientKey}
         toothFdi={selectedFdi}
