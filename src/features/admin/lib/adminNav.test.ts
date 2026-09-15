@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { filterAdminNavSections, type AdminNavSection } from "./adminNav";
+import {
+  filterAdminNavSections,
+  flattenAdminNavItems,
+  type AdminNavSection,
+} from "./adminNav";
 
 const nestedFixture: AdminNavSection[] = [
   {
@@ -48,5 +52,34 @@ describe("filterAdminNavSections (recursive)", () => {
     const result = filterAdminNavSections(nestedFixture, new Set());
     const ids = result[0]!.entries!.map((e) => ("href" in e ? e.href : e.id));
     assert.deepEqual(ids, ["/admin/a"]);
+  });
+});
+
+describe("flattenAdminNavItems (recursive)", () => {
+  it("reaches an item nested two levels deep, including the sub-group's own link", () => {
+    const fixture: AdminNavSection[] = [
+      {
+        id: "s",
+        titleKey: "admin.nav.clinic",
+        entries: [
+          { href: "/admin/a", labelKey: "admin.nav.overview" },
+          {
+            id: "g",
+            labelKey: "admin.nav.overview",
+            items: [
+              { href: "/admin/b", labelKey: "admin.nav.overview" },
+              {
+                id: "g2",
+                href: "/admin/g2",
+                labelKey: "admin.nav.overview",
+                items: [{ href: "/admin/c", labelKey: "admin.nav.overview" }],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const hrefs = flattenAdminNavItems(fixture).map((item) => item.href);
+    assert.deepEqual(hrefs, ["/admin/a", "/admin/b", "/admin/g2", "/admin/c"]);
   });
 });

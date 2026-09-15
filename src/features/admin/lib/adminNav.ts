@@ -480,18 +480,24 @@ export function filterAdminNavSections(
   return result;
 }
 
-export function flattenAdminNavItems(): AdminNavItem[] {
-  return adminNavSections.flatMap((section) => {
+function flattenEntry(entry: AdminNavSectionEntry): AdminNavItem[] {
+  if (!isAdminNavGroup(entry)) return [entry];
+  return [
+    ...(entry.href ? [{ href: entry.href, labelKey: entry.labelKey }] : []),
+    ...entry.items.flatMap(flattenEntry),
+  ];
+}
+
+export function flattenAdminNavItems(
+  sections: AdminNavSection[] = adminNavSections,
+): AdminNavItem[] {
+  return sections.flatMap((section) => {
     if (section.entries) {
-      return section.entries.flatMap((entry) =>
-        isAdminNavGroup(entry)
-          ? [...(entry.href ? [{ href: entry.href, labelKey: entry.labelKey }] : []), ...entry.items]
-          : [entry],
-      );
+      return section.entries.flatMap(flattenEntry);
     }
     return [
       ...(section.items ?? []),
-      ...(section.groups?.flatMap((group) => group.items) ?? []),
+      ...(section.groups?.flatMap((group) => flattenEntry(group)) ?? []),
     ];
   });
 }
