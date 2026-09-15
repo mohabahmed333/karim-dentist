@@ -5,6 +5,7 @@ import { MediaUploadField, type MediaKind } from "./MediaUploadField";
 import type { Client } from "@/services/clients";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   item: Client;
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function ClientForm({ item, onSubmit, pending, message }: Props) {
+  const t = useTranslations();
   const [logoUrl, setLogoUrl] = useState(item.logo_url ?? "");
   const [mediaType, setMediaType] = useState<MediaKind>(
     item.media_type ?? "image",
@@ -36,7 +38,7 @@ export function ClientForm({ item, onSubmit, pending, message }: Props) {
       onSubmit={(e) => void handleSubmit(e)}
     >
       <div className="space-y-2">
-        <Label htmlFor="name">name</Label>
+        <Label htmlFor="name">{t("admin.cms.name")}</Label>
         <Input
           id="name"
           name="name"
@@ -45,7 +47,7 @@ export function ClientForm({ item, onSubmit, pending, message }: Props) {
         />
       </div>
       <MediaUploadField
-        label="Logo media"
+        label={t("admin.cms.logoMedia")}
         bucket="clients"
         folder="logos"
         mediaType={mediaType}
@@ -57,7 +59,7 @@ export function ClientForm({ item, onSubmit, pending, message }: Props) {
         <p className="text-sm text-muted-foreground">{message}</p>
       ) : null}
       {pending ? (
-        <p className="text-sm text-muted-foreground">Saving…</p>
+        <p className="text-sm text-muted-foreground">{t("admin.saving")}</p>
       ) : null}
     </form>
   );

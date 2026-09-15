@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent } from "react";
+import type { AdminMessageKey } from "@/lib/i18n";
+import { useTranslations } from "@/lib/i18n";
 import type { ExperienceEntry } from "@/services/experience_entries";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +15,14 @@ type Props = {
   message: string | null;
 };
 
+const FIELD_LABEL_KEYS: Record<"title" | "org" | "date_label", AdminMessageKey> = {
+  title: "admin.cms.title",
+  org: "admin.cms.org",
+  date_label: "admin.cms.dateLabel",
+};
+
 export function ExperienceForm({ item, onSubmit, pending, message }: Props) {
+  const t = useTranslations();
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -33,7 +42,7 @@ export function ExperienceForm({ item, onSubmit, pending, message }: Props) {
     >
       {(["title", "org", "date_label"] as const).map((name) => (
         <div key={name} className="space-y-2">
-          <Label htmlFor={name}>{name}</Label>
+          <Label htmlFor={name}>{t(FIELD_LABEL_KEYS[name])}</Label>
           <Input
             id={name}
             name={name}
@@ -43,7 +52,7 @@ export function ExperienceForm({ item, onSubmit, pending, message }: Props) {
         </div>
       ))}
       <div className="space-y-2">
-        <Label htmlFor="description">description</Label>
+        <Label htmlFor="description">{t("admin.cms.description")}</Label>
         <Textarea
           id="description"
           name="description"
@@ -56,7 +65,7 @@ export function ExperienceForm({ item, onSubmit, pending, message }: Props) {
         <p className="text-sm text-muted-foreground">{message}</p>
       ) : null}
       {pending ? (
-        <p className="text-sm text-muted-foreground">Saving…</p>
+        <p className="text-sm text-muted-foreground">{t("admin.saving")}</p>
       ) : null}
     </form>
   );

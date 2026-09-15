@@ -4,6 +4,7 @@ import { FormEvent } from "react";
 import type { FooterLink } from "@/services/footer_links";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "@/lib/i18n";
 import { FOOTER_ICON_PRESETS } from "@/features/portfolio/lib/footerIcons";
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function FooterLinkForm({ item, onSubmit, pending, message }: Props) {
+  const t = useTranslations();
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -38,7 +40,7 @@ export function FooterLinkForm({ item, onSubmit, pending, message }: Props) {
       onSubmit={(e) => void handleSubmit(e)}
     >
       <div className="space-y-2">
-        <Label htmlFor="label">Label (EN)</Label>
+        <Label htmlFor="label">{t("admin.cms.labelEn")}</Label>
         <Input
           id="label"
           name="label"
@@ -47,7 +49,7 @@ export function FooterLinkForm({ item, onSubmit, pending, message }: Props) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="label_ar">Label (AR)</Label>
+        <Label htmlFor="label_ar">{t("admin.cms.labelAr")}</Label>
         <Input
           id="label_ar"
           name="label_ar"
@@ -57,7 +59,7 @@ export function FooterLinkForm({ item, onSubmit, pending, message }: Props) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="href">URL / anchor</Label>
+        <Label htmlFor="href">{t("admin.cms.urlAnchor")}</Label>
         <Input
           id="href"
           name="href"
@@ -67,7 +69,7 @@ export function FooterLinkForm({ item, onSubmit, pending, message }: Props) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="column_key">Column</Label>
+        <Label htmlFor="column_key">{t("admin.cms.column")}</Label>
         <select
           id="column_key"
           name="column_key"
@@ -75,13 +77,13 @@ export function FooterLinkForm({ item, onSubmit, pending, message }: Props) {
           key={item.id + "col"}
           className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
         >
-          <option value="portfolio">Links</option>
-          <option value="follow">Follow Us</option>
-          <option value="resources">Resources (hidden)</option>
+          <option value="portfolio">{t("admin.cms.columnLinks")}</option>
+          <option value="follow">{t("admin.cms.columnFollow")}</option>
+          <option value="resources">{t("admin.cms.columnResources")}</option>
         </select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="display_mode">Display</Label>
+        <Label htmlFor="display_mode">{t("admin.cms.display")}</Label>
         <select
           id="display_mode"
           name="display_mode"
@@ -89,12 +91,12 @@ export function FooterLinkForm({ item, onSubmit, pending, message }: Props) {
           key={item.id + "display"}
           className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
         >
-          <option value="text">Text</option>
-          <option value="icon">Icon</option>
+          <option value="text">{t("admin.cms.displayText")}</option>
+          <option value="icon">{t("admin.cms.displayIcon")}</option>
         </select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="icon_key">Preset icon</Label>
+        <Label htmlFor="icon_key">{t("admin.cms.presetIcon")}</Label>
         <select
           id="icon_key"
           name="icon_key"
@@ -102,7 +104,7 @@ export function FooterLinkForm({ item, onSubmit, pending, message }: Props) {
           key={item.id + "icon"}
           className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
         >
-          <option value="">None</option>
+          <option value="">{t("admin.cms.none")}</option>
           {FOOTER_ICON_PRESETS.map((p) => (
             <option key={p.value} value={p.value}>
               {p.label}
@@ -111,7 +113,7 @@ export function FooterLinkForm({ item, onSubmit, pending, message }: Props) {
         </select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="icon_url">Custom icon URL</Label>
+        <Label htmlFor="icon_url">{t("admin.cms.customIconUrl")}</Label>
         <Input
           id="icon_url"
           name="icon_url"
@@ -121,7 +123,7 @@ export function FooterLinkForm({ item, onSubmit, pending, message }: Props) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="sort_order">Sort order</Label>
+        <Label htmlFor="sort_order">{t("admin.cms.sortOrder")}</Label>
         <Input
           id="sort_order"
           name="sort_order"
@@ -134,7 +136,7 @@ export function FooterLinkForm({ item, onSubmit, pending, message }: Props) {
         <p className="text-sm text-muted-foreground">{message}</p>
       ) : null}
       {pending ? (
-        <p className="text-sm text-muted-foreground">Saving…</p>
+        <p className="text-sm text-muted-foreground">{t("admin.saving")}</p>
       ) : null}
     </form>
   );

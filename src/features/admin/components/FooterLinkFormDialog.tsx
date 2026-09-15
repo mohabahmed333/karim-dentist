@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { isReservedFooterLink } from "@/features/portfolio/lib/footerLinkHref";
 import type { FooterLink } from "@/services/footer_links";
+import { useTranslations } from "@/lib/i18n";
 import { FooterLinkForm } from "./FooterLinkForm";
 
 type Props = {
@@ -31,20 +32,22 @@ export function FooterLinkFormDialog({
   onSubmit,
   onDeleteClick,
 }: Props) {
+  const t = useTranslations();
   const reserved = item ? isReservedFooterLink(item) : false;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="shrink-0 space-y-1 px-4 pt-4 pe-12">
-          <DialogTitle>{reserved ? "Contact" : "Edit link"}</DialogTitle>
+          <DialogTitle>
+            {reserved ? t("admin.pages.footerLinks.contactTitle") : t("admin.pages.footerLinks.editTitle")}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           {item && reserved ? (
             <p className="text-sm text-muted-foreground">
-              This footer link is fixed on the site and opens the contact form.
-              Edit contact details under Settings → Contact.
+              {t("admin.pages.footerLinks.reservedDesc")}
             </p>
           ) : item ? (
             <FooterLinkForm
@@ -60,10 +63,10 @@ export function FooterLinkFormDialog({
         {!reserved ? (
           <DialogFooter className="m-0 shrink-0 flex-row justify-between rounded-none border-[var(--admin-border)] bg-[var(--admin-hover)]/40 px-4 py-3">
             <Button variant="destructive" size="sm" onClick={onDeleteClick}>
-              Delete
+              {t("admin.delete")}
             </Button>
             <Button type="submit" form="footer-link-form" disabled={pending}>
-              {pending ? "Saving…" : "Save"}
+              {pending ? t("admin.saving") : t("admin.save")}
             </Button>
           </DialogFooter>
         ) : null}
