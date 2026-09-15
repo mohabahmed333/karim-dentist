@@ -26,7 +26,10 @@ import {
   DEFAULT_DASHBOARD_SECONDARY,
 } from "@/services/site_settings/dashboardTheme";
 import { ADMIN_THEME_EVENT } from "@/features/admin/lib/adminThemeEvent";
-import { ADMIN_OPEN_WHATSAPP_EVENT } from "@/features/admin/lib/adminShellEvents";
+import {
+  ADMIN_OPEN_WHATSAPP_EVENT,
+  type OpenWhatsappDetail,
+} from "@/features/admin/lib/adminShellEvents";
 import type { AdminDemoInbox } from "@/features/admin/lib/adminDemoInbox";
 import type { AdminChatLayout } from "@/features/admin/hooks/useAdminChatLayout";
 
@@ -168,6 +171,11 @@ export function AdminShell({
   const [content, setContent] = useState(contentColor);
   const [chatOpen, setChatOpen] = useState(false);
   const [whatsappOpen, setWhatsappOpen] = useState(false);
+  // Conversation the panel should jump to, when it was opened for one patient
+  // rather than for the inbox at large.
+  const [whatsappConversationId, setWhatsappConversationId] = useState<
+    string | undefined
+  >(undefined);
 
   useEffect(() => {
     if (forceWhatsappOpen === undefined) return;
@@ -195,10 +203,12 @@ export function AdminShell({
   }, [isSupport]);
 
   useEffect(() => {
-    function onOpenWhatsapp() {
+    function onOpenWhatsapp(event: Event) {
       if (pathname.startsWith("/admin/support")) return;
+      const detail = (event as CustomEvent<OpenWhatsappDetail>).detail;
       setChatOpen(false);
       setWhatsappOpen(true);
+      setWhatsappConversationId(detail?.conversationId);
     }
     window.addEventListener(ADMIN_OPEN_WHATSAPP_EVENT, onOpenWhatsapp);
     return () =>
@@ -314,6 +324,7 @@ export function AdminShell({
         <AdminFloatingBubbles
           chatOpen={chatOpen}
           whatsappOpen={whatsappOpen}
+          whatsappConversationId={whatsappConversationId}
           onChatOpen={() => {
             setWhatsappOpen(false);
             setChatOpen(true);
@@ -325,7 +336,12 @@ export function AdminShell({
             setWhatsappOpen(true);
             if (chatLayout === "dock") handleExpandDock();
           }}
-          onWhatsappClose={() => setWhatsappOpen(false)}
+          onWhatsappClose={() => {
+            setWhatsappOpen(false);
+            // Forget the target, so reopening from the bubble returns to the
+            // inbox rather than snapping back to one patient's thread.
+            setWhatsappConversationId(undefined);
+          }}
           layout={chatLayout}
           dockCollapsed={dockCollapsed}
           onToggleLayout={handleToggleChatLayout}

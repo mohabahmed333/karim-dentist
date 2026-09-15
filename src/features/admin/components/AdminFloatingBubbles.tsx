@@ -38,6 +38,8 @@ import type { AdminDemoInbox } from "@/features/admin/lib/adminDemoInbox";
 type Props = {
   chatOpen: boolean;
   whatsappOpen: boolean;
+  /** Conversation to select when the panel was opened for one patient. */
+  whatsappConversationId?: string;
   onChatOpen: () => void;
   onChatClose: () => void;
   onWhatsappOpen: () => void;
@@ -98,6 +100,7 @@ function writeStoredTab(tab: DockChatTab) {
 export function AdminFloatingBubbles({
   chatOpen,
   whatsappOpen,
+  whatsappConversationId,
   onChatOpen,
   onChatClose,
   onWhatsappOpen,
@@ -252,7 +255,7 @@ export function AdminFloatingBubbles({
         openCount: demoInbox.openCount ?? demoInbox.conversations.length,
         forcedSelectedId: demoInbox.forcedSelectedId,
       }
-    : { useKapso: true as const };
+    : { useKapso: true as const, forcedSelectedId: whatsappConversationId };
 
   function renderFab() {
     return (
@@ -411,7 +414,7 @@ export function AdminFloatingBubbles({
           key={
             demoInbox?.forcedSelectedId
               ? `demo-${demoInbox.forcedSelectedId}`
-              : "live-whatsapp"
+              : `live-whatsapp-${whatsappConversationId ?? "inbox"}`
           }
           {...inboxDemoProps}
           compact

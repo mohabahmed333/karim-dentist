@@ -10,6 +10,7 @@ import { listPatientTreatmentsServer } from "@/services/patient_treatments";
 import type { PatientTreatmentRow } from "@/services/patient_treatments";
 import { listReservationsServer } from "@/services/reservations/queries";
 import { patientKeysForDoctor } from "@/services/reservations/patientHistory";
+import { findConversationForPatient } from "@/services/whatsapp/queries";
 
 export type MyDayPatientBundle = {
   patientKey: string;
@@ -21,6 +22,13 @@ export type MyDayPatientBundle = {
    */
   treatments: PatientTreatmentRow[];
   balance: number;
+  /**
+   * This patient's WhatsApp thread, for the header's "open the panel on them"
+   * button. The id only — the panel fetches the messages itself, through the
+   * `support.view`-gated API that decides whether the caller may read them.
+   * Null when they have never messaged the clinic.
+   */
+  whatsappConversationId: string | null;
 };
 
 /**
@@ -36,17 +44,19 @@ export type MyDayPatientBundle = {
  */
 export async function loadMyDayPatientBundle(input: {
   patientKey: string;
+  /** Used to find their WhatsApp thread when nothing links it by patient_key. */
+  phone: string;
   /** This patient's visits, for the ledger's deposit matching. */
   reservationIds: string[];
 }): Promise<MyDayPatientBundle> {
   const auth = await requirePermission("patients.view");
   if (auth.error || !auth.session) throw new Error("Forbidden");
   const supabase = auth.supabase;
-  const { patientKey, reservationIds } = input;
+  const { patientKey, phone, reservationIds } = input;
 
   await assertPatientInScope(auth.session, supabase, patientKey);
 
-  const [notes, imaging, treatments, ledger] = await Promise.all([
+  const [notes, imaging, treatments, ledger, conversation] = await Promise.all([
     listToothNotesServer(supabase, patientKey).catch(() => []),
     listPatientImagingServer(supabase, patientKey).catch(() => []),
     listPatientTreatmentsServer(supabase, patientKey).catch(() => []),
@@ -54,9 +64,17 @@ export async function loadMyDayPatientBundle(input: {
       entries: [],
       balance: 0,
     })),
+    findConversationForPatient(supabase, { patientKey, phone }).catch(() => null),
   ]);
 
-  return { patientKey, notes, imaging, treatments, balance: ledger.balance };
+  return {
+    patientKey,
+    notes,
+    imaging,
+    treatments,
+    balance: ledger.balance,
+    whatsappConversationId: conversation?.id ?? null,
+  };
 }
 
 type ServerSupabase = Awaited<

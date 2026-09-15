@@ -1,5 +1,4 @@
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
-import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedAdminPageHeader";
 import { MyDayView } from "@/features/admin/components/my-day/MyDayView";
 import { localTodayIso } from "@/features/admin/lib/calendarDayBooking";
 import { pickCurrentReservation } from "@/features/admin/lib/dayScheduleModel";
@@ -84,6 +83,7 @@ export default async function AdminMyDayPage() {
   const initialBundle = currentGroup
     ? await loadMyDayPatientBundle({
         patientKey: currentGroup.patientKey,
+        phone: currentGroup.phone,
         reservationIds: currentGroup.visits.map((v) => v.id),
       }).catch(() => null)
     : null;
@@ -93,11 +93,10 @@ export default async function AdminMyDayPage() {
   );
 
   return (
-    <AdminPageMotion className="flex min-h-0 flex-1 flex-col space-y-4">
-      <LocalizedAdminPageHeader
-        titleKey="admin.pages.myDay.title"
-        descriptionKey="admin.pages.myDay.description"
-      />
+    // No page header: the topbar breadcrumb already says "My Day", and this
+    // screen is a cockpit rather than a document — the ~80px a title band
+    // costs is better spent on the chart.
+    <AdminPageMotion className="flex min-h-0 flex-1 flex-col">
       <MyDayView
         todaysReservations={todaysReservations}
         directory={directory}
@@ -112,6 +111,7 @@ export default async function AdminMyDayPage() {
           session.permissions.has("reservations.edit")
         }
         canEditProfile={session.permissions.has("patients.edit")}
+        canViewInbox={session.permissions.has("support.view")}
         showDoctor={!scopeToDoctor}
         doctorNameById={doctorNameById}
         doctors={doctors}

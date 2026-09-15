@@ -47,6 +47,8 @@ type Props = {
   canEditBilling: boolean;
   canBook: boolean;
   canEditProfile: boolean;
+  /** `support.view` — without it the inbox panel cannot load a thread. */
+  canViewInbox: boolean;
   showDoctor: boolean;
   doctorNameById: Record<string, string>;
   doctors: PriceableDoctor[];
@@ -133,6 +135,7 @@ export function MyDayView({
   canEditBilling,
   canBook,
   canEditProfile,
+  canViewInbox,
   showDoctor,
   doctorNameById,
   doctors,
@@ -188,6 +191,7 @@ export function MyDayView({
         try {
           const next = await loadMyDayPatientBundle({
             patientKey: forGroup.patientKey,
+            phone: forGroup.phone,
             reservationIds: forGroup.visits.map((v) => v.id),
           });
           setBundle(next);
@@ -257,7 +261,7 @@ export function MyDayView({
   return (
     <div
       className={cn(
-        "grid min-h-0 flex-1 gap-4",
+        "grid min-h-0 flex-1 gap-3",
         railCollapsed ? "xl:grid-cols-[3.5rem_minmax(0,1fr)]" : "xl:grid-cols-[20rem_minmax(0,1fr)]",
       )}
     >
@@ -335,15 +339,17 @@ export function MyDayView({
         </div>
       </aside>
 
-      <section className="flex min-h-0 min-w-0 flex-col gap-3">
+      <section className="flex min-h-0 min-w-0 flex-col gap-2">
         <MyDayPatientHeader
           group={group}
           reservation={selected}
           canPropose={canPropose}
+          canViewInbox={canViewInbox}
+          conversationId={bundle?.whatsappConversationId ?? null}
           onBill={() => setBillOpen(true)}
         />
 
-        <div className="relative flex min-h-0 flex-1 flex-col gap-3">
+        <div className="relative flex min-h-0 flex-1 flex-col gap-2">
           {stale || loading ? (
             <div className="absolute inset-0 z-10 flex flex-col gap-3 bg-[var(--admin-canvas)]/70">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

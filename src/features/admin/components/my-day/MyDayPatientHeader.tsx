@@ -9,6 +9,7 @@ import {
   Stethoscope,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { dispatchOpenWhatsapp } from "@/features/admin/lib/adminShellEvents";
 import {
   patientWorkspacePath,
   whatsappChatHref,
@@ -22,6 +23,10 @@ type Props = {
   group: PatientGroup;
   reservation: Reservation;
   canPropose: boolean;
+  /** `support.view`. Without it the in-app inbox panel cannot load a thread. */
+  canViewInbox: boolean;
+  /** This patient's WhatsApp thread, when one exists. */
+  conversationId: string | null;
   onBill: () => void;
 };
 
@@ -38,6 +43,8 @@ export function MyDayPatientHeader({
   group,
   reservation,
   canPropose,
+  canViewInbox,
+  conversationId,
   onBill,
 }: Props) {
   const t = useTranslations();
@@ -48,7 +55,12 @@ export function MyDayPatientHeader({
     minute: "2-digit",
   }).format(new Date(reservation.starts_at));
 
-  const whatsappHref = whatsappChatHref(group.phone);
+  // Prefer the in-app panel: it opens on this patient's thread with the
+  // clinic's own history and the ability to reply as the clinic. It needs
+  // `support.view` to read messages, though, and a doctor does not have it —
+  // so they get the wa.me hand-off instead of a panel that would 403.
+  const canOpenPanel = canViewInbox && Boolean(conversationId);
+  const whatsappHref = canOpenPanel ? "" : whatsappChatHref(group.phone);
 
   const meta: { Icon: typeof Phone; label: string }[] = [
     { Icon: Clock, label: time },
@@ -88,6 +100,16 @@ export function MyDayPatientHeader({
           <Button type="button" size="sm" onClick={onBill}>
             {t("admin.billing.billVisit")}
           </Button>
+        ) : null}
+        {canOpenPanel ? (
+          <button
+            type="button"
+            onClick={() => dispatchOpenWhatsapp({ conversationId: conversationId! })}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            <MessageCircle className="size-3.5" />
+            {t("admin.myDay.openWhatsapp")}
+          </button>
         ) : null}
         {whatsappHref ? (
           <a
