@@ -8,6 +8,7 @@ import { adminPageLabelKeys } from "@/features/admin/lib/adminNav";
 import { AdminNewMenu } from "./AdminNewMenu";
 import { CommandPalette } from "./CommandPalette";
 import { DashboardLayoutTopbarControls } from "@/features/admin/components/dashboardWidgets/DashboardLayoutTopbarControls";
+import { AdminBillingBell } from "./AdminBillingBell";
 
 type Props = {
   navBadges?: Record<string, number>;
@@ -26,6 +27,8 @@ export function AdminTopbar({
   onToggleDarkMode,
   permissions,
 }: Props) {
+  // Only the people who settle a bill are shown one waiting.
+  const canCollect = (permissions ?? []).includes("patients.billing.edit");
   const pathname = usePathname();
   const t = useTranslations();
   const sectionKey =
@@ -65,6 +68,9 @@ export function AdminTopbar({
           <CommandPalette permissions={permissions} />
         </div>
         <div className="ms-auto flex items-center gap-2">
+          {canCollect ? (
+            <AdminBillingBell count={navBadges["/admin/billing"] ?? 0} />
+          ) : null}
           {onToggleDarkMode ? (
             <button
               type="button"

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { AdminIconRail } from "./AdminIconRail";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminTopbar } from "./AdminTopbar";
+import { AdminBillingAlerts } from "./AdminBillingAlerts";
 import { AdminFloatingBubbles } from "./AdminFloatingBubbles";
 import { AdminFloatingNotes } from "./notes/AdminFloatingNotes";
 import { WhatsappLiveBoot } from "./WhatsappLiveBoot";
@@ -287,6 +288,10 @@ export function AdminShell({
         ["--admin-panel" as string]: effectivePanel,
       }}
     >
+      {/* Shell-level, so a bill announces itself wherever the front desk is. */}
+      <AdminBillingAlerts
+        canCollect={(permissions ?? []).includes("patients.billing.edit")}
+      />
       <AdminIconRail permissions={permissions} sidebarCollapsed={sidebarCollapsed} />
       <AnimatePresence initial={false}>
         {!sidebarCollapsed ? (
