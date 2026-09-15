@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useState } from "react";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 import type { Service } from "@/services/services/types";
@@ -54,17 +54,9 @@ export function PatientTeethPane(props: Props) {
 
         <div className="grid gap-5 xl:grid-cols-12">
           <div className="xl:col-span-5">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={chartStyle}
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.2 }}
-              >
-                <TeethChartCanvas style={chartStyle} {...chartProps} />
-              </motion.div>
-            </AnimatePresence>
+            {/* The crossfade lives in TeethChartCanvas now, so the shape
+                change animates the same way on every surface. */}
+            <TeethChartCanvas style={chartStyle} {...chartProps} />
           </div>
           <motion.div
             className="xl:col-span-3"

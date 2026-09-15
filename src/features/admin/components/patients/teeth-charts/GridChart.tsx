@@ -35,7 +35,10 @@ export function GridChart({
   onDeselect,
 }: Props) {
   return (
-    <div className="space-y-3" onClick={onDeselect}>
+    <div
+      className="flex h-full min-h-0 flex-col justify-center gap-3 overflow-y-auto"
+      onClick={onDeselect}
+    >
       {ROWS.map((row) => (
         <div key={row.label} className="flex items-center gap-2">
           <span className="w-7 shrink-0 text-[10px] font-semibold tracking-wide text-[var(--admin-muted)]">

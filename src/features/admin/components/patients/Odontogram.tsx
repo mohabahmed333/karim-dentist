@@ -17,6 +17,7 @@ import {
 import { OdontogramArch } from "./OdontogramArch";
 import { ClinicalCanvasLtr } from "@/features/admin/components/ClinicalCanvasLtr";
 import { useTranslations } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 type Props = {
   selectedFdi: string | null;
@@ -25,6 +26,8 @@ type Props = {
   onSelect: (fdi: string) => void;
   onHover: (fdi: string | null) => void;
   onDeselect: () => void;
+  /** Fill the parent's height instead of the drawing's own aspect ratio. */
+  fill?: boolean;
 };
 
 export function Odontogram({
@@ -34,6 +37,7 @@ export function Odontogram({
   onSelect,
   onHover,
   onDeselect,
+  fill = false,
 }: Props) {
   const t = useTranslations();
   const positions = useMemo(() => odontogramPositions(), []);
@@ -61,13 +65,21 @@ export function Odontogram({
   }, [onDeselect, onSelect, selectedFdi]);
 
   return (
-    <ClinicalCanvasLtr className="rounded-2xl bg-[var(--admin-hover)] px-4 py-5">
+    <ClinicalCanvasLtr
+      className={cn(
+        "rounded-2xl bg-[var(--admin-hover)] px-4 py-5",
+        fill && "flex h-full flex-col overflow-hidden",
+      )}
+    >
       <h3 className="mb-4 text-center text-base font-semibold text-[var(--admin-text)]">
         {t("admin.chartStyle.odontogram")}
       </h3>
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="mx-auto h-auto w-full max-w-md"
+        className={cn(
+          "mx-auto w-full max-w-md",
+          fill ? "min-h-0 flex-1" : "h-auto",
+        )}
         role="img"
         aria-label="Adult dental chart"
       >

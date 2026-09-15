@@ -51,7 +51,7 @@ export function CirclesChart({
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
-      className="mx-auto h-auto w-full max-w-md"
+      className="mx-auto h-full w-full"
       role="img"
       aria-label="Circle tooth chart"
     >

@@ -3,9 +3,13 @@
 import type { Dentition, NotationSystem } from "@/services/notation";
 import type { PaintTool, SurfaceId, SurfaceMap } from "@/services/tooth_surfaces";
 import type { TeethChartStyle } from "../teeth-charts/chartStyles";
-import { TeethChartCanvas } from "../teeth-charts/TeethChartCanvas";
+import {
+  TeethChartCanvas,
+  TOOTH_CHART_HEIGHT,
+} from "../teeth-charts/TeethChartCanvas";
 import { TeethChartPicker } from "../teeth-charts/TeethChartPicker";
 import { ChartingGltfOdontogram } from "../charting/gltf/ChartingGltfOdontogram";
+import { cn } from "@/lib/utils";
 
 type Props = {
   notation: NotationSystem;
@@ -34,7 +38,9 @@ export function WorkspaceChartPane(props: Props) {
           />
         </div>
       ) : null}
-      <div className="relative min-h-0 flex-1 bg-transparent">
+      {/* The 3D model takes the same fixed height as the flat charts, so
+          switching shape never moves anything below it. */}
+      <div className={cn("relative w-full bg-transparent", TOOTH_CHART_HEIGHT)}>
         {model ? (
           <ChartingGltfOdontogram
             dentition={props.dentition}

@@ -51,7 +51,8 @@ export function ArchEllipseChart({
   return (
     <svg
       viewBox="0 0 200 170"
-      className="mx-auto h-auto w-full max-w-md"
+      preserveAspectRatio="xMidYMid meet"
+      className="mx-auto h-full w-full"
       role="img"
       aria-label="Arch tooth chart"
     >
