@@ -1,12 +1,30 @@
+import type { AdminMessageKey } from "@/lib/i18n";
+
 export type TeethChartStyle = "anatomic" | "arch" | "grid" | "circles";
 
 export const TEETH_CHART_STYLES: {
   id: TeethChartStyle;
-  label: string;
-  hint: string;
+  labelKey: AdminMessageKey;
+  hintKey: AdminMessageKey;
 }[] = [
-  { id: "anatomic", label: "Anatomic", hint: "Realistic tooth outlines" },
-  { id: "arch", label: "Arch", hint: "Curved U-shaped ellipses" },
-  { id: "grid", label: "Grid", hint: "Quadrant rows by FDI" },
-  { id: "circles", label: "Circles", hint: "Numbered clinical dots" },
+  {
+    id: "anatomic",
+    labelKey: "admin.chartStyle.anatomic",
+    hintKey: "admin.chartStyle.anatomicHint",
+  },
+  {
+    id: "arch",
+    labelKey: "admin.chartStyle.arch",
+    hintKey: "admin.chartStyle.archHint",
+  },
+  {
+    id: "grid",
+    labelKey: "admin.chartStyle.grid",
+    hintKey: "admin.chartStyle.gridHint",
+  },
+  {
+    id: "circles",
+    labelKey: "admin.chartStyle.circles",
+    hintKey: "admin.chartStyle.circlesHint",
+  },
 ];

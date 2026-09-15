@@ -1,6 +1,8 @@
 "use client";
 
 import { TEETH_CHART_STYLES, type TeethChartStyle } from "./chartStyles";
+import { useTranslations } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { ChartStyleThumb } from "./ChartStyleThumb";
 
 type Props = {
@@ -9,10 +11,11 @@ type Props = {
 };
 
 export function TeethChartPicker({ value, onChange }: Props) {
+  const t = useTranslations();
   return (
     <div
       role="radiogroup"
-      aria-label="Tooth chart shape"
+      aria-label={t("admin.chartStyle.legend")}
       className="flex flex-wrap gap-2"
     >
       {TEETH_CHART_STYLES.map((style) => {
@@ -23,18 +26,19 @@ export function TeethChartPicker({ value, onChange }: Props) {
             type="button"
             role="radio"
             aria-checked={active}
-            aria-label={style.label}
-            title={style.hint}
+            aria-label={t(style.labelKey)}
+            title={t(style.hintKey)}
             onClick={() => onChange(style.id)}
-            className={`flex w-[4.75rem] flex-col items-center gap-1 rounded-2xl p-2 transition ${
+            className={cn(
+              "flex w-[4.75rem] flex-col items-center gap-1 rounded-2xl p-2 transition",
               active
-                ? "bg-[#111111] text-white"
-                : "bg-[#f3f4f6] text-[#6b7280] hover:text-[#111111]"
-            }`}
+                ? "bg-[var(--admin-primary)] text-white"
+                : "bg-[var(--admin-hover)] text-[var(--admin-muted)] hover:text-[var(--admin-text)]",
+            )}
           >
             <ChartStyleThumb styleId={style.id} active={active} />
             <span className="text-[10px] font-medium leading-none">
-              {style.label}
+              {t(style.labelKey)}
             </span>
           </button>
         );

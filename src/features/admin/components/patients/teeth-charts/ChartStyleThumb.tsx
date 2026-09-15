@@ -6,8 +6,10 @@ type Props = {
 };
 
 export function ChartStyleThumb({ styleId, active }: Props) {
-  const stroke = active ? "#ffffff" : "#6b7280";
-  const fill = active ? "rgba(255,255,255,0.2)" : "rgba(107,114,128,0.15)";
+  // Inherit the button's text colour so the thumb is legible on either theme
+  // and in both selected states.
+  const stroke = "currentColor";
+  const fill = active ? "rgba(255,255,255,0.22)" : "currentColor";
 
   if (styleId === "anatomic") {
     return (

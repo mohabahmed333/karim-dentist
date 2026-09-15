@@ -1,3 +1,4 @@
+import type { AdminMessageKey } from "@/lib/i18n";
 import type { TeethChartStyle } from "../teeth-charts/chartStyles";
 import { TEETH_CHART_STYLES } from "../teeth-charts/chartStyles";
 
@@ -5,13 +6,13 @@ export type ChartingChartStyle = "surfaces" | TeethChartStyle;
 
 export const CHARTING_CHART_STYLES: {
   id: ChartingChartStyle;
-  label: string;
-  hint: string;
+  labelKey: AdminMessageKey;
+  hintKey: AdminMessageKey;
 }[] = [
   {
     id: "surfaces",
-    label: "Surfaces",
-    hint: "5-surface paint chart",
+    labelKey: "admin.chartStyle.surfaces",
+    hintKey: "admin.chartStyle.surfacesHint",
   },
   ...TEETH_CHART_STYLES,
 ];

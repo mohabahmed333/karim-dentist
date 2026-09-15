@@ -147,6 +147,7 @@ export function PatientWorkspaceView(props: Props) {
             dentition={w.session.dentition}
             paintTool={w.session.paintTool}
             chartStyle={w.chartStyle}
+            onChartStyleChange={forcedToothFdi ? undefined : w.setChartStyle}
             selectedFdi={w.selectedFdi}
             byFdi={w.surfaces.byFdi}
             commented={w.notesChart.commented}
