@@ -12,6 +12,7 @@ import {
   AdminSelectTrigger,
   AdminSelectValue,
 } from "@/features/admin/ui";
+import { useTranslations } from "@/lib/i18n";
 import { saveTreatmentProposal } from "@/services/treatment_proposals/actions";
 import {
   resolveServiceDoctorPrice,
@@ -66,6 +67,7 @@ export function ProposeServicesForm({
   initialItems,
   initialReservationId,
 }: Props) {
+  const t = useTranslations();
   const [doctorId, setDoctorId] = useState(initialDoctorId ?? "");
   const [items, setItems] = useState<DraftItem[]>(initialItems ?? [emptyItem()]);
   const [reservationId, setReservationId] = useState(initialReservationId ?? NO_RESERVATION);
@@ -89,7 +91,7 @@ export function ProposeServicesForm({
 
   async function onSubmit() {
     if (!doctorId) {
-      toast.error("Pick a doctor");
+      toast.error(t("admin.billing.proposal.pickDoctor"));
       return;
     }
     const parsedItems = items
@@ -100,11 +102,11 @@ export function ProposeServicesForm({
         amountEgp: Number(item.amount),
       }));
     if (parsedItems.length === 0) {
-      toast.error("Add at least one service");
+      toast.error(t("admin.billing.proposal.addAtLeastOne"));
       return;
     }
     if (parsedItems.some((item) => !Number.isFinite(item.amountEgp) || item.amountEgp <= 0)) {
-      toast.error("Enter a valid amount for every service");
+      toast.error(t("admin.billing.proposal.invalidAmountEach"));
       return;
     }
     setPending(true);
@@ -117,10 +119,10 @@ export function ProposeServicesForm({
       setDoctorId("");
       setItems([emptyItem()]);
       setReservationId(NO_RESERVATION);
-      toast.success("Proposal sent");
+      toast.success(t("admin.billing.proposal.sent"));
       onSent();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Send failed");
+      toast.error(err instanceof Error ? err.message : t("admin.billing.proposal.sendFailed"));
     } finally {
       setPending(false);
     }
@@ -128,15 +130,15 @@ export function ProposeServicesForm({
 
   return (
     <Card className="h-full gap-3 bg-transparent p-6">
-      <p className="text-sm font-medium text-[var(--admin-text)]">Propose services</p>
+      <p className="text-sm font-medium text-[var(--admin-text)]">{t("admin.billing.proposal.title")}</p>
       <AdminSelect value={doctorId} onValueChange={(value) => setDoctorId(String(value))}>
         <AdminSelectTrigger>
-          <AdminSelectValue placeholder="Doctor" />
+          <AdminSelectValue placeholder={t("admin.billing.form.doctorPlaceholder")} />
         </AdminSelectTrigger>
         <AdminSelectContent>
           {doctors.map((doctor) => (
             <AdminSelectItem key={doctor.id} value={doctor.id}>
-              {doctor.display_name ?? "Unnamed"}
+              {doctor.display_name ?? t("admin.billing.form.unnamedDoctor")}
             </AdminSelectItem>
           ))}
         </AdminSelectContent>
@@ -148,10 +150,10 @@ export function ProposeServicesForm({
           onValueChange={(value) => setReservationId(String(value))}
         >
           <AdminSelectTrigger>
-            <AdminSelectValue placeholder="Which visit is this for? (optional)" />
+            <AdminSelectValue placeholder={t("admin.billing.form.visitPlaceholder")} />
           </AdminSelectTrigger>
           <AdminSelectContent>
-            <AdminSelectItem value={NO_RESERVATION}>Not tied to a visit</AdminSelectItem>
+            <AdminSelectItem value={NO_RESERVATION}>{t("admin.billing.form.notTiedToVisit")}</AdminSelectItem>
             {reservations.map((reservation) => (
               <AdminSelectItem key={reservation.id} value={reservation.id}>
                 {reservation.service_label} — {formatAppointmentDateTime(reservation.starts_at, "en")}
@@ -170,10 +172,10 @@ export function ProposeServicesForm({
             services={services}
             value={item.serviceId}
             onChange={(serviceId) => pickService(index, serviceId)}
-            placeholder="Service"
+            placeholder={t("admin.billing.proposal.servicePlaceholder")}
           />
           <AdminInput
-            placeholder="Amount (EGP)"
+            placeholder={t("admin.billing.form.amountPlaceholder")}
             inputMode="decimal"
             value={item.amount}
             onChange={(e) => patchItem(index, { amount: e.target.value })}
@@ -185,15 +187,15 @@ export function ProposeServicesForm({
             disabled={items.length === 1}
             onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))}
           >
-            Remove
+            {t("admin.billing.proposal.remove")}
           </Button>
         </div>
       ))}
       <Button type="button" variant="outline" size="sm" onClick={() => setItems((prev) => [...prev, emptyItem()])}>
-        Add service
+        {t("admin.billing.proposal.addService")}
       </Button>
       <Button type="button" disabled={pending} onClick={() => void onSubmit()}>
-        {pending ? "Sending…" : "Send proposal"}
+        {pending ? t("admin.billing.proposal.sending") : t("admin.billing.proposal.send")}
       </Button>
     </Card>
   );
