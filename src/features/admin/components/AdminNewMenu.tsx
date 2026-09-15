@@ -1,40 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  CalendarPlus,
-  ChevronDown,
-  MessagesSquare,
-  NotebookPen,
-  Plus,
-  UserPlus,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CalendarPlus, ChevronDown, Plus, UserPlus } from "lucide-react";
 import {
   AdminDropdownMenu,
   AdminDropdownMenuContent,
   AdminDropdownMenuItem,
-  AdminDropdownMenuSeparator,
   AdminDropdownMenuTrigger,
 } from "@/features/admin/ui";
 import { useTranslations } from "@/lib/i18n";
-import { canAddClinicalNote } from "@/features/admin/lib/adminPatientPath";
-import {
-  dispatchOpenClinicalNote,
-  dispatchOpenWhatsapp,
-} from "@/features/admin/lib/adminShellEvents";
 import { patientProfilePath } from "@/services/reservations/patientHistory";
 import { AddPatientDialog } from "@/features/admin/components/patients/AddPatientDialog";
 import { useQuickBook } from "./quick-book/QuickBookContext";
 
 export function AdminNewMenu() {
   const t = useTranslations();
-  const pathname = usePathname();
   const router = useRouter();
   const { openQuickBook } = useQuickBook();
   const [addPatientOpen, setAddPatientOpen] = useState(false);
-  const showClinicalNote = canAddClinicalNote(pathname);
-  const onSupport = pathname.startsWith("/admin/support");
 
   return (
     <>
@@ -57,27 +41,6 @@ export function AdminNewMenu() {
             <UserPlus aria-hidden />
             {t("admin.new.menu.patient")}
           </AdminDropdownMenuItem>
-
-          <AdminDropdownMenuSeparator />
-
-          <AdminDropdownMenuItem
-            onClick={() => {
-              if (onSupport) {
-                router.push("/admin/support");
-                return;
-              }
-              dispatchOpenWhatsapp();
-            }}
-          >
-            <MessagesSquare aria-hidden />
-            {t("admin.new.menu.whatsapp")}
-          </AdminDropdownMenuItem>
-          {showClinicalNote ? (
-            <AdminDropdownMenuItem onClick={() => dispatchOpenClinicalNote()}>
-              <NotebookPen aria-hidden />
-              {t("admin.new.menu.clinicalNote")}
-            </AdminDropdownMenuItem>
-          ) : null}
         </AdminDropdownMenuContent>
       </AdminDropdownMenu>
 
