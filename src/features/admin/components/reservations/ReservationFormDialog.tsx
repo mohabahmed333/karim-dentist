@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -58,8 +59,10 @@ export function ReservationFormDialog({
   onSaveModeChange,
 }: Props) {
   const t = useTranslations();
+  const reduced = useReducedMotion();
   const showModeChoice = Boolean(replaceTarget && onSaveModeChange);
   const [step, setStep] = useState<"patient" | "details">("details");
+  const [direction, setDirection] = useState<1 | -1>(1);
 
   useEffect(() => {
     if (!open) return;
@@ -81,7 +84,13 @@ export function ReservationFormDialog({
       phone: patient.phone,
       email: patient.email ?? "",
     });
+    setDirection(1);
     setStep("details");
+  }
+
+  function goBackToPatientStep() {
+    setDirection(-1);
+    setStep("patient");
   }
 
   return (
@@ -107,7 +116,16 @@ export function ReservationFormDialog({
           <StepBadge index={2} label={t("admin.reservations.stepDetails")} active={step === "details"} done={false} />
         </div>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={step}
+              initial={reduced ? false : { opacity: 0, x: direction * 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reduced ? undefined : { opacity: 0, x: -direction * 16 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
+              className="space-y-4"
+            >
           {step === "patient" ? (
             <PatientPickerStep onPatientChosen={handlePatientChosen} />
           ) : (
@@ -159,6 +177,8 @@ export function ReservationFormDialog({
               />
             </>
           )}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {step === "details" ? (
@@ -167,7 +187,7 @@ export function ReservationFormDialog({
               type="button"
               variant="ghost"
               disabled={pending}
-              onClick={() => setStep("patient")}
+              onClick={goBackToPatientStep}
             >
               {t("admin.reservations.backToPatient")}
             </Button>
