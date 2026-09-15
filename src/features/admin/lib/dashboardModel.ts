@@ -262,3 +262,48 @@ export function groupUpcomingByDay(
   }
   return groups;
 }
+
+/** KPI cards for outstanding balance / pending payments / low stock / pending approvals. Each
+ * field is `null` when the viewer lacks the permission for that section, in which case no
+ * entry is produced for it (the KPI simply doesn't appear, rather than showing "0"). */
+export function buildBillingInventoryKpis(input: {
+  outstandingBalance: number | null;
+  pendingPaymentsCount: number | null;
+  lowStockCount: number | null;
+  pendingApprovalsCount: number | null;
+}): DashboardKpi[] {
+  const kpis: DashboardKpi[] = [];
+  if (input.outstandingBalance !== null) {
+    kpis.push({
+      labelKey: "admin.overview.kpi.outstandingBalance",
+      value: `${Math.round(input.outstandingBalance).toLocaleString()} EGP`,
+      trend: "—",
+      up: true,
+    });
+  }
+  if (input.pendingPaymentsCount !== null) {
+    kpis.push({
+      labelKey: "admin.overview.kpi.pendingPayments",
+      value: String(input.pendingPaymentsCount),
+      trend: "—",
+      up: input.pendingPaymentsCount === 0,
+    });
+  }
+  if (input.lowStockCount !== null) {
+    kpis.push({
+      labelKey: "admin.overview.kpi.lowStock",
+      value: String(input.lowStockCount),
+      trend: "—",
+      up: input.lowStockCount === 0,
+    });
+  }
+  if (input.pendingApprovalsCount !== null) {
+    kpis.push({
+      labelKey: "admin.overview.kpi.pendingApprovals",
+      value: String(input.pendingApprovalsCount),
+      trend: "—",
+      up: input.pendingApprovalsCount === 0,
+    });
+  }
+  return kpis;
+}
