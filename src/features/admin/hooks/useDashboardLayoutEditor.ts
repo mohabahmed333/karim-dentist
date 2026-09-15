@@ -8,11 +8,8 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import type { SiteSettings } from "@/services/site_settings/types";
-import { upsertSettings } from "@/services/site_settings";
 import { useTranslations } from "@/lib/i18n";
 import {
-  DEFAULT_DASHBOARD_LAYOUT,
   addDashboardWidget,
   appendToDashboardStack,
   cloneDashboardLayout,
@@ -25,12 +22,12 @@ import {
   removeDashboardWidget,
   resizeDashboardWidget,
   resizeDashboardWidgetHeight,
+  type DashboardCatalog,
   type DashboardColSpan,
   type DashboardDropEdge,
   type DashboardLayout,
-  type DashboardWidgetId,
-} from "@/features/admin/lib/dashboardLayout";
-import { createDragAutoScroll } from "@/features/admin/lib/dashboardDragScroll";
+} from "@/features/admin/lib/dashboardWidgets/dashboardLayout";
+import { createDragAutoScroll } from "@/features/admin/lib/dashboardWidgets/dashboardDragScroll";
 import {
   emptyLayoutHistory,
   layoutsEqual,
@@ -39,27 +36,27 @@ import {
   redoLayout,
   undoLayout,
   type LayoutHistory,
-} from "@/features/admin/lib/dashboardLayoutHistory";
+} from "@/features/admin/lib/dashboardWidgets/dashboardLayoutHistory";
 import {
   DASHBOARD_LAYOUT_ACTION_EVENT,
   publishDashboardLayoutState,
   type DashboardLayoutAction,
-} from "@/features/admin/lib/dashboardLayoutBridge";
+} from "@/features/admin/lib/dashboardWidgets/dashboardLayoutBridge";
 
 type DropTarget =
-  | { kind: "widget"; id: DashboardWidgetId; edge: DashboardDropEdge }
+  | { kind: "widget"; id: string; edge: DashboardDropEdge }
   | { kind: "stack"; stackId: string }
   | { kind: "gap"; afterStackId: string; colSpan: DashboardColSpan }
   | { kind: "end" };
 
 export function useDashboardLayoutEditor(
-  initialSettings: SiteSettings | null,
+  catalog: DashboardCatalog,
   initialLayout: DashboardLayout,
-  hiddenWidgetIds: DashboardWidgetId[] = [],
+  save: (layout: DashboardLayout) => Promise<DashboardLayout>,
+  hiddenWidgetIds: string[] = [],
 ) {
   const t = useTranslations();
   const router = useRouter();
-  const [settings, setSettings] = useState(initialSettings);
   const [editing, setEditing] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -69,13 +66,13 @@ export function useDashboardLayoutEditor(
   const historyRef = useRef<LayoutHistory>(emptyLayoutHistory());
   const heightGestureRef = useRef(false);
   const skipInitialLayoutSyncRef = useRef(false);
-  const dragFromRef = useRef<DashboardWidgetId | null>(null);
+  const dragFromRef = useRef<string | null>(null);
   const dropTargetRef = useRef<DropTarget | null>(null);
   const autoScrollRef = useRef(createDragAutoScroll());
   const editingRef = useRef(editing);
   editingRef.current = editing;
-  const [dragFromId, setDragFromId] = useState<DashboardWidgetId | null>(null);
-  const [dragOverId, setDragOverId] = useState<DashboardWidgetId | null>(null);
+  const [dragFromId, setDragFromId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [dropEdge, setDropEdge] = useState<DashboardDropEdge | null>(null);
   const [dragOverStackId, setDragOverStackId] = useState<string | null>(null);
   const [dragOverGapId, setDragOverGapId] = useState<string | null>(null);
@@ -87,8 +84,6 @@ export function useDashboardLayoutEditor(
   draftRef.current = draft;
   const savedLayoutRef = useRef(savedLayout);
   savedLayoutRef.current = savedLayout;
-  const settingsRef = useRef(settings);
-  settingsRef.current = settings;
   const dirtyRef = useRef(dirty);
   dirtyRef.current = dirty;
 
@@ -96,9 +91,11 @@ export function useDashboardLayoutEditor(
   const canRedo = historyRef.current.future.length > 0;
   void historyEpoch;
 
-  useEffect(() => {
-    setSettings(initialSettings);
-  }, [initialSettings]);
+  function missingWithLabels(current: DashboardLayout) {
+    return missingDashboardWidgets(current, catalog, hiddenWidgetIds).map(
+      (id) => ({ id, labelKey: catalog.meta(id).labelKey }),
+    );
+  }
 
   useEffect(() => {
     // After Save/persist we already applied the upsert response. A follow-up
@@ -163,20 +160,21 @@ export function useDashboardLayoutEditor(
     else startEdit();
   }
 
-  async function save() {
+  async function persist(next: DashboardLayout): Promise<DashboardLayout> {
+    const toSave = normalizeDashboardLayout(next, catalog);
+    const fromDb = normalizeDashboardLayout(await save(toSave), catalog);
+    // Keep the client save if the echo is missing heights we just wrote.
+    return layoutHeightsEqual(fromDb, toSave) ? fromDb : toSave;
+  }
+
+  async function saveEdit() {
     setSaving(true);
     try {
       heightGestureRef.current = false;
-      const toSave = normalizeDashboardLayout(draftRef.current);
+      const toSave = normalizeDashboardLayout(draftRef.current, catalog);
       draftRef.current = toSave;
       setDraft(toSave);
-      const row = await upsertSettings(settingsRef.current, {
-        dashboard_layout: toSave,
-      });
-      const fromDb = normalizeDashboardLayout(row.dashboard_layout);
-      // Keep client save if the echo is missing heights we just wrote.
-      const next = layoutHeightsEqual(fromDb, toSave) ? fromDb : toSave;
-      setSettings(row);
+      const next = await persist(toSave);
       setSavedLayout(next);
       savedLayoutRef.current = next;
       setDraft(next);
@@ -210,7 +208,7 @@ export function useDashboardLayoutEditor(
     if (!editingRef.current) {
       savedLayoutRef.current = result.layout;
       setSavedLayout(result.layout);
-      void persistLayout(result.layout);
+      void persistInBackground(result.layout);
     }
     setHistoryEpoch((n) => n + 1);
   }
@@ -227,20 +225,14 @@ export function useDashboardLayoutEditor(
     if (!editingRef.current) {
       savedLayoutRef.current = result.layout;
       setSavedLayout(result.layout);
-      void persistLayout(result.layout);
+      void persistInBackground(result.layout);
     }
     setHistoryEpoch((n) => n + 1);
   }
 
-  async function persistLayout(next: DashboardLayout) {
+  async function persistInBackground(next: DashboardLayout) {
     try {
-      const toSave = normalizeDashboardLayout(next);
-      const row = await upsertSettings(settingsRef.current, {
-        dashboard_layout: toSave,
-      });
-      const fromDb = normalizeDashboardLayout(row.dashboard_layout);
-      const normalized = layoutHeightsEqual(fromDb, toSave) ? fromDb : toSave;
-      setSettings(row);
+      const normalized = await persist(next);
       setSavedLayout(normalized);
       savedLayoutRef.current = normalized;
       setDraft(normalized);
@@ -267,10 +259,7 @@ export function useDashboardLayoutEditor(
     setDragOverEnd(false);
   }
 
-  function sameRowNeighbor(
-    fromId: DashboardWidgetId,
-    toId: DashboardWidgetId,
-  ): boolean {
+  function sameRowNeighbor(fromId: string, toId: string): boolean {
     const layout = editingRef.current
       ? draftRef.current
       : savedLayoutRef.current;
@@ -283,8 +272,8 @@ export function useDashboardLayoutEditor(
   }
 
   function edgeForWidgetDrop(
-    fromId: DashboardWidgetId,
-    toId: DashboardWidgetId,
+    fromId: string,
+    toId: string,
     event: DragEvent<HTMLElement>,
   ): DashboardDropEdge {
     const host = event.currentTarget.closest("[data-dash-widget-id]");
@@ -299,7 +288,7 @@ export function useDashboardLayoutEditor(
     );
   }
 
-  function setWidgetTarget(id: DashboardWidgetId, edge: DashboardDropEdge) {
+  function setWidgetTarget(id: string, edge: DashboardDropEdge) {
     dropTargetRef.current = { kind: "widget", id, edge };
     setDragOverId(id);
     setDropEdge(edge);
@@ -364,8 +353,8 @@ export function useDashboardLayoutEditor(
 
   function moveWidgetById(
     d: DashboardLayout,
-    fromId: DashboardWidgetId,
-    targetId: DashboardWidgetId,
+    fromId: string,
+    targetId: string,
     edge: DashboardDropEdge,
   ): DashboardLayout {
     if (fromId === targetId) return d;
@@ -384,10 +373,10 @@ export function useDashboardLayoutEditor(
         cancelEdit();
         break;
       case "save":
-        void save();
+        void saveEdit();
         break;
       case "reset":
-        mutateDraft(() => cloneDashboardLayout(DEFAULT_DASHBOARD_LAYOUT));
+        mutateDraft(() => cloneDashboardLayout(catalog.defaultLayout));
         break;
       case "undo":
         undo();
@@ -407,7 +396,7 @@ export function useDashboardLayoutEditor(
         );
         break;
       case "add":
-        mutateDraft((d) => addDashboardWidget(d, action.id));
+        mutateDraft((d) => addDashboardWidget(d, action.id, catalog));
         setCatalogOpen(false);
         break;
     }
@@ -425,7 +414,7 @@ export function useDashboardLayoutEditor(
       catalogOpen,
       canUndo,
       canRedo,
-      missing: missingDashboardWidgets(draft, hiddenWidgetIds),
+      missing: missingWithLabels(draft),
     });
   }, [
     editing,
@@ -513,21 +502,21 @@ export function useDashboardLayoutEditor(
     dragOverStackId,
     dragOverGapId,
     dragOverEnd,
-    missing: missingDashboardWidgets(draft, hiddenWidgetIds),
+    missing: missingWithLabels(draft),
     startEdit,
     cancelEdit,
-    save,
+    save: saveEdit,
     undo,
     redo,
     reset: () =>
-      mutateDraft(() => cloneDashboardLayout(DEFAULT_DASHBOARD_LAYOUT)),
+      mutateDraft(() => cloneDashboardLayout(catalog.defaultLayout)),
     toggleCatalog: () => setCatalogOpen((v) => !v),
     closeCatalog: () => setCatalogOpen(false),
-    add: (id: DashboardWidgetId) =>
-      mutateDraft((d) => addDashboardWidget(d, id)),
-    resize: (id: DashboardWidgetId, colSpan: DashboardColSpan) =>
-      mutateDraft((d) => resizeDashboardWidget(d, id, colSpan)),
-    resizeHeight: (id: DashboardWidgetId, heightPx: number) => {
+    add: (id: string) =>
+      mutateDraft((d) => addDashboardWidget(d, id, catalog)),
+    resize: (id: string, colSpan: DashboardColSpan) =>
+      mutateDraft((d) => resizeDashboardWidget(d, id, colSpan, catalog)),
+    resizeHeight: (id: string, heightPx: number) => {
       if (!editingRef.current) {
         const current = savedLayoutRef.current;
         if (!heightGestureRef.current) {
@@ -554,14 +543,11 @@ export function useDashboardLayoutEditor(
     commitHeight: () => {
       heightGestureRef.current = false;
       if (editingRef.current) return;
-      void persistLayout(savedLayoutRef.current);
+      void persistInBackground(savedLayoutRef.current);
     },
-    remove: (id: DashboardWidgetId) =>
+    remove: (id: string) =>
       mutateDraft((d) => removeDashboardWidget(d, id)),
-    onDragStart: (
-      id: DashboardWidgetId,
-      event: DragEvent<HTMLElement>,
-    ) => {
+    onDragStart: (id: string, event: DragEvent<HTMLElement>) => {
       const target = event.target as Element;
       if (target.closest("[data-no-widget-drag]")) {
         event.preventDefault();
@@ -588,10 +574,7 @@ export function useDashboardLayoutEditor(
       autoScrollRef.current.notePointer(event.clientY);
       autoScrollRef.current.start(event.currentTarget);
     },
-    onDragOver: (
-      id: DashboardWidgetId,
-      event: DragEvent<HTMLElement>,
-    ) => {
+    onDragOver: (id: string, event: DragEvent<HTMLElement>) => {
       const fromId = dragFromRef.current;
       if (!fromId || fromId === id) return;
       event.preventDefault();
@@ -599,15 +582,10 @@ export function useDashboardLayoutEditor(
       autoScrollRef.current.notePointer(event.clientY);
       setWidgetTarget(id, edgeForWidgetDrop(fromId, id, event));
     },
-    onDrop: (
-      id: DashboardWidgetId,
-      event: DragEvent<HTMLElement>,
-    ) => {
+    onDrop: (id: string, event: DragEvent<HTMLElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      const fromId =
-        dragFromRef.current ??
-        (event.dataTransfer.getData("text/plain") as DashboardWidgetId);
+      const fromId = dragFromRef.current ?? event.dataTransfer.getData("text/plain");
       if (!fromId || fromId === id) {
         clearDragUi();
         return;
@@ -626,9 +604,7 @@ export function useDashboardLayoutEditor(
     onStackDrop: (stackId: string, event: DragEvent<HTMLElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      const fromId =
-        dragFromRef.current ??
-        (event.dataTransfer.getData("text/plain") as DashboardWidgetId);
+      const fromId = dragFromRef.current ?? event.dataTransfer.getData("text/plain");
       if (!fromId) {
         clearDragUi();
         return;
@@ -655,9 +631,7 @@ export function useDashboardLayoutEditor(
     ) => {
       event.preventDefault();
       event.stopPropagation();
-      const fromId =
-        dragFromRef.current ??
-        (event.dataTransfer.getData("text/plain") as DashboardWidgetId);
+      const fromId = dragFromRef.current ?? event.dataTransfer.getData("text/plain");
       if (!fromId) {
         clearDragUi();
         return;
@@ -676,9 +650,7 @@ export function useDashboardLayoutEditor(
     onEndDrop: (event: DragEvent<HTMLElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      const fromId =
-        dragFromRef.current ??
-        (event.dataTransfer.getData("text/plain") as DashboardWidgetId);
+      const fromId = dragFromRef.current ?? event.dataTransfer.getData("text/plain");
       if (!fromId) {
         clearDragUi();
         return;
