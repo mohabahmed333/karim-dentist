@@ -103,11 +103,11 @@ export function ReservationFormDialog({
           <DialogTitle className="text-[var(--admin-text)]">
             {t("admin.reservations.new")}
           </DialogTitle>
-          <DialogDescription className="text-[var(--admin-muted)]">
-            {step === "patient"
-              ? t("admin.reservations.pickPatientDesc")
-              : t("admin.reservations.createDesc")}
-          </DialogDescription>
+          {step === "details" ? (
+            <DialogDescription className="text-[var(--admin-muted)]">
+              {t("admin.reservations.createDesc")}
+            </DialogDescription>
+          ) : null}
         </DialogHeader>
 
         <div className="flex shrink-0 items-center gap-2 px-4 pb-3">

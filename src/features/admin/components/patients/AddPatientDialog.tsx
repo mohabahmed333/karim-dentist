@@ -75,7 +75,7 @@ export function AddPatientDialog({ open, onOpenChange, onCreated }: Props) {
     >
       <DialogContent
         data-showreel-action="add-patient-modal"
-        className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
+        className="flex max-h-[90vh] origin-bottom flex-col gap-0 overflow-hidden p-0 duration-200 data-open:zoom-in-75 data-open:slide-in-from-bottom-6 data-closed:zoom-out-75 data-closed:slide-out-to-bottom-6 sm:max-w-lg"
       >
         <DialogHeader className="shrink-0 space-y-1 px-4 pt-4 pe-12">
           <DialogTitle className="text-[var(--admin-text)]">Add patient</DialogTitle>
