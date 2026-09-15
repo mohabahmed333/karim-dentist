@@ -69,3 +69,5 @@ supabase/.temp
 # Downloaded at runtime by tesseract.js if a cache path is not set
 *.traineddata
 *.traineddata.gz
+scripts/.seed-my-day-demo.json
+scripts/.seed-billing-demo.json

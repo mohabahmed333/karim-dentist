@@ -79,7 +79,54 @@ ADMIN_EMAIL=admin@dentallounge.local
 ADMIN_PASSWORD=DentalLounge2026!
 ```
 
-## 4. Clinical workspace smoke test
+## 4. Test accounts and a test patient (billing flow)
+
+The owner account above can see everything, which makes it the wrong account
+for testing anything role-specific — a doctor cannot read the WhatsApp inbox,
+and only the front desk collects payment. One script creates both logins, a
+patient sitting in the chair right now, and the completed work to bill:
+
+```bash
+node --env-file=.env.e2e scripts/seed-billing-demo.mjs --dry-run   # see the plan
+node --env-file=.env.e2e scripts/seed-billing-demo.mjs             # write it
+node --env-file=.env.e2e scripts/seed-billing-demo.mjs --undo      # remove it
+```
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Owner | `admin@dentallounge.local` | `DentalLounge2026!` |
+| Doctor | `doctor@dentallounge.local` | `DentalLounge2026!` |
+| Front desk | `frontdesk@dentallounge.local` | `DentalLounge2026!` |
+
+It also seeds **Test Patient Billing** (`+201000000001`) with an appointment at
+10:00 today assigned to the test doctor, two completed treatments on that
+appointment, and a doctor fee of EGP 750 / 1200 for the two services it used.
+
+**It refuses to run against production.** `.env.local` points at the hosted
+project, so the script checks the URL and stops unless you pass
+`--i-know-this-is-production`. Use `.env.e2e`.
+
+Every id it writes goes into `scripts/.seed-billing-demo.json`, and `--undo`
+deletes exactly those and nothing else. Logins that already existed are reused
+rather than recreated, and never deleted by `--undo`.
+
+### Walking the billing flow
+
+1. Sign in as the **doctor** → `/admin/my-day`. The test patient is in the
+   chair. **Bill visit** opens with two lines — the treatments, not the booked
+   service — priced 750 and 1200 from that doctor's fees. Send it.
+2. Sign in as the **front desk** (a second browser or a private window, so both
+   sessions stay live) → the Billing nav entry now carries a count, and the
+   overview Attention list shows *Bills awaiting payment*.
+3. Open `/admin/billing`. With the doctor's window still open, send a second
+   bill: the request appears without a reload, with a chime.
+4. **Collect cash** → the patient's ledger gains a payment row and the badge
+   drops.
+
+Step 3 needs the realtime migration applied (`supabase db push`); without it
+the queue still updates, just on the 30-second poll instead of instantly.
+
+## 5. Clinical workspace smoke test
 
 1. Sign in → **Patients** → open a patient → **Clinical workspace**.
 2. Select a tooth → chat to draft a treatment.
@@ -92,7 +139,7 @@ Sample chat prompt:
 Deep distal caries on this tooth, sensitive to cold. Suggest a composite fill from the clinic menu.
 ```
 
-## 5. Useful commands
+## 6. Useful commands
 
 | Command | Purpose |
 | --- | --- |
@@ -101,7 +148,7 @@ Deep distal caries on this tooth, sensitive to cold. Suggest a composite fill fr
 | `supabase link --project-ref puibdsyokgjdvkkousil` | Link remote DB |
 | `supabase db push --linked` | Apply migrations |
 
-## 5b. Kapso WhatsApp (Front desk)
+## 6b. Kapso WhatsApp (Front desk)
 
 Front desk (`/admin/support`) stores chats in Supabase and sends/receives via Kapso.
 
@@ -122,7 +169,7 @@ https://YOUR_PUBLIC_HOST/api/v1/whatsapp/webhook
 
 Local: run `yarn dev`, then `ngrok http 3000`, register the ngrok HTTPS URL + path above in Kapso WhatsApp webhooks for your phone number. Subscribe to message received/sent/delivered/read/failed and conversation created/ended.
 
-## 6. Layout
+## 7. Layout
 
 | Path | Role |
 | --- | --- |
