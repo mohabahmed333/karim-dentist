@@ -55,6 +55,7 @@ type DropTarget =
 export function useDashboardLayoutEditor(
   initialSettings: SiteSettings | null,
   initialLayout: DashboardLayout,
+  hiddenWidgetIds: DashboardWidgetId[] = [],
 ) {
   const t = useTranslations();
   const router = useRouter();
@@ -424,7 +425,7 @@ export function useDashboardLayoutEditor(
       catalogOpen,
       canUndo,
       canRedo,
-      missing: missingDashboardWidgets(draft),
+      missing: missingDashboardWidgets(draft, hiddenWidgetIds),
     });
   }, [
     editing,
@@ -435,6 +436,7 @@ export function useDashboardLayoutEditor(
     canRedo,
     draft,
     historyEpoch,
+    hiddenWidgetIds,
   ]);
 
   useEffect(() => {
@@ -511,7 +513,7 @@ export function useDashboardLayoutEditor(
     dragOverStackId,
     dragOverGapId,
     dragOverEnd,
-    missing: missingDashboardWidgets(draft),
+    missing: missingDashboardWidgets(draft, hiddenWidgetIds),
     startEdit,
     cancelEdit,
     save,

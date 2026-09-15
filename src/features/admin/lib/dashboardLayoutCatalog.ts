@@ -33,6 +33,14 @@ export const DASHBOARD_WIDGET_IDS = [
   "chartCancelRate",
   "chartServiceRank",
   "myProductionWeek",
+  "chartBillingRevenue",
+  "chartBillingMethodMix",
+  "kpiOutstandingBalance",
+  "kpiPendingPayments",
+  "chartInventoryStockValue",
+  "chartInventoryConsumption",
+  "kpiLowStock",
+  "kpiPendingApprovals",
 ] as const;
 
 export type DashboardWidgetId = (typeof DASHBOARD_WIDGET_IDS)[number];
@@ -257,6 +265,46 @@ export const DASHBOARD_WIDGET_CATALOG: readonly DashboardWidgetMeta[] = [
   {
     id: "myProductionWeek",
     labelKey: "admin.overview.widget.myProductionWeek",
+    ...CARD,
+  },
+  {
+    id: "chartBillingRevenue",
+    labelKey: "admin.overview.widget.chartBillingRevenue",
+    ...CHART,
+  },
+  {
+    id: "chartBillingMethodMix",
+    labelKey: "admin.overview.widget.chartBillingMethodMix",
+    ...CHART,
+  },
+  {
+    id: "kpiOutstandingBalance",
+    labelKey: "admin.overview.widget.kpiOutstandingBalance",
+    ...CARD,
+  },
+  {
+    id: "kpiPendingPayments",
+    labelKey: "admin.overview.widget.kpiPendingPayments",
+    ...CARD,
+  },
+  {
+    id: "chartInventoryStockValue",
+    labelKey: "admin.overview.widget.chartInventoryStockValue",
+    ...CHART,
+  },
+  {
+    id: "chartInventoryConsumption",
+    labelKey: "admin.overview.widget.chartInventoryConsumption",
+    ...CHART,
+  },
+  {
+    id: "kpiLowStock",
+    labelKey: "admin.overview.widget.kpiLowStock",
+    ...CARD,
+  },
+  {
+    id: "kpiPendingApprovals",
+    labelKey: "admin.overview.widget.kpiPendingApprovals",
     ...CARD,
   },
 ];

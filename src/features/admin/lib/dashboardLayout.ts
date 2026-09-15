@@ -235,7 +235,9 @@ export function resizeDashboardWidgetHeight(
 
 export function missingDashboardWidgets(
   layout: DashboardLayout,
+  hiddenWidgetIds: readonly DashboardWidgetId[] = [],
 ): DashboardWidgetId[] {
   const present = new Set(layout.map((w) => w.id));
-  return DASHBOARD_WIDGET_IDS.filter((id) => !present.has(id));
+  const hidden = new Set(hiddenWidgetIds);
+  return DASHBOARD_WIDGET_IDS.filter((id) => !present.has(id) && !hidden.has(id));
 }

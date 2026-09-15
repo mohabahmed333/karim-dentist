@@ -484,4 +484,14 @@ describe("dashboardLayout", () => {
     assert.ok(missing.includes("chartWeekCompare"));
     assert.ok(missing.includes("attentionNoShow"));
   });
+
+  it("excludes hidden widget ids from the missing list", () => {
+    const missing = missingDashboardWidgets(DEFAULT_DASHBOARD_LAYOUT, [
+      "kpiCancelled",
+      "listPending",
+    ]);
+    assert.ok(!missing.includes("kpiCancelled"));
+    assert.ok(!missing.includes("listPending"));
+    assert.ok(missing.includes("chartWeekCompare"));
+  });
 });

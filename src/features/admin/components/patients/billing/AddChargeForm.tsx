@@ -12,6 +12,7 @@ import {
   AdminSelectTrigger,
   AdminSelectValue,
 } from "@/features/admin/ui";
+import { useTranslations } from "@/lib/i18n";
 import { saveBillingEntry } from "@/services/patient_billing/actions";
 import type { LedgerEntryWithBalance } from "@/services/patient_billing/types";
 import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
@@ -65,6 +66,7 @@ export function AddChargeForm({
   balance,
   onRecorded,
 }: Props) {
+  const t = useTranslations();
   const [form, setForm] = useState<FormState>(defaultForm());
   const [pending, setPending] = useState(false);
   // Purely a convenience lookup for the amount field below — the saved entry
@@ -109,11 +111,11 @@ export function AddChargeForm({
   async function onSubmit() {
     const amount = Number(form.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      toast.error("Enter a valid amount");
+      toast.error(t("admin.billing.form.invalidAmount"));
       return;
     }
     if (!form.description.trim()) {
-      toast.error("Enter a description");
+      toast.error(t("admin.billing.form.invalidDescription"));
       return;
     }
     setPending(true);
@@ -140,9 +142,9 @@ export function AddChargeForm({
       setPriceServiceId("");
       setPriceDoctorId("");
       setReservationId(NO_RESERVATION);
-      toast.success("Entry recorded");
+      toast.success(t("admin.billing.form.recorded"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
+      toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
     } finally {
       setPending(false);
     }
@@ -161,8 +163,8 @@ export function AddChargeForm({
             <AdminSelectValue />
           </AdminSelectTrigger>
           <AdminSelectContent>
-            <AdminSelectItem value="payment">Payment</AdminSelectItem>
-            <AdminSelectItem value="charge">Charge</AdminSelectItem>
+            <AdminSelectItem value="payment">{t("admin.billing.form.payment")}</AdminSelectItem>
+            <AdminSelectItem value="charge">{t("admin.billing.form.charge")}</AdminSelectItem>
           </AdminSelectContent>
         </AdminSelect>
         {form.kind === "payment" ? (
@@ -176,10 +178,10 @@ export function AddChargeForm({
               <AdminSelectValue />
             </AdminSelectTrigger>
             <AdminSelectContent>
-              <AdminSelectItem value="cash">Cash</AdminSelectItem>
-              <AdminSelectItem value="card">Card</AdminSelectItem>
-              <AdminSelectItem value="instapay">InstaPay</AdminSelectItem>
-              <AdminSelectItem value="other">Other</AdminSelectItem>
+              <AdminSelectItem value="cash">{t("admin.billing.form.cash")}</AdminSelectItem>
+              <AdminSelectItem value="card">{t("admin.billing.form.card")}</AdminSelectItem>
+              <AdminSelectItem value="instapay">{t("admin.billing.form.instapay")}</AdminSelectItem>
+              <AdminSelectItem value="other">{t("admin.billing.form.other")}</AdminSelectItem>
             </AdminSelectContent>
           </AdminSelect>
         ) : null}
@@ -190,16 +192,16 @@ export function AddChargeForm({
             services={services}
             value={priceServiceId}
             onChange={pickService}
-            placeholder="Service (optional, for a price lookup)"
+            placeholder={t("admin.billing.form.servicePlaceholder")}
           />
           <AdminSelect value={priceDoctorId} onValueChange={(value) => pickDoctor(String(value))}>
             <AdminSelectTrigger>
-              <AdminSelectValue placeholder="Doctor" />
+              <AdminSelectValue placeholder={t("admin.billing.form.doctorPlaceholder")} />
             </AdminSelectTrigger>
             <AdminSelectContent>
               {doctors.map((doctor) => (
                 <AdminSelectItem key={doctor.id} value={doctor.id}>
-                  {doctor.display_name ?? "Unnamed"}
+                  {doctor.display_name ?? t("admin.billing.form.unnamedDoctor")}
                 </AdminSelectItem>
               ))}
             </AdminSelectContent>
@@ -208,17 +210,25 @@ export function AddChargeForm({
       ) : null}
       {resolvedPrice ? (
         <p className="text-xs text-[var(--admin-muted)]">
-          {doctors.find((d) => d.id === priceDoctorId)?.display_name ?? "This doctor"}’s price for{" "}
-          {services.find((s) => s.id === priceServiceId)?.title ?? "this service"}: {resolvedPrice}
+          {t("admin.billing.form.priceLine")
+            .replace(
+              "{doctor}",
+              doctors.find((d) => d.id === priceDoctorId)?.display_name ?? t("admin.billing.form.thisDoctor"),
+            )
+            .replace(
+              "{service}",
+              services.find((s) => s.id === priceServiceId)?.title ?? t("admin.billing.form.thisService"),
+            )
+            .replace("{price}", resolvedPrice)}
         </p>
       ) : null}
       {reservations.length > 0 ? (
         <AdminSelect value={reservationId} onValueChange={(value) => setReservationId(String(value))}>
           <AdminSelectTrigger>
-            <AdminSelectValue placeholder="Which visit is this for? (optional)" />
+            <AdminSelectValue placeholder={t("admin.billing.form.visitPlaceholder")} />
           </AdminSelectTrigger>
           <AdminSelectContent>
-            <AdminSelectItem value={NO_RESERVATION}>Not tied to a visit</AdminSelectItem>
+            <AdminSelectItem value={NO_RESERVATION}>{t("admin.billing.form.notTiedToVisit")}</AdminSelectItem>
             {reservations.map((reservation) => (
               <AdminSelectItem key={reservation.id} value={reservation.id}>
                 {reservation.service_label} — {formatAppointmentDateTime(reservation.starts_at, "en")}
@@ -228,18 +238,18 @@ export function AddChargeForm({
         </AdminSelect>
       ) : null}
       <AdminInput
-        placeholder="Amount (EGP)"
+        placeholder={t("admin.billing.form.amountPlaceholder")}
         inputMode="decimal"
         value={form.amount}
         onChange={(e) => setForm((prev) => ({ ...prev, amount: e.target.value }))}
       />
       <AdminInput
-        placeholder="Description"
+        placeholder={t("admin.billing.form.descriptionPlaceholder")}
         value={form.description}
         onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
       />
       <Button type="button" disabled={pending} onClick={() => void onSubmit()}>
-        {pending ? "Saving…" : "Record entry"}
+        {pending ? t("admin.saving") : t("admin.billing.form.recordEntry")}
       </Button>
     </Card>
   );
