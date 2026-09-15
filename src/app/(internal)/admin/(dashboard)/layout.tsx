@@ -14,12 +14,18 @@ export const dynamic = "force-dynamic";
 
 async function loadAdminChrome() {
   const supabase = await createClient();
-  const [{ count }, settings] = await Promise.all([
+  const [{ count }, { count: unbilled }, settings] = await Promise.all([
     supabase
       .from("reservations")
       .select("id", { count: "exact", head: true })
       .eq("status", "pending")
       .is("deleted_at", null),
+    // Bills a doctor has sent that the front desk has not settled yet. Without
+    // this the queue at /admin/billing is only found by going to look at it.
+    supabase
+      .from("treatment_proposals")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "sent"),
     supabase
       .from("site_settings")
       .select(
@@ -29,7 +35,10 @@ async function loadAdminChrome() {
       .maybeSingle(),
   ]);
   return {
-    pendingCount: count ?? 0,
+    navBadges: {
+      "/admin/reservations": count ?? 0,
+      "/admin/billing": unbilled ?? 0,
+    } as Record<string, number>,
     primaryColor: normalizeHexColor(
       settings.data?.dashboard_primary_color,
       DEFAULT_DASHBOARD_PRIMARY,
@@ -53,7 +62,7 @@ export default async function AdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   let chrome = {
-    pendingCount: 0,
+    navBadges: {} as Record<string, number>,
     primaryColor: DEFAULT_DASHBOARD_PRIMARY,
     secondaryColor: DEFAULT_DASHBOARD_SECONDARY,
     canvasColor: DEFAULT_DASHBOARD_CANVAS,
@@ -71,7 +80,7 @@ export default async function AdminLayout({
   return (
     <NuqsAdapter>
       <AdminShell
-        pendingCount={chrome.pendingCount}
+        navBadges={chrome.navBadges}
         primaryColor={chrome.primaryColor}
         secondaryColor={chrome.secondaryColor}
         canvasColor={chrome.canvasColor}

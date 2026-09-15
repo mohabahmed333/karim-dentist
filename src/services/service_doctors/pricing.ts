@@ -5,16 +5,21 @@ export type PriceableService = {
   title: string;
   title_ar: string | null;
   price_label: string | null;
+  /** The floor of the clinic's range, and the fallback a doctor fee resolves to. */
+  price_min_egp?: number | null;
 };
 
 export type PriceableDoctor = { id: string; display_name: string | null };
 
 /**
- * What a doctor charges for a service — their own override if one is set,
- * else the clinic-wide default, else nothing on file. Mirrors the same
- * COALESCE the list_bookable_doctors_for_service RPC does in SQL, so a
- * client-side picker (the billing "Add charge" form) agrees with what the
- * WhatsApp assistant would quote for the same pair.
+ * The display label for what a doctor charges — their own override if one is
+ * set, else the clinic-wide default, else nothing on file.
+ *
+ * Note this is the *label* path, and it is deliberately two rungs: the SQL in
+ * list_bookable_doctors_for_service gained a third (services.price_min_egp)
+ * in 20260915140000_doctor_price_falls_back_to_min.sql. For prefilling an
+ * amount use `resolveServiceDoctorPriceEgp`, which follows the SQL; this one
+ * stays label-shaped for the pickers that show a range to staff.
  */
 export function resolveServiceDoctorPrice(
   serviceId: string,
@@ -24,6 +29,30 @@ export function resolveServiceDoctorPrice(
 ): string | null {
   const own = (mappings[serviceId] ?? []).find((e) => e.doctorId === doctorId);
   return own?.priceLabel ?? clinicDefault ?? null;
+}
+
+/**
+ * What to bill for this doctor doing this service, in EGP.
+ *
+ * Mirrors the COALESCE in list_bookable_doctors_for_service as of
+ * 20260915140000: the doctor's own fee, else the clinic's floor for that
+ * service, else nothing. The floor is the right fallback because "EGP 300-600"
+ * is not an answer to "what does this doctor charge" — a range cannot prefill
+ * an amount field, which is why the label path gives up on one.
+ *
+ * `??` throughout, so a mapping row that exists with no price set falls
+ * through to the floor rather than billing zero.
+ */
+export function resolveServiceDoctorPriceEgp(
+  serviceId: string,
+  doctorId: string | undefined,
+  mappings: Record<string, ServiceDoctorMapping[]>,
+  service: { price_min_egp?: number | null } | undefined,
+): number | null {
+  const own = doctorId
+    ? (mappings[serviceId] ?? []).find((e) => e.doctorId === doctorId)
+    : undefined;
+  return own?.priceEgp ?? service?.price_min_egp ?? null;
 }
 
 /**

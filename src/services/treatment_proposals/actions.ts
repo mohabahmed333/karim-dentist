@@ -39,7 +39,10 @@ export async function loadBillingFormOptions(): Promise<BillingFormOptions> {
   const [servicesRes, doctors, serviceDoctorMappings] = await Promise.all([
     auth.supabase
       .from("services")
-      .select("id, title, title_ar, price_label")
+      // price_min_egp is the fallback rung for a doctor with no fee of their
+      // own — without it the amount field can only be prefilled for services
+      // priced at a single figure.
+      .select("id, title, title_ar, price_label, price_min_egp")
       .is("deleted_at", null)
       .order("sort_order", { ascending: true }),
     listDoctors(auth.supabase),

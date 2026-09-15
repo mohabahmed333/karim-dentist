@@ -5,6 +5,7 @@ import {
   formatPriceRangeLabel,
   isPriceEgpWithinRange,
   resolveServiceDoctorPrice,
+  resolveServiceDoctorPriceEgp,
 } from "./pricing";
 
 describe("resolveServiceDoctorPrice", () => {
@@ -29,6 +30,71 @@ describe("resolveServiceDoctorPrice", () => {
 
   it("resolves to nothing when neither exists", () => {
     assert.equal(resolveServiceDoctorPrice("svc-2", "doc-a", mappings, null), null);
+  });
+});
+
+describe("resolveServiceDoctorPriceEgp", () => {
+  const mappings = {
+    "svc-1": [
+      { doctorId: "doc-a", priceLabel: "EGP 900", priceEgp: 900 },
+      { doctorId: "doc-b", priceLabel: null, priceEgp: null },
+    ],
+  };
+  const service = { price_min_egp: 300 };
+
+  it("bills the doctor's own fee", () => {
+    assert.equal(
+      resolveServiceDoctorPriceEgp("svc-1", "doc-a", mappings, service),
+      900,
+    );
+  });
+
+  it("falls to the service floor when the doctor's row carries no fee", () => {
+    assert.equal(
+      resolveServiceDoctorPriceEgp("svc-1", "doc-b", mappings, service),
+      300,
+    );
+  });
+
+  it("falls to the service floor when the doctor isn't mapped", () => {
+    assert.equal(
+      resolveServiceDoctorPriceEgp("svc-1", "doc-c", mappings, service),
+      300,
+    );
+  });
+
+  it("falls to the service floor when no doctor is chosen yet", () => {
+    assert.equal(
+      resolveServiceDoctorPriceEgp("svc-1", undefined, mappings, service),
+      300,
+    );
+  });
+
+  it("resolves to nothing when neither a fee nor a floor exists", () => {
+    assert.equal(
+      resolveServiceDoctorPriceEgp("svc-2", "doc-a", mappings, {
+        price_min_egp: null,
+      }),
+      null,
+    );
+    assert.equal(
+      resolveServiceDoctorPriceEgp("svc-2", "doc-a", mappings, undefined),
+      null,
+    );
+  });
+
+  it("keeps a zero fee rather than falling through it", () => {
+    // ?? not ||: a service the doctor genuinely does for free must bill zero,
+    // not silently pick up the clinic floor.
+    assert.equal(
+      resolveServiceDoctorPriceEgp(
+        "svc-1",
+        "doc-z",
+        { "svc-1": [{ doctorId: "doc-z", priceLabel: null, priceEgp: 0 }] },
+        service,
+      ),
+      0,
+    );
   });
 });
 

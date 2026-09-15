@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 type Props = {
-  pendingCount?: number;
+  navBadges?: Record<string, number>;
   permissions?: string[] | null;
 };
 
-export function AdminMobileNav({ pendingCount = 0, permissions }: Props) {
+export function AdminMobileNav({ navBadges = {}, permissions }: Props) {
   const [open, setOpen] = useState(false);
   const t = useTranslations();
 
@@ -49,7 +49,7 @@ export function AdminMobileNav({ pendingCount = 0, permissions }: Props) {
                   <X className="size-5" />
                 </Button>
               </div>
-              <AdminSidebar pendingCount={pendingCount} mobile permissions={permissions} />
+              <AdminSidebar navBadges={navBadges} mobile permissions={permissions} />
             </div>
           </div>
         </SheetContent>

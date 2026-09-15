@@ -14,14 +14,14 @@ import { useTranslations } from "@/lib/i18n";
 import { AdminNavSectionBlock } from "./AdminNavSectionBlock";
 
 type Props = {
-  pendingCount?: number;
+  navBadges?: Record<string, number>;
   mobile?: boolean;
   /** Omit to show every section unfiltered (e.g. showreel demos with no session). */
   permissions?: string[] | null;
 };
 
 export function AdminSidebar({
-  pendingCount = 0,
+  navBadges = {},
   mobile = false,
   permissions,
 }: Props) {
@@ -100,7 +100,7 @@ export function AdminSidebar({
         <AdminNavSectionBlock
           key={section.id}
           section={section}
-          pendingCount={pendingCount}
+          navBadges={navBadges}
           openGroupIds={openGroupIds}
           onToggleGroup={toggleGroup}
           isFirst={index === 0}

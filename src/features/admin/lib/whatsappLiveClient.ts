@@ -4,7 +4,14 @@ import type {
   WhatsappMessage,
 } from "@/services/whatsapp/types";
 
-export type WhatsappLiveEvent =
+/**
+ * One channel for every table the admin UI watches live.
+ *
+ * It started as the WhatsApp inbox's own channel and is still named for it;
+ * a second socket per table would multiply reconnects and auth rebinds for no
+ * gain, so new tables join here instead.
+ */
+export type AdminLiveEvent =
   | {
       table: "whatsapp_conversations";
       eventType: string;
@@ -14,15 +21,23 @@ export type WhatsappLiveEvent =
       table: "whatsapp_messages";
       eventType: string;
       row: WhatsappMessage | null;
+    }
+  | {
+      table: "treatment_proposals";
+      eventType: string;
+      row: { id: string; status: string } | null;
     };
 
-type Listener = (event: WhatsappLiveEvent) => void;
+/** @deprecated Use {@link AdminLiveEvent}; kept for the inbox's imports. */
+export type WhatsappLiveEvent = AdminLiveEvent;
+
+type Listener = (event: AdminLiveEvent) => void;
 
 const listeners = new Set<Listener>();
 let started = false;
 let retryTimer = 0;
 
-function emit(event: WhatsappLiveEvent) {
+function emit(event: AdminLiveEvent) {
   for (const listener of listeners) listener(event);
 }
 
@@ -74,6 +89,20 @@ async function startChannel() {
         });
       },
     )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "treatment_proposals" },
+      (payload) => {
+        emit({
+          table: "treatment_proposals",
+          eventType: payload.eventType,
+          row: (payload.new ?? payload.old) as {
+            id: string;
+            status: string;
+          } | null,
+        });
+      },
+    )
     .subscribe((status) => {
       if (status !== "CHANNEL_ERROR" && status !== "TIMED_OUT") return;
       started = false;
@@ -90,3 +119,6 @@ export function subscribeWhatsappLive(listener: Listener): () => void {
     listeners.delete(listener);
   };
 }
+
+/** Same channel, named for what it actually is now. */
+export const subscribeAdminLive = subscribeWhatsappLive;

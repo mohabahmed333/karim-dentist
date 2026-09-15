@@ -50,7 +50,20 @@ export function PendingBillingRequestsList({ proposals, doctors }: Props) {
     }
   }
 
-  if (proposals.length === 0) return null;
+  // Rendering nothing made an empty queue and a broken one look identical —
+  // worth a line of text now that the front desk is meant to watch this.
+  if (proposals.length === 0) {
+    return (
+      <Card className="max-w-3xl gap-3 bg-transparent p-6">
+        <p className="text-sm font-medium text-[var(--admin-text)]">
+          {t("admin.billing.pendingRequests")}
+        </p>
+        <p className="text-sm text-[var(--admin-muted)]">
+          {t("admin.billing.noPendingRequests")}
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <Card className="max-w-3xl gap-3 bg-transparent p-6">

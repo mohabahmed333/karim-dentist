@@ -36,7 +36,7 @@ export function DashboardScene({ active }: Props) {
       <div className="showreel-demo-dashboard relative h-screen overflow-hidden">
         <AdminShell
           key={active ? "live" : "idle"}
-          pendingCount={pendingFromAttention(props.attention)}
+          navBadges={{ "/admin/reservations": pendingFromAttention(props.attention) }}
           demoInbox={demoInbox}
           forceChatLayout="float"
           forceSidebarCollapsed={false}

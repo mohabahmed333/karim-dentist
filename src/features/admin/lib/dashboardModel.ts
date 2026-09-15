@@ -89,6 +89,8 @@ export type AttentionItem = {
 export function buildAttentionItems(
   reservations: Reservation[],
   now = new Date(),
+  /** Bills a doctor has sent that nobody has collected on yet. */
+  unbilledProposals = 0,
 ): AttentionItem[] {
   const active = reservations.filter((r) => !r.deleted_at);
   const pending = active.filter((r) => r.status === "pending");
@@ -99,6 +101,19 @@ export function buildAttentionItems(
       r.status !== "cancelled",
   );
   const items: AttentionItem[] = [];
+  // First: money already earned and not yet collected is more urgent than a
+  // booking to confirm, and unlike the rest of this list nothing else in the
+  // app announces it.
+  if (unbilledProposals > 0) {
+    items.push({
+      id: "unbilled",
+      titleKey: "admin.overview.attention.unbilled",
+      detail: `${unbilledProposals}`,
+      urgency: "urgent",
+      href: "/admin/billing",
+      tone: "orange",
+    });
+  }
   if (pending.length) {
     items.push({
       id: "pending",

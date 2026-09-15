@@ -10,7 +10,7 @@ import { CommandPalette } from "./CommandPalette";
 import { DashboardLayoutTopbarControls } from "@/features/admin/components/dashboardWidgets/DashboardLayoutTopbarControls";
 
 type Props = {
-  pendingCount?: number;
+  navBadges?: Record<string, number>;
   sidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
   darkMode?: boolean;
@@ -19,7 +19,7 @@ type Props = {
 };
 
 export function AdminTopbar({
-  pendingCount = 0,
+  navBadges = {},
   sidebarCollapsed = false,
   onToggleSidebar,
   darkMode = false,
@@ -41,7 +41,7 @@ export function AdminTopbar({
   return (
     <header className="sticky top-0 z-40 shrink-0 border-b border-[var(--admin-border)] bg-[var(--admin-panel)]/90 px-4 py-2 backdrop-blur-md md:px-6">
       <div className="flex items-center gap-3">
-        <AdminMobileNav pendingCount={pendingCount} permissions={permissions} />
+        <AdminMobileNav navBadges={navBadges} permissions={permissions} />
         {onToggleSidebar ? (
           <button
             type="button"

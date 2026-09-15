@@ -440,6 +440,7 @@ export function MyDayView({
         patientPhone={group.phone}
         patientName={group.displayName}
         reservations={group.visits}
+        treatments={treatmentItems}
         visit={{
           id: selected.id,
           serviceId: selected.service_id,

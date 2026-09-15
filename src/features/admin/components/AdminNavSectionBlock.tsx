@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   section: AdminNavSection;
-  pendingCount?: number;
+  navBadges?: Record<string, number>;
   /** Every group/sub-group currently expanded, across every depth. */
   openGroupIds: Set<string>;
   onToggleGroup: (groupId: string) => void;
@@ -33,7 +33,7 @@ function NavGroup({
   onToggle,
   onToggleGroup,
   openGroupIds,
-  pendingCount,
+  navBadges,
 }: {
   group: AdminNavGroup;
   depth: number;
@@ -42,7 +42,7 @@ function NavGroup({
   onToggle: () => void;
   onToggleGroup: (groupId: string) => void;
   openGroupIds: Set<string>;
-  pendingCount?: number;
+  navBadges?: Record<string, number>;
 }) {
   const t = useTranslations();
   const label = t(group.labelKey);
@@ -108,7 +108,7 @@ function NavGroup({
                 depth={depth + 1}
                 openGroupIds={openGroupIds}
                 onToggleGroup={onToggleGroup}
-                pendingCount={pendingCount}
+                navBadges={navBadges}
               />
             </div>
           </motion.div>
@@ -123,13 +123,13 @@ function AdminNavEntryList({
   depth,
   openGroupIds,
   onToggleGroup,
-  pendingCount,
+  navBadges,
 }: {
   entries: AdminNavSectionEntry[];
   depth: number;
   openGroupIds: Set<string>;
   onToggleGroup: (groupId: string) => void;
-  pendingCount?: number;
+  navBadges?: Record<string, number>;
 }) {
   const blocks: ReactNode[] = [];
   let run: AdminNavItem[] = [];
@@ -140,7 +140,7 @@ function AdminNavEntryList({
         key={key}
         items={run}
         depth={depth}
-        pendingCount={pendingCount}
+        navBadges={navBadges}
       />,
     );
     run = [];
@@ -158,7 +158,7 @@ function AdminNavEntryList({
           onToggle={() => onToggleGroup(entry.id)}
           onToggleGroup={onToggleGroup}
           openGroupIds={openGroupIds}
-          pendingCount={pendingCount}
+          navBadges={navBadges}
         />,
       );
     } else {
@@ -171,7 +171,7 @@ function AdminNavEntryList({
 
 export function AdminNavSectionBlock({
   section,
-  pendingCount = 0,
+  navBadges = {},
   openGroupIds,
   onToggleGroup,
   isFirst,
@@ -198,7 +198,7 @@ export function AdminNavSectionBlock({
         depth={0}
         openGroupIds={openGroupIds}
         onToggleGroup={onToggleGroup}
-        pendingCount={pendingCount}
+        navBadges={navBadges}
       />
     </section>
   );

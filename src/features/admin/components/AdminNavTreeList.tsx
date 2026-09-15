@@ -57,21 +57,22 @@ function TreeRow({ depth, isLast, children }: TreeRowProps) {
 type Props = {
   items: AdminNavItem[];
   depth?: number;
-  pendingCount?: number;
+  navBadges?: Record<string, number>;
 };
 
 export function AdminNavTreeList({
   items,
   depth = 0,
-  pendingCount = 0,
+  navBadges = {},
 }: Props) {
   const t = useTranslations();
 
   return (
     <ul className="m-0 space-y-0.5 p-0">
       {items.map((item, index) => {
-        const badge =
-          item.href === "/admin/reservations" ? pendingCount : item.badge;
+        // Counts are keyed by href rather than special-cased per route, so a
+        // new badge is a query in loadAdminChrome and nothing else.
+        const badge = navBadges[item.href] ?? item.badge;
 
         return (
           <TreeRow

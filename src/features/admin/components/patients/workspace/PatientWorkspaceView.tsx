@@ -5,6 +5,7 @@ import type { PatientGroup } from "@/services/reservations/patientHistory";
 import type { PatientImaging } from "@/services/patient_imaging";
 import type { PatientToothNote } from "@/services/patient_tooth_notes";
 import type { PatientTreatmentRow } from "@/services/patient_treatments";
+import { toTreatmentItem } from "@/services/patient_treatments";
 import type { Service } from "@/services/services/types";
 import { toothName } from "@/services/patient_tooth_findings/fdi";
 import type { TreatmentAiDraft } from "@/services/ai_groq";
@@ -219,6 +220,7 @@ export function PatientWorkspaceView(props: Props) {
         patientPhone={group.phone}
         patientName={group.displayName}
         reservations={group.visits}
+        treatments={props.treatments.map(toTreatmentItem)}
         currentDoctorId={currentDoctorId}
         canPickDoctor={canPickDoctor}
       />

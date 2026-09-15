@@ -19,11 +19,9 @@ import {
   loadBillingFormOptions,
   type BillingFormOptions,
 } from "@/services/treatment_proposals/actions";
-import {
-  extractSingleAmount,
-  resolveServiceDoctorPrice,
-} from "@/services/service_doctors/pricing";
+import { resolveServiceDoctorPriceEgp } from "@/services/service_doctors/pricing";
 import { formatAppointmentDateTime } from "@/services/patient_notifications/formatWhen";
+import type { TreatmentItem } from "@/services/patient_treatments";
 import type { Reservation } from "@/services/reservations/types";
 import { useLocale, useTranslations } from "@/lib/i18n";
 
@@ -45,6 +43,12 @@ type Props = {
   /** This patient's visits, for the "which visit?" picker. */
   reservations: Reservation[];
   visit?: BillingVisit | null;
+  /**
+   * The patient's charted work. Given, the bill is seeded from what was
+   * actually done in this visit; omitted, it falls back to the booked service,
+   * which is all the callers without a chart loaded can offer.
+   */
+  treatments?: TreatmentItem[];
   /** The signed-in doctor, decided server-side. Null for everyone else. */
   currentDoctorId: string | null;
   /** True when the user isn't a doctor, so they must say who did the work. */
@@ -68,6 +72,7 @@ export function BillPatientDialog({
   patientName,
   reservations,
   visit = null,
+  treatments,
   currentDoctorId,
   canPickDoctor,
 }: Props) {
@@ -96,10 +101,9 @@ export function BillPatientDialog({
   // A doctor bills as themselves; an owner billing from an appointment bills
   // as whoever is seeing the patient.
   const initialDoctorId = currentDoctorId ?? visit?.doctorId ?? undefined;
-  const initialItems =
-    options && visit?.serviceId
-      ? [seedItem(options, visit.serviceId, visit.serviceLabel, initialDoctorId)]
-      : undefined;
+  const initialItems = options
+    ? seedItems(options, visit, treatments, initialDoctorId)
+    : undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -151,25 +155,79 @@ export function BillPatientDialog({
   );
 }
 
-/** The visit's own service, priced for whoever is billing it. */
-function seedItem(
+/**
+ * What to put in the bill before anyone types.
+ *
+ * The work the doctor actually finished in this visit, one line each — that is
+ * what the patient owes for, and it is rarely the single service the
+ * appointment was booked under. A visit booked as a consultation where two
+ * fillings were done should bill as two fillings.
+ *
+ * Only `done` treatments: billing work that has not been carried out yet is
+ * how a patient gets charged for a plan rather than a visit.
+ *
+ * Falls back to the booked service when the chart has nothing for this visit,
+ * so the dialog is never blank — that also covers the callers that do not load
+ * a chart at all and pass no treatments.
+ */
+function seedItems(
   options: BillingFormOptions,
-  serviceId: string,
-  serviceLabel: string,
+  visit: BillingVisit | null,
+  treatments: TreatmentItem[] | undefined,
+  doctorId: string | undefined,
+): DraftItem[] | undefined {
+  const done = (treatments ?? []).filter(
+    (item) =>
+      item.status === "done" && visit != null && item.reservationId === visit.id,
+  );
+
+  if (done.length > 0) {
+    return done.map((item) => seedFromTreatment(options, item, doctorId));
+  }
+
+  if (!visit?.serviceId) return undefined;
+  const service = options.services.find((s) => s.id === visit.serviceId);
+  return [
+    {
+      serviceId: visit.serviceId,
+      description: service?.title ?? visit.serviceLabel,
+      amount: amountFor(options, visit.serviceId, doctorId) ?? "",
+    },
+  ];
+}
+
+function seedFromTreatment(
+  options: BillingFormOptions,
+  item: TreatmentItem,
   doctorId: string | undefined,
 ): DraftItem {
+  const serviceId = item.serviceId ?? "";
   const service = options.services.find((s) => s.id === serviceId);
-  const price = doctorId
-    ? resolveServiceDoctorPrice(
-        serviceId,
-        doctorId,
-        options.serviceDoctorMappings,
-        service?.price_label ?? null,
-      )
-    : (service?.price_label ?? null);
-  return {
+  // The treatment names the tooth it was done on; the bill should say so, since
+  // two fillings on one visit are otherwise indistinguishable on the receipt.
+  const label = service?.title ?? item.lastTreatment ?? "";
+  const description = item.toothName ? `${label} — ${item.toothName}` : label;
+
+  // The doctor's fee for the service, else whatever fee the treatment was
+  // recorded with — an ad-hoc treatment with no service still has to bill.
+  const resolved = serviceId ? amountFor(options, serviceId, doctorId) : null;
+  const fallback = item.feeAmount > 0 ? String(item.feeAmount) : "";
+
+  return { serviceId, description, amount: resolved ?? fallback };
+}
+
+/** The doctor's fee for a service as a plain amount string, or null. */
+function amountFor(
+  options: BillingFormOptions,
+  serviceId: string,
+  doctorId: string | undefined,
+): string | null {
+  const service = options.services.find((s) => s.id === serviceId);
+  const egp = resolveServiceDoctorPriceEgp(
     serviceId,
-    description: service?.title ?? serviceLabel,
-    amount: extractSingleAmount(price) ?? "",
-  };
+    doctorId,
+    options.serviceDoctorMappings,
+    service,
+  );
+  return egp === null ? null : String(egp);
 }

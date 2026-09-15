@@ -60,6 +60,8 @@ export function useWhatsappConversationsLive(
         }
         return;
       }
+      // The channel carries other tables now; this hook only tracks the inbox.
+      if (event.table !== "whatsapp_messages") return;
       if (event.row && event.eventType !== "DELETE") {
         const message = event.row;
         setRows((prev) => patchConversationsFromMessage(prev, message));

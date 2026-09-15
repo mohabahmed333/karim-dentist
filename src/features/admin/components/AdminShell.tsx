@@ -46,7 +46,7 @@ type ThemeDetail = {
 
 type Props = {
   children: ReactNode;
-  pendingCount?: number;
+  navBadges?: Record<string, number>;
   primaryColor?: string;
   secondaryColor?: string;
   canvasColor?: string;
@@ -92,7 +92,7 @@ function clearRootThemeVars() {
 
 export function AdminShell({
   children,
-  pendingCount = 0,
+  navBadges = {},
   primaryColor = DEFAULT_DASHBOARD_PRIMARY,
   secondaryColor = DEFAULT_DASHBOARD_SECONDARY,
   canvasColor = DEFAULT_DASHBOARD_CANVAS,
@@ -302,14 +302,14 @@ export function AdminShell({
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration, ease }}
           >
-            <AdminSidebar pendingCount={pendingCount} permissions={permissions} />
+            <AdminSidebar navBadges={navBadges} permissions={permissions} />
           </motion.div>
         ) : null}
       </AnimatePresence>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col p-2 md:p-2.5">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[10px] border border-[var(--admin-border)] bg-[var(--admin-panel)]">
           <AdminTopbar
-            pendingCount={pendingCount}
+            navBadges={navBadges}
             sidebarCollapsed={sidebarCollapsed}
             onToggleSidebar={isCustomize ? undefined : toggle}
             darkMode={darkMode}

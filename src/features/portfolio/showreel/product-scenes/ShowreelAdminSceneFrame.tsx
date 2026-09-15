@@ -69,7 +69,9 @@ export function ShowreelAdminSceneFrame({
       >
         <AdminShell
           key={active ? "live" : "idle"}
-          pendingCount={Number.isFinite(pending) ? pending : 0}
+          navBadges={{
+            "/admin/reservations": Number.isFinite(pending) ? pending : 0,
+          }}
           demoInbox={demoInbox}
           demoAssistPanel={demoAssistPanel}
           forceChatLayout={forceChatLayout}

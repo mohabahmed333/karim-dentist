@@ -101,6 +101,7 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
     weekConsumptionRows,
     lowStockCount,
     pendingApprovalsCount,
+    unbilledProposals,
   ] = await Promise.all([
     supabase.auth.getUser(),
     listReservationsServer(supabase, listFilters).catch(() => []),
@@ -136,6 +137,21 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
       : Promise.resolve(0),
     canViewInventory
       ? countPendingApprovals(supabase).catch(() => 0)
+      : Promise.resolve(0),
+    // Bills waiting to be collected, for the Attention list. Gated with the
+    // rest of billing so a role that cannot settle one is not told about it.
+    canViewBilling
+      ? (async () => {
+          try {
+            const { count } = await supabase
+              .from("treatment_proposals")
+              .select("id", { count: "exact", head: true })
+              .eq("status", "sent");
+            return count ?? 0;
+          } catch {
+            return 0;
+          }
+        })()
       : Promise.resolve(0),
   ]);
 
@@ -204,7 +220,7 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
       coverageFrom={coverage.from}
       coverageTo={coverage.to}
       services={servicesRes.data ?? []}
-      attention={buildAttentionItems(reservations)}
+      attention={buildAttentionItems(reservations, new Date(), unbilledProposals)}
       kpis={kpis}
       stats={stats}
       conversations={conversations}
