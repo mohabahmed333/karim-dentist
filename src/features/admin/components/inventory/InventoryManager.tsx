@@ -5,12 +5,14 @@ import { toast } from "sonner";
 import { CollectionTable, type CollectionColumn } from "@/features/admin/components/CollectionTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useLocale, useTranslations } from "@/lib/i18n";
 import { ItemFormDialog } from "./ItemFormDialog";
 import { SupplierFormDialog } from "./SupplierFormDialog";
 import { RestockDialog } from "./RestockDialog";
 import { AdjustmentDialog } from "./AdjustmentDialog";
-import { WastageLogDialog as WastageDialog } from "./WastageLogDialog";
+import { WastageLogDialog } from "./WastageLogDialog";
 import { archiveItem, archiveSupplier } from "@/services/inventory/actions";
+import { CATEGORY_LABEL_KEYS, localizedItemName } from "@/services/inventory/i18nMaps";
 import {
   getStockOnHand,
   listBatchesForItem,
@@ -31,6 +33,8 @@ type Props = {
 };
 
 export function InventoryManager({ initialItems, initialSuppliers }: Props) {
+  const t = useTranslations();
+  const { locale } = useLocale();
   const [view, setView] = useState<"items" | "suppliers">("items");
   const [items, setItems] = useState(initialItems);
   const [suppliers, setSuppliers] = useState(initialSuppliers);
@@ -60,13 +64,13 @@ export function InventoryManager({ initialItems, initialSuppliers }: Props) {
   async function refreshItemDetail(itemId: string) {
     setDetailLoading(true);
     try {
-      const [b, t, onHand] = await Promise.all([
+      const [b, tx, onHand] = await Promise.all([
         listBatchesForItem(itemId),
         listTransactionsForItem(itemId),
         getStockOnHand(itemId),
       ]);
       setBatches(b);
-      setTransactions(t);
+      setTransactions(tx);
       setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, qty_on_hand: onHand } : i)));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load item detail");
@@ -81,34 +85,44 @@ export function InventoryManager({ initialItems, initialSuppliers }: Props) {
   }
 
   async function onArchiveItem(item: InventoryItem) {
-    if (!confirm(`Archive ${item.name}? It stays in past records but won't be selectable going forward.`)) return;
+    const name = localizedItemName(locale, item.name, item.name_ar);
+    if (!confirm(t("admin.pages.inventory.archiveItemConfirm").replace("{name}", name))) return;
     try {
       await archiveItem(item.id);
       setItems((prev) => prev.filter((i) => i.id !== item.id));
       if (selectedItemId === item.id) setSelectedItemId(null);
-      toast.success("Item archived");
+      toast.success(t("admin.pages.inventory.itemArchived"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Archive failed");
+      toast.error(error instanceof Error ? error.message : t("admin.pages.inventory.archiveFailed"));
     }
   }
 
   async function onArchiveSupplier(supplier: Supplier) {
-    if (!confirm(`Archive ${supplier.name}?`)) return;
+    if (!confirm(t("admin.pages.inventory.archiveSupplierConfirm").replace("{name}", supplier.name))) return;
     try {
       await archiveSupplier(supplier.id);
       setSuppliers((prev) => prev.filter((s) => s.id !== supplier.id));
-      toast.success("Supplier archived");
+      toast.success(t("admin.pages.inventory.supplierArchived"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Archive failed");
+      toast.error(error instanceof Error ? error.message : t("admin.pages.inventory.archiveFailed"));
     }
   }
 
   const itemColumns: CollectionColumn<ItemWithStock>[] = [
-    { key: "name", header: "Item", cell: (r) => <span className="font-medium">{r.name}</span>, searchValue: (r) => r.name },
-    { key: "category", header: "Category", cell: (r) => r.category.replace("_", " ") },
+    {
+      key: "name",
+      header: t("admin.pages.inventory.colItem"),
+      cell: (r) => <span className="font-medium">{localizedItemName(locale, r.name, r.name_ar)}</span>,
+      searchValue: (r) => `${r.name} ${r.name_ar ?? ""}`,
+    },
+    {
+      key: "category",
+      header: t("admin.pages.inventory.colCategory"),
+      cell: (r) => t(CATEGORY_LABEL_KEYS[r.category]),
+    },
     {
       key: "qty_on_hand",
-      header: "On hand",
+      header: t("admin.pages.inventory.colOnHand"),
       cell: (r) => (
         <span>
           {r.qty_on_hand} {r.unit}
@@ -116,25 +130,30 @@ export function InventoryManager({ initialItems, initialSuppliers }: Props) {
       ),
       sortValue: (r) => r.qty_on_hand,
     },
-    { key: "min_stock_level", header: "Min level", cell: (r) => r.min_stock_level, sortValue: (r) => r.min_stock_level },
+    {
+      key: "min_stock_level",
+      header: t("admin.pages.inventory.colMinLevel"),
+      cell: (r) => r.min_stock_level,
+      sortValue: (r) => r.min_stock_level,
+    },
     {
       key: "status",
-      header: "Status",
+      header: t("admin.pages.inventory.colStatus"),
       cell: (r) =>
         r.min_stock_level > 0 && r.qty_on_hand <= r.min_stock_level ? (
-          <Badge variant="destructive">Low stock</Badge>
+          <Badge variant="destructive">{t("admin.pages.inventory.statusLow")}</Badge>
         ) : (
-          <Badge variant="secondary">OK</Badge>
+          <Badge variant="secondary">{t("admin.pages.inventory.statusOk")}</Badge>
         ),
       sortable: false,
     },
   ];
 
   const supplierColumns: CollectionColumn<Supplier>[] = [
-    { key: "name", header: "Supplier", cell: (r) => <span className="font-medium">{r.name}</span>, searchValue: (r) => r.name },
-    { key: "contact_name", header: "Contact", cell: (r) => r.contact_name },
-    { key: "phone", header: "Phone", cell: (r) => r.phone },
-    { key: "email", header: "Email", cell: (r) => r.email ?? "" },
+    { key: "name", header: t("admin.pages.inventory.colSupplier"), cell: (r) => <span className="font-medium">{r.name}</span>, searchValue: (r) => r.name },
+    { key: "contact_name", header: t("admin.pages.inventory.colContact"), cell: (r) => r.contact_name },
+    { key: "phone", header: t("admin.pages.inventory.colPhone"), cell: (r) => r.phone },
+    { key: "email", header: t("admin.pages.inventory.colEmail"), cell: (r) => r.email ?? "" },
   ];
 
   return (
@@ -146,23 +165,23 @@ export function InventoryManager({ initialItems, initialSuppliers }: Props) {
             onClick={() => setView("items")}
             className={`rounded-md px-3 py-1.5 text-[12px] font-medium ${view === "items" ? "bg-[var(--admin-hover)]" : ""}`}
           >
-            Items
+            {t("admin.pages.inventory.tabItems")}
           </button>
           <button
             type="button"
             onClick={() => setView("suppliers")}
             className={`rounded-md px-3 py-1.5 text-[12px] font-medium ${view === "suppliers" ? "bg-[var(--admin-hover)]" : ""}`}
           >
-            Suppliers
+            {t("admin.pages.inventory.tabSuppliers")}
           </button>
         </div>
         {view === "items" ? (
           <Button type="button" size="sm" onClick={() => setItemDialog({ open: true, item: null })}>
-            Add item
+            {t("admin.pages.inventory.addItem")}
           </Button>
         ) : (
           <Button type="button" size="sm" onClick={() => setSupplierDialog({ open: true, supplier: null })}>
-            Add supplier
+            {t("admin.pages.inventory.addSupplier")}
           </Button>
         )}
       </div>
@@ -175,49 +194,57 @@ export function InventoryManager({ initialItems, initialSuppliers }: Props) {
             columns={itemColumns}
             onRowClick={selectItem}
             selectedId={selectedItemId}
-            emptyMessage="No inventory items yet."
+            emptyMessage={t("admin.pages.inventory.emptyItems")}
             rowActions={[
-              { id: "edit", label: "Edit", icon: "edit", onClick: (r) => setItemDialog({ open: true, item: r }) },
-              { id: "archive", label: "Archive", icon: "delete", tone: "danger", onClick: onArchiveItem },
+              { id: "edit", label: t("admin.edit"), icon: "edit", onClick: (r) => setItemDialog({ open: true, item: r }) },
+              { id: "archive", label: t("admin.pages.inventory.archive"), icon: "delete", tone: "danger", onClick: onArchiveItem },
             ]}
           />
 
           <div className="rounded-xl border border-[var(--admin-border)] p-4">
             {!selectedItem ? (
-              <p className="text-sm text-[var(--admin-muted)]">Select an item to see batches and history.</p>
+              <p className="text-sm text-[var(--admin-muted)]">{t("admin.pages.inventory.selectItemHint")}</p>
             ) : (
               <div className="flex flex-col gap-4">
                 <div>
-                  <h3 className="text-sm font-semibold">{selectedItem.name}</h3>
+                  <h3 className="text-sm font-semibold">
+                    {localizedItemName(locale, selectedItem.name, selectedItem.name_ar)}
+                  </h3>
                   <p className="text-xs text-[var(--admin-muted)]">
-                    {selectedItem.qty_on_hand} {selectedItem.unit} on hand · min {selectedItem.min_stock_level}
+                    {t("admin.pages.inventory.stockSummary")
+                      .replace("{qty}", String(selectedItem.qty_on_hand))
+                      .replace("{unit}", selectedItem.unit)
+                      .replace("{min}", String(selectedItem.min_stock_level))}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" size="sm" variant="outline" onClick={() => setRestockOpen(true)}>
-                    Receive stock
+                    {t("admin.pages.inventory.receiveStock")}
                   </Button>
                   <Button type="button" size="sm" variant="outline" onClick={() => setAdjustOpen(true)}>
-                    Recount
+                    {t("admin.pages.inventory.recount")}
                   </Button>
                   <Button type="button" size="sm" variant="destructive" onClick={() => setWastageOpen(true)}>
-                    Log wastage
+                    {t("admin.pages.inventory.logWastage")}
                   </Button>
                 </div>
 
                 <div>
                   <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--admin-muted)]">
-                    Batches {detailLoading ? "· loading…" : ""}
+                    {t("admin.pages.inventory.batchesHeading")}
+                    {detailLoading ? ` ${t("admin.pages.inventory.loadingSuffix")}` : ""}
                   </h4>
                   <div className="flex flex-col gap-1 text-xs">
                     {batches.length === 0 ? (
-                      <p className="text-[var(--admin-muted)]">No batches on file.</p>
+                      <p className="text-[var(--admin-muted)]">{t("admin.pages.inventory.noBatches")}</p>
                     ) : (
                       batches.map((b) => (
                         <div key={b.id} className="flex items-center justify-between rounded-md border border-[var(--admin-border)] px-2 py-1.5">
                           <span>
-                            {b.lot_number ? `Lot ${b.lot_number}` : "No lot"}
-                            {b.expires_on ? ` · exp ${b.expires_on}` : ""}
+                            {b.lot_number
+                              ? t("admin.pages.inventory.lotLabel").replace("{lot}", b.lot_number)
+                              : t("admin.pages.inventory.noLot")}
+                            {b.expires_on ? ` · ${t("admin.pages.inventory.expLabel").replace("{date}", b.expires_on)}` : ""}
                           </span>
                           <span className="font-medium">{b.qty_remaining}/{b.qty_received}</span>
                         </div>
@@ -228,16 +255,16 @@ export function InventoryManager({ initialItems, initialSuppliers }: Props) {
 
                 <div>
                   <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--admin-muted)]">
-                    Recent activity
+                    {t("admin.pages.inventory.activityHeading")}
                   </h4>
                   <div className="flex flex-col gap-1 text-xs">
                     {transactions.length === 0 ? (
-                      <p className="text-[var(--admin-muted)]">No transactions yet.</p>
+                      <p className="text-[var(--admin-muted)]">{t("admin.pages.inventory.noTransactions")}</p>
                     ) : (
-                      transactions.slice(0, 10).map((t) => (
-                        <div key={t.id} className="flex items-center justify-between rounded-md border border-[var(--admin-border)] px-2 py-1.5">
-                          <span className="capitalize">{t.type}{t.reason_code ? ` · ${t.reason_code.replace(/_/g, " ")}` : ""}</span>
-                          <span className="font-medium">{t.qty}</span>
+                      transactions.slice(0, 10).map((tx) => (
+                        <div key={tx.id} className="flex items-center justify-between rounded-md border border-[var(--admin-border)] px-2 py-1.5">
+                          <span className="capitalize">{tx.type}{tx.reason_code ? ` · ${tx.reason_code.replace(/_/g, " ")}` : ""}</span>
+                          <span className="font-medium">{tx.qty}</span>
                         </div>
                       ))
                     )}
@@ -252,10 +279,10 @@ export function InventoryManager({ initialItems, initialSuppliers }: Props) {
           tableId="inventory-suppliers"
           rows={suppliers}
           columns={supplierColumns}
-          emptyMessage="No suppliers yet."
+          emptyMessage={t("admin.pages.inventory.emptySuppliers")}
           rowActions={[
-            { id: "edit", label: "Edit", icon: "edit", onClick: (r) => setSupplierDialog({ open: true, supplier: r }) },
-            { id: "archive", label: "Archive", icon: "delete", tone: "danger", onClick: onArchiveSupplier },
+            { id: "edit", label: t("admin.edit"), icon: "edit", onClick: (r) => setSupplierDialog({ open: true, supplier: r }) },
+            { id: "archive", label: t("admin.pages.inventory.archive"), icon: "delete", tone: "danger", onClick: onArchiveSupplier },
           ]}
         />
       )}
@@ -291,7 +318,7 @@ export function InventoryManager({ initialItems, initialSuppliers }: Props) {
         suppliers={suppliers}
         onSaved={() => selectedItemId && refreshItemDetail(selectedItemId)}
       />
-      <WastageDialog
+      <WastageLogDialog
         open={wastageOpen}
         onOpenChange={setWastageOpen}
         item={selectedItem}

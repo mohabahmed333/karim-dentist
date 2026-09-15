@@ -12,6 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useLocale, useTranslations } from "@/lib/i18n";
+import { UNIT_LABEL_KEYS, localizedItemName } from "@/services/inventory/i18nMaps";
 import type { ConsumableUsage, ServiceRecipeWithItem } from "@/services/inventory/types";
 
 type Props = {
@@ -36,7 +38,10 @@ export function ConsumablesCheckoutDialog({
   onConfirm,
   onCancel,
 }: Props) {
+  const t = useTranslations();
+  const { locale } = useLocale();
   const [quantities, setQuantities] = useState<Record<string, string>>({});
+
   // Reseed quantities from the recipe defaults whenever a new checkout
   // opens, using React's "adjust state during render" pattern instead of an
   // effect — the dialog's own open/close cadence IS the reset signal, so
@@ -58,18 +63,16 @@ export function ConsumablesCheckoutDialog({
     <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Confirm consumables used</DialogTitle>
-          <DialogDescription>
-            Enter exactly what was used for this visit before it can be marked complete.
-          </DialogDescription>
+          <DialogTitle>{t("admin.pages.inventory.checkout.title")}</DialogTitle>
+          <DialogDescription>{t("admin.pages.inventory.checkout.desc")}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3 py-2">
           {recipes.map((recipe) => (
             <div key={recipe.item_id} className="flex items-center justify-between gap-3">
               <Label htmlFor={`qty-${recipe.item_id}`} className="flex-1">
-                {recipe.item.name}
+                {localizedItemName(locale, recipe.item.name, recipe.item.name_ar)}
                 <span className="text-muted-foreground ml-1 text-xs">
-                  ({recipe.item.unit})
+                  ({t(UNIT_LABEL_KEYS[recipe.item.unit])})
                 </span>
               </Label>
               <Input
@@ -88,14 +91,16 @@ export function ConsumablesCheckoutDialog({
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" disabled={pending} onClick={onCancel}>
-            Cancel
+            {t("admin.cancel")}
           </Button>
           <Button
             type="button"
             disabled={pending || !canConfirm}
             onClick={() => onConfirm(parsedUsages)}
           >
-            {pending ? "Completing…" : "Confirm & Complete"}
+            {pending
+              ? t("admin.pages.inventory.checkout.completing")
+              : t("admin.pages.inventory.checkout.confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>

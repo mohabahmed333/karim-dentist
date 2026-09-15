@@ -20,7 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useLocale, useTranslations } from "@/lib/i18n";
 import { restock } from "@/services/inventory/actions";
+import { localizedItemName } from "@/services/inventory/i18nMaps";
 import type { InventoryItem, Supplier } from "@/services/inventory/types";
 
 type Props = {
@@ -32,6 +34,8 @@ type Props = {
 };
 
 export function RestockDialog({ open, onOpenChange, item, suppliers, onSaved }: Props) {
+  const t = useTranslations();
+  const { locale } = useLocale();
   const [pending, setPending] = useState(false);
   const [supplierId, setSupplierId] = useState("");
   const [lotNumber, setLotNumber] = useState("");
@@ -62,11 +66,11 @@ export function RestockDialog({ open, onOpenChange, item, suppliers, onSaved }: 
         qty_received: Number(qty),
         unit_cost_egp: Number(unitCost) || 0,
       });
-      toast.success("Stock received");
+      toast.success(t("admin.pages.inventory.restock.success"));
       onSaved();
       onOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Restock failed");
+      toast.error(error instanceof Error ? error.message : t("admin.pages.inventory.restock.failed"));
     } finally {
       setPending(false);
     }
@@ -76,18 +80,21 @@ export function RestockDialog({ open, onOpenChange, item, suppliers, onSaved }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Receive stock — {item?.name}</DialogTitle>
-          <DialogDescription>
-            Records a new batch. Lot/expiry matter for anesthesia, Botox, bone graft, and sutures.
-          </DialogDescription>
+          <DialogTitle>
+            {t("admin.pages.inventory.restock.title").replace(
+              "{item}",
+              item ? localizedItemName(locale, item.name, item.name_ar) : "",
+            )}
+          </DialogTitle>
+          <DialogDescription>{t("admin.pages.inventory.restock.desc")}</DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-3 py-2">
           <div className="col-span-2 flex flex-col gap-1">
-            <Label>Supplier</Label>
+            <Label>{t("admin.pages.inventory.restock.supplier")}</Label>
             <Select value={supplierId || "none"} onValueChange={(v) => setSupplierId(v === "none" ? "" : v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No supplier</SelectItem>
+                <SelectItem value="none">{t("admin.pages.inventory.restock.noSupplier")}</SelectItem>
                 {suppliers.map((s) => (
                   <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                 ))}
@@ -95,21 +102,21 @@ export function RestockDialog({ open, onOpenChange, item, suppliers, onSaved }: 
             </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="restock-qty">Quantity received</Label>
+            <Label htmlFor="restock-qty">{t("admin.pages.inventory.restock.qty")}</Label>
             <Input id="restock-qty" type="number" min="0" step="0.01" value={qty} onChange={(e) => setQty(e.target.value)} />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="restock-cost">Unit cost (EGP)</Label>
+            <Label htmlFor="restock-cost">{t("admin.pages.inventory.restock.unitCost")}</Label>
             <Input id="restock-cost" type="number" min="0" step="0.01" value={unitCost} onChange={(e) => setUnitCost(e.target.value)} />
           </div>
           {item?.tracks_batches ? (
             <>
               <div className="flex flex-col gap-1">
-                <Label htmlFor="restock-lot">Lot / batch number</Label>
+                <Label htmlFor="restock-lot">{t("admin.pages.inventory.restock.lot")}</Label>
                 <Input id="restock-lot" value={lotNumber} onChange={(e) => setLotNumber(e.target.value)} />
               </div>
               <div className="flex flex-col gap-1">
-                <Label htmlFor="restock-expiry">Expiry date</Label>
+                <Label htmlFor="restock-expiry">{t("admin.pages.inventory.restock.expiry")}</Label>
                 <Input id="restock-expiry" type="date" value={expiresOn} onChange={(e) => setExpiresOn(e.target.value)} />
               </div>
             </>
@@ -117,14 +124,14 @@ export function RestockDialog({ open, onOpenChange, item, suppliers, onSaved }: 
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("admin.cancel")}
           </Button>
           <Button
             type="button"
             disabled={pending || !qty || Number(qty) <= 0}
             onClick={onSave}
           >
-            {pending ? "Saving…" : "Receive stock"}
+            {pending ? t("admin.saving") : t("admin.pages.inventory.restock.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>

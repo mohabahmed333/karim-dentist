@@ -15,17 +15,20 @@ export default async function AdminInventoryReportsPage() {
         .select("*")
         .eq("approval_status", "pending_review")
         .order("created_at", { ascending: true }),
-      supabase.from("inventory_items").select("id, name, unit").is("deleted_at", null),
+      supabase.from("inventory_items").select("id, name, name_ar, unit").is("deleted_at", null),
       supabase.from("service_recipes").select("service_id, item_id, default_qty").eq("kind", "fixed"),
       supabase.from("patient_treatments").select("service_id").eq("status", "done").not("service_id", "is", null),
       supabase.from("inventory_transactions").select("item_id, qty").in("type", ["consumption", "wastage"]),
     ]);
 
-  const itemNameById = new Map((items ?? []).map((i) => [i.id, { name: i.name, unit: i.unit }]));
+  const itemNameById = new Map(
+    (items ?? []).map((i) => [i.id, { name: i.name, name_ar: i.name_ar, unit: i.unit }]),
+  );
 
   const pending = (pendingRaw ?? []).map((row) => ({
     ...row,
     item_name: itemNameById.get(row.item_id)?.name ?? "Unknown item",
+    item_name_ar: itemNameById.get(row.item_id)?.name_ar ?? null,
   }));
 
   const doneCountByService = new Map<string, number>();
@@ -54,6 +57,7 @@ export default async function AdminInventoryReportsPage() {
       return {
         item_id,
         item_name: itemNameById.get(item_id)?.name ?? "Unknown item",
+        item_name_ar: itemNameById.get(item_id)?.name_ar ?? null,
         unit: itemNameById.get(item_id)?.unit ?? "unit",
         expected_qty: expected,
         actual_qty: actual,

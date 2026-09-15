@@ -20,7 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslations } from "@/lib/i18n";
 import { createItem, updateItem } from "@/services/inventory/actions";
+import { CATEGORY_LABEL_KEYS, UNIT_LABEL_KEYS } from "@/services/inventory/i18nMaps";
 import type {
   InventoryItem,
   InventoryItemCategory,
@@ -50,6 +52,7 @@ type Props = {
 };
 
 export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }: Props) {
+  const t = useTranslations();
   const [pending, setPending] = useState(false);
   const [form, setForm] = useState(() => seed(item));
 
@@ -78,10 +81,10 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
         ? await updateItem(item.id, payload)
         : await createItem(payload);
       onSaved(saved);
-      toast.success(item ? "Item updated" : "Item created");
+      toast.success(item ? t("admin.pages.inventory.item.updated") : t("admin.pages.inventory.item.created"));
       onOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Save failed");
+      toast.error(error instanceof Error ? error.message : t("admin.saveFailed"));
     } finally {
       setPending(false);
     }
@@ -91,14 +94,14 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{item ? "Edit item" : "New inventory item"}</DialogTitle>
-          <DialogDescription>
-            Consumables and stock this clinic tracks for loss prevention.
-          </DialogDescription>
+          <DialogTitle>
+            {item ? t("admin.pages.inventory.item.editTitle") : t("admin.pages.inventory.item.newTitle")}
+          </DialogTitle>
+          <DialogDescription>{t("admin.pages.inventory.item.desc")}</DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-3 py-2">
           <div className="col-span-2 flex flex-col gap-1">
-            <Label htmlFor="item-name">Name</Label>
+            <Label htmlFor="item-name">{t("admin.pages.inventory.item.name")}</Label>
             <Input
               id="item-name"
               value={form.name}
@@ -106,7 +109,7 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="item-name-ar">Name (Arabic)</Label>
+            <Label htmlFor="item-name-ar">{t("admin.pages.inventory.item.nameAr")}</Label>
             <Input
               id="item-name-ar"
               value={form.name_ar}
@@ -114,7 +117,7 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="item-sku">SKU</Label>
+            <Label htmlFor="item-sku">{t("admin.pages.inventory.item.sku")}</Label>
             <Input
               id="item-sku"
               value={form.sku}
@@ -122,7 +125,7 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label>Category</Label>
+            <Label>{t("admin.pages.inventory.item.category")}</Label>
             <Select
               value={form.category}
               onValueChange={(v) => setForm((f) => ({ ...f, category: v as InventoryItemCategory }))}
@@ -130,13 +133,13 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>{c.replace("_", " ")}</SelectItem>
+                  <SelectItem key={c} value={c}>{t(CATEGORY_LABEL_KEYS[c])}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <Label>Unit</Label>
+            <Label>{t("admin.pages.inventory.item.unit")}</Label>
             <Select
               value={form.unit}
               onValueChange={(v) => setForm((f) => ({ ...f, unit: v as InventoryItemUnit }))}
@@ -144,13 +147,13 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {UNITS.map((u) => (
-                  <SelectItem key={u} value={u}>{u}</SelectItem>
+                  <SelectItem key={u} value={u}>{t(UNIT_LABEL_KEYS[u])}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="item-min">Minimum stock level</Label>
+            <Label htmlFor="item-min">{t("admin.pages.inventory.item.minStock")}</Label>
             <Input
               id="item-min"
               type="number"
@@ -160,7 +163,7 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="item-reorder">Suggested reorder qty</Label>
+            <Label htmlFor="item-reorder">{t("admin.pages.inventory.item.reorderQty")}</Label>
             <Input
               id="item-reorder"
               type="number"
@@ -170,7 +173,7 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
             />
           </div>
           <div className="col-span-2 flex flex-col gap-1">
-            <Label>Default supplier</Label>
+            <Label>{t("admin.pages.inventory.item.defaultSupplier")}</Label>
             <Select
               value={form.default_supplier_id || "none"}
               onValueChange={(v) =>
@@ -179,7 +182,7 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No default supplier</SelectItem>
+                <SelectItem value="none">{t("admin.pages.inventory.item.noSupplier")}</SelectItem>
                 {suppliers.map((s) => (
                   <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                 ))}
@@ -187,7 +190,7 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
             </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="item-cost">Last unit cost (EGP)</Label>
+            <Label htmlFor="item-cost">{t("admin.pages.inventory.item.lastCost")}</Label>
             <Input
               id="item-cost"
               type="number"
@@ -197,12 +200,12 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="item-threshold">Wastage approval threshold (EGP)</Label>
+            <Label htmlFor="item-threshold">{t("admin.pages.inventory.item.wastageThreshold")}</Label>
             <Input
               id="item-threshold"
               type="number"
               min="0"
-              placeholder="Clinic default"
+              placeholder={t("admin.pages.inventory.item.wastageThresholdPlaceholder")}
               value={form.wastage_approval_threshold_egp}
               onChange={(e) =>
                 setForm((f) => ({ ...f, wastage_approval_threshold_egp: e.target.value }))
@@ -212,10 +215,10 @@ export function ItemFormDialog({ open, onOpenChange, item, suppliers, onSaved }:
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("admin.cancel")}
           </Button>
           <Button type="button" disabled={pending || !form.name.trim()} onClick={onSave}>
-            {pending ? "Saving…" : "Save"}
+            {pending ? t("admin.saving") : t("admin.save")}
           </Button>
         </DialogFooter>
       </DialogContent>

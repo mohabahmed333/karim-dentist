@@ -21,7 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useLocale, useTranslations } from "@/lib/i18n";
 import { logWastage } from "@/services/inventory/actions";
+import { REASON_LABEL_KEYS, localizedItemName } from "@/services/inventory/i18nMaps";
 import { WASTAGE_REASON_CODES, type InventoryItem } from "@/services/inventory/types";
 
 type Props = {
@@ -31,19 +33,9 @@ type Props = {
   onSaved: () => void;
 };
 
-const REASON_LABELS: Record<string, string> = {
-  dropped_contaminated: "Dropped / contaminated",
-  expired: "Expired",
-  damaged_packaging: "Damaged packaging",
-  patient_no_show_opened: "Opened for a no-show",
-  equipment_failure: "Equipment failure",
-  recount_correction: "Recount correction",
-  received_shipment: "Received shipment",
-  returned_to_supplier: "Returned to supplier",
-  other: "Other",
-};
-
 export function WastageLogDialog({ open, onOpenChange, item, onSaved }: Props) {
+  const t = useTranslations();
+  const { locale } = useLocale();
   const [pending, setPending] = useState(false);
   const [qty, setQty] = useState("");
   const [reasonCode, setReasonCode] = useState<string>("dropped_contaminated");
@@ -75,11 +67,11 @@ export function WastageLogDialog({ open, onOpenChange, item, onSaved }: Props) {
         reason_note: reasonNote,
         photo_url: photoUrl || null,
       });
-      toast.success("Wastage logged");
+      toast.success(t("admin.pages.inventory.wastage.success"));
       onSaved();
       onOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Log failed");
+      toast.error(error instanceof Error ? error.message : t("admin.pages.inventory.wastage.failed"));
     } finally {
       setPending(false);
     }
@@ -91,15 +83,19 @@ export function WastageLogDialog({ open, onOpenChange, item, onSaved }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Log wastage — {item?.name}</DialogTitle>
-          <DialogDescription>
-            Dropped, contaminated, or expired stock. This never touches patient billing, and a
-            reason code is always required.
-          </DialogDescription>
+          <DialogTitle>
+            {t("admin.pages.inventory.wastage.title").replace(
+              "{item}",
+              item ? localizedItemName(locale, item.name, item.name_ar) : "",
+            )}
+          </DialogTitle>
+          <DialogDescription>{t("admin.pages.inventory.wastage.desc")}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3 py-2">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="wastage-qty">Quantity ({item?.unit})</Label>
+            <Label htmlFor="wastage-qty">
+              {t("admin.pages.inventory.wastage.qty").replace("{unit}", item?.unit ?? "")}
+            </Label>
             <Input
               id="wastage-qty"
               type="number"
@@ -110,19 +106,19 @@ export function WastageLogDialog({ open, onOpenChange, item, onSaved }: Props) {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label>Reason</Label>
+            <Label>{t("admin.pages.inventory.wastage.reason")}</Label>
             <Select value={reasonCode} onValueChange={setReasonCode}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {WASTAGE_REASON_CODES.map((code) => (
-                  <SelectItem key={code} value={code}>{REASON_LABELS[code] ?? code}</SelectItem>
+                  <SelectItem key={code} value={code}>{t(REASON_LABEL_KEYS[code])}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="flex flex-col gap-1">
             <Label htmlFor="wastage-note">
-              Note{needsNote ? " (required)" : " (optional)"}
+              {needsNote ? t("admin.pages.inventory.wastage.noteRequired") : t("admin.pages.inventory.wastage.noteOptional")}
             </Label>
             <Textarea
               id="wastage-note"
@@ -131,22 +127,24 @@ export function WastageLogDialog({ open, onOpenChange, item, onSaved }: Props) {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="wastage-photo">Photo URL (recommended for high-value items)</Label>
+            <Label htmlFor="wastage-photo">{t("admin.pages.inventory.wastage.photo")}</Label>
             <Input id="wastage-photo" value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} />
           </div>
           {estimatedCost != null ? (
             <p className="text-xs text-[var(--admin-muted)]">
-              Estimated cost: {estimatedCost.toFixed(2)} EGP. Wastage above the clinic&apos;s
-              threshold requires a second admin&apos;s approval before it&apos;s final.
+              {t("admin.pages.inventory.wastage.estimatedCost").replace(
+                "{cost}",
+                estimatedCost.toFixed(2),
+              )}
             </p>
           ) : null}
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("admin.cancel")}
           </Button>
           <Button type="button" variant="destructive" disabled={pending || !canSave} onClick={onSave}>
-            {pending ? "Logging…" : "Log wastage"}
+            {pending ? t("admin.pages.inventory.wastage.logging") : t("admin.pages.inventory.wastage.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>
