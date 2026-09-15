@@ -8,6 +8,7 @@ import {
   toothVisualState,
   type FdiNumber,
 } from "@/services/patient_tooth_findings/fdi";
+import { cn } from "@/lib/utils";
 
 type Props = {
   selectedFdi: string | null;
@@ -37,7 +38,7 @@ export function GridChart({
     <div className="space-y-3" onClick={onDeselect}>
       {ROWS.map((row) => (
         <div key={row.label} className="flex items-center gap-2">
-          <span className="w-7 shrink-0 text-[10px] font-semibold tracking-wide text-[#9ca3af]">
+          <span className="w-7 shrink-0 text-[10px] font-semibold tracking-wide text-[var(--admin-muted)]">
             {row.label}
           </span>
           <div className="flex flex-1 flex-wrap gap-1.5">
@@ -55,15 +56,16 @@ export function GridChart({
                   }}
                   onMouseEnter={() => onHover(fdi)}
                   onMouseLeave={() => onHover(null)}
-                  className={`flex h-9 min-w-9 flex-1 items-center justify-center rounded-lg text-[11px] font-semibold transition ${
+                  className={cn(
+                    "flex h-9 min-w-9 flex-1 items-center justify-center rounded-lg text-[11px] font-semibold transition",
                     state === "active"
-                      ? "bg-[#E2F163] text-[#111111]"
+                      ? "bg-[var(--admin-primary)] text-white"
                       : state === "has-comment"
-                        ? "bg-blue-50 text-blue-700"
+                        ? "bg-[color-mix(in_srgb,var(--admin-primary)_22%,transparent)] text-[var(--admin-text)]"
                         : hovered
-                          ? "bg-blue-50 text-[#111111]"
-                          : "bg-[#f2f2f2] text-[#6b7280] hover:bg-[#eef0f2]"
-                  }`}
+                          ? "bg-[color-mix(in_srgb,var(--admin-primary)_12%,transparent)] text-[var(--admin-text)]"
+                          : "bg-[var(--admin-hover)] text-[var(--admin-muted)] hover:text-[var(--admin-text)]",
+                  )}
                 >
                   {fdi}
                 </button>

@@ -8,6 +8,13 @@ import {
   toothVisualState,
   type FdiNumber,
 } from "@/services/patient_tooth_findings/fdi";
+import {
+  TOOTH_ACTIVE_LABEL,
+  TOOTH_FILL_SOLID,
+  TOOTH_HOVER_FILL,
+  TOOTH_HOVER_STROKE,
+  TOOTH_STROKE,
+} from "./toothChartColors";
 
 type Props = {
   selectedFdi: string | null;
@@ -139,10 +146,13 @@ function ToothEllipse({
 }) {
   const state = toothVisualState(fdi, selectedFdi, commented);
   const hovered = fdi === hoveredFdi && state !== "active";
-  const fill =
-    state === "active" ? "#E2F163" : state === "has-comment" || hovered ? "#dbeafe" : "var(--admin-hover)";
+  const fill = hovered
+    ? TOOTH_HOVER_FILL
+    : state === "unmarked"
+      ? "var(--admin-hover)"
+      : TOOTH_FILL_SOLID[state];
   const stroke =
-    state === "active" ? "#111111" : state === "has-comment" ? "#2563eb" : hovered ? "#93c5fd" : "var(--admin-border)";
+    hovered && state === "unmarked" ? TOOTH_HOVER_STROKE : TOOTH_STROKE[state];
 
   return (
     <g
@@ -167,7 +177,7 @@ function ToothEllipse({
           textAnchor="middle"
           fontSize={3.5}
           fontWeight={700}
-          fill="#111"
+          fill={state === "active" ? TOOTH_ACTIVE_LABEL : "var(--admin-text)"}
           style={{ pointerEvents: "none" }}
         >
           {fdi}

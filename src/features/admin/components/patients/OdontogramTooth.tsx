@@ -3,10 +3,14 @@
 import {
   toothType,
   toothVisualState,
-  type ToothVisualState,
 } from "@/services/patient_tooth_findings/fdi";
 import type { ToothPosition } from "@/services/patient_tooth_findings/fdiLayout";
 import { TOOTH_GLYPHS, TOOTH_SCALE } from "./toothPaths";
+import {
+  TOOTH_FILL,
+  TOOTH_HOVER_STROKE,
+  TOOTH_STROKE,
+} from "./teeth-charts/toothChartColors";
 
 type Props = {
   position: ToothPosition;
@@ -16,25 +20,6 @@ type Props = {
   onSelect: (fdi: string) => void;
   onHover: (fdi: string | null) => void;
 };
-
-/**
- * Everything the chart paints comes off `--admin-primary`, which the clinic can
- * change from the DB at runtime — so no fixed blues. `color-mix` keeps one hue
- * across the three states instead of picking three unrelated swatches.
- */
-const STROKE: Record<ToothVisualState, string> = {
-  unmarked: "var(--admin-border)",
-  "has-comment": "color-mix(in srgb, var(--admin-primary) 55%, transparent)",
-  active: "var(--admin-primary)",
-};
-
-const FILL: Record<ToothVisualState, string> = {
-  unmarked: "color-mix(in srgb, var(--admin-primary) 14%, transparent)",
-  "has-comment": "color-mix(in srgb, var(--admin-primary) 18%, transparent)",
-  active: "color-mix(in srgb, var(--admin-primary) 34%, transparent)",
-};
-
-const HOVER_STROKE = "color-mix(in srgb, var(--admin-primary) 45%, transparent)";
 
 export function OdontogramTooth({
   position,
@@ -50,7 +35,8 @@ export function OdontogramTooth({
   const glyph = TOOTH_GLYPHS[kind];
   const scale = TOOTH_SCALE[kind];
   const filled = state !== "unmarked" || hovered;
-  const stroke = hovered && state === "unmarked" ? HOVER_STROKE : STROKE[state];
+  const stroke =
+    hovered && state === "unmarked" ? TOOTH_HOVER_STROKE : TOOTH_STROKE[state];
 
   return (
     <g
@@ -76,7 +62,7 @@ export function OdontogramTooth({
     >
       <path
         d={glyph.outline}
-        fill={filled ? FILL[state] : "none"}
+        fill={filled ? TOOTH_FILL[state] : "none"}
         stroke={stroke}
         strokeWidth={state === "active" ? 2 : hovered ? 1.6 : 1.3}
         strokeDasharray={state === "active" ? "3 2" : undefined}
