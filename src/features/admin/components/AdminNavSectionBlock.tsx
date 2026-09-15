@@ -25,6 +25,29 @@ type Props = {
   isFirst: boolean;
 };
 
+/**
+ * Everything the rows inside this group are counting, added up.
+ *
+ * A badge on a child is invisible while the group is collapsed, which is the
+ * normal state — the billing queue could fill up with nobody seeing a thing.
+ * The group carries its children's total so the count survives collapsing.
+ */
+function groupBadgeTotal(
+  entries: AdminNavSectionEntry[],
+  navBadges: Record<string, number>,
+): number {
+  let total = 0;
+  for (const entry of entries) {
+    if ("items" in entry && Array.isArray(entry.items)) {
+      total += groupBadgeTotal(entry.items, navBadges);
+      continue;
+    }
+    const href = (entry as { href?: string }).href;
+    if (href) total += navBadges[href] ?? 0;
+  }
+  return total;
+}
+
 function NavGroup({
   group,
   depth,
@@ -47,6 +70,7 @@ function NavGroup({
   const t = useTranslations();
   const label = t(group.labelKey);
   const Icon = depth === 0 ? group.icon : undefined;
+  const collapsedBadge = groupBadgeTotal(group.items, navBadges ?? {});
 
   return (
     <>
@@ -75,6 +99,14 @@ function NavGroup({
               <span className="truncate">{label}</span>
             </button>
           )}
+          {!isOpen && collapsedBadge > 0 ? (
+            <span
+              className="shrink-0 rounded-full bg-[var(--admin-primary)] px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-white"
+              aria-label={`${collapsedBadge}`}
+            >
+              {collapsedBadge > 9 ? "9+" : collapsedBadge}
+            </span>
+          ) : null}
           <button
             type="button"
             aria-label={label}

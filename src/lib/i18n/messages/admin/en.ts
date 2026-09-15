@@ -1405,6 +1405,7 @@ export const adminEn = {
 
   "admin.overview.daySchedule": "Day Schedule",
   "admin.overview.widget.attention": "Attention",
+  "admin.overview.widget.attentionUnbilled": "Bills awaiting payment",
   "admin.overview.widget.attentionPending": "Pending bookings",
   "admin.overview.widget.attentionToday": "Today’s chair time",
   "admin.overview.widget.attentionCancelled": "Cancelled bookings",

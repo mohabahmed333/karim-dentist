@@ -104,6 +104,7 @@ const KPI_BY_WIDGET: Partial<
 };
 
 const ATTENTION_BY_WIDGET: Partial<Record<DashboardWidgetId, string>> = {
+  attentionUnbilled: "unbilled",
   attentionPending: "pending",
   attentionToday: "today",
   attentionCancelled: "cancelled",

@@ -1406,6 +1406,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
 
   "admin.overview.daySchedule": "جدول اليوم",
   "admin.overview.widget.attention": "تنبيهات",
+  "admin.overview.widget.attentionUnbilled": "فواتير بانتظار السداد",
   "admin.overview.widget.attentionPending": "حجوزات معلّقة",
   "admin.overview.widget.attentionToday": "مواعيد اليوم",
   "admin.overview.widget.attentionCancelled": "حجوزات ملغاة",

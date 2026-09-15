@@ -6,6 +6,7 @@ import type {
 import { DASHBOARD_COL_SPANS } from "@/features/admin/lib/dashboardWidgets/dashboardCatalog";
 
 export const OVERVIEW_WIDGET_IDS = [
+  "attentionUnbilled",
   "attentionPending",
   "attentionToday",
   "attentionCancelled",
@@ -71,6 +72,7 @@ const CARD = { defaultColSpan: 3 as const, allowedColSpans: ALL_SPANS };
 const CHART = { defaultColSpan: 6 as const, allowedColSpans: ALL_SPANS };
 
 export const OVERVIEW_WIDGET_CATALOG: readonly DashboardWidgetMeta[] = [
+  { id: "attentionUnbilled", labelKey: "admin.overview.widget.attentionUnbilled", ...CARD },
   { id: "attentionPending", labelKey: "admin.overview.widget.attentionPending", ...CARD },
   { id: "attentionToday", labelKey: "admin.overview.widget.attentionToday", ...CARD },
   { id: "attentionCancelled", labelKey: "admin.overview.widget.attentionCancelled", ...CARD },
@@ -118,6 +120,7 @@ export function overviewWidgetMeta(id: string): DashboardWidgetMeta {
 }
 
 export const DEFAULT_OVERVIEW_LAYOUT: DashboardLayout = [
+  { id: "attentionUnbilled", colSpan: 3 },
   { id: "attentionPending", colSpan: 3 },
   { id: "attentionToday", colSpan: 3 },
   { id: "kpiTodayVisits", colSpan: 3 },
