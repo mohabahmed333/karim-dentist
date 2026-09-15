@@ -18,6 +18,7 @@ import {
   AdminSelectTrigger,
   AdminSelectValue,
 } from "@/features/admin/ui";
+import { useTranslations, type AdminMessageKey } from "@/lib/i18n";
 import type { ImagingKind, PatientImaging } from "@/services/patient_imaging";
 import type { usePatientImaging } from "./usePatientImaging";
 
@@ -27,47 +28,48 @@ type Props = {
   chart: Chart;
 };
 
-const KIND_LABEL: Record<ImagingKind, string> = {
-  xray: "X-ray",
-  cbct: "CBCT",
-  photo: "Photo",
+const KIND_LABEL_KEYS: Record<ImagingKind, AdminMessageKey> = {
+  xray: "admin.patients.xray.kindXray",
+  cbct: "admin.patients.xray.kindCbct",
+  photo: "admin.patients.xray.kindPhoto",
 };
 
 function isImage(mime: string) {
   return mime.startsWith("image/");
 }
 
-function formatDate(value: string | null) {
-  if (!value) return "No date";
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
 export function PatientXrayPane({ chart }: Props) {
+  const t = useTranslations();
   const { items, draft, setDraft, pending, upload, setViewerId, setDeleteId } =
     chart;
+
+  function formatDate(value: string | null) {
+    if (!value) return t("admin.patients.xray.noDate");
+    return new Date(value).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
 
   return (
     <section className="mt-5 space-y-5">
       <div className="rounded-[28px] bg-[#fafafa] p-5">
         <h2 className="mb-4 text-[15px] font-medium text-[#111111]">
-          Upload X-ray
+          {t("admin.patients.xray.uploadTitle")}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="xray-title">Title</Label>
+            <Label htmlFor="xray-title">{t("admin.patients.xray.title")}</Label>
             <AdminInput
               id="xray-title"
               value={draft.title}
               onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-              placeholder="Bitewing · Left"
+              placeholder={t("admin.patients.xray.titlePlaceholder")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Kind</Label>
+            <Label>{t("admin.patients.xray.kind")}</Label>
             <AdminSelect
               value={draft.kind}
               onValueChange={(value) => {
@@ -79,14 +81,14 @@ export function PatientXrayPane({ chart }: Props) {
                 <AdminSelectValue />
               </AdminSelectTrigger>
               <AdminSelectContent>
-                <AdminSelectItem value="xray">X-ray</AdminSelectItem>
-                <AdminSelectItem value="cbct">CBCT</AdminSelectItem>
-                <AdminSelectItem value="photo">Photo</AdminSelectItem>
+                <AdminSelectItem value="xray">{t("admin.patients.xray.kindXray")}</AdminSelectItem>
+                <AdminSelectItem value="cbct">{t("admin.patients.xray.kindCbct")}</AdminSelectItem>
+                <AdminSelectItem value="photo">{t("admin.patients.xray.kindPhoto")}</AdminSelectItem>
               </AdminSelectContent>
             </AdminSelect>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="xray-tooth">Tooth # (optional)</Label>
+            <Label htmlFor="xray-tooth">{t("admin.patients.xray.tooth")}</Label>
             <AdminInput
               id="xray-tooth"
               inputMode="numeric"
@@ -94,11 +96,11 @@ export function PatientXrayPane({ chart }: Props) {
               onChange={(e) =>
                 setDraft({ ...draft, toothNumber: e.target.value })
               }
-              placeholder="1–32"
+              placeholder={t("admin.patients.xray.toothPlaceholder")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="xray-taken">Taken date</Label>
+            <Label htmlFor="xray-taken">{t("admin.patients.xray.takenDate")}</Label>
             <AdminInput
               id="xray-taken"
               type="date"
@@ -107,7 +109,7 @@ export function PatientXrayPane({ chart }: Props) {
             />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="xray-file">File (image or PDF)</Label>
+            <Label htmlFor="xray-file">{t("admin.patients.xray.file")}</Label>
             <AdminInput
               id="xray-file"
               type="file"
@@ -121,14 +123,14 @@ export function PatientXrayPane({ chart }: Props) {
         <div className="mt-4">
           <Button type="button" disabled={pending} onClick={() => void upload()}>
             <Upload className="size-4" />
-            {pending ? "Uploading…" : "Upload"}
+            {pending ? t("admin.patients.xray.uploading") : t("admin.patients.xray.upload")}
           </Button>
         </div>
       </div>
 
       {items.length === 0 ? (
         <p className="rounded-[28px] bg-[#fafafa] px-5 py-10 text-center text-sm text-[#6b7280]">
-          No X-rays yet. Upload the first image or PDF above.
+          {t("admin.patients.xray.empty")}
         </p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -138,6 +140,7 @@ export function PatientXrayPane({ chart }: Props) {
               item={item}
               onOpen={() => setViewerId(item.id)}
               onDelete={() => setDeleteId(item.id)}
+              formatDate={formatDate}
             />
           ))}
         </div>
@@ -158,11 +161,14 @@ function XrayCard({
   item,
   onOpen,
   onDelete,
+  formatDate,
 }: {
   item: PatientImaging;
   onOpen: () => void;
   onDelete: () => void;
+  formatDate: (value: string | null) => string;
 }) {
+  const t = useTranslations();
   return (
     <article className="overflow-hidden rounded-[24px] bg-[#fafafa]">
       <button
@@ -192,8 +198,10 @@ function XrayCard({
             {item.title}
           </p>
           <p className="mt-0.5 text-[11px] text-[#6b7280]">
-            {KIND_LABEL[item.kind]}
-            {item.tooth_number != null ? ` · Tooth #${item.tooth_number}` : ""}
+            {t(KIND_LABEL_KEYS[item.kind])}
+            {item.tooth_number != null
+              ? t("admin.patients.xray.toothNumberSuffix").replace("{n}", String(item.tooth_number))
+              : ""}
             {" · "}
             {formatDate(item.taken_at ?? item.created_at)}
           </p>
@@ -202,7 +210,7 @@ function XrayCard({
           type="button"
           variant="ghost"
           size="icon-sm"
-          aria-label={`Delete ${item.title}`}
+          aria-label={t("admin.patients.xray.deleteAria").replace("{title}", item.title)}
           onClick={onDelete}
         >
           <Trash2 className="size-4" />
@@ -221,11 +229,12 @@ function XrayViewer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useTranslations();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{item?.title ?? "X-ray"}</DialogTitle>
+          <DialogTitle>{item?.title ?? t("admin.patients.xray.viewerDefaultTitle")}</DialogTitle>
         </DialogHeader>
         {item ? (
           isImage(item.mime_type) ? (
