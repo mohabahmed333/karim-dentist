@@ -11,6 +11,7 @@ import {
   type PatientImaging,
 } from "@/services/patient_imaging";
 import { universalForFdi } from "@/services/notation";
+import { useTranslations } from "@/lib/i18n";
 import { ImagingEmpty } from "./ImagingEmpty";
 
 type Props = {
@@ -21,6 +22,7 @@ type Props = {
 };
 
 export function ImagingLightbox({ patientKey, fdi, items, onUploaded }: Props) {
+  const t = useTranslations();
   const linked = useMemo(() => imagingForFdi(items, fdi), [items, fdi]);
   const [index, setIndex] = useState(0);
   const [invert, setInvert] = useState(false);
@@ -41,9 +43,9 @@ export function ImagingLightbox({ patientKey, fdi, items, onUploaded }: Props) {
         mime_type: uploaded.mime_type,
       });
       onUploaded(await createPatientImaging(patientKey, parsed));
-      toast.success("Radiograph uploaded");
+      toast.success(t("admin.pages.imaging.uploaded"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
+      toast.error(err instanceof Error ? err.message : t("admin.pages.imaging.uploadFailed"));
     }
   }
 
@@ -70,11 +72,11 @@ export function ImagingLightbox({ patientKey, fdi, items, onUploaded }: Props) {
       </div>
       <p className="text-xs text-[#6b7280]">{current.title}</p>
       <div className="flex flex-wrap gap-2 text-xs text-[#2563eb]">
-        <button type="button" onClick={() => setInvert((v) => !v)}>Invert</button>
-        <button type="button" onClick={() => setZoom((z) => Math.min(3, z + 0.25))}>Zoom +</button>
-        <button type="button" onClick={() => setZoom((z) => Math.max(1, z - 0.25))}>Zoom −</button>
-        <button type="button" disabled={index <= 0} onClick={() => setIndex((i) => i - 1)}>Prev</button>
-        <button type="button" disabled={index >= linked.length - 1} onClick={() => setIndex((i) => i + 1)}>Next</button>
+        <button type="button" onClick={() => setInvert((v) => !v)}>{t("admin.pages.imaging.invert")}</button>
+        <button type="button" onClick={() => setZoom((z) => Math.min(3, z + 0.25))}>{t("admin.pages.imaging.zoomIn")}</button>
+        <button type="button" onClick={() => setZoom((z) => Math.max(1, z - 0.25))}>{t("admin.pages.imaging.zoomOut")}</button>
+        <button type="button" disabled={index <= 0} onClick={() => setIndex((i) => i - 1)}>{t("admin.table.prev")}</button>
+        <button type="button" disabled={index >= linked.length - 1} onClick={() => setIndex((i) => i + 1)}>{t("admin.table.next")}</button>
       </div>
     </div>
   );

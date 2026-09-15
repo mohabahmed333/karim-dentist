@@ -7,6 +7,7 @@ import {
   formatEgp,
 } from "@/services/cdt";
 import type { TreatmentItem } from "@/services/patient_treatments";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   items: TreatmentItem[];
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export function FeeEstimator({ items, insurancePct, onInsurancePct }: Props) {
+  const t = useTranslations();
   const rate = feeRateFromPct(insurancePct);
   const summary = feeSummary(
     items.map((item) => ({ status: item.status, fee_amount: item.feeAmount })),
@@ -23,7 +25,7 @@ export function FeeEstimator({ items, insurancePct, onInsurancePct }: Props) {
 
   return (
     <div className="space-y-2 rounded-xl border border-[#E2E8F0] bg-[#F8F9FA] p-3">
-      <p className="text-[12px] font-semibold text-[#1E293B]">Fee estimate</p>
+      <p className="text-[12px] font-semibold text-[#1E293B]">{t("admin.pages.feeEstimator.title")}</p>
       <div className="flex flex-col gap-1.5">
         {FEE_RATE_PRESETS.map((preset) => (
           <button
@@ -43,15 +45,15 @@ export function FeeEstimator({ items, insurancePct, onInsurancePct }: Props) {
       </div>
       <dl className="space-y-1 text-[12px] text-[#475569]">
         <div className="flex justify-between">
-          <dt>Total Fee</dt>
+          <dt>{t("admin.pages.feeEstimator.totalFee")}</dt>
           <dd>{formatEgp(summary.totalFee)}</dd>
         </div>
         <div className="flex justify-between">
-          <dt>Discount</dt>
+          <dt>{t("admin.pages.feeEstimator.discount")}</dt>
           <dd>{formatEgp(summary.discount)}</dd>
         </div>
         <div className="flex justify-between font-semibold text-[#1E293B]">
-          <dt>Final Patient Balance</dt>
+          <dt>{t("admin.pages.feeEstimator.finalBalance")}</dt>
           <dd>{formatEgp(summary.balance)}</dd>
         </div>
       </dl>

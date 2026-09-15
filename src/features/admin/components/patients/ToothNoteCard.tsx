@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Paperclip, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "@/lib/i18n";
 import { ATTACHMENT_FILE_ACCEPT } from "@/lib/supabase/uploadHelpers";
 import type { PatientToothNote } from "@/services/patient_tooth_notes";
 import { formatClinicalNoteHeading } from "./clinicalNoteFormat";
@@ -40,6 +41,7 @@ export function ToothNoteCard({
   onSaveEdit,
   onDelete,
 }: Props) {
+  const t = useTranslations();
   const canSaveEdit = !isRichTextEmpty(editBody) && !pending;
 
   return (
@@ -54,7 +56,7 @@ export function ToothNoteCard({
               type="button"
               onClick={onStartEdit}
               className="rounded p-1 text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#475569]"
-              aria-label="Edit note"
+              aria-label={t("admin.pages.toothNote.editAria")}
             >
               <Pencil className="size-3.5" />
             </button>
@@ -64,7 +66,7 @@ export function ToothNoteCard({
             onClick={onDelete}
             disabled={pending}
             className="rounded p-1 text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#ef4444] disabled:opacity-50"
-            aria-label="Remove note"
+            aria-label={t("admin.pages.toothNote.removeAria")}
           >
             <Trash2 className="size-3.5" />
           </button>
@@ -77,7 +79,7 @@ export function ToothNoteCard({
             value={editBody}
             onChange={onEditBodyChange}
             disabled={pending}
-            placeholder="Edit clinical note…"
+            placeholder={t("admin.pages.toothNote.editPlaceholder")}
           />
           {note.patient_tooth_note_attachments.length > 0 ? (
             <ul className="space-y-1">
@@ -96,7 +98,7 @@ export function ToothNoteCard({
           ) : null}
           <label className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-[#64748b] hover:text-[#475569]">
             <Paperclip className="size-3.5" aria-hidden />
-            Add attachment
+            {t("admin.pages.toothNote.addAttachment")}
             <input
               type="file"
               multiple
@@ -123,10 +125,10 @@ export function ToothNoteCard({
           ))}
           <div className="flex gap-2">
             <Button type="button" size="sm" disabled={!canSaveEdit} onClick={onSaveEdit}>
-              {pending ? "Saving…" : "Save"}
+              {pending ? t("admin.saving") : t("admin.save")}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={onCancelEdit}>
-              Cancel
+              {t("admin.cancel")}
             </Button>
           </div>
         </div>
