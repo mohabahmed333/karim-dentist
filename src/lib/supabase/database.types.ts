@@ -81,6 +81,44 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_notes: {
+        Row: {
+          color: string
+          content: string
+          created_at: string
+          created_by: string | null
+          dismissed_at: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          content: string
+          created_at?: string
+          created_by?: string | null
+          dismissed_at?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          dismissed_at?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       about_trust_items: {
         Row: {
           created_at: string
