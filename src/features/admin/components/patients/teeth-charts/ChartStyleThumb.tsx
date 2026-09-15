@@ -55,6 +55,33 @@ export function ChartStyleThumb({ styleId, active }: Props) {
       </svg>
     );
   }
+  if (styleId === "model") {
+    // A U-arch seen at an angle — reads as "the 3D one" next to the flat charts.
+    return (
+      <svg viewBox="0 0 48 36" className="h-8 w-full" aria-hidden>
+        <ellipse
+          cx="24"
+          cy="20"
+          rx="15"
+          ry="9"
+          fill={fill}
+          stroke={stroke}
+          strokeWidth="1.2"
+        />
+        <ellipse
+          cx="24"
+          cy="16"
+          rx="15"
+          ry="9"
+          fill="none"
+          stroke={stroke}
+          strokeWidth="1.2"
+        />
+        <path d="M9 16v4M39 16v4" stroke={stroke} strokeWidth="1.2" />
+      </svg>
+    );
+  }
+
   return (
     <svg viewBox="0 0 48 36" className="h-8 w-full" aria-hidden>
       {[0, 1, 2, 3, 4, 5, 6].map((i) => {

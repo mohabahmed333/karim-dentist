@@ -23,7 +23,7 @@ type Props = {
 };
 
 export function WorkspaceChartPane(props: Props) {
-  const anatomic = props.chartStyle === "anatomic";
+  const model = props.chartStyle === "model";
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       {props.onChartStyleChange ? (
@@ -35,7 +35,7 @@ export function WorkspaceChartPane(props: Props) {
         </div>
       ) : null}
       <div className="relative min-h-0 flex-1 bg-transparent">
-        {anatomic ? (
+        {model ? (
           <ChartingGltfOdontogram
             dentition={props.dentition}
             notation={props.notation}

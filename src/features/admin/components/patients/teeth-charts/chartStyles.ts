@@ -1,6 +1,11 @@
 import type { AdminMessageKey } from "@/lib/i18n";
 
-export type TeethChartStyle = "anatomic" | "arch" | "grid" | "circles";
+export type TeethChartStyle =
+  | "anatomic"
+  | "arch"
+  | "grid"
+  | "circles"
+  | "model";
 
 export const TEETH_CHART_STYLES: {
   id: TeethChartStyle;
@@ -26,5 +31,10 @@ export const TEETH_CHART_STYLES: {
     id: "circles",
     labelKey: "admin.chartStyle.circles",
     hintKey: "admin.chartStyle.circlesHint",
+  },
+  {
+    id: "model",
+    labelKey: "admin.chartStyle.model",
+    hintKey: "admin.chartStyle.modelHint",
   },
 ];

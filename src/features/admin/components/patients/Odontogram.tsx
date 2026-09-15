@@ -16,6 +16,7 @@ import {
 } from "@/services/patient_tooth_findings/fdiLayout";
 import { OdontogramArch } from "./OdontogramArch";
 import { ClinicalCanvasLtr } from "@/features/admin/components/ClinicalCanvasLtr";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   selectedFdi: string | null;
@@ -34,6 +35,7 @@ export function Odontogram({
   onHover,
   onDeselect,
 }: Props) {
+  const t = useTranslations();
   const positions = useMemo(() => odontogramPositions(), []);
   const { width, height, cx, cy } = ODONTOGRAM_VIEWBOX;
   const pick = (ids: readonly FdiNumber[]) => ids.map((id) => positions[id]);
@@ -59,9 +61,9 @@ export function Odontogram({
   }, [onDeselect, onSelect, selectedFdi]);
 
   return (
-    <ClinicalCanvasLtr className="rounded-2xl bg-[#EEF2F6] px-4 py-5">
-      <h3 className="mb-4 text-center text-base font-semibold text-[#111827]">
-        Odontogram
+    <ClinicalCanvasLtr className="rounded-2xl bg-[var(--admin-hover)] px-4 py-5">
+      <h3 className="mb-4 text-center text-base font-semibold text-[var(--admin-text)]">
+        {t("admin.chartStyle.odontogram")}
       </h3>
       <svg
         viewBox={`0 0 ${width} ${height}`}
@@ -77,8 +79,20 @@ export function Odontogram({
           fill="transparent"
           onClick={onDeselect}
         />
-        <line x1={cx} y1={24} x2={cx} y2={height - 24} stroke="#e5e7eb" />
-        <line x1={28} y1={cy} x2={width - 28} y2={cy} stroke="#e5e7eb" />
+        <line
+          x1={cx}
+          y1={24}
+          x2={cx}
+          y2={height - 24}
+          stroke="var(--admin-border)"
+        />
+        <line
+          x1={28}
+          y1={cy}
+          x2={width - 28}
+          y2={cy}
+          stroke="var(--admin-border)"
+        />
         <OdontogramArch
           positions={pick([...UPPER_RIGHT, ...UPPER_LEFT])}
           selectedFdi={selectedFdi}
@@ -108,7 +122,11 @@ export function Odontogram({
               fontSize={11}
               fontWeight={active || hover ? 700 : 400}
               className={
-                active ? "fill-[#111827]" : hover ? "fill-[#2563eb]" : "fill-[#9ca3af]"
+                active
+                  ? "fill-[var(--admin-text)]"
+                  : hover
+                    ? "fill-[var(--admin-primary)]"
+                    : "fill-[var(--admin-muted)]"
               }
               pointerEvents="none"
             >

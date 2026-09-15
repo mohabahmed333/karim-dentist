@@ -17,11 +17,24 @@ type Props = {
   onHover: (fdi: string | null) => void;
 };
 
+/**
+ * Everything the chart paints comes off `--admin-primary`, which the clinic can
+ * change from the DB at runtime — so no fixed blues. `color-mix` keeps one hue
+ * across the three states instead of picking three unrelated swatches.
+ */
 const STROKE: Record<ToothVisualState, string> = {
-  unmarked: "#d1d5db",
-  "has-comment": "#2563eb",
-  active: "#1d4ed8",
+  unmarked: "var(--admin-border)",
+  "has-comment": "color-mix(in srgb, var(--admin-primary) 55%, transparent)",
+  active: "var(--admin-primary)",
 };
+
+const FILL: Record<ToothVisualState, string> = {
+  unmarked: "color-mix(in srgb, var(--admin-primary) 14%, transparent)",
+  "has-comment": "color-mix(in srgb, var(--admin-primary) 18%, transparent)",
+  active: "color-mix(in srgb, var(--admin-primary) 34%, transparent)",
+};
+
+const HOVER_STROKE = "color-mix(in srgb, var(--admin-primary) 45%, transparent)";
 
 export function OdontogramTooth({
   position,
@@ -37,7 +50,7 @@ export function OdontogramTooth({
   const glyph = TOOTH_GLYPHS[kind];
   const scale = TOOTH_SCALE[kind];
   const filled = state !== "unmarked" || hovered;
-  const stroke = hovered && state === "unmarked" ? "#93c5fd" : STROKE[state];
+  const stroke = hovered && state === "unmarked" ? HOVER_STROKE : STROKE[state];
 
   return (
     <g
@@ -63,7 +76,7 @@ export function OdontogramTooth({
     >
       <path
         d={glyph.outline}
-        fill={filled ? "#dbeafe" : "none"}
+        fill={filled ? FILL[state] : "none"}
         stroke={stroke}
         strokeWidth={state === "active" ? 2 : hovered ? 1.6 : 1.3}
         strokeDasharray={state === "active" ? "3 2" : undefined}
