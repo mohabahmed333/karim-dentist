@@ -43,6 +43,40 @@ export function reservationsForDay(
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
 }
 
+/**
+ * The appointment a doctor is most likely looking at right now.
+ *
+ * Reservations store only `starts_at`, so "still in the chair" is inferred
+ * from the same fixed slot the day grid draws with. Order matters:
+ *
+ *   1. the appointment whose slot covers `now` — the last one when two
+ *      overlap, since the later start is the one that just began;
+ *   2. else the next one still to come today;
+ *   3. else the last of the day, so an evening list doesn't go blank after
+ *      the final patient leaves.
+ *
+ * A `completed` appointment stays eligible: the doctor often finishes the
+ * work before billing it.
+ */
+export function pickCurrentReservation(
+  reservations: Reservation[],
+  now: Date,
+): Reservation | null {
+  const rows = reservationsForDay(reservations, now);
+  if (rows.length === 0) return null;
+
+  const nowMs = now.getTime();
+  let current: Reservation | null = null;
+  for (const row of rows) {
+    const startMs = new Date(row.starts_at).getTime();
+    if (startMs <= nowMs && nowMs < startMs + DAY_SCHEDULE_SLOT_MS) current = row;
+  }
+  if (current) return current;
+
+  const next = rows.find((row) => new Date(row.starts_at).getTime() > nowMs);
+  return next ?? rows[rows.length - 1] ?? null;
+}
+
 /** Local-day bounds as ISO strings for Supabase range queries. */
 export function dayScheduleQueryBounds(day: Date): {
   startIso: string;

@@ -8,6 +8,7 @@ import {
   Gauge,
   Package,
   Settings,
+  Stethoscope,
   Users,
 } from "lucide-react";
 import type { AdminMessageKey } from "@/lib/i18n";
@@ -110,6 +111,13 @@ export const adminRailItems: AdminRailItem[] = [
     labelKey: "admin.nav.overview",
     icon: Home,
     exact: true,
+  },
+  {
+    id: "my-day",
+    href: "/admin/my-day",
+    labelKey: "admin.nav.myDay",
+    icon: Stethoscope,
+    permission: "patients.view",
   },
   {
     id: "bookings",
@@ -260,6 +268,12 @@ export const adminNavSections: AdminNavSection[] = [
     entries: [
       { href: "/admin", labelKey: "admin.nav.overview", icon: Home, exact: true },
       {
+        href: "/admin/my-day",
+        labelKey: "admin.nav.myDay",
+        icon: Stethoscope,
+        permission: "patients.view",
+      },
+      {
         id: "bookings",
         labelKey: "admin.nav.bookingsGroup",
         icon: CalendarDays,
@@ -388,6 +402,7 @@ export const adminNavSections: AdminNavSection[] = [
 
 export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin": "admin.nav.overview",
+  "/admin/my-day": "admin.nav.myDay",
   "/admin/reservations": "admin.nav.reservations",
   "/admin/patients": "admin.nav.patients",
   "/admin/billing": "admin.nav.billing",
@@ -442,6 +457,7 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
  */
 export const adminPagePermissions: Record<string, string> = {
   "/admin": "dashboard.view",
+  "/admin/my-day": "patients.view",
   "/admin/reservations": "reservations.view",
   "/admin/patients": "patients.view",
   "/admin/billing": "patients.view",

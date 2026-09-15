@@ -8,6 +8,7 @@ import {
   dayScheduleTitle,
   dayWithinCoverage,
   expandCoverageThroughAfterTomorrow,
+  pickCurrentReservation,
   reservationsForDay,
 } from "./dayScheduleModel.ts";
 import type { Reservation } from "@/services/reservations/types.ts";
@@ -99,6 +100,96 @@ describe("dayScheduleModel", () => {
     assert.deepEqual(
       expandCoverageThroughAfterTomorrow("2026-09-01", "2026-09-30", now),
       { from: "2026-09-01", to: "2026-09-30" },
+    );
+  });
+});
+
+describe("pickCurrentReservation", () => {
+  const at = (hour: number, minute = 0) =>
+    new Date(2026, 8, 8, hour, minute, 0).toISOString();
+  const row = (
+    id: string,
+    hour: number,
+    over: Partial<Reservation> = {},
+  ): Reservation =>
+    ({ ...base, id, status: "confirmed", starts_at: at(hour), ...over }) as Reservation;
+
+  const nine = row("9am", 9);
+  const eleven = row("11am", 11);
+  const two = row("2pm", 14);
+  const day = [nine, eleven, two];
+
+  it("has nothing to show on an empty day", () => {
+    assert.equal(pickCurrentReservation([], new Date(2026, 8, 8, 10)), null);
+  });
+
+  it("picks the appointment that just started", () => {
+    const out = pickCurrentReservation(day, new Date(2026, 8, 8, 9, 0, 0));
+    assert.equal(out?.id, "9am");
+  });
+
+  it("keeps the appointment until its slot runs out", () => {
+    const out = pickCurrentReservation(day, new Date(2026, 8, 8, 9, 59, 59, 999));
+    assert.equal(out?.id, "9am");
+  });
+
+  it("moves on the moment the slot ends", () => {
+    const out = pickCurrentReservation(day, new Date(2026, 8, 8, 10, 0, 0));
+    assert.equal(out?.id, "11am");
+  });
+
+  it("looks ahead to the next one in a gap", () => {
+    const out = pickCurrentReservation(day, new Date(2026, 8, 8, 10, 30, 0));
+    assert.equal(out?.id, "11am");
+  });
+
+  it("shows the first appointment before the day starts", () => {
+    const out = pickCurrentReservation(day, new Date(2026, 8, 8, 7, 0, 0));
+    assert.equal(out?.id, "9am");
+  });
+
+  it("stays on the last appointment once the day is over", () => {
+    const out = pickCurrentReservation(day, new Date(2026, 8, 8, 19, 0, 0));
+    assert.equal(out?.id, "2pm");
+  });
+
+  it("prefers the later start when two appointments overlap", () => {
+    const double = [nine, row("9am-again", 9, { id: "9am-again" })];
+    const out = pickCurrentReservation(double, new Date(2026, 8, 8, 9, 30, 0));
+    assert.equal(out?.id, "9am-again");
+  });
+
+  it("ignores a cancelled appointment even mid-slot", () => {
+    const rows = [row("cancelled", 9, { id: "cancelled", status: "cancelled" }), eleven];
+    const out = pickCurrentReservation(rows, new Date(2026, 8, 8, 9, 30, 0));
+    assert.equal(out?.id, "11am");
+  });
+
+  it("ignores a deleted appointment even mid-slot", () => {
+    const rows = [
+      row("deleted", 9, { id: "deleted", deleted_at: "2026-09-07T00:00:00.000Z" }),
+      eleven,
+    ];
+    const out = pickCurrentReservation(rows, new Date(2026, 8, 8, 9, 30, 0));
+    assert.equal(out?.id, "11am");
+  });
+
+  it("still shows a completed appointment — it may not be billed yet", () => {
+    const rows = [row("done", 9, { id: "done", status: "completed" }), eleven];
+    const out = pickCurrentReservation(rows, new Date(2026, 8, 8, 9, 30, 0));
+    assert.equal(out?.id, "done");
+  });
+
+  it("ignores another day's appointments", () => {
+    const tomorrow = {
+      ...base,
+      id: "tomorrow",
+      status: "confirmed",
+      starts_at: new Date(2026, 8, 9, 9, 0, 0).toISOString(),
+    } as Reservation;
+    assert.equal(
+      pickCurrentReservation([tomorrow], new Date(2026, 8, 8, 9, 30, 0)),
+      null,
     );
   });
 });

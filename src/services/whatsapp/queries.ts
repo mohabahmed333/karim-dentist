@@ -1,6 +1,8 @@
 import type { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { createServiceClient } from "@/lib/supabase/service";
 import { sanitizeIlike } from "@/services/reservations/listFilters";
+import { pickConversation } from "@/services/patient_notifications/resolveConversation";
+import { phoneSuffixForLookup } from "@/services/reservations/phoneSuffix";
 import type { WhatsappConversation, WhatsappMessage } from "./types";
 import { buildMessageCursorFilter } from "./messageCursor";
 
@@ -136,6 +138,49 @@ export async function listMessagesPage(
     messages: [...page].reverse(),
     nextCursor,
   };
+}
+
+/**
+ * The thread belonging to one patient, for a patient-scoped read.
+ *
+ * Two ways in, because conversations are linked to patients loosely: the
+ * `patient_key` column when something has already tied them together, and the
+ * phone otherwise. The phone path compares only the last digits in SQL, so
+ * `pickConversation` re-checks each candidate with `phonesMatch` — a suffix
+ * match alone will happily return a stranger's thread.
+ *
+ * Returns null freely, and never creates: most patients have never messaged
+ * the clinic, and inventing a row here would fork the thread they'd land in
+ * if they ever did.
+ */
+export async function findConversationForPatient(
+  supabase: AnySupabase,
+  input: { patientKey?: string | null; phone?: string | null },
+): Promise<WhatsappConversation | null> {
+  if (input.patientKey) {
+    const { data } = await supabase
+      .from("whatsapp_conversations")
+      .select("*")
+      .eq("patient_key", input.patientKey)
+      .order("last_message_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data) return data;
+  }
+
+  const suffix = input.phone ? phoneSuffixForLookup(input.phone) : null;
+  if (!suffix || !input.phone) return null;
+
+  const { data: candidates } = await supabase
+    .from("whatsapp_conversations")
+    .select("*")
+    .eq("phone_suffix", suffix)
+    .order("updated_at", { ascending: false })
+    .limit(20);
+  if (!candidates || candidates.length === 0) return null;
+
+  const picked = pickConversation(candidates, input.phone);
+  return candidates.find((row) => row.id === picked?.id) ?? null;
 }
 
 export async function getConversation(

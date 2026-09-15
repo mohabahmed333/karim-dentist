@@ -137,13 +137,14 @@ describe("findActiveAdminNavGroupIds (recursive, Set-returning)", () => {
 });
 
 describe("adminNavSections (new IA)", () => {
-  it("Clinic section entries are ordered: Overview, Bookings, Patients & Billing, Inventory, Communications", () => {
+  it("Clinic section entries are ordered: Overview, My day, Bookings, Patients & Billing, Inventory, Communications", () => {
     const clinic = adminNavSections.find((s) => s.id === "clinic")!;
     const ids = (clinic.entries as AdminNavSectionEntry[]).map((e) =>
       isAdminNavGroup(e) ? e.id : e.href,
     );
     assert.deepEqual(ids, [
       "/admin",
+      "/admin/my-day",
       "bookings",
       "patients-billing",
       "inventory",
