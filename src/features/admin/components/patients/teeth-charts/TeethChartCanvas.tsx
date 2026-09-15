@@ -17,7 +17,15 @@ type ChartProps = {
   onDeselect: () => void;
 };
 
-type Props = ChartProps & { style: TeethChartStyle };
+type Props = ChartProps & {
+  style: TeethChartStyle;
+  /**
+   * Fill the parent instead of standing at {@link TOOTH_CHART_HEIGHT}. For a
+   * pane that already bounds its own height and wants the chart to use all of
+   * it; the fixed box stays the default everywhere it would otherwise collapse.
+   */
+  fill?: boolean;
+};
 
 /**
  * One height for every shape.
@@ -29,7 +37,7 @@ type Props = ChartProps & { style: TeethChartStyle };
  */
 export const TOOTH_CHART_HEIGHT = "h-[26rem]";
 
-export function TeethChartCanvas({ style, ...chart }: Props) {
+export function TeethChartCanvas({ style, fill = false, ...chart }: Props) {
   const reduced = useReducedMotion();
 
   // "model" is the 3D odontogram, which needs surface data this canvas is not
@@ -38,7 +46,12 @@ export function TeethChartCanvas({ style, ...chart }: Props) {
   const flat = style === "anatomic" || style === "model";
 
   return (
-    <div className={cn("relative w-full overflow-hidden", TOOTH_CHART_HEIGHT)}>
+    <div
+      className={cn(
+        "relative w-full overflow-hidden",
+        fill ? "h-full min-h-0" : TOOTH_CHART_HEIGHT,
+      )}
+    >
       <AnimatePresence mode="wait" initial={false}>
         {/* Keyed on the shape so switching crossfades. The selected tooth is
             the parent's state, not this subtree's, so remounting here never

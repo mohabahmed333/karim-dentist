@@ -15,6 +15,7 @@ import {
   AnatomicalArchViewer,
 } from "../../shared/anatomical-arch";
 import { SurfaceOdontogram } from "../SurfaceOdontogram";
+import { cn } from "@/lib/utils";
 
 const KindCanvas = dynamic(
   () => import("./ChartingGltfCanvas").then((m) => m.ChartingGltfCanvas),
@@ -30,6 +31,8 @@ type Props = {
   onSelect: (fdi: string) => void;
   onDeselect: () => void;
   onPaint: (fdi: string, surface: SurfaceId) => void;
+  /** Take the parent's height rather than the 52vh/420px box. */
+  fill?: boolean;
 };
 
 async function probeArch(): Promise<boolean> {
@@ -99,8 +102,13 @@ export function ChartingGltfOdontogram(props: Props) {
 
   if (mode === "arch") {
     return (
-      <div className="mt-4 min-h-0 flex-1 overflow-hidden p-1">
-        <div className="h-[min(52vh,420px)] w-full">
+      <div
+        className={cn(
+          "min-h-0 flex-1 overflow-hidden p-1",
+          props.fill ? "" : "mt-4",
+        )}
+      >
+        <div className={cn("w-full", props.fill ? "h-full" : "h-[min(52vh,420px)]")}>
           <AnatomicalArchViewer
             selectedFdi={props.selectedFdi}
             focusMode
@@ -114,8 +122,13 @@ export function ChartingGltfOdontogram(props: Props) {
   }
 
   return (
-    <div className="mt-4 min-h-0 flex-1 overflow-hidden">
-      <div className="h-[min(52vh,420px)] w-full">
+    <div
+      className={cn(
+        "min-h-0 flex-1 overflow-hidden",
+        props.fill ? "" : "mt-4",
+      )}
+    >
+      <div className={cn("w-full", props.fill ? "h-full" : "h-[min(52vh,420px)]")}>
         <KindCanvas
           dentition={props.dentition}
           selectedFdi={props.selectedFdi}

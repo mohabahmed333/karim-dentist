@@ -3,13 +3,9 @@
 import type { Dentition, NotationSystem } from "@/services/notation";
 import type { PaintTool, SurfaceId, SurfaceMap } from "@/services/tooth_surfaces";
 import type { TeethChartStyle } from "../teeth-charts/chartStyles";
-import {
-  TeethChartCanvas,
-  TOOTH_CHART_HEIGHT,
-} from "../teeth-charts/TeethChartCanvas";
+import { TeethChartCanvas } from "../teeth-charts/TeethChartCanvas";
 import { TeethChartPicker } from "../teeth-charts/TeethChartPicker";
 import { ChartingGltfOdontogram } from "../charting/gltf/ChartingGltfOdontogram";
-import { cn } from "@/lib/utils";
 
 type Props = {
   notation: NotationSystem;
@@ -38,11 +34,14 @@ export function WorkspaceChartPane(props: Props) {
           />
         </div>
       ) : null}
-      {/* The 3D model takes the same fixed height as the flat charts, so
-          switching shape never moves anything below it. */}
-      <div className={cn("relative w-full bg-transparent", TOOTH_CHART_HEIGHT)}>
+      {/* The chart takes whatever height the pane has left. Every shape gets
+          the same box, so switching still moves nothing — and in a workspace
+          bounded to the viewport, a fixed 26rem left the rest of the column
+          empty. */}
+      <div className="relative flex min-h-0 w-full flex-1 flex-col bg-transparent">
         {model ? (
           <ChartingGltfOdontogram
+            fill
             dentition={props.dentition}
             notation={props.notation}
             selectedFdi={props.selectedFdi}
@@ -54,6 +53,7 @@ export function WorkspaceChartPane(props: Props) {
           />
         ) : (
           <TeethChartCanvas
+            fill
             style={props.chartStyle}
             selectedFdi={props.selectedFdi}
             hoveredFdi={null}
