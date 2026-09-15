@@ -1093,6 +1093,7 @@ export function SupportInboxView({
               transition={paneTransition}
             >
               <SupportChatColumn
+                compact
                 conversation={conversation}
                 messages={messages}
                 draft={draftsById[conversation.id] ?? ""}

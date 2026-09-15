@@ -17,6 +17,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useQuickBook } from "@/features/admin/components/quick-book/QuickBookContext";
 import { useTranslations } from "@/lib/i18n";
 import {
@@ -90,7 +96,35 @@ type Props = {
   onBack?: () => void;
   /** Close floating WhatsApp bubble (compact panel). */
   onClose?: () => void;
+  /**
+   * The narrow panel (floating bubble or side dock) rather than the full
+   * Front desk page. Labels give way to icons — there is no room for both
+   * the conversation's name and a row of worded buttons.
+   */
+  compact?: boolean;
 };
+
+/**
+ * An icon in the chat header, with its name on hover.
+ *
+ * The row is all glyphs, so every one of them needs a way to say what it
+ * does. `title` was doing that for some and nothing for others; this makes it
+ * uniform and keeps the label available to screen readers either way.
+ */
+function HeaderAction({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactElement;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger delay={200} closeDelay={0} render={children} />
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export function SupportChatColumn({
   conversation,
@@ -119,6 +153,7 @@ export function SupportChatColumn({
   showWorkspace = false,
   onBack,
   onClose,
+  compact = false,
 }: Props) {
   const t = useTranslations();
   const { openQuickBook } = useQuickBook();
@@ -292,6 +327,7 @@ export function SupportChatColumn({
             ) : null}
           </div>
         </div>
+        <TooltipProvider>
         <div className="flex shrink-0 items-center gap-0.5">
           <WaThemeSwitcher
             value={preference}
@@ -299,47 +335,67 @@ export function SupportChatColumn({
             disabled={siteDarkMode}
           />
           {allowMessageSearch ? (
-            <button
-              type="button"
-              onClick={() => setSearchOpen((v) => !v)}
-              className={cn(
-                "rounded-md p-1.5 text-[var(--wa-header-icon)] transition-colors hover:bg-[var(--wa-header-hover)]",
-                searchOpen && "bg-[var(--wa-header-hover)] text-[var(--wa-header-text)]",
-              )}
-              aria-label={
+            <HeaderAction
+              label={
                 searchOpen
                   ? t("admin.frontDesk.hideMessageSearch")
                   : t("admin.frontDesk.searchMessages")
               }
-              aria-pressed={searchOpen}
             >
-              <Search className="h-4 w-4" />
-            </button>
+              <button
+                type="button"
+                onClick={() => setSearchOpen((v) => !v)}
+                className={cn(
+                  "rounded-md p-1.5 text-[var(--wa-header-icon)] transition-colors hover:bg-[var(--wa-header-hover)]",
+                  searchOpen && "bg-[var(--wa-header-hover)] text-[var(--wa-header-text)]",
+                )}
+                aria-label={
+                  searchOpen
+                    ? t("admin.frontDesk.hideMessageSearch")
+                    : t("admin.frontDesk.searchMessages")
+                }
+                aria-pressed={searchOpen}
+              >
+                <Search className="h-4 w-4" />
+              </button>
+            </HeaderAction>
           ) : null}
           {onAskAi ? (
+            <HeaderAction label={t("admin.frontDesk.askAiTitle")}>
+              <button
+                type="button"
+                onClick={onAskAi}
+                data-showreel-action="whatsapp-ask-ai"
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-md bg-[var(--admin-primary)]/10 font-semibold text-[var(--admin-primary)] hover:bg-[var(--admin-primary)]/15",
+                  compact ? "p-1.5" : "px-2.5 py-1.5 text-xs",
+                )}
+                aria-label={t("admin.frontDesk.askAi")}
+              >
+                <Sparkles className={compact ? "h-4 w-4" : "h-3.5 w-3.5"} />
+                {compact ? null : t("admin.frontDesk.askAi")}
+              </button>
+            </HeaderAction>
+          ) : null}
+          <HeaderAction label={t("admin.frontDesk.bookTitle")}>
             <button
               type="button"
-              onClick={onAskAi}
-              data-showreel-action="whatsapp-ask-ai"
-              className="inline-flex items-center gap-1.5 rounded-md bg-[var(--admin-primary)]/10 px-2.5 py-1.5 text-xs font-semibold text-[var(--admin-primary)] hover:bg-[var(--admin-primary)]/15"
-              aria-label={t("admin.frontDesk.askAi")}
-              title={t("admin.frontDesk.askAiTitle")}
+              onClick={openAppointmentForClient}
+              data-showreel-action="whatsapp-book"
+              className="rounded-md p-1.5 text-[var(--wa-header-icon)] hover:bg-[var(--wa-header-hover)]"
+              aria-label={t("admin.frontDesk.book")}
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              {t("admin.frontDesk.askAi")}
+              <Calendar className="h-4 w-4" />
             </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={openAppointmentForClient}
-            data-showreel-action="whatsapp-book"
-            className="rounded-md p-1.5 text-[var(--wa-header-icon)] hover:bg-[var(--wa-header-hover)]"
-            aria-label={t("admin.frontDesk.book")}
-            title={t("admin.frontDesk.bookTitle")}
-          >
-            <Calendar className="h-4 w-4" />
-          </button>
+          </HeaderAction>
           {onArchiveToggle ? (
+            <HeaderAction
+              label={
+                archived
+                  ? t("admin.frontDesk.unarchive")
+                  : t("admin.frontDesk.archive")
+              }
+            >
             <button
               type="button"
               onClick={onArchiveToggle}
@@ -350,11 +406,6 @@ export function SupportChatColumn({
                   ? t("admin.frontDesk.unarchiveAria")
                   : t("admin.frontDesk.archiveAria")
               }
-              title={
-                archived
-                  ? t("admin.frontDesk.unarchive")
-                  : t("admin.frontDesk.archive")
-              }
             >
               {archived ? (
                 <ArchiveRestore className="h-4 w-4" />
@@ -362,8 +413,16 @@ export function SupportChatColumn({
                 <Archive className="h-4 w-4" />
               )}
             </button>
+            </HeaderAction>
           ) : null}
           {onMuteToggle ? (
+            <HeaderAction
+              label={
+                conversation.muted
+                  ? t("admin.frontDesk.unmute")
+                  : t("admin.frontDesk.mute")
+              }
+            >
             <button
               type="button"
               onClick={() => onMuteToggle(!conversation.muted)}
@@ -374,11 +433,6 @@ export function SupportChatColumn({
                   ? t("admin.frontDesk.unmuteAria")
                   : t("admin.frontDesk.muteAria")
               }
-              title={
-                conversation.muted
-                  ? t("admin.frontDesk.unmute")
-                  : t("admin.frontDesk.mute")
-              }
             >
               {conversation.muted ? (
                 <BellOff className="h-4 w-4" />
@@ -386,8 +440,16 @@ export function SupportChatColumn({
                 <Bell className="h-4 w-4" />
               )}
             </button>
+            </HeaderAction>
           ) : null}
           {onToggleDetails ? (
+            <HeaderAction
+              label={
+                detailsOpen
+                  ? t("admin.frontDesk.hideDetails")
+                  : t("admin.frontDesk.showDetails")
+              }
+            >
             <button
               type="button"
               onClick={onToggleDetails}
@@ -404,6 +466,7 @@ export function SupportChatColumn({
             >
               <PanelRight className="h-4 w-4" />
             </button>
+            </HeaderAction>
           ) : null}
           {showWorkspace && conversation.workspaceHref ? (
             <Link
@@ -427,17 +490,20 @@ export function SupportChatColumn({
             </Link>
           ) : null}
           {onClose ? (
-            <button
-              type="button"
-              onClick={onClose}
-              data-showreel-action="chat-close"
-              className="rounded-md p-1.5 text-[var(--wa-header-icon)] hover:bg-[var(--wa-header-hover)]"
-              aria-label={t("admin.frontDesk.closeBubble")}
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <HeaderAction label={t("admin.frontDesk.closeBubble")}>
+              <button
+                type="button"
+                onClick={onClose}
+                data-showreel-action="chat-close"
+                className="rounded-md p-1.5 text-[var(--wa-header-icon)] hover:bg-[var(--wa-header-hover)]"
+                aria-label={t("admin.frontDesk.closeBubble")}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </HeaderAction>
           ) : null}
         </div>
+        </TooltipProvider>
       </header>
 
       {allowMessageSearch ? (

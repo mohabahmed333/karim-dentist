@@ -339,7 +339,9 @@ export function AdminFloatingBubbles({
                       {...inboxDemoProps}
                       compact
                       showClinicAssist={false}
-                      onClose={onCollapseDock}
+                      // No onClose: the dock's own tab bar collapses it, and a
+                      // second ✕ inside the thread header only asks the reader
+                      // which one dismisses what.
                       agentName={t("admin.frontDesk.agentName")}
                       panelVisible={
                         showDockColumn && dockTab === "whatsapp"
