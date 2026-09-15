@@ -1,3 +1,5 @@
+import type { AdminMessageKey } from "@/lib/i18n";
+import { useTranslations } from "@/lib/i18n";
 import type { CaseStudy } from "@/services/case_studies";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,14 +16,26 @@ const fields = [
   "production_company",
 ] as const;
 
+const FIELD_LABEL_KEYS: Record<(typeof fields)[number], AdminMessageKey> = {
+  title: "admin.cms.title",
+  description: "admin.cms.description",
+  year: "admin.cms.year",
+  category: "admin.cms.category",
+  client: "admin.cms.client",
+  director: "admin.cms.director",
+  agency: "admin.cms.agency",
+  production_company: "admin.cms.productionCompany",
+};
+
 type Props = { item: CaseStudy };
 
 export function CaseStudyFields({ item }: Props) {
+  const t = useTranslations();
   return (
     <>
       {fields.map((name) => (
         <div key={name} className="space-y-2">
-          <Label htmlFor={name}>{name}</Label>
+          <Label htmlFor={name}>{t(FIELD_LABEL_KEYS[name])}</Label>
           {name === "description" ? (
             <Textarea
               id={name}
@@ -46,7 +60,7 @@ export function CaseStudyFields({ item }: Props) {
         </div>
       ))}
       <div className="space-y-2">
-        <Label htmlFor="tags">tags (comma-separated)</Label>
+        <Label htmlFor="tags">{t("admin.cms.tagsCommaSeparated")}</Label>
         <Input
           id="tags"
           name="tags"
@@ -55,7 +69,7 @@ export function CaseStudyFields({ item }: Props) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="is_published">status</Label>
+        <Label htmlFor="is_published">{t("admin.cms.status")}</Label>
         <select
           id="is_published"
           name="is_published"
@@ -63,8 +77,8 @@ export function CaseStudyFields({ item }: Props) {
           key={item.id + "pub"}
           className="flex h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm"
         >
-          <option value="false">Draft</option>
-          <option value="true">Published</option>
+          <option value="false">{t("admin.draft")}</option>
+          <option value="true">{t("admin.publish")}</option>
         </select>
       </div>
     </>

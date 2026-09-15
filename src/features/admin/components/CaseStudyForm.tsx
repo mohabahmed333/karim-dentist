@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { MediaUploadField, type MediaKind } from "./MediaUploadField";
 import { CaseStudyFields } from "./CaseStudyFields";
+import { useTranslations } from "@/lib/i18n";
 import type { CaseStudy } from "@/services/case_studies";
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function CaseStudyForm({ item, onSubmit, pending, message }: Props) {
+  const t = useTranslations();
   const [mediaUrl, setMediaUrl] = useState(item.media_url ?? "");
   const [mediaType, setMediaType] = useState<MediaKind>(
     item.media_type ?? "image",
@@ -49,7 +51,7 @@ export function CaseStudyForm({ item, onSubmit, pending, message }: Props) {
     >
       <CaseStudyFields item={item} />
       <MediaUploadField
-        label="Card media"
+        label={t("admin.cms.cardMedia")}
         bucket="projects"
         folder="case-studies"
         mediaType={mediaType}
@@ -61,7 +63,7 @@ export function CaseStudyForm({ item, onSubmit, pending, message }: Props) {
         <p className="text-sm text-muted-foreground">{message}</p>
       ) : null}
       {pending ? (
-        <p className="text-sm text-muted-foreground">Saving…</p>
+        <p className="text-sm text-muted-foreground">{t("admin.saving")}</p>
       ) : null}
     </form>
   );
