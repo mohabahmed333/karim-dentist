@@ -156,6 +156,7 @@ export const adminRailItems: AdminRailItem[] = [
     permission: "inventory.view",
     children: [
       { href: "/admin/inventory/reports", labelKey: "admin.nav.inventoryReports", permission: "inventory.reports.view" },
+      { href: "/admin/inventory/analytics", labelKey: "admin.nav.inventoryAnalytics", permission: "inventory.view" },
     ],
   },
   {
@@ -304,6 +305,7 @@ export const adminNavSections: AdminNavSection[] = [
         permission: "inventory.view",
         items: [
           { href: "/admin/inventory/reports", labelKey: "admin.nav.inventoryReports", permission: "inventory.reports.view" },
+          { href: "/admin/inventory/analytics", labelKey: "admin.nav.inventoryAnalytics", permission: "inventory.view" },
         ],
       },
       {
@@ -408,6 +410,7 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin/billing": "admin.nav.billing",
   "/admin/inventory": "admin.nav.inventory",
   "/admin/inventory/reports": "admin.nav.inventoryReports",
+  "/admin/inventory/analytics": "admin.nav.inventoryAnalytics",
   "/admin/support": "admin.nav.support",
   "/admin/hero": "admin.nav.hero",
   "/admin/about": "admin.nav.about",
@@ -463,6 +466,7 @@ export const adminPagePermissions: Record<string, string> = {
   "/admin/billing": "patients.view",
   "/admin/inventory": "inventory.view",
   "/admin/inventory/reports": "inventory.reports.view",
+  "/admin/inventory/analytics": "inventory.view",
   "/admin/support": "support.view",
   "/admin/hero": "hero.view",
   "/admin/about": "about.view",
