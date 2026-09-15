@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { useTranslations } from "@/lib/i18n";
 
 export type TemplateProposal = {
   kind: string;
@@ -35,18 +36,22 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   );
 }
 
-function Body({ name, language, text }: { name: string; language: string; text: string }) {
+function Body({ name, language, languageLabel, text }: { name: string; language: string; languageLabel: string; text: string }) {
+  const t = useTranslations();
   return (
     <div className="flex items-start gap-2">
       <div className="min-w-0 flex-1">
         <p className="font-mono text-[11px] text-[var(--admin-muted)]">
-          {name} · {language}
+          {name} · {languageLabel}
         </p>
-        <p dir={language === "Arabic" ? "rtl" : "ltr"} className="text-xs leading-relaxed">
+        <p dir={language === "ar" ? "rtl" : "ltr"} className="text-xs leading-relaxed">
           {text}
         </p>
       </div>
-      <CopyButton text={text} label={`Copy the ${language} body of ${name}`} />
+      <CopyButton
+        text={text}
+        label={t("admin.pages.templates.copyBody").replace("{language}", languageLabel).replace("{name}", name)}
+      />
     </div>
   );
 }
@@ -59,6 +64,7 @@ function Body({ name, language, text }: { name: string; language: string; text: 
  * write themselves. Same source as the runbook — TEMPLATE_PROPOSALS.
  */
 export function TemplateProposalCard({ proposal }: { proposal: TemplateProposal }) {
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
 
   return (
@@ -69,20 +75,22 @@ export function TemplateProposalCard({ proposal }: { proposal: TemplateProposal 
         onClick={() => setOpen(!open)}
         className="w-full px-2.5 py-1.5 text-left text-xs text-[var(--admin-muted)] hover:text-[var(--admin-fg,#111)]"
       >
-        {open ? "Hide" : "Show"} the text to submit for {proposal.title.toLowerCase()}
+        {t(open ? "admin.pages.templates.hideText" : "admin.pages.templates.showText").replace(
+          "{title}",
+          proposal.title.toLowerCase(),
+        )}
       </button>
 
       {open ? (
         <div className="space-y-2 border-t border-[var(--admin-border,#e5e7eb)] px-2.5 py-2">
           <p className="text-xs text-[var(--admin-muted)]">
-            Submit both in Meta Business Manager as <strong>{proposal.category}</strong>, language{" "}
-            <strong>en_US</strong>, body positional. Then add the approved names to PATIENT_TEMPLATES.
+            {t("admin.pages.templates.submitInstructions").replace("{category}", proposal.category)}
           </p>
           <p className="text-[11px] text-[var(--admin-muted)]">
             {proposal.params.map((name, i) => `{{${i + 1}}} ${name}`).join(" · ")}
           </p>
-          <Body name={proposal.names.en} language="English" text={proposal.bodyEn} />
-          <Body name={proposal.names.ar} language="Arabic" text={proposal.bodyAr} />
+          <Body name={proposal.names.en} language="en" languageLabel={t("admin.pages.templates.englishLabel")} text={proposal.bodyEn} />
+          <Body name={proposal.names.ar} language="ar" languageLabel={t("admin.pages.templates.arabicLabel")} text={proposal.bodyAr} />
         </div>
       ) : null}
     </div>
