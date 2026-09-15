@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AnimatePresence,
   LayoutGroup,
@@ -17,6 +17,10 @@ import type { Service } from "@/services/services/types";
 import type { WhatsappConversation } from "@/services/whatsapp/types";
 import type { SiteSettings } from "@/services/site_settings/types";
 import type { DoctorProduction } from "@/services/patient_treatments/queries";
+import type {
+  BillingChartStats,
+  InventoryChartStats,
+} from "./renderDashboardWidget";
 import { AdminReservationFilters } from "@/features/admin/components/AdminReservationFilters";
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
 import { useDashboardLayoutEditor } from "@/features/admin/hooks/useDashboardLayoutEditor";
@@ -27,6 +31,7 @@ import {
   packDashboardStackRows,
   rowGapColSpan,
   type DashboardLayout,
+  type DashboardWidgetId,
 } from "@/features/admin/lib/dashboardLayout";
 import {
   dashboardEditChromeTransition,
@@ -65,6 +70,12 @@ type Props = {
   /** True when the signed-in doctor's role has dashboard_scope "own" — reservations are already filtered to just them. */
   scopeToDoctor?: boolean;
   doctorProduction?: DoctorProduction | null;
+  /** Gates the 4 billing widgets — fails closed (defaults to hidden). */
+  canViewBilling?: boolean;
+  /** Gates the 4 inventory widgets — fails closed (defaults to hidden). */
+  canViewInventory?: boolean;
+  billingStats?: BillingChartStats | null;
+  inventoryStats?: InventoryChartStats | null;
 };
 
 export function ClinicDashboard({
@@ -85,6 +96,10 @@ export function ClinicDashboard({
   demoClinical = null,
   scopeToDoctor = false,
   doctorProduction = null,
+  canViewBilling = false,
+  canViewInventory = false,
+  billingStats = null,
+  inventoryStats = null,
 }: Props) {
   const [clinicReservation, setClinicReservation] =
     useState<Reservation | null>(null);
@@ -94,7 +109,35 @@ export function ClinicDashboard({
   const layoutTransition = dashboardLayoutTransition(reduced);
   const chromeTransition = dashboardEditChromeTransition(reduced);
   const slotVariants = dashboardEditSlotVariants(reduced);
-  const editor = useDashboardLayoutEditor(settings, initialLayout);
+  const hiddenWidgetIds = useMemo<DashboardWidgetId[]>(() => {
+    const hidden: DashboardWidgetId[] = [];
+    if (!canViewBilling) {
+      hidden.push(
+        "chartBillingRevenue",
+        "chartBillingMethodMix",
+        "kpiOutstandingBalance",
+        "kpiPendingPayments",
+      );
+    }
+    if (!canViewInventory) {
+      hidden.push(
+        "chartInventoryStockValue",
+        "chartInventoryConsumption",
+        "kpiLowStock",
+        "kpiPendingApprovals",
+      );
+    }
+    return hidden;
+  }, [canViewBilling, canViewInventory]);
+  const visibleInitialLayout = useMemo(
+    () => initialLayout.filter((w) => !hiddenWidgetIds.includes(w.id)),
+    [initialLayout, hiddenWidgetIds],
+  );
+  const editor = useDashboardLayoutEditor(
+    settings,
+    visibleInitialLayout,
+    hiddenWidgetIds,
+  );
   const stacks = groupDashboardStacks(editor.layout);
   const stackRows = packDashboardStackRows(stacks);
   const layoutActive = !reduced && !editor.dragFromId;
@@ -111,6 +154,8 @@ export function ClinicDashboard({
     onPatientSelect: setClinicReservation,
     conversationsLive: !demoMode,
     doctorProduction,
+    billingStats,
+    inventoryStats,
   };
 
   return (
