@@ -12,7 +12,7 @@ export async function createAdminNote(content: string): Promise<AdminNote> {
   const auth = await requirePermission("notes.manage");
   if (auth.error) throw new Error("Forbidden");
   return mutations.createAdminNote(auth.supabase, {
-    content: content.trim().slice(0, 2000),
+    content: content.trim().slice(0, 10000),
     createdBy: auth.session?.user.id ?? null,
   });
 }

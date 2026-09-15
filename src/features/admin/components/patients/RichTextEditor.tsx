@@ -1,10 +1,13 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEffect } from "react";
+import { useEditor, EditorContent, type Extension } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
+import type { EditorView } from "@tiptap/pm/view";
 import {
   Bold,
   Italic,
@@ -13,6 +16,7 @@ import {
   ListOrdered,
   Heading2,
   Link2,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useTranslations } from "@/lib/i18n";
 
@@ -22,7 +26,36 @@ type Props = {
   placeholder?: string;
   disabled?: boolean;
   minHeightClass?: string;
+  /** When set, enables pasting/dropping an image straight into the editor
+   * (and a toolbar button to pick one) — resolve to the image's public URL,
+   * e.g. after uploading it to storage. Omit to leave images unsupported,
+   * exactly as before. */
+  onImageUpload?: (file: File) => Promise<string>;
+  /** Focus the editor once it mounts — for a freshly created, empty note. */
+  autoFocus?: boolean;
 };
+
+function insertImage(view: EditorView, url: string) {
+  const { schema } = view.state;
+  const node = schema.nodes.image?.create({ src: url });
+  if (!node) return;
+  view.dispatch(view.state.tr.replaceSelectionWith(node));
+}
+
+/** Claims (and uploads) the first image found in a paste/drop; returns
+ * whether it handled the event so Tiptap's default handling is skipped. */
+function handleImageFiles(
+  view: EditorView,
+  files: File[],
+  onImageUpload: (file: File) => Promise<string>,
+): boolean {
+  const image = files.find((file) => file.type.startsWith("image/"));
+  if (!image) return false;
+  void onImageUpload(image)
+    .then((url) => insertImage(view, url))
+    .catch(() => undefined);
+  return true;
+}
 
 export function RichTextEditor({
   value,
@@ -30,6 +63,8 @@ export function RichTextEditor({
   placeholder,
   disabled,
   minHeightClass = "min-h-28",
+  onImageUpload,
+  autoFocus,
 }: Props) {
   const t = useTranslations();
   const editor = useEditor({
@@ -40,6 +75,7 @@ export function RichTextEditor({
       Underline,
       Placeholder.configure({ placeholder: placeholder ?? t("admin.richText.write") }),
       Link.configure({ openOnClick: false, HTMLAttributes: { class: "text-blue-600 underline" } }),
+      ...(onImageUpload ? [Image as unknown as Extension] : []),
     ],
     content: value || "",
     onUpdate: ({ editor: ed }) => onChange(ed.getHTML()),
@@ -47,14 +83,31 @@ export function RichTextEditor({
       attributes: {
         class: `rich-text-editor prose prose-sm max-w-none px-3 py-2 outline-none ${minHeightClass}`,
       },
+      handlePaste: onImageUpload
+        ? (view, event) => {
+            const files = Array.from(event.clipboardData?.files ?? []);
+            return handleImageFiles(view, files, onImageUpload);
+          }
+        : undefined,
+      handleDrop: onImageUpload
+        ? (view, event) => {
+            const files = Array.from(event.dataTransfer?.files ?? []);
+            return handleImageFiles(view, files, onImageUpload);
+          }
+        : undefined,
     },
   });
+
+  useEffect(() => {
+    if (autoFocus && editor) editor.chain().focus("end").run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- focus once, on mount only
+  }, [editor]);
 
   if (!editor) return null;
 
   return (
     <div className={`overflow-hidden rounded-lg bg-[#f2f2f2] ${disabled ? "opacity-60" : ""}`}>
-      <Toolbar editor={editor} disabled={Boolean(disabled)} t={t} />
+      <Toolbar editor={editor} disabled={Boolean(disabled)} t={t} onImageUpload={onImageUpload} />
       <EditorContent editor={editor} />
     </div>
   );
@@ -64,10 +117,12 @@ function Toolbar({
   editor,
   disabled,
   t,
+  onImageUpload,
 }: {
   editor: NonNullable<ReturnType<typeof useEditor>>;
   disabled: boolean;
   t: ReturnType<typeof useTranslations>;
+  onImageUpload?: (file: File) => Promise<string>;
 }) {
   function setLink() {
     const prev = editor.getAttributes("link").href as string | undefined;
@@ -78,6 +133,21 @@ function Toolbar({
       return;
     }
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+  }
+
+  function pickImage() {
+    if (!onImageUpload) return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      void onImageUpload(file).then((url) => {
+        editor.chain().focus().setImage({ src: url }).run();
+      });
+    };
+    input.click();
   }
 
   const btn =
@@ -93,7 +163,9 @@ function Toolbar({
       <button type="button" disabled={disabled} className={`${btn} ${editor.isActive("bulletList") ? on : ""}`} onClick={() => editor.chain().focus().toggleBulletList().run()} aria-label={t("admin.richText.bulletList")}><List className="size-3.5" /></button>
       <button type="button" disabled={disabled} className={`${btn} ${editor.isActive("orderedList") ? on : ""}`} onClick={() => editor.chain().focus().toggleOrderedList().run()} aria-label={t("admin.richText.orderedList")}><ListOrdered className="size-3.5" /></button>
       <button type="button" disabled={disabled} className={`${btn} ${editor.isActive("link") ? on : ""}`} onClick={setLink} aria-label={t("admin.richText.link")}><Link2 className="size-3.5" /></button>
+      {onImageUpload ? (
+        <button type="button" disabled={disabled} className={btn} onClick={pickImage} aria-label={t("admin.richText.image")}><ImageIcon className="size-3.5" /></button>
+      ) : null}
     </div>
   );
 }
-

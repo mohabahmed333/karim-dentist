@@ -156,6 +156,7 @@ export const adminEn = {
   "admin.richText.bulletList": "Bullet list",
   "admin.richText.orderedList": "Ordered list",
   "admin.richText.link": "Link",
+  "admin.richText.image": "Image",
 
   "admin.notifications.off": "Off",
   "admin.notifications.rehearsing": "Rehearsing",

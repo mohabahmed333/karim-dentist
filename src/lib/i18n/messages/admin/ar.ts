@@ -158,6 +158,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.richText.bulletList": "قائمة نقطية",
   "admin.richText.orderedList": "قائمة مرقّمة",
   "admin.richText.link": "رابط",
+  "admin.richText.image": "صورة",
 
   "admin.notifications.off": "متوقف",
   "admin.notifications.rehearsing": "تجريبي",

@@ -11,7 +11,10 @@ import {
   dismissAdminNote,
   updateAdminNoteContent,
 } from "@/services/admin_notes/actions";
+import { hasMeaningfulContent } from "@/services/admin_notes/schemas";
+import { uploadAdminNoteImage } from "@/services/admin_notes/uploadImage";
 import type { AdminNote } from "@/services/admin_notes/types";
+import { RichTextEditor } from "@/features/admin/components/patients/RichTextEditor";
 
 const MIN_WIDTH = 240;
 const MAX_WIDTH = 480;
@@ -275,11 +278,6 @@ function NoteRow({
 }) {
   const [content, setContent] = useState(note.content);
   const saveTimer = useRef<number | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (autoFocus) textareaRef.current?.focus();
-  }, [autoFocus]);
 
   useEffect(() => {
     return () => {
@@ -295,7 +293,7 @@ function NoteRow({
   }
 
   async function save(next: string) {
-    if (!next.trim()) return;
+    if (!hasMeaningfulContent(next)) return;
     try {
       await updateAdminNoteContent(note.id, next);
     } catch {
@@ -322,14 +320,13 @@ function NoteRow({
           <X className="size-3" />
         </button>
       </div>
-      <textarea
-        ref={textareaRef}
+      <RichTextEditor
         value={content}
-        onChange={(e) => schedule(e.target.value)}
-        onBlur={() => void save(content)}
-        rows={3}
+        onChange={schedule}
+        onImageUpload={uploadAdminNoteImage}
+        autoFocus={autoFocus}
         placeholder="Write a note for the team…"
-        className="w-full resize-none bg-transparent text-[12px] text-[var(--admin-text)] outline-none placeholder:text-[var(--admin-muted)]"
+        minHeightClass="min-h-16"
       />
     </div>
   );
