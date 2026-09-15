@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   url: string;
@@ -14,6 +15,7 @@ const DEFAULT_PEAKS = [
 ];
 
 export function VoiceNotePlayer({ url, peaks = DEFAULT_PEAKS }: Props) {
+  const t = useTranslations();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -93,7 +95,7 @@ export function VoiceNotePlayer({ url, peaks = DEFAULT_PEAKS }: Props) {
           const rect = e.currentTarget.getBoundingClientRect();
           seek((e.clientX - rect.left) / rect.width);
         }}
-        aria-label="Seek"
+        aria-label={t("admin.frontDesk.seek")}
       >
         {peaks.map((p, i) => (
           <span

@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useQuickBook } from "@/features/admin/components/quick-book/QuickBookContext";
+import { useTranslations } from "@/lib/i18n";
 import type { SupportMessage } from "../supportDummyData";
 
 export type FlowBookingContext = {
@@ -36,6 +37,7 @@ function isAppointmentFlow(flow: NonNullable<SupportMessage["flow"]>) {
 }
 
 export function FlowMessageCard({ flow, booking }: Props) {
+  const t = useTranslations();
   const { openQuickBook } = useQuickBook();
   const fields = useMemo(
     () =>
@@ -54,8 +56,8 @@ export function FlowMessageCard({ flow, booking }: Props) {
 
   function openNewAppointment() {
     if (!booking) return;
-    toast.message("New appointment", {
-      description: "After you save, we’ll WhatsApp the confirmation.",
+    toast.message(t("admin.frontDesk.newAppointmentToast"), {
+      description: t("admin.frontDesk.newAppointmentDesc"),
     });
     openQuickBook({
       waConversationId: booking.conversationId,
@@ -68,14 +70,15 @@ export function FlowMessageCard({ flow, booking }: Props) {
   function submit() {
     const missing = fields.filter((f) => !values[f]?.trim());
     if (missing.length) {
-      toast.error(`Fill in: ${missing.join(", ")}`);
+      toast.error(t("admin.frontDesk.flowFillIn").replace("{fields}", missing.join(", ")));
       return;
     }
     setDone(true);
     setOpen(false);
-    toast.success(`${flow.title ?? "Flow"} submitted`, {
-      description: fields.map((f) => `${f}: ${values[f]}`).join(" · "),
-    });
+    toast.success(
+      t("admin.frontDesk.flowSubmittedToast").replace("{title}", flow.title ?? "Flow"),
+      { description: fields.map((f) => `${f}: ${values[f]}`).join(" · ") },
+    );
   }
 
   return (
@@ -91,7 +94,7 @@ export function FlowMessageCard({ flow, booking }: Props) {
           </span>
           <div>
             <p className="text-xs font-semibold text-[#111827]">
-              {flow.title ?? "WhatsApp Flow"}
+              {flow.title ?? t("admin.frontDesk.whatsappFlow")}
             </p>
             {flow.subtitle ? (
               <p className="text-[11px] text-[#6B7280]">{flow.subtitle}</p>
@@ -124,10 +127,10 @@ export function FlowMessageCard({ flow, booking }: Props) {
             className="w-full rounded-md bg-[#4F46E5] px-3 py-1.5 text-xs font-semibold text-white disabled:bg-[#A5B4FC]"
           >
             {done
-              ? "Submitted"
+              ? t("admin.frontDesk.flowSubmittedLabel")
               : appointment
-                ? "New appointment"
-                : (flow.cta ?? "Open")}
+                ? t("admin.frontDesk.newAppointment")
+                : (flow.cta ?? t("admin.open"))}
           </button>
         </div>
       </div>
@@ -136,9 +139,9 @@ export function FlowMessageCard({ flow, booking }: Props) {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="sm:max-w-md" showCloseButton>
             <DialogHeader>
-              <DialogTitle>{flow.title ?? "WhatsApp Flow"}</DialogTitle>
+              <DialogTitle>{flow.title ?? t("admin.frontDesk.whatsappFlow")}</DialogTitle>
               <DialogDescription>
-                {flow.subtitle ?? "Complete the fields below."}
+                {flow.subtitle ?? t("admin.frontDesk.flowCompleteFields")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-1">
@@ -167,14 +170,14 @@ export function FlowMessageCard({ flow, booking }: Props) {
                 onClick={() => setOpen(false)}
                 className="rounded-md border border-[#E5E7EB] px-3 py-1.5 text-xs font-medium"
               >
-                Cancel
+                {t("admin.cancel")}
               </button>
               <button
                 type="button"
                 onClick={submit}
                 className="rounded-md bg-[#4F46E5] px-3 py-1.5 text-xs font-semibold text-white"
               >
-                Submit
+                {t("admin.frontDesk.submit")}
               </button>
             </DialogFooter>
           </DialogContent>

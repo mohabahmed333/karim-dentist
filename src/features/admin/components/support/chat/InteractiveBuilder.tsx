@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Link2, MessageSquarePlus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "@/lib/i18n";
 
 export type InteractiveDraft =
   | {
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export function InteractiveBuilder({ value, onChange }: Props) {
+  const t = useTranslations();
   const [tab, setTab] = useState<"buttons" | "cta">(
     value?.mode === "cta" ? "cta" : "buttons",
   );
@@ -38,7 +40,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
           }
         >
           <MessageSquarePlus className="h-3.5 w-3.5" />
-          Quick reply buttons
+          {t("admin.frontDesk.quickReplyButtons")}
         </button>
         <button
           type="button"
@@ -52,7 +54,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
           }
         >
           <Link2 className="h-3.5 w-3.5" />
-          URL CTA
+          {t("admin.frontDesk.urlCta")}
         </button>
       </div>
     );
@@ -71,7 +73,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
               setTab("buttons");
               onChange({ mode: "buttons", labels: ["Yes", "No"] });
             }}
-            label="Quick replies"
+            label={t("admin.frontDesk.quickReplies")}
           />
           <Tab
             active={tab === "cta"}
@@ -79,12 +81,12 @@ export function InteractiveBuilder({ value, onChange }: Props) {
               setTab("cta");
               onChange({ mode: "cta", label: "Book online", url: "https://" });
             }}
-            label="URL CTA"
+            label={t("admin.frontDesk.urlCta")}
           />
         </div>
         <button
           type="button"
-          aria-label="Remove interactive"
+          aria-label={t("admin.frontDesk.removeInteractive")}
           className="rounded p-1 text-[var(--wa-surface-muted-text)] hover:bg-[var(--wa-surface-bg)]"
           onClick={() => onChange(null)}
         >
@@ -103,7 +105,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
                 labels[i] = e.target.value;
                 onChange({ ...value, labels });
               }}
-              placeholder={`Button ${i + 1}`}
+              placeholder={t("admin.frontDesk.buttonPlaceholder").replace("{n}", String(i + 1))}
             />
           ))}
           {value.labels.length < 3 ? (
@@ -115,7 +117,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
                 onChange({ ...value, labels: [...value.labels, ""] })
               }
             >
-              Add button
+              {t("admin.pages.quickReplies.addButton")}
             </Button>
           ) : null}
         </div>
@@ -127,7 +129,7 @@ export function InteractiveBuilder({ value, onChange }: Props) {
             onChange={(e) =>
               onChange({ ...value, label: e.target.value })
             }
-            placeholder="Button label"
+            placeholder={t("admin.customize.buttonLabel")}
           />
           <Input
             value={value.url}

@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useTranslations } from "@/lib/i18n";
 import {
   parseLatLngFromText,
   type LocationPin,
@@ -30,6 +31,7 @@ export function LocationSendDialog({
   onSend,
   clinicAddress,
 }: Props) {
+  const t = useTranslations();
   const clinic = clinicLocationPin(clinicAddress);
   const [mode, setMode] = useState<"clinic" | "custom">("clinic");
   const [name, setName] = useState(clinic.name);
@@ -69,18 +71,18 @@ export function LocationSendDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-[#EF4444]" />
-            Send location
+            {t("admin.frontDesk.sendLocation")}
           </DialogTitle>
         </DialogHeader>
         <div className="mb-3 flex gap-1 rounded-lg bg-[#F3F4F6] p-1">
           <ModeTab
             active={mode === "clinic"}
-            label="Clinic"
+            label={t("admin.frontDesk.locationClinic")}
             onClick={() => setMode("clinic")}
           />
           <ModeTab
             active={mode === "custom"}
-            label="Custom"
+            label={t("admin.frontDesk.locationCustom")}
             onClick={() => setMode("custom")}
           />
         </div>
@@ -97,36 +99,36 @@ export function LocationSendDialog({
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Location name"
+              placeholder={t("admin.frontDesk.locationName")}
             />
             <Input
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="Address"
+              placeholder={t("admin.frontDesk.locationAddress")}
             />
             <Input
               value={coords}
               onChange={(e) => setCoords(e.target.value)}
-              placeholder="Latitude, longitude"
+              placeholder={t("admin.frontDesk.locationCoords")}
             />
             <div className="flex gap-2">
               <Input
                 value={paste}
                 onChange={(e) => setPaste(e.target.value)}
-                placeholder="Paste Google Maps link"
+                placeholder={t("admin.frontDesk.locationPaste")}
               />
               <Button type="button" variant="outline" onClick={applyPaste}>
-                Parse
+                {t("admin.frontDesk.parse")}
               </Button>
             </div>
           </div>
         )}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("admin.cancel")}
           </Button>
           <Button type="button" onClick={submit}>
-            Send location
+            {t("admin.frontDesk.sendLocation")}
           </Button>
         </DialogFooter>
       </DialogContent>
