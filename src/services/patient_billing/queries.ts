@@ -1,7 +1,12 @@
 import { groupReservationsByPatient } from "@/services/reservations/patientHistory";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 import { listReservationsServer } from "@/services/reservations/queries";
-import type { LedgerEntry, LedgerEntryWithBalance, PatientBalance } from "./types";
+import type {
+  LedgerEntry,
+  LedgerEntryWithBalance,
+  PatientBalance,
+  WeekPaymentRow,
+} from "./types";
 
 type ServerSupabase = Awaited<
   ReturnType<typeof import("@/lib/supabase/server").createClient>
@@ -157,4 +162,55 @@ export async function listPatientBalances(
     manualRes.data ?? [],
     directory,
   );
+}
+
+type WeekEntryRow = { amount_egp: number; method: string | null; created_at: string };
+type WeekDepositRow = { amount_egp: number; decided_at: string | null; created_at: string };
+
+/** Merges this-week billing-entry payments and paid deposits into one list — pure, no I/O. */
+export function mergeWeekPayments(
+  entries: WeekEntryRow[],
+  deposits: WeekDepositRow[],
+): WeekPaymentRow[] {
+  const fromEntries: WeekPaymentRow[] = entries.map((e) => ({
+    date: e.created_at,
+    amount: e.amount_egp,
+    method: e.method,
+  }));
+  const fromDeposits: WeekPaymentRow[] = deposits.map((d) => ({
+    date: d.decided_at ?? d.created_at,
+    amount: d.amount_egp,
+    method: "deposit",
+  }));
+  return [...fromEntries, ...fromDeposits];
+}
+
+/** This week's payments (manual/WhatsApp billing entries + paid deposits), from/to inclusive ISO bounds. */
+export async function listWeekPayments(
+  supabase: ServerSupabase,
+  from: string,
+  to: string,
+): Promise<WeekPaymentRow[]> {
+  const [entriesRes, depositsRes] = await Promise.all([
+    supabase
+      .from("patient_billing_entries")
+      .select("amount_egp, method, created_at")
+      .eq("kind", "payment")
+      .gte("created_at", from)
+      .lte("created_at", to),
+    supabase
+      .from("deposit_requests")
+      .select("amount_egp, decided_at, created_at")
+      .eq("status", "paid")
+      .gte("decided_at", from)
+      .lte("decided_at", to),
+  ]);
+  if (entriesRes.error) throw entriesRes.error;
+  if (depositsRes.error) throw depositsRes.error;
+  return mergeWeekPayments(entriesRes.data ?? [], depositsRes.data ?? []);
+}
+
+/** Sum of every patient's positive balance — total EGP currently owed, clinic-wide. */
+export function sumOutstandingBalance(balances: PatientBalance[]): number {
+  return balances.reduce((sum, b) => sum + Math.max(0, b.balance), 0);
 }

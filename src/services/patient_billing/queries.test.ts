@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { aggregatePatientBalances, buildLedger } from "./queries";
-import type { LedgerEntry } from "./types";
+import {
+  aggregatePatientBalances,
+  buildLedger,
+  mergeWeekPayments,
+  sumOutstandingBalance,
+} from "./queries";
+import type { LedgerEntry, PatientBalance } from "./types";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 
 describe("buildLedger", () => {
@@ -120,5 +125,45 @@ describe("aggregatePatientBalances", () => {
       balances.map((b) => b.patientKey),
       ["b", "a"],
     );
+  });
+});
+
+describe("mergeWeekPayments", () => {
+  it("merges billing entries and paid deposits, using decided_at for deposit dates", () => {
+    const rows = mergeWeekPayments(
+      [{ amount_egp: 300, method: "cash", created_at: "2026-09-14T10:00:00Z" }],
+      [{ amount_egp: 500, decided_at: "2026-09-15T08:00:00Z", created_at: "2026-09-13T00:00:00Z" }],
+    );
+    assert.deepEqual(rows, [
+      { date: "2026-09-14T10:00:00Z", amount: 300, method: "cash" },
+      { date: "2026-09-15T08:00:00Z", amount: 500, method: "deposit" },
+    ]);
+  });
+
+  it("falls back to created_at when a deposit has no decided_at", () => {
+    const rows = mergeWeekPayments(
+      [],
+      [{ amount_egp: 200, decided_at: null, created_at: "2026-09-12T00:00:00Z" }],
+    );
+    assert.deepEqual(rows, [{ date: "2026-09-12T00:00:00Z", amount: 200, method: "deposit" }]);
+  });
+
+  it("returns an empty list when there is nothing to merge", () => {
+    assert.deepEqual(mergeWeekPayments([], []), []);
+  });
+});
+
+describe("sumOutstandingBalance", () => {
+  it("sums only positive balances", () => {
+    const balances: PatientBalance[] = [
+      { patientKey: "a", displayName: "A", phone: "", balance: 500 },
+      { patientKey: "b", displayName: "B", phone: "", balance: -200 },
+      { patientKey: "c", displayName: "C", phone: "", balance: 100 },
+    ];
+    assert.equal(sumOutstandingBalance(balances), 600);
+  });
+
+  it("returns zero for an empty list", () => {
+    assert.equal(sumOutstandingBalance([]), 0);
   });
 });

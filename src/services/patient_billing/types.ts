@@ -18,3 +18,5 @@ export type PatientBalance = {
   phone: string;
   balance: number;
 };
+
+export type WeekPaymentRow = { date: string; amount: number; method: string | null };
