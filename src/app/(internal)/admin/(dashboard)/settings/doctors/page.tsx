@@ -6,6 +6,7 @@ import { listDoctors } from "@/services/profiles";
 import { listDoctorHours } from "@/services/doctor_schedule/queries";
 import type { DoctorHours } from "@/services/doctor_schedule/types";
 import { listAllServiceDoctorMappings } from "@/services/service_doctors/queries";
+import { listRoles } from "@/services/roles/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function AdminSettingsDoctorsPage() {
   const session = await requirePagePermissionOrDoctor("settings.view");
   const supabase = await createClient();
 
-  const [doctors, hours, services, mappings] = await Promise.all([
+  const [doctors, hours, services, mappings, roles] = await Promise.all([
     listDoctors(supabase),
     listDoctorHours(supabase),
     // Every non-deleted service, not just published ones — an admin should
@@ -25,6 +26,7 @@ export default async function AdminSettingsDoctorsPage() {
       .is("deleted_at", null)
       .order("sort_order", { ascending: true }),
     listAllServiceDoctorMappings(supabase),
+    listRoles(supabase),
   ]);
 
   const initialHours = hours.reduce<Record<string, DoctorHours>>(
@@ -44,6 +46,8 @@ export default async function AdminSettingsDoctorsPage() {
         initialMappings={mappings}
         currentUserId={session.user?.id ?? null}
         canEditAny={session.permissions.has("settings.edit")}
+        roles={roles}
+        canAddDoctor={session.permissions.has("accounts.create")}
       />
     </AdminPageMotion>
   );

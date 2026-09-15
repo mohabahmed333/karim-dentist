@@ -40,7 +40,7 @@ type Props = {
   roles: Role[];
 };
 
-function randomTempPassword() {
+export function randomTempPassword() {
   return `Dl-${Math.random().toString(36).slice(2, 8)}${Math.floor(Math.random() * 100)}!`;
 }
 

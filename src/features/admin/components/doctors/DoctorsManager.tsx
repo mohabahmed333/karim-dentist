@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,8 @@ import {
   isPriceEgpWithinRange,
 } from "@/services/service_doctors/pricing";
 import type { Service } from "@/services/services";
+import type { Role } from "@/services/roles/queries";
+import { AddDoctorDialog } from "./AddDoctorDialog";
 import { useTranslations } from "@/lib/i18n";
 import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
 
@@ -172,6 +175,10 @@ type Props = {
   currentUserId: string | null;
   /** Holds `settings.edit` — can add/save any doctor's data, not just their own. */
   canEditAny: boolean;
+  /** All roles, so the Add Doctor dialog can offer the ones flagged `is_doctor`. */
+  roles: Role[];
+  /** Holds `accounts.create` — can provision a brand-new doctor account. */
+  canAddDoctor: boolean;
 };
 
 export function DoctorsManager({
@@ -181,9 +188,13 @@ export function DoctorsManager({
   initialMappings,
   currentUserId,
   canEditAny,
+  roles,
+  canAddDoctor,
 }: Props) {
   const t = useTranslations();
+  const router = useRouter();
   const [doctors, setDoctors] = useState(initialDoctors);
+  const [addDoctorOpen, setAddDoctorOpen] = useState(false);
   const [hoursByDoctor, setHoursByDoctor] =
     useState<Record<string, DoctorHours>>(initialHours);
   const [selectedId, setSelectedId] = useState(() =>
@@ -562,11 +573,29 @@ export function DoctorsManager({
     }
   }
 
+  function handleDoctorCreated(doctor: DoctorProfile) {
+    setDoctors((prev) => [...prev, doctor]);
+    setIdentityForms((prev) => ({ ...prev, [doctor.id]: identityFromDoctor(doctor) }));
+    setForms((prev) => ({ ...prev, [doctor.id]: defaultForm() }));
+    setBaselines((prev) => ({
+      ...prev,
+      [doctor.id]: snapshotFor(defaultForm(), identityFromDoctor(doctor), [], {}),
+    }));
+    setSelectedId(doctor.id);
+    setAddDoctorOpen(false);
+    router.refresh();
+  }
+
   const header = (
     <LocalizedAdminPageHeader
       titleKey="admin.settings.doctors"
       actions={
         <div className="flex items-center gap-2">
+          {canAddDoctor ? (
+            <Button type="button" variant="outline" onClick={() => setAddDoctorOpen(true)}>
+              {t("admin.doctors.addDoctor")}
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="outline"
@@ -587,6 +616,15 @@ export function DoctorsManager({
     />
   );
 
+  const addDoctorDialog = (
+    <AddDoctorDialog
+      open={addDoctorOpen}
+      onOpenChange={setAddDoctorOpen}
+      roles={roles}
+      onCreated={handleDoctorCreated}
+    />
+  );
+
   if (doctors.length === 0) {
     return (
       <div className="space-y-4">
@@ -594,6 +632,7 @@ export function DoctorsManager({
         <Card className="gap-0 bg-transparent p-6 text-sm text-[var(--admin-muted)]">
           {t("admin.doctors.emptyState")}
         </Card>
+        {addDoctorDialog}
       </div>
     );
   }
@@ -1002,6 +1041,7 @@ export function DoctorsManager({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {addDoctorDialog}
     </div>
   );
 }

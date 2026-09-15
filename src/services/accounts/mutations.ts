@@ -9,6 +9,10 @@ export type CreateAccountInput = {
   displayName: string;
   tempPassword: string;
   roleId: string;
+  /** Set when the new account is a doctor — written to the same profiles row. */
+  specialty?: string | null;
+  bio?: string | null;
+  calendar_color?: string | null;
 };
 
 /**
@@ -34,6 +38,11 @@ export async function createAccount(
     id: created.user.id,
     display_name: input.displayName,
     role_id: input.roleId,
+    ...(input.specialty !== undefined ? { specialty: input.specialty } : {}),
+    ...(input.bio !== undefined ? { bio: input.bio } : {}),
+    ...(input.calendar_color !== undefined
+      ? { calendar_color: input.calendar_color }
+      : {}),
   });
   if (profileError) {
     await service.auth.admin.deleteUser(created.user.id);

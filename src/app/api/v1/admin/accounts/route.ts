@@ -40,6 +40,9 @@ const createSchema = z.object({
   displayName: z.string().min(1),
   tempPassword: z.string().min(8),
   roleId: z.string().uuid(),
+  specialty: z.string().trim().max(120).nullable().optional(),
+  bio: z.string().trim().max(500).nullable().optional(),
+  calendar_color: z.string().nullable().optional(),
 });
 
 export async function POST(request: Request) {
