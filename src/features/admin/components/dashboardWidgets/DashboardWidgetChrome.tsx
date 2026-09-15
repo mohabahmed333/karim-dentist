@@ -4,30 +4,27 @@ import type { CSSProperties, DragEvent, ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { GripVertical, Trash2 } from "lucide-react";
 import { useTranslations } from "@/lib/i18n";
-import {
-  widgetMeta,
-  type DashboardColSpan,
-  type DashboardWidgetId,
-  type DashboardWidgetPlacement,
-} from "@/features/admin/lib/dashboardLayout";
+import type {
+  DashboardColSpan,
+  DashboardWidgetMeta,
+  DashboardWidgetPlacement,
+} from "@/features/admin/lib/dashboardWidgets/dashboardCatalog";
 import {
   dashboardEditChromeTransition,
   dashboardEditChromeVariants,
-} from "@/features/admin/lib/dashboardLayoutMotion";
+} from "@/features/admin/lib/dashboardWidgets/dashboardLayoutMotion";
 import { cn } from "@/lib/utils";
 
 type Props = {
   placement: DashboardWidgetPlacement;
+  meta: DashboardWidgetMeta;
   editing: boolean;
   dragging: boolean;
   maxColSpan: DashboardColSpan;
-  onDragStart: (
-    id: DashboardWidgetId,
-    event: DragEvent<HTMLElement>,
-  ) => void;
+  onDragStart: (id: string, event: DragEvent<HTMLElement>) => void;
   onDragEnd: () => void;
-  onResize: (id: DashboardWidgetId, colSpan: DashboardColSpan) => void;
-  onRemove: (id: DashboardWidgetId) => void;
+  onResize: (id: string, colSpan: DashboardColSpan) => void;
+  onRemove: (id: string) => void;
   children: ReactNode;
 };
 
@@ -42,6 +39,7 @@ const SIZE_CHIPS: { span: DashboardColSpan; label: string }[] = [
 
 export function DashboardWidgetChrome({
   placement,
+  meta,
   editing,
   dragging,
   maxColSpan,
@@ -52,7 +50,6 @@ export function DashboardWidgetChrome({
   children,
 }: Props) {
   const t = useTranslations();
-  const meta = widgetMeta(placement.id);
   const reduced = useReducedMotion();
   const transition = dashboardEditChromeTransition(reduced);
   const variants = dashboardEditChromeVariants(reduced);

@@ -17,11 +17,11 @@ import {
   INACTIVE_DASHBOARD_LAYOUT_STATE,
   dispatchDashboardLayoutAction,
   type DashboardLayoutUiState,
-} from "@/features/admin/lib/dashboardLayoutBridge";
+} from "@/features/admin/lib/dashboardWidgets/dashboardLayoutBridge";
 import {
   dashboardEditChromeTransition,
   dashboardEditChromeVariants,
-} from "@/features/admin/lib/dashboardLayoutMotion";
+} from "@/features/admin/lib/dashboardWidgets/dashboardLayoutMotion";
 import {
   Tooltip,
   TooltipContent,

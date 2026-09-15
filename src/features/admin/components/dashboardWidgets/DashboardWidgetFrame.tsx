@@ -2,49 +2,42 @@
 
 import { useRef, type DragEvent, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import {
-  type DashboardColSpan,
-  type DashboardDropEdge,
-  type DashboardWidgetId,
-  type DashboardWidgetPlacement,
-} from "@/features/admin/lib/dashboardLayout";
+import type {
+  DashboardColSpan,
+  DashboardWidgetMeta,
+  DashboardWidgetPlacement,
+} from "@/features/admin/lib/dashboardWidgets/dashboardCatalog";
+import type { DashboardDropEdge } from "@/features/admin/lib/dashboardWidgets/dashboardDrop";
 import {
   dashboardEditChromeTransition,
   dashboardLayoutTransition,
-} from "@/features/admin/lib/dashboardLayoutMotion";
+} from "@/features/admin/lib/dashboardWidgets/dashboardLayoutMotion";
 import { DashboardDropPlaceholder } from "./DashboardDropPlaceholder";
 import { DashboardWidgetChrome } from "./DashboardWidgetChrome";
 import { DashboardWidgetHeightHandle } from "./DashboardWidgetHeightHandle";
 
 type Props = {
   placement: DashboardWidgetPlacement;
+  meta: DashboardWidgetMeta;
   editing: boolean;
   dragOver: boolean;
   dropEdge: DashboardDropEdge | null;
   dragging: boolean;
   maxColSpan?: DashboardColSpan;
-  onDragStart: (
-    id: DashboardWidgetId,
-    event: DragEvent<HTMLElement>,
-  ) => void;
-  onDragOver: (
-    id: DashboardWidgetId,
-    event: DragEvent<HTMLElement>,
-  ) => void;
-  onDrop: (
-    id: DashboardWidgetId,
-    event: DragEvent<HTMLElement>,
-  ) => void;
+  onDragStart: (id: string, event: DragEvent<HTMLElement>) => void;
+  onDragOver: (id: string, event: DragEvent<HTMLElement>) => void;
+  onDrop: (id: string, event: DragEvent<HTMLElement>) => void;
   onDragEnd: () => void;
-  onResize: (id: DashboardWidgetId, colSpan: DashboardColSpan) => void;
-  onRemove: (id: DashboardWidgetId) => void;
-  onHeightChange: (id: DashboardWidgetId, heightPx: number) => void;
+  onResize: (id: string, colSpan: DashboardColSpan) => void;
+  onRemove: (id: string) => void;
+  onHeightChange: (id: string, heightPx: number) => void;
   onHeightCommit: () => void;
   children: ReactNode;
 };
 
 export function DashboardWidgetFrame({
   placement,
+  meta,
   editing,
   dragOver,
   dropEdge,
@@ -108,6 +101,7 @@ export function DashboardWidgetFrame({
           >
             <DashboardWidgetChrome
               placement={placement}
+              meta={meta}
               editing={editing}
               dragging={dragging}
               maxColSpan={maxColSpan}

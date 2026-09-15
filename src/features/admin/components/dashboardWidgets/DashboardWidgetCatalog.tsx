@@ -1,15 +1,14 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
+import type { AnyMessageKey } from "@/lib/i18n";
 import { useTranslations } from "@/lib/i18n";
-import {
-  DASHBOARD_WIDGET_CATALOG,
-  type DashboardWidgetId,
-} from "@/features/admin/lib/dashboardLayout";
+
+type MissingWidget = { id: string; labelKey: AnyMessageKey };
 
 type CatalogProps = {
-  missing: DashboardWidgetId[];
-  onAdd: (id: DashboardWidgetId) => void;
+  missing: MissingWidget[];
+  onAdd: (id: string) => void;
   onClose: () => void;
 };
 
@@ -40,22 +39,19 @@ export function DashboardWidgetCatalog({
         </p>
       ) : (
         <ul className="max-h-64 overflow-y-auto p-1">
-          {missing.map((id) => {
-            const meta = DASHBOARD_WIDGET_CATALOG.find((w) => w.id === id)!;
-            return (
-              <li key={id}>
-                <button
-                  type="button"
-                  data-dash-widget-catalog-item={id}
-                  className="flex w-full items-center gap-2 rounded px-2 py-2 text-start text-[12px] text-[var(--admin-text)] hover:bg-[var(--admin-hover)]"
-                  onClick={() => onAdd(id)}
-                >
-                  <Plus className="size-3.5 shrink-0 text-[var(--admin-muted)]" />
-                  {t(meta.labelKey)}
-                </button>
-              </li>
-            );
-          })}
+          {missing.map((widget) => (
+            <li key={widget.id}>
+              <button
+                type="button"
+                data-dash-widget-catalog-item={widget.id}
+                className="flex w-full items-center gap-2 rounded px-2 py-2 text-start text-[12px] text-[var(--admin-text)] hover:bg-[var(--admin-hover)]"
+                onClick={() => onAdd(widget.id)}
+              >
+                <Plus className="size-3.5 shrink-0 text-[var(--admin-muted)]" />
+                {t(widget.labelKey)}
+              </button>
+            </li>
+          ))}
         </ul>
       )}
     </div>

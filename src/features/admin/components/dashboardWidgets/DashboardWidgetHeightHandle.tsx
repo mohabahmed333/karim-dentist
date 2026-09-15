@@ -14,8 +14,8 @@ import {
   DASHBOARD_WIDGET_HEIGHT_MIN,
   nextDashboardWidgetHeightFromDrag,
   viewportWidgetHeightMax,
-} from "@/features/admin/lib/dashboardWidgetHeight";
-import { findVerticalScrollParent } from "@/features/admin/lib/dashboardDragScroll";
+} from "@/features/admin/lib/dashboardWidgets/dashboardWidgetHeight";
+import { findVerticalScrollParent } from "@/features/admin/lib/dashboardWidgets/dashboardDragScroll";
 import { cn } from "@/lib/utils";
 
 type Props = {
