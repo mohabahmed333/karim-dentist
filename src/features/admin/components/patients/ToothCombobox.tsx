@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { ChevronDown } from "lucide-react";
+import { AdminSearchInput } from "@/features/admin/ui";
 import {
   filterToothOptions,
   toothOptionByFdi,
@@ -54,14 +54,12 @@ export function ToothCombobox({ fdi, disabled, onSelect }: Props) {
 
       {open ? (
         <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5">
-          <div className="flex items-center gap-2 border-b border-[#f3f4f6] px-3 py-2">
-            <Search className="size-3.5 text-[#9ca3af]" />
-            <Input
+          <div className="p-2">
+            <AdminSearchInput
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="FDI or name…"
-              className="h-8 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
             />
           </div>
           <ul

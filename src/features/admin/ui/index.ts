@@ -12,6 +12,7 @@ export {
 } from "./styles";
 
 export { AdminInput } from "./AdminInput";
+export { AdminSearchInput } from "./AdminSearchInput";
 export { AdminTextarea } from "./AdminTextarea";
 export { AdminNativeSelect } from "./AdminNativeSelect";
 export { AdminFieldButton } from "./AdminFieldButton";

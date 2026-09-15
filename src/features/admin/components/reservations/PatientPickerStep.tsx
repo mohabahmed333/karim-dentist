@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { CornerDownLeft, Plus, Search, User, X } from "lucide-react";
+import { Plus, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AdminSearchInput } from "@/features/admin/ui";
 import { searchPatients } from "@/services/patient_profiles/queries";
 import type {
   PatientProfile,
@@ -85,31 +86,16 @@ export function PatientPickerStep({ onPatientChosen }: Props) {
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-[var(--admin-border)]">
-      <div className="flex items-center gap-2 border-b border-[var(--admin-border)] px-3 py-2.5">
-        <Search className="size-4 shrink-0 text-[var(--admin-muted)]" />
-        <input
-          ref={inputRef}
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={onInputKey}
-          placeholder="Search patients by name or phone…"
-          className="h-7 min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[var(--admin-muted)]"
-        />
-        {query ? (
-          <button
-            type="button"
-            onClick={() => setQuery("")}
-            className="flex size-5 items-center justify-center rounded-md bg-[var(--admin-muted)] text-white"
-            aria-label="Clear"
-          >
-            <X className="size-3" />
-          </button>
-        ) : (
-          <CornerDownLeft className="size-3.5 text-[var(--admin-muted)]" />
-        )}
-      </div>
+    <div className="space-y-2">
+      <AdminSearchInput
+        ref={inputRef}
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        onKeyDown={onInputKey}
+        placeholder="Search patients by name or phone…"
+      />
 
+      <div className="overflow-hidden rounded-lg border border-[var(--admin-border)]">
       <div className="max-h-64 overflow-y-auto py-2">
         {loading ? (
           <p className="px-4 py-6 text-center text-[13px] text-[var(--admin-muted)]">
@@ -160,6 +146,7 @@ export function PatientPickerStep({ onPatientChosen }: Props) {
         <Plus className="size-4 shrink-0" />
         Add new patient
       </button>
+      </div>
 
       <AddPatientDialog
         open={addOpen}

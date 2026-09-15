@@ -15,7 +15,6 @@ import {
   Filter,
   MoreVertical,
   Pencil,
-  Search,
   Trash2,
   X,
 } from "lucide-react";
@@ -51,6 +50,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/lib/i18n";
+import { AdminSearchInput } from "@/features/admin/ui";
 
 export type CollectionColumn<T> = {
   key: string;
@@ -421,17 +421,13 @@ export function CollectionTable<T>({
       {showChrome ? (
         <div className="flex flex-wrap items-center gap-2 border-b border-[var(--admin-border)] px-3 py-2.5">
           {enableSearch ? (
-            <label className="relative min-w-[12rem] flex-1">
-              <Search className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[var(--admin-muted)]" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={
-                  searchPlaceholder ?? t("admin.table.search")
-                }
-                className="h-8 w-full rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)] pe-3 ps-8 text-[12px] text-[var(--admin-text)] outline-none placeholder:text-[var(--admin-muted)] focus:border-[var(--admin-primary)]"
-              />
-            </label>
+            <AdminSearchInput
+              containerClassName="min-w-[12rem] flex-1"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={searchPlaceholder ?? t("admin.table.search")}
+              className="h-8 text-[12px]"
+            />
           ) : (
             <div className="flex-1" />
           )}

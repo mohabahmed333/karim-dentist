@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronsUpDown, Search } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { AdminSearchInput } from "@/features/admin/ui";
 import type { Service } from "@/services/services/types";
 import {
   GENERAL_CONSULTATION_LABEL_EN,
@@ -171,9 +172,8 @@ export function ServicePicker({
 
       {open ? (
         <div className="absolute inset-x-0 top-[calc(100%+4px)] z-50 overflow-hidden rounded-lg border border-[var(--admin-border,#e5e7eb)] bg-[var(--admin-panel,#fff)] shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
-          <div className="flex items-center gap-2 border-b border-[var(--admin-border,#e5e7eb)] px-3 py-2">
-            <Search className="size-4 shrink-0 text-[var(--admin-muted,#9ca3af)]" />
-            <input
+          <div className="p-2">
+            <AdminSearchInput
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -190,7 +190,6 @@ export function ServicePicker({
               }}
               placeholder={t("admin.filters.searchServices")}
               aria-label={t("admin.filters.searchServices")}
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--admin-muted,#9ca3af)]"
             />
           </div>
           <ul
