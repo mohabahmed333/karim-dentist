@@ -40,3 +40,10 @@ export const patientProfileUpsertSchema = z.object({
 export type PatientProfileUpsertValues = z.infer<
   typeof patientProfileUpsertSchema
 >;
+
+/** A brand-new patient needs a phone to be findable later - editing an
+ * already-identified existing patient (patientProfileUpsertSchema) doesn't
+ * enforce that, since some legacy records predate requiring one. */
+export const createPatientSchema = patientProfileUpsertSchema.extend({
+  phone: z.string().trim().min(1, "Phone is required").max(40),
+});

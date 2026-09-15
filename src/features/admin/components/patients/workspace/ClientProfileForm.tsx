@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Label } from "@/components/ui/label";
 import { AdminInput, AdminTextarea } from "@/features/admin/ui";
+import { cn } from "@/lib/utils";
 import type {
   PatientGender,
   PatientProfileUpsertValues,
@@ -20,9 +21,10 @@ type Props = {
   value: PatientProfileUpsertValues;
   onChange: (next: PatientProfileUpsertValues) => void;
   readOnly?: boolean;
+  errors?: Partial<Record<keyof PatientProfileUpsertValues, string>>;
 };
 
-export function ClientProfileForm({ value, onChange, readOnly }: Props) {
+export function ClientProfileForm({ value, onChange, readOnly, errors }: Props) {
   if (readOnly) return <ClientProfileSummary value={value} />;
 
   function set<K extends keyof PatientProfileUpsertValues>(
@@ -42,23 +44,26 @@ export function ClientProfileForm({ value, onChange, readOnly }: Props) {
   return (
     <div className="space-y-5 px-5 pb-6 pt-1">
       <Section title="Identity">
-        <Field label="Full name">
+        <Field label="Full name" required error={errors?.display_name}>
           <AdminInput
             value={value.display_name}
             onChange={(e) => set("display_name", e.target.value)}
+            className={cn(errors?.display_name && errorInputClass)}
           />
         </Field>
-        <Field label="Phone">
+        <Field label="Phone" required error={errors?.phone}>
           <AdminInput
             value={value.phone}
             onChange={(e) => set("phone", e.target.value)}
+            className={cn(errors?.phone && errorInputClass)}
           />
         </Field>
-        <Field label="Email">
+        <Field label="Email" error={errors?.email}>
           <AdminInput
             type="email"
             value={value.email ?? ""}
             onChange={(e) => set("email", e.target.value || null)}
+            className={cn(errors?.email && errorInputClass)}
           />
         </Field>
       </Section>
@@ -158,17 +163,27 @@ function Section({
   );
 }
 
+const errorInputClass = "border-red-400 focus-visible:ring-red-200";
+
 function Field({
   label,
+  required,
+  error,
   children,
 }: {
   label: string;
+  required?: boolean;
+  error?: string;
   children: ReactNode;
 }) {
   return (
     <label className="block space-y-1.5">
-      <Label className="text-[12px] text-[#70758A]">{label}</Label>
+      <Label className="text-[12px] text-[#70758A]">
+        {label}
+        {required ? <span className="ms-0.5 text-red-500">*</span> : null}
+      </Label>
       {children}
+      {error ? <p className="text-[11px] text-red-600">{error}</p> : null}
     </label>
   );
 }

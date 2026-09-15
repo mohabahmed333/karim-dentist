@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  patientProfileUpsertSchema,
+  createPatientSchema,
   type PatientProfileUpsertValues,
 } from "@/services/patient_profiles/schemas";
 import { createPatient } from "@/services/patient_profiles/actions";
@@ -38,20 +38,31 @@ const EMPTY_FORM: PatientProfileUpsertValues = {
   notes: "",
 };
 
+type FieldErrors = Partial<Record<keyof PatientProfileUpsertValues, string>>;
+
 export function AddPatientDialog({ open, onOpenChange, onCreated }: Props) {
   const [form, setForm] = useState<PatientProfileUpsertValues>(EMPTY_FORM);
   const [pending, setPending] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+
+  function handleFormChange(next: PatientProfileUpsertValues) {
+    setForm(next);
+    if (Object.keys(errors).length > 0) setErrors({});
+  }
 
   async function save() {
-    const parsed = patientProfileUpsertSchema.safeParse(form);
+    const parsed = createPatientSchema.safeParse(form);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Invalid profile");
+      const fieldErrors: FieldErrors = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0] as keyof PatientProfileUpsertValues | undefined;
+        if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
+      toast.error("Please fill in the required fields");
       return;
     }
-    if (!parsed.data.phone.trim()) {
-      toast.error("Phone is required");
-      return;
-    }
+    setErrors({});
     setPending(true);
     try {
       const created = await createPatient(parsed.data);
@@ -69,7 +80,10 @@ export function AddPatientDialog({ open, onOpenChange, onCreated }: Props) {
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next) setForm(EMPTY_FORM);
+        if (!next) {
+          setForm(EMPTY_FORM);
+          setErrors({});
+        }
         onOpenChange(next);
       }}
     >
@@ -85,7 +99,7 @@ export function AddPatientDialog({ open, onOpenChange, onCreated }: Props) {
         </DialogHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <ClientProfileForm value={form} onChange={setForm} />
+          <ClientProfileForm value={form} onChange={handleFormChange} errors={errors} />
         </div>
 
         <DialogFooter className="m-0 shrink-0 rounded-none border-[var(--admin-border)] bg-[var(--admin-hover)]/40 px-4 py-3">
