@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Search } from "lucide-react";
+import { Check } from "lucide-react";
+import { AdminSearchInput } from "@/features/admin/ui";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { serviceDisplayName } from "@/features/admin/lib/serviceDisplayName";
 import type { Service } from "@/services/services/types";
@@ -151,17 +152,14 @@ export function BookBookingPanel({
             ),
           )}
         </p>
-        <div className="mt-2 flex items-center gap-2 rounded-xl border border-[#E8EAED] bg-white px-3 py-2">
-          <Search className="size-4 shrink-0 text-[#9CA3AF]" aria-hidden />
-          <input
-            value={serviceQuery}
-            disabled={pending}
-            onChange={(e) => setServiceQuery(e.target.value)}
-            placeholder={t("admin.filters.searchServices")}
-            aria-label={t("admin.filters.searchServices")}
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-[#111111] outline-none placeholder:text-[#9CA3AF] disabled:opacity-50"
-          />
-        </div>
+        <AdminSearchInput
+          containerClassName="mt-2"
+          value={serviceQuery}
+          disabled={pending}
+          onChange={(e) => setServiceQuery(e.target.value)}
+          placeholder={t("admin.filters.searchServices")}
+          aria-label={t("admin.filters.searchServices")}
+        />
         <div className="mt-2 max-h-56 space-y-2 overflow-y-auto pe-0.5">
           {filteredOptions.length === 0 ? (
             <p className="rounded-xl border border-dashed border-[#E8EAED] bg-white px-3 py-4 text-center text-[12px] text-[#70758A]">

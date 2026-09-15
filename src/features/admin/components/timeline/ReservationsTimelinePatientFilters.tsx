@@ -1,6 +1,5 @@
 "use client";
 
-import { Search } from "lucide-react";
 import type { PatientTimelineFilter } from "@/services/reservations/patientHistory";
 import {
   DropdownMenu,
@@ -8,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+import { AdminSearchInput } from "@/features/admin/ui";
 import { cn } from "@/lib/utils";
 
 const labels: Record<PatientTimelineFilter, string> = {
@@ -35,18 +34,12 @@ export function ReservationsTimelinePatientFilters({
 
   return (
     <>
-      <div className="relative min-w-[10rem] flex-1 sm:min-w-[12rem]">
-        <Search
-          className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-[#6b7280]"
-          aria-hidden
-        />
-        <Input
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Search patient or phone"
-          className="rounded-full border-[#e6e8ec] bg-white ps-9"
-        />
-      </div>
+      <AdminSearchInput
+        containerClassName="min-w-[10rem] flex-1 sm:min-w-[12rem]"
+        value={search}
+        onChange={(event) => onSearchChange(event.target.value)}
+        placeholder="Search patient or phone"
+      />
       <DropdownMenu>
         <DropdownMenuTrigger
           className={cn(

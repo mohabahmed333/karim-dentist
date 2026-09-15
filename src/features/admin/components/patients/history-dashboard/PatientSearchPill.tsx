@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { AdminSearchInput } from "@/features/admin/ui";
 import {
   patientProfilePath,
   type PatientGroup,
@@ -29,14 +29,12 @@ export function PatientSearchPill({ directory, currentKey }: Props) {
 
   return (
     <div className="relative w-full max-w-[240px]">
-      <Search className="pointer-events-none absolute top-1/2 start-3.5 size-4 -translate-y-1/2 text-[#8a8a8a]" />
-      <input
+      <AdminSearchInput
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Search patient..."
         aria-label="Search patient"
-        className="h-11 w-full rounded-full bg-[#f2f2f2] pe-4 ps-10 text-[13px] text-[#111111] outline-none placeholder:text-[#8a8a8a]"
       />
       {matches.length > 0 ? (
         <ul className="absolute top-full end-0 start-0 z-30 mt-2 overflow-hidden rounded-2xl bg-white py-1">

@@ -62,9 +62,14 @@ type AdminUiState = LegacyAdminUiState & {
   /** False until the persisted value has loaded client-side — matches the old
    *  "SSR-safe default, then hydrate" hooks so nothing flashes wrong-then-right. */
   hasHydrated: boolean;
+  /** Nav groups/sub-groups the sidebar last had manually open, so a refresh
+   *  on the same page restores them instead of collapsing back to just
+   *  whatever the current page auto-opens. */
+  openGroupIds: string[];
   toggleDarkMode: () => void;
   toggleSidebar: () => void;
   setWaThemePreference: (id: WaThemePreference) => void;
+  setOpenGroupIds: (ids: string[]) => void;
   hydrateComplete: () => void;
 };
 
@@ -82,9 +87,11 @@ export const useAdminUiStore = create<AdminUiState>()(
       sidebarCollapsed: false,
       waThemePreference: "light",
       hasHydrated: false,
+      openGroupIds: [],
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       setWaThemePreference: (id) => set({ waThemePreference: id }),
+      setOpenGroupIds: (ids) => set({ openGroupIds: ids }),
       hydrateComplete: () => set({ hasHydrated: true }),
     }),
     {
@@ -94,6 +101,7 @@ export const useAdminUiStore = create<AdminUiState>()(
         darkMode: state.darkMode,
         sidebarCollapsed: state.sidebarCollapsed,
         waThemePreference: state.waThemePreference,
+        openGroupIds: state.openGroupIds,
       }),
       onRehydrateStorage: () => (state) => {
         state?.hydrateComplete();

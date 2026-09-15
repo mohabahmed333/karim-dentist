@@ -1,6 +1,7 @@
 "use client";
 
-import { Filter, Plus, Search } from "lucide-react";
+import { Filter, Plus } from "lucide-react";
+import { AdminSearchInput } from "@/features/admin/ui";
 import type { TreatmentSeverity } from "@/services/patient_treatments";
 
 type Props = {
@@ -23,15 +24,13 @@ export function TreatmentsToolbar({
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
-      <div className="relative">
-        <Search className="pointer-events-none absolute top-1/2 start-3 size-3.5 -translate-y-1/2 text-slate-400" />
-        <input
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Search…"
-          className="h-8 w-40 rounded-xl border border-slate-200/80 bg-white pe-3 ps-8 text-[12px] text-[#0F172A] outline-none placeholder:text-slate-400 shadow-sm"
-        />
-      </div>
+      <AdminSearchInput
+        containerClassName="w-40"
+        value={query}
+        onChange={(e) => onQueryChange(e.target.value)}
+        placeholder="Search…"
+        className="h-8 text-[12px]"
+      />
       <button
         type="button"
         className={pill}

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FolderOpen } from "lucide-react";
 import {
   adminNavSections,
   filterAdminNavSections,
   findActiveAdminNavGroupIds,
 } from "@/features/admin/lib/adminNav";
+import { useAdminUiStore } from "@/features/admin/stores/adminUiStore";
 import { useTranslations } from "@/lib/i18n";
 import { AdminNavSectionBlock } from "./AdminNavSectionBlock";
 
@@ -42,12 +43,30 @@ export function AdminSidebar({
     () => findActiveAdminNavGroupIds(sections, pathname),
     [sections, pathname],
   );
+
+  // Manually-opened groups survive a hard refresh (same page) by mirroring
+  // into the shared, localStorage-backed UI store. A real in-app navigation
+  // still resets to just the new page's active groups, same as before —
+  // this only restores what was open a moment ago on *this* page.
+  const persistedOpenGroupIds = useAdminUiStore((state) => state.openGroupIds);
+  const setPersistedOpenGroupIds = useAdminUiStore((state) => state.setOpenGroupIds);
+  const hasHydrated = useAdminUiStore((state) => state.hasHydrated);
+
   const [openGroupIds, setOpenGroupIds] = useState(activeGroupIds);
   const [renderedForPathname, setRenderedForPathname] = useState(pathname);
+  const [mergedPersisted, setMergedPersisted] = useState(false);
   if (pathname !== renderedForPathname) {
     setRenderedForPathname(pathname);
     setOpenGroupIds(activeGroupIds);
+    setMergedPersisted(false);
+  } else if (hasHydrated && !mergedPersisted) {
+    setMergedPersisted(true);
+    setOpenGroupIds(new Set([...activeGroupIds, ...persistedOpenGroupIds]));
   }
+
+  useEffect(() => {
+    setPersistedOpenGroupIds([...openGroupIds]);
+  }, [openGroupIds, setPersistedOpenGroupIds]);
 
   function toggleGroup(groupId: string) {
     setOpenGroupIds((prev) => {
