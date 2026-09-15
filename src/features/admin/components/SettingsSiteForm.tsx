@@ -11,10 +11,12 @@ import { Label } from "@/components/ui/label";
 import { SettingsContactFields } from "./SettingsContactFields";
 import { FooterTaglineImageField } from "./FooterTaglineImageField";
 import { SettingsSaveRow, SettingsSectionGroup } from "./SettingsSectionGroup";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = { settings: SiteSettings | null };
 
 export function SettingsSiteForm({ settings: initial }: Props) {
+  const t = useTranslations();
   const [settings, setSettings] = useState(initial);
   const [logoUrl, setLogoUrl] = useState(initial?.brand_logo_url ?? "");
   const [taglineImage, setTaglineImage] = useState(
@@ -53,10 +55,10 @@ export function SettingsSiteForm({ settings: initial }: Props) {
         contact_x: String(form.get("contact_x") ?? ""),
       });
       setSettings(row);
-      toast.success("Saved");
+      toast.success(t("admin.saved"));
       notifyRevalidate(["portfolio"]);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
+      toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
     } finally {
       setPending(false);
     }
@@ -64,11 +66,11 @@ export function SettingsSiteForm({ settings: initial }: Props) {
 
   return (
     <form className="w-full space-y-6" onSubmit={(e) => void onSubmit(e)}>
-      <SettingsSectionGroup title="Brand">
+      <SettingsSectionGroup title={t("admin.pages.settingsSite.brand")}>
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-2">
             <MediaUploadField
-              label="Header logo (PNG)"
+              label={t("admin.pages.settingsSite.headerLogo")}
               bucket="about"
               folder="brand"
               mediaType="image"
@@ -78,13 +80,13 @@ export function SettingsSiteForm({ settings: initial }: Props) {
             />
             {logoUrl ? (
               <Button type="button" variant="ghost" size="sm" onClick={() => setLogoUrl("")}>
-                Remove logo
+                {t("admin.pages.settingsSite.removeLogo")}
               </Button>
             ) : null}
           </div>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="brand_name">Brand name</Label>
+              <Label htmlFor="brand_name">{t("admin.pages.settingsSite.brandName")}</Label>
               <Input id="brand_name" name="brand_name" defaultValue={settings?.brand_name ?? ""} />
             </div>
             <div className="space-y-2">
@@ -92,7 +94,7 @@ export function SettingsSiteForm({ settings: initial }: Props) {
                 value={taglineImage || null}
                 onChange={(url) => setTaglineImage(url ?? "")}
               />
-              <Label htmlFor="footer_tagline">Footer tagline (text fallback)</Label>
+              <Label htmlFor="footer_tagline">{t("admin.pages.settingsSite.footerTagline")}</Label>
               <Input
                 id="footer_tagline"
                 name="footer_tagline"
@@ -105,7 +107,7 @@ export function SettingsSiteForm({ settings: initial }: Props) {
       <SettingsContactFields settings={settings} />
       <SettingsSaveRow>
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save"}
+          {pending ? t("admin.saving") : t("admin.save")}
         </Button>
       </SettingsSaveRow>
     </form>
