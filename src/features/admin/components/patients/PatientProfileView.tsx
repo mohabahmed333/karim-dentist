@@ -2,6 +2,7 @@
 
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 import type { PatientToothNote } from "@/services/patient_tooth_notes";
+import type { TreatmentItem } from "@/services/patient_treatments";
 import { useState } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
@@ -23,6 +24,8 @@ import { chartTabProps } from "./history-dashboard/chartTabProps";
 type Props = {
   group: PatientGroup;
   notes: PatientToothNote[];
+  treatments: TreatmentItem[];
+  doctorNameById: Record<string, string>;
 };
 
 /**
@@ -37,6 +40,8 @@ type Props = {
 export function PatientProfileView({
   group,
   notes,
+  treatments,
+  doctorNameById,
 }: Props) {
   const t = useTranslations();
   const [tab, setTab] = useState<PatientProfileTab>("information");
@@ -60,7 +65,11 @@ export function PatientProfileView({
         <PatientAppointmentHistoryTab group={group} />
       ) : null}
       {tab === "next" ? <PatientNextTreatmentTab group={group} /> : null}
-      {tab === "medical" ? <PatientMedicalRecordTab {...chartTabProps(chart)} /> : null}
+      {tab === "medical" ? (
+        <PatientMedicalRecordTab
+          {...chartTabProps(chart, treatments, doctorNameById)}
+        />
+      ) : null}
     </div>
   );
 }

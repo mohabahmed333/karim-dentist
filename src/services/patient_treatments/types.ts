@@ -30,6 +30,8 @@ export type TreatmentItem = {
   severity: TreatmentSeverity;
   lastTreatment: string;
   status: TreatmentStatus;
+  /** Who performed it — the tooth timeline names the dentist. */
+  doctorId: string | null;
   reservationId: string | null;
   cdtCode: string | null;
   phase: "urgent" | "restorative" | "prosthodontic";
@@ -79,6 +81,7 @@ export function toTreatmentItem(row: PatientTreatmentRow): TreatmentItem {
     severity: row.severity,
     lastTreatment: row.last_treatment,
     status: row.status,
+    doctorId: row.doctor_id ?? null,
     reservationId: row.reservation_id,
     cdtCode: row.cdt_code ?? null,
     phase: row.phase ?? "restorative",

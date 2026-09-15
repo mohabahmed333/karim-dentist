@@ -1,13 +1,18 @@
 import type { ComponentProps } from "react";
 import type { PatientMedicalRecordTab } from "../PatientMedicalRecordTab";
 import type { usePatientToothNotes } from "../usePatientToothNotes";
+import type { TreatmentItem } from "@/services/patient_treatments";
 
 type Chart = ReturnType<typeof usePatientToothNotes>;
 
 export function chartTabProps(
   chart: Chart,
+  treatments: TreatmentItem[] = [],
+  doctorNameById: Record<string, string> = {},
 ): ComponentProps<typeof PatientMedicalRecordTab> {
   return {
+    treatments,
+    doctorNameById,
     selectedFdi: chart.selectedFdi,
     commented: chart.commented,
     selectedNotes: chart.selectedNotes,

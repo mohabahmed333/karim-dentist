@@ -7,6 +7,8 @@ import { TOOTH_CHART_HEIGHT } from "./teeth-charts/TeethChartCanvas";
 import { cn } from "@/lib/utils";
 import { ServiceToggle, type ServiceFilter } from "./ServiceToggle";
 import { ToothRecordPanel } from "./ToothRecordPanel";
+import { ToothTreatmentTimeline } from "./ToothTreatmentTimeline";
+import type { TreatmentItem } from "@/services/patient_treatments";
 
 type Props = {
   selectedFdi: string | null;
@@ -32,6 +34,9 @@ type Props = {
   onRemoveAttachment: (noteId: string, attachmentId: string) => void;
   onSaveEdit: () => void;
   onDeleteNote: (noteId: string) => void;
+  /** Every treatment on the patient; the timeline narrows to the shown tooth. */
+  treatments: TreatmentItem[];
+  doctorNameById: Record<string, string>;
 };
 
 export function PatientMedicalRecordTab(props: Props) {
@@ -62,11 +67,21 @@ export function PatientMedicalRecordTab(props: Props) {
               onDeselect={props.onDeselect}
             />
           </div>
-          <ToothRecordPanel
-            {...props}
-            notes={props.selectedNotes}
-            onClose={props.onDeselect}
-          />
+          {/* Timeline first — it is what the record is for. The note
+              composer stays below it so writing a note is still possible
+              without leaving for the clinical workspace. */}
+          <div className="min-w-0 space-y-5">
+            <ToothTreatmentTimeline
+              selectedFdi={props.selectedFdi}
+              treatments={props.treatments}
+              doctorNameById={props.doctorNameById}
+            />
+            <ToothRecordPanel
+              {...props}
+              notes={props.selectedNotes}
+              onClose={props.onDeselect}
+            />
+          </div>
         </div>
       )}
     </div>
