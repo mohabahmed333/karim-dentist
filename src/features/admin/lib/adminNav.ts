@@ -203,37 +203,47 @@ export const adminNavSections: AdminNavSection[] = [
     id: "clinic",
     titleKey: "admin.nav.clinic",
     entries: [
-      { href: "/admin", labelKey: "admin.nav.overview", exact: true },
+      { href: "/admin", labelKey: "admin.nav.overview", icon: Home, exact: true },
       {
-        id: "reservations",
-        labelKey: "admin.nav.reservations",
-        href: "/admin/reservations",
-        permission: "reservations.view",
+        id: "bookings",
+        labelKey: "admin.nav.bookingsGroup",
+        icon: CalendarDays,
         defaultOpen: true,
         items: [
+          { href: "/admin/reservations", labelKey: "admin.nav.reservations", permission: "reservations.view" },
           { href: "/admin/waitlist", labelKey: "admin.nav.waitlist", permission: "waitlist.view" },
           // A deposit belongs to a booking, and the page gates on the same
           // permission the reservations list does.
           { href: "/admin/deposits", labelKey: "admin.nav.deposits", permission: "reservations.view" },
         ],
       },
-      { href: "/admin/patients", labelKey: "admin.nav.patients", permission: "patients.view" },
-      { href: "/admin/billing", labelKey: "admin.nav.billing", permission: "patients.view" },
+      {
+        id: "patients-billing",
+        labelKey: "admin.nav.patientsBillingGroup",
+        icon: Users,
+        defaultOpen: true,
+        items: [
+          { href: "/admin/patients", labelKey: "admin.nav.patients", permission: "patients.view" },
+          { href: "/admin/billing", labelKey: "admin.nav.billing", permission: "patients.view" },
+        ],
+      },
       {
         id: "inventory",
         labelKey: "admin.nav.inventory",
         href: "/admin/inventory",
+        icon: Package,
         permission: "inventory.view",
         items: [
           { href: "/admin/inventory/reports", labelKey: "admin.nav.inventoryReports", permission: "inventory.reports.view" },
         ],
       },
-      { href: "/admin/support", labelKey: "admin.nav.support", permission: "support.view" },
       {
         id: "messaging",
         labelKey: "admin.nav.messagingGroup",
+        icon: Inbox,
         defaultOpen: true,
         items: [
+          { href: "/admin/support", labelKey: "admin.nav.support", permission: "support.view" },
           { href: "/admin/quick-replies", labelKey: "admin.nav.quickReplies", permission: "quick-replies.view" },
           { href: "/admin/knowledge", labelKey: "admin.nav.knowledge", permission: "knowledge.view" },
           { href: "/admin/assistant-review", labelKey: "admin.nav.assistantReview", permission: "assistant-review.view" },
@@ -245,15 +255,21 @@ export const adminNavSections: AdminNavSection[] = [
   {
     id: "site",
     titleKey: "admin.nav.site",
-    items: [
-      { href: "/admin/customize", labelKey: "admin.nav.customize", permission: "customize.view" },
-      { href: "/admin/usage", labelKey: "admin.nav.usage", permission: "usage.view" },
-      { href: "/admin/assist-analytics", labelKey: "admin.nav.assistAnalytics", permission: "assist-analytics.view" },
-    ],
-    groups: [
+    entries: [
+      { href: "/admin/customize", labelKey: "admin.nav.customize", icon: LayoutGrid, permission: "customize.view" },
+      {
+        id: "insights",
+        labelKey: "admin.nav.insightsGroup",
+        icon: Gauge,
+        items: [
+          { href: "/admin/usage", labelKey: "admin.nav.usage", permission: "usage.view" },
+          { href: "/admin/assist-analytics", labelKey: "admin.nav.assistAnalytics", permission: "assist-analytics.view" },
+        ],
+      },
       {
         id: "logs",
         labelKey: "admin.nav.logs",
+        icon: History,
         defaultOpen: false,
         items: [
           { href: "/admin/system-log", labelKey: "admin.nav.systemLog", permission: "system-log.view" },
@@ -261,25 +277,54 @@ export const adminNavSections: AdminNavSection[] = [
         ],
       },
       {
-        // No href on purpose: Settings is a container, and clicking it should
-        // open the group rather than navigate. It had one because the
-        // dashboard theme lived at /admin/settings; that page now sits in the
-        // list below with its siblings.
+        // No href on purpose: Settings is a container, and clicking it
+        // should open the group rather than navigate.
         id: "settings",
         labelKey: "admin.nav.settings",
+        icon: Settings,
         defaultOpen: false,
         items: [
-          { href: "/admin/settings/theme", labelKey: "admin.settings.theme", permission: "settings.view" },
-          { href: "/admin/settings/clinic-hours", labelKey: "admin.settings.hours", permission: "settings.view" },
-          { href: "/admin/settings/site", labelKey: "admin.settings.brand", permission: "settings.view" },
-          { href: "/admin/settings/prices", labelKey: "admin.settings.clinic", permission: "settings.view" },
-          { href: "/admin/settings/whatsapp-ai", labelKey: "admin.settings.whatsappAi", permission: "settings.view" },
-          { href: "/admin/settings/patient-notifications", labelKey: "admin.settings.notifications", permission: "settings.view" },
-          { href: "/admin/settings/deposits", labelKey: "admin.settings.deposits", permission: "settings.view" },
-          { href: "/admin/settings/templates", labelKey: "admin.settings.templates", permission: "settings.view" },
-          { href: "/admin/settings/doctors", labelKey: "admin.settings.doctors", permission: "settings.view" },
-          { href: "/admin/settings/accounts", labelKey: "admin.nav.accounts", permission: "accounts.view" },
-          { href: "/admin/settings/roles", labelKey: "admin.nav.roles", permission: "roles.view" },
+          {
+            id: "settings-clinic",
+            labelKey: "admin.settings.groupClinic",
+            items: [
+              { href: "/admin/settings/clinic-hours", labelKey: "admin.settings.hours", permission: "settings.view" },
+              { href: "/admin/settings/prices", labelKey: "admin.settings.clinic", permission: "settings.view" },
+              { href: "/admin/settings/doctors", labelKey: "admin.settings.doctors", permission: "settings.view" },
+            ],
+          },
+          {
+            id: "settings-communications",
+            labelKey: "admin.settings.groupCommunications",
+            items: [
+              { href: "/admin/settings/whatsapp-ai", labelKey: "admin.settings.whatsappAi", permission: "settings.view" },
+              { href: "/admin/settings/patient-notifications", labelKey: "admin.settings.notifications", permission: "settings.view" },
+              { href: "/admin/settings/templates", labelKey: "admin.settings.templates", permission: "settings.view" },
+            ],
+          },
+          {
+            id: "settings-billing",
+            labelKey: "admin.settings.groupBilling",
+            items: [
+              { href: "/admin/settings/deposits", labelKey: "admin.settings.deposits", permission: "settings.view" },
+            ],
+          },
+          {
+            id: "settings-site",
+            labelKey: "admin.settings.groupSite",
+            items: [
+              { href: "/admin/settings/theme", labelKey: "admin.settings.theme", permission: "settings.view" },
+              { href: "/admin/settings/site", labelKey: "admin.settings.brand", permission: "settings.view" },
+            ],
+          },
+          {
+            id: "settings-staff-access",
+            labelKey: "admin.settings.groupStaffAccess",
+            items: [
+              { href: "/admin/settings/accounts", labelKey: "admin.nav.accounts", permission: "accounts.view" },
+              { href: "/admin/settings/roles", labelKey: "admin.nav.roles", permission: "roles.view" },
+            ],
+          },
         ],
       },
     ],

@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  adminNavSections,
   filterAdminNavSections,
   findActiveAdminNavGroupIds,
   flattenAdminNavItems,
+  isAdminNavGroup,
+  type AdminNavGroup,
   type AdminNavSection,
+  type AdminNavSectionEntry,
 } from "./adminNav";
 
 const nestedFixture: AdminNavSection[] = [
@@ -129,5 +133,80 @@ describe("findActiveAdminNavGroupIds (recursive, Set-returning)", () => {
   it("returns an empty set when nothing matches", () => {
     const ids = findActiveAdminNavGroupIds(fixture, "/admin/unrelated-page");
     assert.deepEqual([...ids], []);
+  });
+});
+
+describe("adminNavSections (new IA)", () => {
+  it("Clinic section entries are ordered: Overview, Bookings, Patients & Billing, Inventory, Communications", () => {
+    const clinic = adminNavSections.find((s) => s.id === "clinic")!;
+    const ids = (clinic.entries as AdminNavSectionEntry[]).map((e) =>
+      isAdminNavGroup(e) ? e.id : e.href,
+    );
+    assert.deepEqual(ids, [
+      "/admin",
+      "bookings",
+      "patients-billing",
+      "inventory",
+      "messaging",
+    ]);
+  });
+
+  it("Settings is now 5 sub-groups, not 11 flat items", () => {
+    const site = adminNavSections.find((s) => s.id === "site")!;
+    const settings = (site.entries as AdminNavSectionEntry[]).find(
+      (e) => isAdminNavGroup(e) && e.id === "settings",
+    ) as AdminNavGroup;
+    assert.equal(settings.items.length, 5);
+    for (const sub of settings.items) {
+      assert.ok(isAdminNavGroup(sub), `expected ${JSON.stringify(sub)} to be a sub-group`);
+    }
+    assert.deepEqual(
+      settings.items.map((sub) => (sub as AdminNavGroup).id),
+      [
+        "settings-clinic",
+        "settings-communications",
+        "settings-billing",
+        "settings-site",
+        "settings-staff-access",
+      ],
+    );
+  });
+
+  it("every settings leaf href from before the regroup is still reachable", () => {
+    const hrefs = new Set(
+      flattenAdminNavItems()
+        .filter((item) => item.href.startsWith("/admin/settings/"))
+        .map((item) => item.href),
+    );
+    assert.deepEqual(
+      hrefs,
+      new Set([
+        "/admin/settings/clinic-hours",
+        "/admin/settings/prices",
+        "/admin/settings/doctors",
+        "/admin/settings/whatsapp-ai",
+        "/admin/settings/patient-notifications",
+        "/admin/settings/templates",
+        "/admin/settings/deposits",
+        "/admin/settings/theme",
+        "/admin/settings/site",
+        "/admin/settings/accounts",
+        "/admin/settings/roles",
+      ]),
+    );
+  });
+
+  it("Bookings, Patients & Billing, and Communications default open; Insights and the two Site groups don't", () => {
+    const clinic = adminNavSections.find((s) => s.id === "clinic")!;
+    const site = adminNavSections.find((s) => s.id === "site")!;
+    const byId = (id: string) =>
+      [...(clinic.entries ?? []), ...(site.entries ?? [])].find(
+        (e) => isAdminNavGroup(e) && e.id === id,
+      ) as AdminNavGroup;
+    assert.equal(byId("bookings").defaultOpen, true);
+    assert.equal(byId("patients-billing").defaultOpen, true);
+    assert.equal(byId("messaging").defaultOpen, true);
+    assert.notEqual(byId("insights").defaultOpen, true);
+    assert.notEqual(byId("settings").defaultOpen, true);
   });
 });
