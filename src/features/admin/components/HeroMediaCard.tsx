@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   mediaType: MediaKind;
@@ -27,17 +28,16 @@ export function HeroMediaCard({
   mobile,
   onMobileChange,
 }: Props) {
+  const t = useTranslations();
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Media</CardTitle>
-        <CardDescription>
-          One type for both slots — upload image or video files.
-        </CardDescription>
+        <CardTitle>{t("admin.customize.media")}</CardTitle>
+        <CardDescription>{t("admin.pages.hero.mediaDesc")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <MediaUploadField
-          label="Desktop"
+          label={t("admin.pages.hero.desktop")}
           bucket="hero"
           folder="desktop"
           mediaType={mediaType}
@@ -47,7 +47,7 @@ export function HeroMediaCard({
         />
         <Separator />
         <MediaUploadField
-          label="Mobile"
+          label={t("admin.pages.hero.mobile")}
           bucket="hero"
           folder="mobile"
           mediaType={mediaType}
