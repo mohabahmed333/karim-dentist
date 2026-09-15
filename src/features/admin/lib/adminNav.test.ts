@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   filterAdminNavSections,
+  findActiveAdminNavGroupIds,
   flattenAdminNavItems,
   type AdminNavSection,
 } from "./adminNav";
@@ -81,5 +82,52 @@ describe("flattenAdminNavItems (recursive)", () => {
     ];
     const hrefs = flattenAdminNavItems(fixture).map((item) => item.href);
     assert.deepEqual(hrefs, ["/admin/a", "/admin/b", "/admin/g2", "/admin/c"]);
+  });
+});
+
+describe("findActiveAdminNavGroupIds (recursive, Set-returning)", () => {
+  const fixture: AdminNavSection[] = [
+    {
+      id: "site",
+      titleKey: "admin.nav.site",
+      entries: [
+        {
+          id: "settings",
+          labelKey: "admin.nav.settings",
+          items: [
+            {
+              id: "settings-clinic",
+              labelKey: "admin.settings.groupClinic",
+              items: [
+                { href: "/admin/settings/clinic-hours", labelKey: "admin.settings.hours" },
+              ],
+            },
+          ],
+        },
+        {
+          id: "inventory",
+          href: "/admin/inventory",
+          labelKey: "admin.nav.inventory",
+          items: [
+            { href: "/admin/inventory/reports", labelKey: "admin.nav.inventoryReports" },
+          ],
+        },
+      ],
+    },
+  ];
+
+  it("adds both the group and the sub-group on the path to a doubly-nested active page", () => {
+    const ids = findActiveAdminNavGroupIds(fixture, "/admin/settings/clinic-hours");
+    assert.deepEqual([...ids].sort(), ["settings", "settings-clinic"]);
+  });
+
+  it("adds a group whose own href matches, even with no active descendant", () => {
+    const ids = findActiveAdminNavGroupIds(fixture, "/admin/inventory");
+    assert.deepEqual([...ids], ["inventory"]);
+  });
+
+  it("returns an empty set when nothing matches", () => {
+    const ids = findActiveAdminNavGroupIds(fixture, "/admin/unrelated-page");
+    assert.deepEqual([...ids], []);
   });
 });

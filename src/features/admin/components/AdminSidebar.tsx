@@ -7,7 +7,7 @@ import { FolderOpen } from "lucide-react";
 import {
   adminNavSections,
   filterAdminNavSections,
-  findActiveAdminNavGroupId,
+  findActiveAdminNavGroupIds,
 } from "@/features/admin/lib/adminNav";
 import { useTranslations } from "@/lib/i18n";
 import { AdminNavSectionBlock } from "./AdminNavSectionBlock";
@@ -29,27 +29,36 @@ export function AdminSidebar({
   const permissionSet = permissions ? new Set(permissions) : null;
   const sections = filterAdminNavSections(adminNavSections, permissionSet);
 
-  // Accordion, not independent toggles: whichever group the current page
-  // lives under is the one that's open, and navigating elsewhere closes it
-  // in favour of the new page's group (or closes everything, on a page with
-  // no group). A manual click still overrides this until the route changes.
+  // Every group/sub-group on the path to the current page auto-opens; a
+  // manual click can open/close others on top of that until the route
+  // changes, when the whole set is recomputed fresh from scratch (not
+  // accumulated forever — a group closes again once you navigate away from
+  // it and don't reopen it).
   //
   // Adjusted during render rather than in an effect — React's documented
-  // pattern for "reset state when a prop changes" — so the old group never
+  // pattern for "reset state when a prop changes" — so the old set never
   // has a chance to paint open on the new page.
-  const activeGroupId = useMemo(
-    () => findActiveAdminNavGroupId(sections, pathname),
+  const activeGroupIds = useMemo(
+    () => findActiveAdminNavGroupIds(sections, pathname),
     [sections, pathname],
   );
-  const [openGroupId, setOpenGroupId] = useState(activeGroupId);
+  const [openGroupIds, setOpenGroupIds] = useState(activeGroupIds);
   const [renderedForPathname, setRenderedForPathname] = useState(pathname);
   if (pathname !== renderedForPathname) {
     setRenderedForPathname(pathname);
-    setOpenGroupId(activeGroupId);
+    setOpenGroupIds(activeGroupIds);
   }
 
   function toggleGroup(groupId: string) {
-    setOpenGroupId((prev) => (prev === groupId ? null : groupId));
+    setOpenGroupIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId)) {
+        next.delete(groupId);
+      } else {
+        next.add(groupId);
+      }
+      return next;
+    });
   }
 
   return (
@@ -68,13 +77,14 @@ export function AdminSidebar({
           {t("admin.clinicWorkspace")}
         </p>
       </div>
-      {sections.map((section) => (
+      {sections.map((section, index) => (
         <AdminNavSectionBlock
           key={section.id}
           section={section}
           pendingCount={pendingCount}
-          openGroupId={openGroupId}
+          openGroupIds={openGroupIds}
           onToggleGroup={toggleGroup}
+          isFirst={index === 0}
         />
       ))}
       <div className="mt-auto space-y-0.5 border-t border-[var(--admin-border)] px-1 pt-3">
