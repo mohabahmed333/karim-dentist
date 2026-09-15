@@ -20,6 +20,7 @@ import type {
 } from "@/services/patient_treatments";
 import type { Service } from "@/services/services/types";
 import { toast } from "sonner";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   toothFdi: string;
@@ -57,6 +58,7 @@ export function TreatmentWizard({
   onBook,
   onDone,
 }: Props) {
+  const t = useTranslations();
   const [step, setStep] = useState<WizardStep>("treatment");
   const [draft, setDraft] = useState<WizardDraft>(
     () => initialDraft ?? emptyWizardDraft(toothFdi, toothName),
@@ -98,7 +100,7 @@ export function TreatmentWizard({
 
   async function handleReviewSave() {
     const id = await saveDraft();
-    if (id) toast.success("Treatment updated");
+    if (id) toast.success(t("admin.patients.toasts.treatmentUpdated"));
   }
 
   return (

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "@/lib/i18n";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ const EMPTY_FORM: PatientProfileUpsertValues = {
 type FieldErrors = Partial<Record<keyof PatientProfileUpsertValues, string>>;
 
 export function AddPatientDialog({ open, onOpenChange, onCreated }: Props) {
+  const t = useTranslations();
   const [form, setForm] = useState<PatientProfileUpsertValues>(EMPTY_FORM);
   const [pending, setPending] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -59,18 +61,18 @@ export function AddPatientDialog({ open, onOpenChange, onCreated }: Props) {
         if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
       }
       setErrors(fieldErrors);
-      toast.error("Please fill in the required fields");
+      toast.error(t("admin.patients.toasts.fillRequiredFields"));
       return;
     }
     setErrors({});
     setPending(true);
     try {
       const created = await createPatient(parsed.data);
-      toast.success("Patient added");
+      toast.success(t("admin.patients.toasts.patientAdded"));
       setForm(EMPTY_FORM);
       onCreated(created);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not add patient");
+      toast.error(err instanceof Error ? err.message : t("admin.patients.toasts.couldNotAddPatient"));
     } finally {
       setPending(false);
     }
@@ -92,9 +94,9 @@ export function AddPatientDialog({ open, onOpenChange, onCreated }: Props) {
         className="flex max-h-[90vh] origin-bottom flex-col gap-0 overflow-hidden p-0 duration-200 data-open:zoom-in-75 data-open:slide-in-from-bottom-6 data-closed:zoom-out-75 data-closed:slide-out-to-bottom-6 sm:max-w-lg"
       >
         <DialogHeader className="shrink-0 space-y-1 px-4 pt-4 pe-12">
-          <DialogTitle className="text-[var(--admin-text)]">Add patient</DialogTitle>
+          <DialogTitle className="text-[var(--admin-text)]">{t("admin.patients.addDialog.title")}</DialogTitle>
           <DialogDescription className="text-[var(--admin-muted)]">
-            Create a new patient record.
+            {t("admin.patients.addDialog.desc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -109,7 +111,7 @@ export function AddPatientDialog({ open, onOpenChange, onCreated }: Props) {
             disabled={pending}
             onClick={() => void save()}
           >
-            {pending ? "Adding…" : "Add patient"}
+            {pending ? t("admin.patients.addDialog.adding") : t("admin.patients.addDialog.title")}
           </Button>
         </DialogFooter>
       </DialogContent>

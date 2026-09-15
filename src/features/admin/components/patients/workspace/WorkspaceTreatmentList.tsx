@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { useTranslations } from "@/lib/i18n";
 import { formatEgp } from "@/services/cdt";
 import type { ClinicalNote } from "@/services/clinical_notes";
 import type { TreatmentItem } from "@/services/patient_treatments";
@@ -27,16 +28,17 @@ export function WorkspaceTreatmentList({
   onAdd,
   onContext,
 }: Props) {
+  const t = useTranslations();
   if (rows.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-[#E2E8F0] bg-white px-4 py-10 text-center">
-        <p className="text-sm text-[#94A3B8]">No treatments for this tooth.</p>
+        <p className="text-sm text-[#94A3B8]">{t("admin.patients.workspaceList.emptyTooth")}</p>
         <button
           type="button"
           onClick={onAdd}
           className="mt-3 rounded-full bg-[#111111] px-4 py-2 text-[12px] font-semibold text-white"
         >
-          Add required treatment
+          {t("admin.patients.workspaceList.addRequired")}
         </button>
       </div>
     );
@@ -74,7 +76,7 @@ export function WorkspaceTreatmentList({
               onSaveClinicalNote(
                 createDraftNote(item.id, "Quick Note", content),
               );
-              toast.success("Note saved");
+              toast.success(t("admin.patients.toasts.noteSaved"));
             }}
             onDelete={() => chart.setDeleteId(item.id)}
             onContext={(rect) => onContext(item.id, rect)}

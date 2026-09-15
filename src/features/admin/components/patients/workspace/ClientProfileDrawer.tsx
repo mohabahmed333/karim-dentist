@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "@/lib/i18n";
 import {
   emptyPatientProfile,
   getPatientProfile,
@@ -50,6 +51,7 @@ export function ClientProfileDrawer({
   email,
   onClose,
 }: Props) {
+  const t = useTranslations();
   const [pending, setPending] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -73,7 +75,7 @@ export function ClientProfileDrawer({
         setSnapshot(next);
       })
       .catch((err) => {
-        toast.error(err instanceof Error ? err.message : "Failed to load profile");
+        toast.error(err instanceof Error ? err.message : t("admin.patients.toasts.failedLoadProfile"));
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -96,7 +98,7 @@ export function ClientProfileDrawer({
   async function save() {
     const parsed = patientProfileUpsertSchema.safeParse(form);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Invalid profile");
+      toast.error(parsed.error.issues[0]?.message ?? t("admin.patients.toasts.invalidProfile"));
       return;
     }
     setPending(true);
@@ -106,9 +108,9 @@ export function ClientProfileDrawer({
       setForm(saved);
       setSnapshot(saved);
       setEditing(false);
-      toast.success("Client profile saved");
+      toast.success(t("admin.patients.toasts.profileSaved"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
+      toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
     } finally {
       setPending(false);
     }

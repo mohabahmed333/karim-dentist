@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import {
   emptyReservationForm,
@@ -43,6 +44,7 @@ export function TreatmentBookDrawer({
   onClose,
   onBooked,
 }: Props) {
+  const t = useTranslations();
   const [form, setForm] = useState<ReservationFormValues>(emptyReservationForm());
   const [pending, setPending] = useState(false);
 
@@ -79,7 +81,7 @@ export function TreatmentBookDrawer({
   async function submit() {
     const parsed = reservationFormSchema.safeParse(form);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Invalid appointment");
+      toast.error(parsed.error.issues[0]?.message ?? t("admin.patients.toasts.invalidAppointment"));
       return;
     }
     if (!treatment) return;
@@ -99,15 +101,15 @@ export function TreatmentBookDrawer({
       let reservation: Reservation;
       if (mode === "replace" && treatment.reservationId) {
         reservation = await updateReservation(treatment.reservationId, payload);
-        toast.success("Appointment replaced");
+        toast.success(t("admin.patients.toasts.appointmentReplaced"));
       } else {
         reservation = await createReservation(payload);
-        toast.success("Appointment booked");
+        toast.success(t("admin.patients.toasts.appointmentBooked"));
       }
       onBooked(treatment.id, reservation);
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Booking failed");
+      toast.error(err instanceof Error ? err.message : t("admin.patients.toasts.bookingFailed"));
     } finally {
       setPending(false);
     }

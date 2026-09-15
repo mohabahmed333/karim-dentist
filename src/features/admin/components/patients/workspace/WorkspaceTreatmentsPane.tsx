@@ -33,7 +33,7 @@ import {
   bookOpenSlotMatchingStartsAt,
   releaseAppointmentSlot,
 } from "@/services/clinic_schedule";
-import { useLocale } from "@/lib/i18n";
+import { useLocale, useTranslations } from "@/lib/i18n";
 import { serviceDisplayName } from "@/features/admin/lib/serviceDisplayName";
 import type { PriceableDoctor } from "@/services/service_doctors/pricing";
 import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
@@ -61,6 +61,8 @@ type Props = {
   doctors: PriceableDoctor[];
   serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
   canPropose: boolean;
+  currentDoctorId: string | null;
+  canPickDoctor: boolean;
 };
 
 export function WorkspaceTreatmentsPane({
@@ -79,8 +81,11 @@ export function WorkspaceTreatmentsPane({
   doctors,
   serviceDoctorMappings,
   canPropose,
+  currentDoctorId,
+  canPickDoctor,
 }: Props) {
   const { locale } = useLocale();
+  const t = useTranslations();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardSeed, setWizardSeed] = useState<WizardDraft | null>(null);
   const [wizardTreatmentId, setWizardTreatmentId] = useState<
@@ -225,6 +230,8 @@ export function WorkspaceTreatmentsPane({
             doctors={doctors}
             serviceDoctorMappings={serviceDoctorMappings}
             reservations={group.visits}
+            initialDoctorId={currentDoctorId ?? undefined}
+            lockDoctor={!canPickDoctor}
             initialItems={[
               {
                 serviceId: proposalDraft.serviceId,
@@ -332,7 +339,7 @@ export function WorkspaceTreatmentsPane({
         onApplyDraft={onApplyAiDraft}
         onProposeDraft={(aiDraft) => {
           if (!canPropose) {
-            toast.error("You don't have permission to propose treatments");
+            toast.error(t("admin.patients.toasts.noPermissionPropose"));
             return;
           }
           setProposalDraft({
