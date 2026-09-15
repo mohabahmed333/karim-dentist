@@ -8,6 +8,7 @@ import {
   type AdminNavGroup,
   type AdminNavItem,
   type AdminNavSection,
+  type AdminNavSectionEntry,
 } from "@/features/admin/lib/adminNav";
 import { useTranslations } from "@/lib/i18n";
 import { AdminNavLink } from "./AdminNavLink";
@@ -17,40 +18,61 @@ import { cn } from "@/lib/utils";
 type Props = {
   section: AdminNavSection;
   pendingCount?: number;
-  /** Which group is expanded, shared across every section — accordion, not per-group state. */
-  openGroupId: string | null;
+  /** Every group/sub-group currently expanded, across every depth. */
+  openGroupIds: Set<string>;
   onToggleGroup: (groupId: string) => void;
+  /** The very first rendered section skips the top divider. */
+  isFirst: boolean;
 };
 
 function NavGroup({
   group,
+  depth,
   isLast,
   isOpen,
   onToggle,
+  onToggleGroup,
+  openGroupIds,
   pendingCount,
 }: {
   group: AdminNavGroup;
+  depth: number;
   isLast: boolean;
   isOpen: boolean;
   onToggle: () => void;
+  onToggleGroup: (groupId: string) => void;
+  openGroupIds: Set<string>;
   pendingCount?: number;
 }) {
   const t = useTranslations();
   const label = t(group.labelKey);
+  const Icon = depth === 0 ? group.icon : undefined;
 
   return (
     <>
-      <AdminNavTreeRow isLast={isLast && !isOpen} depth={0}>
+      <AdminNavTreeRow isLast={isLast && !isOpen} depth={depth}>
         <div className="flex w-full items-center gap-1">
           {group.href ? (
-            <AdminNavLink href={group.href} label={label} className="flex-1" />
+            <AdminNavLink
+              href={group.href}
+              label={label}
+              icon={Icon}
+              className="flex-1"
+              activeStyle={depth > 0 ? "text" : "pill"}
+            />
           ) : (
             <button
               type="button"
-              className="flex-1 truncate px-2 py-1 text-start text-[13px] text-[var(--admin-text)]"
+              className={cn(
+                "flex flex-1 items-center gap-1.5 truncate px-2 py-1 text-start",
+                depth === 0
+                  ? "text-[13px] text-[var(--admin-text)]"
+                  : "text-[12px] font-normal text-[var(--admin-muted)]",
+              )}
               onClick={onToggle}
             >
-              {label}
+              {Icon ? <Icon className="size-3.5 shrink-0" aria-hidden /> : null}
+              <span className="truncate">{label}</span>
             </button>
           )}
           <button
@@ -81,9 +103,11 @@ function NavGroup({
             className="overflow-hidden"
           >
             <div className="mt-1.5">
-              <AdminNavTreeList
-                items={group.items}
-                depth={1}
+              <AdminNavEntryList
+                entries={group.items}
+                depth={depth + 1}
+                openGroupIds={openGroupIds}
+                onToggleGroup={onToggleGroup}
                 pendingCount={pendingCount}
               />
             </div>
@@ -94,76 +118,88 @@ function NavGroup({
   );
 }
 
+function AdminNavEntryList({
+  entries,
+  depth,
+  openGroupIds,
+  onToggleGroup,
+  pendingCount,
+}: {
+  entries: AdminNavSectionEntry[];
+  depth: number;
+  openGroupIds: Set<string>;
+  onToggleGroup: (groupId: string) => void;
+  pendingCount?: number;
+}) {
+  const blocks: ReactNode[] = [];
+  let run: AdminNavItem[] = [];
+  const flushRun = (key: string) => {
+    if (run.length === 0) return;
+    blocks.push(
+      <AdminNavTreeList
+        key={key}
+        items={run}
+        depth={depth}
+        pendingCount={pendingCount}
+      />,
+    );
+    run = [];
+  };
+  entries.forEach((entry, index) => {
+    if (isAdminNavGroup(entry)) {
+      flushRun(`run-${index}`);
+      blocks.push(
+        <NavGroup
+          key={entry.id}
+          group={entry}
+          depth={depth}
+          isLast={index === entries.length - 1}
+          isOpen={openGroupIds.has(entry.id)}
+          onToggle={() => onToggleGroup(entry.id)}
+          onToggleGroup={onToggleGroup}
+          openGroupIds={openGroupIds}
+          pendingCount={pendingCount}
+        />,
+      );
+    } else {
+      run.push(entry);
+    }
+  });
+  flushRun("run-end");
+  return <>{blocks}</>;
+}
+
 export function AdminNavSectionBlock({
   section,
   pendingCount = 0,
-  openGroupId,
+  openGroupIds,
   onToggleGroup,
+  isFirst,
 }: Props) {
   const t = useTranslations();
   const title = t(section.titleKey);
-
-  const blocks: ReactNode[] = [];
-  if (section.entries) {
-    let run: AdminNavItem[] = [];
-    const flushRun = (key: string) => {
-      if (run.length === 0) return;
-      blocks.push(
-        <AdminNavTreeList key={key} items={run} pendingCount={pendingCount} />,
-      );
-      run = [];
-    };
-    section.entries.forEach((entry, index) => {
-      if (isAdminNavGroup(entry)) {
-        flushRun(`run-${index}`);
-        blocks.push(
-          <NavGroup
-            key={entry.id}
-            group={entry}
-            isLast={index === section.entries!.length - 1}
-            isOpen={entry.id === openGroupId}
-            onToggle={() => onToggleGroup(entry.id)}
-            pendingCount={pendingCount}
-          />,
-        );
-      } else {
-        run.push(entry);
-      }
-    });
-    flushRun("run-end");
-  } else {
-    if (section.items) {
-      blocks.push(
-        <AdminNavTreeList
-          key="items"
-          items={section.items}
-          pendingCount={pendingCount}
-        />,
-      );
-    }
-    const groups = section.groups ?? [];
-    groups.forEach((group, index) => {
-      blocks.push(
-        <NavGroup
-          key={group.id}
-          group={group}
-          isLast={index === groups.length - 1}
-          isOpen={group.id === openGroupId}
-          onToggle={() => onToggleGroup(group.id)}
-          pendingCount={pendingCount}
-        />,
-      );
-    });
-  }
+  const entries: AdminNavSectionEntry[] =
+    section.entries ?? [...(section.items ?? []), ...(section.groups ?? [])];
 
   return (
-    <section className="mb-4">
+    <section
+      className={cn(
+        "mb-6",
+        !isFirst && "border-t border-[var(--admin-border)] pt-4",
+      )}
+    >
       <div className="mb-1 px-2">
         <h2 className="text-[11px] font-medium tracking-wide text-[var(--admin-muted)]">
           {title}
         </h2>
       </div>
-      {blocks}
+      <AdminNavEntryList
+        entries={entries}
+        depth={0}
+        openGroupIds={openGroupIds}
+        onToggleGroup={onToggleGroup}
+        pendingCount={pendingCount}
+      />
     </section>
   );
 }
