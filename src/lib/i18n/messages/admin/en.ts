@@ -876,6 +876,7 @@ export const adminEn = {
   "admin.billing.newBillToastAction": "Open billing",
   "admin.billing.bellWaiting": "Bills awaiting payment",
   "admin.billing.bellClear": "No bills waiting",
+  "admin.billing.doctorFallback": "Doctor",
   "admin.billing.pendingRequests": "Pending billing requests",
   "admin.billing.awaitingPayment": "Awaiting payment confirmation",
   "admin.billing.collectCash": "Collect cash",

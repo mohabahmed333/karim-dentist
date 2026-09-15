@@ -37,8 +37,17 @@ export function BillingPaymentReviewList({ rows }: Props) {
 
   return (
     <section className="space-y-3">
-      <p className="text-sm font-medium text-[var(--admin-text)]">{t("admin.billing.awaitingPayment")}</p>
-      <ul className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-sm font-medium text-[var(--admin-text)]">
+          {t("admin.billing.awaitingPayment")}
+        </h2>
+        <span className="rounded-full bg-[var(--admin-primary)] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-white">
+          {rows.length}
+        </span>
+      </div>
+      {/* Same grid as the requests above it, so the two queues read as one
+          page rather than two stacked columns with the width unused. */}
+      <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
         {rows.map((row) => (
           <li key={row.id}>
             <BillingPaymentReceiptCard row={row}>

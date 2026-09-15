@@ -878,6 +878,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.billing.newBillToastAction": "فتح الفوترة",
   "admin.billing.bellWaiting": "فواتير بانتظار السداد",
   "admin.billing.bellClear": "لا توجد فواتير منتظرة",
+  "admin.billing.doctorFallback": "الطبيب",
   "admin.billing.pendingRequests": "طلبات الفواتير المعلقة",
   "admin.billing.awaitingPayment": "بانتظار تأكيد الدفع",
   "admin.billing.collectCash": "استلام كاش",
