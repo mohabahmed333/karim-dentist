@@ -163,7 +163,7 @@ export function ProposeServicesForm({
           <AdminSelectTrigger>
             <AdminSelectValue placeholder={t("admin.billing.form.doctorPlaceholder")} />
           </AdminSelectTrigger>
-          <AdminSelectContent>
+          <AdminSelectContent alignItemWithTrigger={false}>
             {doctors.map((doctor) => (
               <AdminSelectItem key={doctor.id} value={doctor.id}>
                 {doctor.display_name ?? t("admin.billing.form.unnamedDoctor")}
@@ -181,7 +181,7 @@ export function ProposeServicesForm({
           <AdminSelectTrigger>
             <AdminSelectValue placeholder={t("admin.billing.form.visitPlaceholder")} />
           </AdminSelectTrigger>
-          <AdminSelectContent>
+          <AdminSelectContent alignItemWithTrigger={false}>
             <AdminSelectItem value={NO_RESERVATION}>{t("admin.billing.form.notTiedToVisit")}</AdminSelectItem>
             {reservations.map((reservation) => (
               <AdminSelectItem key={reservation.id} value={reservation.id}>
