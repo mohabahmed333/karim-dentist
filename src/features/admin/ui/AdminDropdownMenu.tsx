@@ -9,6 +9,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -82,6 +85,36 @@ function AdminDropdownMenuGroup(
   return <DropdownMenuGroup {...props} />;
 }
 
+function AdminDropdownMenuSub(
+  props: React.ComponentProps<typeof DropdownMenuSub>,
+) {
+  return <DropdownMenuSub {...props} />;
+}
+
+function AdminDropdownMenuSubTrigger({
+  className,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuSubTrigger>) {
+  return (
+    <DropdownMenuSubTrigger
+      className={cn(adminMenuItemClass, className)}
+      {...props}
+    />
+  );
+}
+
+function AdminDropdownMenuSubContent({
+  className,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuSubContent>) {
+  return (
+    <DropdownMenuSubContent
+      className={cn(adminMenuPanelClass, className)}
+      {...props}
+    />
+  );
+}
+
 function AdminDropdownMenuLabel({
   className,
   ...props
@@ -103,4 +136,7 @@ export {
   AdminDropdownMenuCheckboxItem,
   AdminDropdownMenuSeparator,
   AdminDropdownMenuLabel,
+  AdminDropdownMenuSub,
+  AdminDropdownMenuSubTrigger,
+  AdminDropdownMenuSubContent,
 };

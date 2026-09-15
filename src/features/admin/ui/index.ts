@@ -24,6 +24,9 @@ export {
   AdminDropdownMenuItem,
   AdminDropdownMenuLabel,
   AdminDropdownMenuSeparator,
+  AdminDropdownMenuSub,
+  AdminDropdownMenuSubContent,
+  AdminDropdownMenuSubTrigger,
   AdminDropdownMenuTrigger,
 } from "./AdminDropdownMenu";
 export {

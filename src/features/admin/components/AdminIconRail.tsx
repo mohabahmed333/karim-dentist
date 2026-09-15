@@ -7,6 +7,8 @@ import { useLocale, useTranslations } from "@/lib/i18n";
 import {
   adminRailItems,
   filterAdminRailItems,
+  isRailSubGroup,
+  type AdminRailChild,
   type AdminRailItem,
 } from "@/features/admin/lib/adminNav";
 import {
@@ -19,9 +21,64 @@ import {
   AdminDropdownMenu,
   AdminDropdownMenuContent,
   AdminDropdownMenuItem,
+  AdminDropdownMenuSub,
+  AdminDropdownMenuSubContent,
+  AdminDropdownMenuSubTrigger,
   AdminDropdownMenuTrigger,
 } from "@/features/admin/ui";
 import { AdminAccountMenu } from "./AdminAccountMenu";
+
+function anyRailChildMatches(children: AdminRailChild[], pathname: string): boolean {
+  return children.some((child) =>
+    isRailSubGroup(child)
+      ? anyRailChildMatches(child.children, pathname)
+      : pathname.startsWith(child.href),
+  );
+}
+
+/** Left-side connector before a row's label — stacked rows line up into one
+ *  continuous vertical line down the flyout, echoing the full sidebar's tree. */
+function RailTreeLine() {
+  return (
+    <span
+      aria-hidden
+      className="self-stretch border-s border-[var(--admin-border)]"
+    />
+  );
+}
+
+/** Renders one level of flyout content — a leaf becomes a plain menu item,
+ *  a sub-group becomes a nested sub-menu, recursing for any further nesting. */
+function RailMenuChildren({ entries }: { entries: AdminRailChild[] }) {
+  const t = useTranslations();
+  const router = useRouter();
+
+  return (
+    <>
+      {entries.map((entry) =>
+        isRailSubGroup(entry) ? (
+          <AdminDropdownMenuSub key={entry.id}>
+            <AdminDropdownMenuSubTrigger>
+              <RailTreeLine />
+              {t(entry.labelKey)}
+            </AdminDropdownMenuSubTrigger>
+            <AdminDropdownMenuSubContent>
+              <RailMenuChildren entries={entry.children} />
+            </AdminDropdownMenuSubContent>
+          </AdminDropdownMenuSub>
+        ) : (
+          <AdminDropdownMenuItem
+            key={entry.href}
+            onClick={() => router.push(entry.href)}
+          >
+            <RailTreeLine />
+            {t(entry.labelKey)}
+          </AdminDropdownMenuItem>
+        ),
+      )}
+    </>
+  );
+}
 
 function railButtonClass(active: boolean) {
   return cn(
@@ -70,17 +127,11 @@ function RailDropdownItem({
       <AdminDropdownMenuContent side={side} align="start" className="min-w-40">
         {item.container ? null : (
           <AdminDropdownMenuItem onClick={() => router.push(item.href)}>
+            <RailTreeLine />
             {label}
           </AdminDropdownMenuItem>
         )}
-        {(item.children ?? []).map((child) => (
-          <AdminDropdownMenuItem
-            key={child.href}
-            onClick={() => router.push(child.href)}
-          >
-            {t(child.labelKey)}
-          </AdminDropdownMenuItem>
-        ))}
+        <RailMenuChildren entries={item.children ?? []} />
       </AdminDropdownMenuContent>
     </AdminDropdownMenu>
   );
@@ -117,8 +168,7 @@ export function AdminIconRail({ permissions, sidebarCollapsed = true }: Props = 
           const active = item.exact
             ? pathname === item.href
             : pathname.startsWith(item.href) ||
-              (item.children?.some((child) => pathname.startsWith(child.href)) ??
-                false);
+              (item.children ? anyRailChildMatches(item.children, pathname) : false);
 
           if (item.children?.length) {
             return (

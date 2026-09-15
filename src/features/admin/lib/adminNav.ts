@@ -61,6 +61,29 @@ export type AdminNavSection = {
   entries?: AdminNavSectionEntry[];
 };
 
+export type AdminRailLeaf = {
+  href: string;
+  labelKey: AdminMessageKey;
+  permission?: string;
+};
+
+/** One extra level of nesting inside a rail flyout — a sub-menu that opens
+ *  its own flyout on hover/click, matching the full sidebar's sub-groups. */
+export type AdminRailSubGroup = {
+  id: string;
+  labelKey: AdminMessageKey;
+  children: AdminRailChild[];
+};
+
+/** A leaf never has `children` — that's what tells the two apart. */
+export type AdminRailChild = AdminRailLeaf | AdminRailSubGroup;
+
+export function isRailSubGroup(
+  entry: AdminRailChild,
+): entry is AdminRailSubGroup {
+  return "children" in entry;
+}
+
 export type AdminRailItem = {
   id: string;
   href: string;
@@ -70,7 +93,7 @@ export type AdminRailItem = {
   /** Permission key required to see/use this item's own link. */
   permission?: string;
   /** Shown as a click-to-open dropdown flyout when the sidebar is the narrow icon rail. */
-  children?: { href: string; labelKey: AdminMessageKey; permission?: string }[];
+  children?: AdminRailChild[];
   /**
    * The icon opens its list and nothing else — `href` is only the path prefix
    * that marks it active. Settings is one: every page under it is a child, so
@@ -179,19 +202,53 @@ export const adminRailItems: AdminRailItem[] = [
     icon: Settings,
     permission: "settings.view",
     container: true,
+    // Mirrors the full sidebar's 5 Settings sub-groups, now as nested
+    // flyout sub-menus instead of one flat list of 12. Inventory settings
+    // has no home in the sidebar's Settings group (a pre-existing gap kept
+    // as-is there) — placed here under Clinic as the closest thematic fit.
     children: [
-      { href: "/admin/settings/theme", labelKey: "admin.settings.theme", permission: "settings.view" },
-      { href: "/admin/settings/clinic-hours", labelKey: "admin.settings.hours", permission: "settings.view" },
-      { href: "/admin/settings/site", labelKey: "admin.settings.brand", permission: "settings.view" },
-      { href: "/admin/settings/prices", labelKey: "admin.settings.clinic", permission: "settings.view" },
-      { href: "/admin/settings/whatsapp-ai", labelKey: "admin.settings.whatsappAi", permission: "settings.view" },
-      { href: "/admin/settings/patient-notifications", labelKey: "admin.settings.notifications", permission: "settings.view" },
-      { href: "/admin/settings/deposits", labelKey: "admin.settings.deposits", permission: "settings.view" },
-      { href: "/admin/settings/templates", labelKey: "admin.settings.templates", permission: "settings.view" },
-      { href: "/admin/settings/doctors", labelKey: "admin.settings.doctors", permission: "settings.view" },
-      { href: "/admin/settings/inventory", labelKey: "admin.settings.inventory", permission: "settings.view" },
-      { href: "/admin/settings/accounts", labelKey: "admin.nav.accounts", permission: "accounts.view" },
-      { href: "/admin/settings/roles", labelKey: "admin.nav.roles", permission: "roles.view" },
+      {
+        id: "settings-clinic",
+        labelKey: "admin.settings.groupClinic",
+        children: [
+          { href: "/admin/settings/clinic-hours", labelKey: "admin.settings.hours", permission: "settings.view" },
+          { href: "/admin/settings/prices", labelKey: "admin.settings.clinic", permission: "settings.view" },
+          { href: "/admin/settings/doctors", labelKey: "admin.settings.doctors", permission: "settings.view" },
+          { href: "/admin/settings/inventory", labelKey: "admin.settings.inventory", permission: "settings.view" },
+        ],
+      },
+      {
+        id: "settings-communications",
+        labelKey: "admin.settings.groupCommunications",
+        children: [
+          { href: "/admin/settings/whatsapp-ai", labelKey: "admin.settings.whatsappAi", permission: "settings.view" },
+          { href: "/admin/settings/patient-notifications", labelKey: "admin.settings.notifications", permission: "settings.view" },
+          { href: "/admin/settings/templates", labelKey: "admin.settings.templates", permission: "settings.view" },
+        ],
+      },
+      {
+        id: "settings-billing",
+        labelKey: "admin.settings.groupBilling",
+        children: [
+          { href: "/admin/settings/deposits", labelKey: "admin.settings.deposits", permission: "settings.view" },
+        ],
+      },
+      {
+        id: "settings-site",
+        labelKey: "admin.settings.groupSite",
+        children: [
+          { href: "/admin/settings/theme", labelKey: "admin.settings.theme", permission: "settings.view" },
+          { href: "/admin/settings/site", labelKey: "admin.settings.brand", permission: "settings.view" },
+        ],
+      },
+      {
+        id: "settings-staff-access",
+        labelKey: "admin.settings.groupStaffAccess",
+        children: [
+          { href: "/admin/settings/accounts", labelKey: "admin.nav.accounts", permission: "accounts.view" },
+          { href: "/admin/settings/roles", labelKey: "admin.nav.roles", permission: "roles.view" },
+        ],
+      },
     ],
   },
 ];
@@ -450,15 +507,31 @@ function isPermitted(
   return permissions.has(permission);
 }
 
+function filterRailChildren(
+  children: AdminRailChild[],
+  permissions: Set<string> | null,
+): AdminRailChild[] {
+  const result: AdminRailChild[] = [];
+  for (const child of children) {
+    if (isRailSubGroup(child)) {
+      const filtered = filterRailChildren(child.children, permissions);
+      if (filtered.length > 0) result.push({ ...child, children: filtered });
+    } else if (isPermitted(child.permission, permissions)) {
+      result.push(child);
+    }
+  }
+  return result;
+}
+
 export function filterAdminRailItems(
   items: AdminRailItem[],
   permissions: Set<string> | null,
 ): AdminRailItem[] {
   const result: AdminRailItem[] = [];
   for (const item of items) {
-    const children = item.children?.filter((child) =>
-      isPermitted(child.permission, permissions),
-    );
+    const children = item.children
+      ? filterRailChildren(item.children, permissions)
+      : undefined;
     const ownPermitted = isPermitted(item.permission, permissions);
     const anyChildPermitted = (children?.length ?? 0) > 0;
     if (!ownPermitted && !anyChildPermitted) continue;
