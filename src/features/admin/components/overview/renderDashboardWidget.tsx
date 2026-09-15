@@ -24,6 +24,12 @@ import { DashboardPendingQueuePanel } from "./DashboardPendingQueuePanel";
 import { DashboardTodayPatientsPanel } from "./DashboardTodayPatientsPanel";
 import { DashboardTopServicesPanel } from "./DashboardTopServicesPanel";
 import { DashboardNextAppointmentCard } from "./DashboardNextAppointmentCard";
+import type {
+  PaymentMethodMixItem,
+  WeekRevenuePoint,
+} from "@/features/admin/lib/dashboardBillingStats";
+import type { InventoryWeekConsumptionPoint } from "@/features/admin/lib/dashboardInventoryStats";
+import type { CategoryStockValue } from "@/services/inventory/statsQueries";
 import {
   ChartBookingMix,
   ChartBusyHours,
@@ -36,6 +42,26 @@ import {
   ChartServiceRank,
   ChartWeekCompare,
 } from "./DashboardExtraCharts";
+import {
+  ChartBillingMethodMix,
+  ChartBillingRevenue,
+} from "./DashboardBillingCharts";
+import {
+  ChartInventoryConsumption,
+  ChartInventoryStockValue,
+} from "./DashboardInventoryCharts";
+
+/** Chart data for the 2 billing widgets — null when the viewer lacks patients.view. */
+export type BillingChartStats = {
+  weekRevenue: WeekRevenuePoint[];
+  methodMix: PaymentMethodMixItem[];
+};
+
+/** Chart data for the 2 inventory widgets — null when the viewer lacks inventory.view. */
+export type InventoryChartStats = {
+  stockValueByCategory: CategoryStockValue[];
+  weekConsumption: InventoryWeekConsumptionPoint[];
+};
 
 export type DashboardWidgetRenderCtx = {
   reservations: Reservation[];
@@ -52,6 +78,10 @@ export type DashboardWidgetRenderCtx = {
   conversationsLive?: boolean;
   /** Doctor's own fee total for the current week — null unless dashboard is doctor-scoped. */
   doctorProduction?: DoctorProduction | null;
+  /** Billing chart data — null when the viewer lacks patients.view or the query failed. */
+  billingStats?: BillingChartStats | null;
+  /** Inventory chart data — null when the viewer lacks inventory.view or the query failed. */
+  inventoryStats?: InventoryChartStats | null;
 };
 
 const KPI_BY_WIDGET: Partial<
@@ -67,6 +97,10 @@ const KPI_BY_WIDGET: Partial<
   kpiTomorrow: { labelKey: "admin.overview.kpi.tomorrow", icon: 0 },
   kpiWeekTotal: { labelKey: "admin.overview.kpi.weekTotal", icon: 0 },
   kpiUnreadChats: { labelKey: "admin.overview.kpi.unreadChats", icon: 3 },
+  kpiOutstandingBalance: { labelKey: "admin.overview.kpi.outstandingBalance", icon: 3 },
+  kpiPendingPayments: { labelKey: "admin.overview.kpi.pendingPayments", icon: 1 },
+  kpiLowStock: { labelKey: "admin.overview.kpi.lowStock", icon: 1 },
+  kpiPendingApprovals: { labelKey: "admin.overview.kpi.pendingApprovals", icon: 1 },
 };
 
 const ATTENTION_BY_WIDGET: Partial<Record<DashboardWidgetId, string>> = {
@@ -192,6 +226,26 @@ export function renderDashboardWidget(
       );
     case "chartServiceRank":
       return <ChartServiceRank serviceMix={ctx.stats.serviceMix} />;
+    case "chartBillingRevenue":
+      return ctx.billingStats ? (
+        <ChartBillingRevenue weekRevenue={ctx.billingStats.weekRevenue} />
+      ) : null;
+    case "chartBillingMethodMix":
+      return ctx.billingStats ? (
+        <ChartBillingMethodMix methodMix={ctx.billingStats.methodMix} />
+      ) : null;
+    case "chartInventoryStockValue":
+      return ctx.inventoryStats ? (
+        <ChartInventoryStockValue
+          stockValueByCategory={ctx.inventoryStats.stockValueByCategory}
+        />
+      ) : null;
+    case "chartInventoryConsumption":
+      return ctx.inventoryStats ? (
+        <ChartInventoryConsumption
+          weekConsumption={ctx.inventoryStats.weekConsumption}
+        />
+      ) : null;
     case "myProductionWeek":
       return (
         <DashboardDoctorProductionCard

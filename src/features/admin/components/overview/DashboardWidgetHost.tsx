@@ -12,7 +12,11 @@ import type { DashboardWidgetId } from "@/features/admin/lib/dashboardLayout";
 import type { DoctorProduction } from "@/services/patient_treatments/queries";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { renderDashboardWidget } from "./renderDashboardWidget";
+import {
+  renderDashboardWidget,
+  type BillingChartStats,
+  type InventoryChartStats,
+} from "./renderDashboardWidget";
 
 export type DashboardWidgetHostProps = {
   id: DashboardWidgetId;
@@ -27,6 +31,8 @@ export type DashboardWidgetHostProps = {
   onPatientSelect: (reservation: Reservation) => void;
   conversationsLive?: boolean;
   doctorProduction?: DoctorProduction | null;
+  billingStats?: BillingChartStats | null;
+  inventoryStats?: InventoryChartStats | null;
   className?: string;
 };
 
