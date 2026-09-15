@@ -66,14 +66,18 @@ type AdminUiState = LegacyAdminUiState & {
    *  on the same page restores them instead of collapsing back to just
    *  whatever the current page auto-opens. */
   openGroupIds: string[];
-  /** Where each floating team note was last dragged to, by note id — a
-   *  per-browser UI preference, separate from the note's shared DB content. */
-  noteWidgetPositions: Record<string, { x: number; y: number }>;
+  /** The floating team-notes panel's last position/size/collapsed state —
+   *  a per-browser UI preference, separate from the notes' shared DB content. */
+  notesPanelPosition: { x: number; y: number };
+  notesPanelSize: { width: number; height: number };
+  notesPanelMinimized: boolean;
   toggleDarkMode: () => void;
   toggleSidebar: () => void;
   setWaThemePreference: (id: WaThemePreference) => void;
   setOpenGroupIds: (ids: string[]) => void;
-  setNoteWidgetPosition: (id: string, pos: { x: number; y: number }) => void;
+  setNotesPanelPosition: (pos: { x: number; y: number }) => void;
+  setNotesPanelSize: (size: { width: number; height: number }) => void;
+  setNotesPanelMinimized: (minimized: boolean) => void;
   hydrateComplete: () => void;
 };
 
@@ -92,15 +96,16 @@ export const useAdminUiStore = create<AdminUiState>()(
       waThemePreference: "light",
       hasHydrated: false,
       openGroupIds: [],
-      noteWidgetPositions: {},
+      notesPanelPosition: { x: 24, y: 96 },
+      notesPanelSize: { width: 280, height: 360 },
+      notesPanelMinimized: false,
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       setWaThemePreference: (id) => set({ waThemePreference: id }),
       setOpenGroupIds: (ids) => set({ openGroupIds: ids }),
-      setNoteWidgetPosition: (id, pos) =>
-        set((state) => ({
-          noteWidgetPositions: { ...state.noteWidgetPositions, [id]: pos },
-        })),
+      setNotesPanelPosition: (pos) => set({ notesPanelPosition: pos }),
+      setNotesPanelSize: (size) => set({ notesPanelSize: size }),
+      setNotesPanelMinimized: (minimized) => set({ notesPanelMinimized: minimized }),
       hydrateComplete: () => set({ hasHydrated: true }),
     }),
     {
@@ -111,7 +116,9 @@ export const useAdminUiStore = create<AdminUiState>()(
         sidebarCollapsed: state.sidebarCollapsed,
         waThemePreference: state.waThemePreference,
         openGroupIds: state.openGroupIds,
-        noteWidgetPositions: state.noteWidgetPositions,
+        notesPanelPosition: state.notesPanelPosition,
+        notesPanelSize: state.notesPanelSize,
+        notesPanelMinimized: state.notesPanelMinimized,
       }),
       onRehydrateStorage: () => (state) => {
         state?.hydrateComplete();

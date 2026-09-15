@@ -38,6 +38,7 @@ import {
 import { listRolesAction } from "@/services/roles/actions";
 import type { Role } from "@/services/roles/queries";
 import { useAdminNotesStore } from "@/features/admin/stores/adminNotesStore";
+import { useAdminUiStore } from "@/features/admin/stores/adminUiStore";
 import { createAdminNote } from "@/services/admin_notes/actions";
 import { useQuickBook } from "./quick-book/QuickBookContext";
 
@@ -53,12 +54,16 @@ export function AdminNewMenu() {
   const [serviceDeleteOpen, setServiceDeleteOpen] = useState(false);
   const [creatingNote, setCreatingNote] = useState(false);
   const addNote = useAdminNotesStore((state) => state.addNote);
+  const setNotesPanelMinimized = useAdminUiStore(
+    (state) => state.setNotesPanelMinimized,
+  );
   const showClinicalNote = canAddClinicalNote(pathname);
 
   async function handleAddNoteClick() {
     setCreatingNote(true);
     try {
       addNote(await createAdminNote(""));
+      setNotesPanelMinimized(false);
     } catch {
       toast.error(t("admin.notes.addFail"));
     } finally {

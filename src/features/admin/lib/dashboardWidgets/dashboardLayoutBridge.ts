@@ -1,5 +1,5 @@
-import type { DashboardWidgetId } from "@/features/admin/lib/dashboardLayout";
-import type { DashboardDropEdge } from "@/features/admin/lib/dashboardDrop";
+import type { AnyMessageKey } from "@/lib/i18n";
+import type { DashboardDropEdge } from "./dashboardDrop";
 
 export const DASHBOARD_LAYOUT_STATE_EVENT = "admin-dashboard-layout-state";
 export const DASHBOARD_LAYOUT_ACTION_EVENT = "admin-dashboard-layout-action";
@@ -12,7 +12,7 @@ export type DashboardLayoutUiState = {
   catalogOpen: boolean;
   canUndo: boolean;
   canRedo: boolean;
-  missing: DashboardWidgetId[];
+  missing: { id: string; labelKey: AnyMessageKey }[];
 };
 
 export type DashboardLayoutAction =
@@ -24,11 +24,11 @@ export type DashboardLayoutAction =
   | { type: "redo" }
   | { type: "toggleCatalog" }
   | { type: "closeCatalog" }
-  | { type: "add"; id: DashboardWidgetId }
+  | { type: "add"; id: string }
   | {
       type: "move";
-      fromId: DashboardWidgetId;
-      targetId: DashboardWidgetId;
+      fromId: string;
+      targetId: string;
       edge: DashboardDropEdge;
     };
 
