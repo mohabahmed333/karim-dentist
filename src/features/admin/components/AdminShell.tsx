@@ -209,11 +209,19 @@ export function AdminShell({
       setChatOpen(false);
       setWhatsappOpen(true);
       setWhatsappConversationId(detail?.conversationId);
+      // A collapsed dock renders a zero-width column, so setting `whatsappOpen`
+      // alone puts the panel in a state nobody can see — the same reason both
+      // bubble handlers below expand it. Without this, "WhatsApp" on a patient
+      // reads as a dead button on any wide screen using the dock layout.
+      if (chatLayout === "dock") handleExpandDock();
     }
     window.addEventListener(ADMIN_OPEN_WHATSAPP_EVENT, onOpenWhatsapp);
     return () =>
       window.removeEventListener(ADMIN_OPEN_WHATSAPP_EVENT, onOpenWhatsapp);
-  }, [pathname]);
+    // `handleExpandDock` is re-created every render; `chatLayout`/`isDemoChat`
+    // are what actually change its behaviour.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, chatLayout, isDemoChat]);
 
   useEffect(() => {
     setPrimary(primaryColor);
