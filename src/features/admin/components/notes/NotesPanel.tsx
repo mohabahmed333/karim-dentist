@@ -261,28 +261,55 @@ export function NotesPanel() {
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-2">
-            {openNote ? (
-              <NoteEditor
-                key={openNote.id}
-                note={openNote}
-                autoFocus
-                onChange={(content) => updateNote(openNote.id, content)}
-                onDismiss={() => void handleDismiss(openNote.id)}
-                onSaved={() => setOpenId(null)}
-              />
-            ) : (
-              <div className="space-y-1.5">
-                {notes.map((note) => (
-                  <NoteListRow
-                    key={note.id}
-                    note={note}
-                    onOpen={() => setOpenId(note.id)}
-                    onDismiss={() => void handleDismiss(note.id)}
+          <div className={`min-h-0 flex-1 p-2 ${openNote ? "overflow-hidden" : "overflow-y-auto"}`}>
+            <AnimatePresence mode="wait" initial={false}>
+              {openNote ? (
+                <motion.div
+                  key={`editor-${openNote.id}`}
+                  initial={reduced ? false : { opacity: 0, x: 18 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={reduced ? undefined : { opacity: 0, x: 18 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
+                  className="h-full"
+                >
+                  <NoteEditor
+                    note={openNote}
+                    autoFocus
+                    onChange={(content) => updateNote(openNote.id, content)}
+                    onDismiss={() => void handleDismiss(openNote.id)}
+                    onSaved={() => setOpenId(null)}
                   />
-                ))}
-              </div>
-            )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="list"
+                  initial={reduced ? false : { opacity: 0, x: -18 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={reduced ? undefined : { opacity: 0, x: -18 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
+                  className="space-y-1.5"
+                >
+                  <AnimatePresence initial={false}>
+                    {notes.map((note) => (
+                      <motion.div
+                        key={note.id}
+                        layout={!reduced}
+                        initial={reduced ? false : { opacity: 0, scale: 0.97 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={reduced ? undefined : { opacity: 0, scale: 0.97 }}
+                        transition={{ duration: 0.14 }}
+                      >
+                        <NoteListRow
+                          note={note}
+                          onOpen={() => setOpenId(note.id)}
+                          onDismiss={() => void handleDismiss(note.id)}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div
@@ -400,8 +427,8 @@ function NoteEditor({
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="mb-1.5 flex items-center justify-end gap-1.5">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-1.5 flex shrink-0 items-center justify-end gap-1.5">
         <span className="text-[10px] text-[var(--admin-muted)]">
           {timeAgo(note.created_at)}
         </span>
@@ -421,11 +448,13 @@ function NoteEditor({
         autoFocus={autoFocus}
         placeholder="Write a note for the team…"
         minHeightClass="min-h-16"
+        className="min-h-0 flex-1"
+        scrollable
       />
       <button
         type="button"
         onClick={() => void handleSaveClick()}
-        className="mt-2 flex items-center justify-center gap-1.5 self-end rounded-md bg-[var(--admin-primary)] px-3 py-1.5 text-[11px] font-medium text-white hover:opacity-90"
+        className="mt-2 flex shrink-0 items-center justify-center gap-1.5 self-end rounded-md bg-[var(--admin-primary)] px-3 py-1.5 text-[11px] font-medium text-white hover:opacity-90"
       >
         <Save className="size-3.5" />
         Save

@@ -33,6 +33,12 @@ type Props = {
   onImageUpload?: (file: File) => Promise<string>;
   /** Focus the editor once it mounts — for a freshly created, empty note. */
   autoFocus?: boolean;
+  /** Extra classes for the outer wrapper — e.g. "flex-1 min-h-0" to let it
+   * fill a flex parent instead of growing with its content. */
+  className?: string;
+  /** Cap the editor's own content to the wrapper's height and scroll inside
+   * it, rather than growing the whole editor to fit the text. */
+  scrollable?: boolean;
 };
 
 function insertImage(view: EditorView, url: string) {
@@ -65,6 +71,8 @@ export function RichTextEditor({
   minHeightClass = "min-h-28",
   onImageUpload,
   autoFocus,
+  className,
+  scrollable,
 }: Props) {
   const t = useTranslations();
   const editor = useEditor({
@@ -106,9 +114,17 @@ export function RichTextEditor({
   if (!editor) return null;
 
   return (
-    <div className={`overflow-hidden rounded-lg bg-[#f2f2f2] ${disabled ? "opacity-60" : ""}`}>
+    <div
+      className={`flex flex-col overflow-hidden rounded-lg bg-[#f2f2f2] ${disabled ? "opacity-60" : ""} ${className ?? ""}`}
+    >
       <Toolbar editor={editor} disabled={Boolean(disabled)} t={t} onImageUpload={onImageUpload} />
-      <EditorContent editor={editor} />
+      {scrollable ? (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <EditorContent editor={editor} />
+        </div>
+      ) : (
+        <EditorContent editor={editor} />
+      )}
     </div>
   );
 }
