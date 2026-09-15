@@ -9,7 +9,7 @@ import type {
 } from "@/features/admin/lib/dashboardModel";
 import type { Service } from "@/services/services/types";
 import type { WhatsappConversation } from "@/services/whatsapp/types";
-import type { DashboardWidgetId } from "@/features/admin/lib/dashboardLayout";
+import type { DashboardWidgetId } from "@/features/admin/lib/overview/overviewDashboardLayout";
 import type { DoctorProduction } from "@/services/patient_treatments/queries";
 import { DashboardAttentionCard } from "./DashboardAttentionCard";
 import { DashboardDoctorProductionCard } from "./DashboardDoctorProductionCard";

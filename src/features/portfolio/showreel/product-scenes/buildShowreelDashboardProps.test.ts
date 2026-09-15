@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { DEFAULT_DASHBOARD_LAYOUT } from "@/features/admin/lib/dashboardLayout";
+import { DEFAULT_DASHBOARD_LAYOUT } from "@/features/admin/lib/overview/overviewDashboardLayout";
 import { buildShowreelDashboardProps } from "./buildShowreelDashboardProps";
 import {
   SHOWREEL_AI_BOOKING_CURSOR_STEPS,

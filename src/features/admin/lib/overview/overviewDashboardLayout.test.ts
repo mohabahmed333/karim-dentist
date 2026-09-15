@@ -20,7 +20,7 @@ import {
   removeDashboardWidget,
   resizeDashboardWidget,
   rowGapColSpan,
-} from "./dashboardLayout.ts";
+} from "./overviewDashboardLayout.ts";
 
 describe("dashboardLayout", () => {
   it("falls back to default for invalid input", () => {

@@ -7,7 +7,7 @@ import { AdminMobileNav } from "./AdminMobileNav";
 import { adminPageLabelKeys } from "@/features/admin/lib/adminNav";
 import { AdminNewMenu } from "./AdminNewMenu";
 import { CommandPalette } from "./CommandPalette";
-import { DashboardLayoutTopbarControls } from "./overview/DashboardLayoutTopbarControls";
+import { DashboardLayoutTopbarControls } from "@/features/admin/components/dashboardWidgets/DashboardLayoutTopbarControls";
 
 type Props = {
   pendingCount?: number;

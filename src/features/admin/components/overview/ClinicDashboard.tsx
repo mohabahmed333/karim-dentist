@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AnimatePresence,
   LayoutGroup,
@@ -21,6 +21,7 @@ import type {
   BillingChartStats,
   InventoryChartStats,
 } from "./renderDashboardWidget";
+import { upsertSettings } from "@/services/site_settings";
 import { AdminReservationFilters } from "@/features/admin/components/AdminReservationFilters";
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
 import { useDashboardLayoutEditor } from "@/features/admin/hooks/useDashboardLayoutEditor";
@@ -30,21 +31,22 @@ import {
   maxDashboardStackColSpan,
   packDashboardStackRows,
   rowGapColSpan,
+  OVERVIEW_CATALOG,
   type DashboardLayout,
   type DashboardWidgetId,
-} from "@/features/admin/lib/dashboardLayout";
+} from "@/features/admin/lib/overview/overviewDashboardLayout";
 import {
   dashboardEditChromeTransition,
   dashboardEditSlotVariants,
   dashboardLayoutTransition,
-} from "@/features/admin/lib/dashboardLayoutMotion";
+} from "@/features/admin/lib/dashboardWidgets/dashboardLayoutMotion";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { DashboardGreeting } from "./DashboardGreeting";
 import { DashboardPageSkeleton } from "./DashboardPageSkeleton";
 import { HomePatientClinicDrawer } from "./HomePatientClinicDrawer";
-import { DashboardDropPlaceholder } from "./DashboardDropPlaceholder";
-import { DashboardWidgetFrame } from "./DashboardWidgetFrame";
+import { DashboardDropPlaceholder } from "@/features/admin/components/dashboardWidgets/DashboardDropPlaceholder";
+import { DashboardWidgetFrame } from "@/features/admin/components/dashboardWidgets/DashboardWidgetFrame";
 import { DashboardWidgetHost } from "./DashboardWidgetHost";
 import type { AdminDemoClinical } from "@/features/admin/lib/adminDemoClinical";
 
@@ -95,7 +97,7 @@ export function ClinicDashboard({
   kpis,
   stats,
   conversations,
-  settings,
+  settings: initialSettings,
   initialLayout,
   demoMode = false,
   demoClinical = null,
@@ -117,6 +119,10 @@ export function ClinicDashboard({
   const layoutTransition = dashboardLayoutTransition(reduced);
   const chromeTransition = dashboardEditChromeTransition(reduced);
   const slotVariants = dashboardEditSlotVariants(reduced);
+  const [settings, setSettings] = useState(initialSettings);
+  useEffect(() => {
+    setSettings(initialSettings);
+  }, [initialSettings]);
   const hiddenWidgetIds = useMemo<DashboardWidgetId[]>(() => {
     const hidden: DashboardWidgetId[] = [];
     if (!canViewBilling) {
@@ -138,12 +144,23 @@ export function ClinicDashboard({
     return hidden;
   }, [canViewBilling, canViewInventory]);
   const visibleInitialLayout = useMemo(
-    () => initialLayout.filter((w) => !hiddenWidgetIds.includes(w.id)),
+    () =>
+      initialLayout.filter(
+        (w) => !hiddenWidgetIds.includes(w.id as DashboardWidgetId),
+      ),
     [initialLayout, hiddenWidgetIds],
   );
+  async function saveOverviewLayout(
+    layout: DashboardLayout,
+  ): Promise<DashboardLayout> {
+    const row = await upsertSettings(settings, { dashboard_layout: layout });
+    setSettings(row);
+    return (row.dashboard_layout ?? []) as DashboardLayout;
+  }
   const editor = useDashboardLayoutEditor(
-    settings,
+    OVERVIEW_CATALOG,
     visibleInitialLayout,
+    saveOverviewLayout,
     hiddenWidgetIds,
   );
   const stacks = groupDashboardStacks(editor.layout);
@@ -222,6 +239,7 @@ export function ClinicDashboard({
                             <DashboardWidgetFrame
                               key={placement.id}
                               placement={placement}
+                              meta={OVERVIEW_CATALOG.meta(placement.id)}
                               editing={editor.editing}
                               dragOver={editor.dragOverId === placement.id}
                               dropEdge={
@@ -244,7 +262,7 @@ export function ClinicDashboard({
                               onHeightCommit={editor.commitHeight}
                             >
                               <DashboardWidgetHost
-                                id={placement.id}
+                                id={placement.id as DashboardWidgetId}
                                 {...hostProps}
                               />
                             </DashboardWidgetFrame>
