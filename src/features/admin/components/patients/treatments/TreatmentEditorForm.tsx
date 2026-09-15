@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "@/lib/i18n";
 import { RichTextEditor } from "../RichTextEditor";
 import { ToothCombobox } from "../ToothCombobox";
 import type { ToothOption } from "../toothCatalog";
@@ -47,6 +48,7 @@ export function TreatmentEditorForm({
   onCancel,
   onSubmit,
 }: Props) {
+  const t = useTranslations();
   const [draft, setDraft] = useState(initial);
 
   function pickTooth(tooth: ToothOption) {
@@ -58,17 +60,17 @@ export function TreatmentEditorForm({
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 space-y-3 overflow-y-auto p-5">
-        <Field label="Tooth">
+        <Field label={t("admin.patients.treatmentEditor.tooth")}>
           <ToothCombobox
             fdi={draft.tooth_fdi}
             disabled={pending}
             onSelect={pickTooth}
           />
           <p className="mt-1 text-[11px] text-[#9ca3af]">
-            Search here or select a tooth on the chart, then click Add.
+            {t("admin.patients.treatmentEditor.toothHint")}
           </p>
         </Field>
-        <Field label="Severity">
+        <Field label={t("admin.patients.treatmentEditor.severity")}>
           <select
             value={draft.severity}
             disabled={pending}
@@ -80,11 +82,11 @@ export function TreatmentEditorForm({
             }
             className="h-9 w-full rounded-lg bg-[#f2f2f2] px-3 text-sm"
           >
-            <option value="Critical">Critical</option>
-            <option value="Minor">Minor</option>
+            <option value="Critical">{t("admin.patients.treatmentEditor.severityCritical")}</option>
+            <option value="Minor">{t("admin.patients.treatmentEditor.severityMinor")}</option>
           </select>
         </Field>
-        <Field label="CDT code">
+        <Field label={t("admin.patients.treatmentEditor.cdtCode")}>
           <Input
             value={draft.cdt_code}
             disabled={pending}
@@ -97,7 +99,7 @@ export function TreatmentEditorForm({
             placeholder="D2391"
           />
         </Field>
-        <Field label="Fee (EGP)">
+        <Field label={t("admin.patients.treatmentEditor.fee")}>
           <Input
             inputMode="numeric"
             value={draft.fee_amount === 0 ? "" : String(draft.fee_amount)}
@@ -112,30 +114,30 @@ export function TreatmentEditorForm({
             placeholder="0"
           />
         </Field>
-        <Field label="Last treatment">
+        <Field label={t("admin.patients.treatmentEditor.lastTreatment")}>
           <RichTextEditor
             value={draft.last_treatment}
             disabled={pending}
             onChange={(html) => setDraft({ ...draft, last_treatment: html })}
-            placeholder="What was done previously…"
+            placeholder={t("admin.patients.treatmentEditor.lastTreatmentPlaceholder")}
           />
         </Field>
-        <Field label="Title (optional)">
+        <Field label={t("admin.patients.treatmentEditor.titleOptional")}>
           <Input
             value={draft.ai_title}
             disabled={pending}
             onChange={(e) => setDraft({ ...draft, ai_title: e.target.value })}
           />
         </Field>
-        <Field label="Description">
+        <Field label={t("admin.patients.treatmentEditor.description")}>
           <RichTextEditor
             value={draft.ai_description}
             disabled={pending}
             onChange={(html) => setDraft({ ...draft, ai_description: html })}
-            placeholder="Clinical description…"
+            placeholder={t("admin.patients.treatmentEditor.descriptionPlaceholder")}
           />
         </Field>
-        <Field label="Confidence %">
+        <Field label={t("admin.patients.treatmentEditor.confidence")}>
           <Input
             inputMode="numeric"
             value={draft.ai_confidence}
@@ -146,18 +148,18 @@ export function TreatmentEditorForm({
             placeholder="75"
           />
         </Field>
-        <Field label="Recommendation">
+        <Field label={t("admin.patients.treatmentEditor.recommendation")}>
           <RichTextEditor
             value={draft.ai_recommendation}
             disabled={pending}
             onChange={(html) =>
               setDraft({ ...draft, ai_recommendation: html })
             }
-            placeholder="Recommended next step…"
+            placeholder={t("admin.patients.treatmentEditor.recommendationPlaceholder")}
             minHeightClass="min-h-20"
           />
         </Field>
-        <Field label="Attachments & X-rays">
+        <Field label={t("admin.patients.treatmentEditor.attachments")}>
           <TreatmentAttachmentsField
             attachments={savedAttachments}
             pendingFiles={pendingFiles}
@@ -181,10 +183,10 @@ export function TreatmentEditorForm({
           disabled={pending || !canSave}
           onClick={() => onSubmit(draft)}
         >
-          {pending ? "Saving…" : "Save"}
+          {pending ? t("admin.saving") : t("admin.save")}
         </Button>
         <Button type="button" variant="ghost" onClick={onCancel}>
-          Cancel
+          {t("admin.cancel")}
         </Button>
       </div>
     </div>
