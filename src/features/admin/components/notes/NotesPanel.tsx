@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
-import { GripHorizontal, Minus, Plus, StickyNote, X } from "lucide-react";
+import { ArrowLeft, GripHorizontal, Minus, Plus, Save, StickyNote, X } from "lucide-react";
 import { useAdminUiStore } from "@/features/admin/stores/adminUiStore";
 import { useAdminNotesStore } from "@/features/admin/stores/adminNotesStore";
 import {
@@ -58,6 +58,16 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
+/** A short plain-text preview for the list row — falls back to a photo
+ * marker for an image-only note, since stripping tags alone would leave it
+ * blank. */
+function previewText(html: string): string {
+  const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  if (text) return text;
+  if (/<img\b/i.test(html)) return "📷 Photo";
+  return "New note";
+}
+
 export function NotesPanel() {
   const reduced = useReducedMotion();
   const notes = useAdminNotesStore((state) => state.notes);
@@ -81,7 +91,8 @@ export function NotesPanel() {
     null,
   );
   const [creating, setCreating] = useState(false);
-  const [focusId, setFocusId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const openNote = notes.find((note) => note.id === openId) ?? null;
 
   // A saved position from a smaller/different screen can end up unreachable —
   // snap it back on mount rather than only when the user next drags it.
@@ -144,7 +155,7 @@ export function NotesPanel() {
     try {
       const note = await createAdminNote("");
       addNote(note);
-      setFocusId(note.id);
+      setOpenId(note.id);
     } catch {
       toast.error("Could not add note");
     } finally {
@@ -154,6 +165,7 @@ export function NotesPanel() {
 
   async function handleDismiss(id: string) {
     removeNote(id);
+    if (openId === id) setOpenId(null);
     try {
       await dismissAdminNote(id);
     } catch {
@@ -200,26 +212,43 @@ export function NotesPanel() {
             onPointerMove={onGripMove}
             onPointerUp={onGripUp}
           >
-            <div className="flex items-center gap-1.5">
-              <GripHorizontal className="size-3.5 text-[var(--admin-muted)]" />
-              <span className="text-[12px] font-semibold text-[var(--admin-text)]">
-                Team notes
-              </span>
-              <span className="rounded-full bg-[var(--admin-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--admin-muted)]">
-                {notes.length}
-              </span>
+            <div className="flex min-w-0 items-center gap-1.5">
+              {openNote ? (
+                <button
+                  type="button"
+                  onClick={() => setOpenId(null)}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  aria-label="Back to notes"
+                  className="flex items-center gap-1 rounded text-[12px] font-semibold text-[var(--admin-text)] hover:text-[var(--admin-muted)]"
+                >
+                  <ArrowLeft className="size-3.5" />
+                  Notes
+                </button>
+              ) : (
+                <>
+                  <GripHorizontal className="size-3.5 text-[var(--admin-muted)]" />
+                  <span className="text-[12px] font-semibold text-[var(--admin-text)]">
+                    Team notes
+                  </span>
+                  <span className="rounded-full bg-[var(--admin-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--admin-muted)]">
+                    {notes.length}
+                  </span>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                disabled={creating}
-                onClick={() => void handleAdd()}
-                onPointerDown={(e) => e.stopPropagation()}
-                aria-label="Add note"
-                className="flex size-5 items-center justify-center rounded text-[var(--admin-muted)] hover:bg-[var(--admin-panel)] hover:text-[var(--admin-text)]"
-              >
-                <Plus className="size-3.5" />
-              </button>
+              {!openNote ? (
+                <button
+                  type="button"
+                  disabled={creating}
+                  onClick={() => void handleAdd()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  aria-label="Add note"
+                  className="flex size-5 items-center justify-center rounded text-[var(--admin-muted)] hover:bg-[var(--admin-panel)] hover:text-[var(--admin-text)]"
+                >
+                  <Plus className="size-3.5" />
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => setMinimized(true)}
@@ -232,16 +261,28 @@ export function NotesPanel() {
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
-            {notes.map((note) => (
-              <NoteRow
-                key={note.id}
-                note={note}
-                autoFocus={note.id === focusId}
-                onChange={(content) => updateNote(note.id, content)}
-                onDismiss={() => void handleDismiss(note.id)}
+          <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            {openNote ? (
+              <NoteEditor
+                key={openNote.id}
+                note={openNote}
+                autoFocus
+                onChange={(content) => updateNote(openNote.id, content)}
+                onDismiss={() => void handleDismiss(openNote.id)}
+                onSaved={() => setOpenId(null)}
               />
-            ))}
+            ) : (
+              <div className="space-y-1.5">
+                {notes.map((note) => (
+                  <NoteListRow
+                    key={note.id}
+                    note={note}
+                    onOpen={() => setOpenId(note.id)}
+                    onDismiss={() => void handleDismiss(note.id)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           <div
@@ -265,16 +306,67 @@ export function NotesPanel() {
   );
 }
 
-function NoteRow({
+function NoteListRow({
+  note,
+  onOpen,
+  onDismiss,
+}: {
+  note: AdminNote;
+  onOpen: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className="group flex w-full cursor-pointer items-start gap-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-canvas)] p-2 text-start transition-shadow hover:shadow-sm"
+    >
+      <span
+        className="mt-1 size-2 shrink-0 rounded-full"
+        style={{ background: COLOR_SWATCH[note.color] ?? COLOR_SWATCH.yellow }}
+      />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[12px] text-[var(--admin-text)]">
+          {previewText(note.content)}
+        </span>
+        <span className="block text-[10px] text-[var(--admin-muted)]">
+          {timeAgo(note.created_at)}
+        </span>
+      </span>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDismiss();
+        }}
+        aria-label="Dismiss note"
+        className="flex size-4 shrink-0 items-center justify-center rounded text-[var(--admin-muted)] opacity-0 group-hover:opacity-100 hover:text-red-500"
+      >
+        <X className="size-3" />
+      </button>
+    </div>
+  );
+}
+
+function NoteEditor({
   note,
   autoFocus,
   onChange,
   onDismiss,
+  onSaved,
 }: {
   note: AdminNote;
   autoFocus: boolean;
   onChange: (content: string) => void;
   onDismiss: () => void;
+  onSaved: () => void;
 }) {
   const [content, setContent] = useState(note.content);
   const saveTimer = useRef<number | null>(null);
@@ -301,13 +393,15 @@ function NoteRow({
     }
   }
 
+  async function handleSaveClick() {
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    await save(content);
+    onSaved();
+  }
+
   return (
-    <div className="group rounded-lg border border-[var(--admin-border)] bg-[var(--admin-canvas)] p-2 transition-shadow hover:shadow-sm">
-      <div className="mb-1 flex items-center justify-between">
-        <span
-          className="size-2 rounded-full"
-          style={{ background: COLOR_SWATCH[note.color] ?? COLOR_SWATCH.yellow }}
-        />
+    <div className="flex h-full flex-col">
+      <div className="mb-1.5 flex items-center justify-end gap-1.5">
         <span className="text-[10px] text-[var(--admin-muted)]">
           {timeAgo(note.created_at)}
         </span>
@@ -315,9 +409,9 @@ function NoteRow({
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss note"
-          className="flex size-4 items-center justify-center rounded text-[var(--admin-muted)] opacity-0 group-hover:opacity-100 hover:text-red-500"
+          className="flex size-5 items-center justify-center rounded text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-red-500"
         >
-          <X className="size-3" />
+          <X className="size-3.5" />
         </button>
       </div>
       <RichTextEditor
@@ -328,6 +422,14 @@ function NoteRow({
         placeholder="Write a note for the team…"
         minHeightClass="min-h-16"
       />
+      <button
+        type="button"
+        onClick={() => void handleSaveClick()}
+        className="mt-2 flex items-center justify-center gap-1.5 self-end rounded-md bg-[var(--admin-primary)] px-3 py-1.5 text-[11px] font-medium text-white hover:opacity-90"
+      >
+        <Save className="size-3.5" />
+        Save
+      </button>
     </div>
   );
 }
