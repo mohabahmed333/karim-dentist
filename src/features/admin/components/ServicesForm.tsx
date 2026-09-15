@@ -6,6 +6,7 @@ import { formatPriceRangeLabel } from "@/services/service_doctors/pricing";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   item: Service;
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export function ServicesForm({ item, onSubmit, pending, message }: Props) {
+  const t = useTranslations();
   const [priceMin, setPriceMin] = useState(item.price_min_egp?.toString() ?? "");
   const [priceMax, setPriceMax] = useState(item.price_max_egp?.toString() ?? "");
   const previewLabel = formatPriceRangeLabel(
@@ -52,7 +54,7 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
       onSubmit={(e) => void handleSubmit(e)}
     >
       <div className="space-y-2">
-        <Label htmlFor="kind">Kind</Label>
+        <Label htmlFor="kind">{t("admin.pages.services.kind")}</Label>
         <select
           id="kind"
           name="kind"
@@ -60,12 +62,12 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
           key={item.id + "kind"}
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
         >
-          <option value="our_services">Our Services</option>
-          <option value="laser">Laser treatments</option>
+          <option value="our_services">{t("admin.pages.services.ourServices")}</option>
+          <option value="laser">{t("admin.pages.services.laser")}</option>
         </select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="title">Title (EN)</Label>
+        <Label htmlFor="title">{t("admin.cms.titleEn")}</Label>
         <Input
           id="title"
           name="title"
@@ -74,7 +76,7 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="title_ar">Title (AR)</Label>
+        <Label htmlFor="title_ar">{t("admin.cms.titleAr")}</Label>
         <Input
           id="title_ar"
           name="title_ar"
@@ -84,7 +86,7 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="tags">Tags (one per line)</Label>
+        <Label htmlFor="tags">{t("admin.pages.services.tagsLabel")}</Label>
         <Textarea
           id="tags"
           name="tags"
@@ -94,7 +96,7 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="description">Description (EN)</Label>
+        <Label htmlFor="description">{t("admin.cms.descriptionEn")}</Label>
         <Textarea
           id="description"
           name="description"
@@ -104,7 +106,7 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="description_ar">Description (AR)</Label>
+        <Label htmlFor="description_ar">{t("admin.cms.descriptionAr")}</Label>
         <Textarea
           id="description_ar"
           name="description_ar"
@@ -115,7 +117,7 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="image_url">Image URL</Label>
+        <Label htmlFor="image_url">{t("admin.cms.imageUrl")}</Label>
         <Input
           id="image_url"
           name="image_url"
@@ -124,11 +126,11 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
         />
       </div>
       <div className="space-y-2">
-        <Label>Price (shown to patients, e.g. on WhatsApp)</Label>
+        <Label>{t("admin.pages.services.priceLabel")}</Label>
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <Label htmlFor="price_min_egp" className="text-xs font-normal text-muted-foreground">
-              Minimum price (EGP)
+              {t("admin.pages.services.priceMin")}
             </Label>
             <Input
               id="price_min_egp"
@@ -136,7 +138,7 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
               type="number"
               min={0}
               step={1}
-              placeholder="e.g. 300"
+              placeholder={t("admin.pages.services.priceMinPlaceholder")}
               value={priceMin}
               onChange={(e) => setPriceMin(e.target.value)}
               key={item.id + "price_min_egp"}
@@ -144,7 +146,7 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
           </div>
           <div className="space-y-1">
             <Label htmlFor="price_max_egp" className="text-xs font-normal text-muted-foreground">
-              Maximum price (EGP)
+              {t("admin.pages.services.priceMax")}
             </Label>
             <Input
               id="price_max_egp"
@@ -152,7 +154,7 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
               type="number"
               min={0}
               step={1}
-              placeholder="e.g. 600, or same as minimum for one figure"
+              placeholder={t("admin.pages.services.priceMaxPlaceholder")}
               value={priceMax}
               onChange={(e) => setPriceMax(e.target.value)}
               key={item.id + "price_max_egp"}
@@ -161,8 +163,8 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
         </div>
         <p className="text-xs text-muted-foreground">
           {previewLabel
-            ? `Patients will see: ${previewLabel}`
-            : "Leave both blank for no price on file."}
+            ? t("admin.pages.services.pricePreview").replace("{label}", previewLabel)
+            : t("admin.pages.services.priceEmpty")}
         </p>
       </div>
       <label className="flex items-center gap-2 text-sm">
@@ -172,13 +174,13 @@ export function ServicesForm({ item, onSubmit, pending, message }: Props) {
           defaultChecked={item.is_published}
           key={item.id + "published"}
         />
-        Published
+        {t("admin.cms.published")}
       </label>
       {message ? (
         <p className="text-sm text-muted-foreground">{message}</p>
       ) : null}
       {pending ? (
-        <p className="text-sm text-muted-foreground">Saving…</p>
+        <p className="text-sm text-muted-foreground">{t("admin.saving")}</p>
       ) : null}
     </form>
   );

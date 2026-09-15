@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Service } from "@/services/services";
+import { useTranslations } from "@/lib/i18n";
 import { ServicesForm } from "./ServicesForm";
 
 type Props = {
@@ -30,11 +31,12 @@ export function ServicesFormDialog({
   onSubmit,
   onDeleteClick,
 }: Props) {
+  const t = useTranslations();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="shrink-0 space-y-1 px-4 pt-4 pe-12">
-          <DialogTitle>Edit service</DialogTitle>
+          <DialogTitle>{t("admin.pages.services.editTitle")}</DialogTitle>
         </DialogHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
@@ -51,10 +53,10 @@ export function ServicesFormDialog({
 
         <DialogFooter className="m-0 shrink-0 flex-row justify-between rounded-none border-[var(--admin-border)] bg-[var(--admin-hover)]/40 px-4 py-3">
           <Button variant="destructive" size="sm" onClick={onDeleteClick}>
-            Delete
+            {t("admin.delete")}
           </Button>
           <Button type="submit" form="services-form" disabled={pending}>
-            {pending ? "Saving…" : "Save"}
+            {pending ? t("admin.saving") : t("admin.save")}
           </Button>
         </DialogFooter>
       </DialogContent>
