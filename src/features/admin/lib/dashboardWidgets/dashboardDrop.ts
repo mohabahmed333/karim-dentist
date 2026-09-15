@@ -1,7 +1,7 @@
 import {
   DASHBOARD_COL_SPANS,
   type DashboardColSpan,
-} from "./dashboardLayoutCatalog";
+} from "./dashboardCatalog";
 
 export type DashboardDropEdge = "above" | "below" | "left" | "right";
 
@@ -70,4 +70,3 @@ export function dropEdgeFromRatios(
   if (y >= 1 - band) return "below";
   return x < 0.5 ? "left" : "right";
 }
-
