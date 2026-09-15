@@ -208,6 +208,9 @@ export function SupportInboxView({
     touchConversation,
   } = live;
   const listLoading = useKapso && (filterLoading || isFilterPending);
+  /** The thread whose history is still being fetched, so the column can
+   *  show a skeleton instead of an empty transcript. */
+  const [loadingThreadId, setLoadingThreadId] = useState<string | null>(null);
 
   const reduced = useReducedMotion();
   const {
@@ -356,28 +359,41 @@ export function SupportInboxView({
     fetchedMsgIds.current.add(selectedId);
     let cancelled = false;
     void (async () => {
-      const url = new URL("/api/v1/whatsapp/messages", window.location.origin);
-      url.searchParams.set("conversationId", selectedId);
-      url.searchParams.set("limit", "40");
-      const res = await fetch(url.toString());
-      if (!res.ok || cancelled) {
+      // Set inside the async body, not the effect body, so this stays out of
+      // the synchronous render path.
+      setLoadingThreadId(selectedId);
+      try {
+        const url = new URL("/api/v1/whatsapp/messages", window.location.origin);
+        url.searchParams.set("conversationId", selectedId);
+        url.searchParams.set("limit", "40");
+        const res = await fetch(url.toString());
+        if (!res.ok || cancelled) {
+          fetchedMsgIds.current.delete(selectedId);
+          return;
+        }
+        const data = (await res.json()) as {
+          messages: WhatsappMessage[];
+          nextCursor: string | null;
+        };
+        const contactName =
+          conversations.find((c) => c.id === selectedId)?.name ??
+          t("admin.frontDesk.patient");
+        replaceConversationMessages(
+          selectedId,
+          data.messages.map((m) =>
+            mapWhatsappMessage(m, contactName, agentName),
+          ),
+          data.nextCursor,
+        );
+      } catch {
+        // A failed fetch must clear the skeleton too, or the thread reads as
+        // perpetually loading.
         fetchedMsgIds.current.delete(selectedId);
-        return;
+      } finally {
+        setLoadingThreadId((current) =>
+          current === selectedId ? null : current,
+        );
       }
-      const data = (await res.json()) as {
-        messages: WhatsappMessage[];
-        nextCursor: string | null;
-      };
-      const contactName =
-        conversations.find((c) => c.id === selectedId)?.name ??
-        t("admin.frontDesk.patient");
-      replaceConversationMessages(
-        selectedId,
-        data.messages.map((m) =>
-          mapWhatsappMessage(m, contactName, agentName),
-        ),
-        data.nextCursor,
-      );
     })();
     return () => {
       cancelled = true;
@@ -1190,7 +1206,7 @@ export function SupportInboxView({
             dragging={inboxResizing}
             onPointerDown={startInboxResize}
           />
-          {listLoading ? (
+          {listLoading || loadingThreadId === selectedId ? (
             <SupportChatColumnSkeleton />
           ) : isAiChat ? (
             <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--admin-panel)]">
