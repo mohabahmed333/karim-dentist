@@ -82,9 +82,10 @@ export function PatientChartingWorkspace({
           void surfaces.paint(fdi, surface, session.paintTool);
         }}
         items={treatmentsChart.items}
-        onAdd={(code, fee) => {
+        services={services}
+        onAdd={(service) => {
           if (selectedFdi) {
-            void treatmentsChart.addCdtProcedure(selectedFdi, code, fee);
+            void treatmentsChart.addServiceProcedure(selectedFdi, service);
           }
         }}
         onPhase={(id, phase) => void treatmentsChart.movePhase(id, phase)}
@@ -121,6 +122,7 @@ export function PatientChartingWorkspace({
         notesChart={notesChart}
         imagingChart={imagingChart}
         treatmentsChart={treatmentsChart}
+        services={services}
       />
       <ChartingOverlays
         tour={tour}

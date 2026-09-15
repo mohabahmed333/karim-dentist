@@ -19,9 +19,10 @@ import {
   type TreatmentSeverity,
 } from "@/services/patient_treatments";
 import { useConsumablesCheckout } from "@/features/admin/lib/useConsumablesCheckout";
-import { cdtAddPayload } from "@/services/cdt";
+import { cdtAddPayload, serviceAddPayload, type CdtPhase } from "@/services/cdt";
 import type { Reservation } from "@/services/reservations/types";
 import type { PatientImaging } from "@/services/patient_imaging";
+import type { Service } from "@/services/services/types";
 import type { PendingFile } from "./treatments/TreatmentEditorForm";
 
 export function usePatientTreatments(
@@ -320,6 +321,27 @@ export function usePatientTreatments(
     }
   }
 
+  async function addServiceProcedure(
+    fdi: string,
+    service: Service,
+    phase?: CdtPhase,
+  ) {
+    const payload = serviceAddPayload(fdi, service, phase);
+    setPending(true);
+    try {
+      const row = await createPatientTreatment(patientKey, payload);
+      setRows((prev) => [
+        { ...row, patient_treatment_attachments: [] },
+        ...prev,
+      ]);
+      toast.success(`${payload.last_treatment} added`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function updateFee(id: string, fee: number) {
     try {
       const row = await updateTreatmentFee(id, fee);
@@ -373,6 +395,7 @@ export function usePatientTreatments(
     confirmDelete,
     afterBooked,
     addCdtProcedure,
+    addServiceProcedure,
     updateFee,
     movePhase,
     checkoutDialog: { ...checkout.dialogProps, pending },

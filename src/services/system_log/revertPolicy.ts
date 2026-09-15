@@ -9,8 +9,6 @@ export const TRACKED_TABLES = [
   "appointment_slots",
   "clinic_hours",
   "doctor_hours",
-  "clinic_cdt_fees",
-  "clinic_treatment_presets",
   "patients",
   "patient_clinical_notes",
   "patient_treatments",

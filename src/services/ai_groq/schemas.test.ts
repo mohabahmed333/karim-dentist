@@ -27,12 +27,12 @@ describe("treatmentAiResponseSchema poll sanitize", () => {
       reply: "Choose a procedure",
       poll: {
         id: "p",
-        kind: "cdt",
-        question: "CDT?",
-        options: [{ id: "1", label: "D2391", value: "  " }],
+        kind: "service",
+        question: "Which procedure?",
+        options: [{ id: "1", label: "Composite Filling", value: "  " }],
       },
     });
-    assert.equal(parsed.poll?.options[0]?.value, "D2391");
+    assert.equal(parsed.poll?.options[0]?.value, "Composite Filling");
   });
 
   it("nulls poll when all options are empty", () => {

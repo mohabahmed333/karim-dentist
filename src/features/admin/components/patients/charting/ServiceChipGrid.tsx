@@ -1,35 +1,34 @@
 "use client";
 
-export type ChipAddItem = {
+export type ServiceChipItem = {
   id: string;
-  label: string;
-  code: string;
-  fee: number;
+  title: string;
+  priceLabel: string | null;
 };
 
 type Props = {
-  items: ChipAddItem[];
-  onAdd: (code: string, fee: number) => void;
-  selectedCode?: string | null;
+  items: ServiceChipItem[];
+  onAdd: (id: string) => void;
+  selectedId?: string | null;
   variant?: "default" | "wizard";
 };
 
-export function CdtChipGrid({
+export function ServiceChipGrid({
   items,
   onAdd,
-  selectedCode,
+  selectedId,
   variant = "default",
 }: Props) {
   const wizard = variant === "wizard";
   return (
     <div className="mt-2 grid grid-cols-2 gap-2">
       {items.map((item) => {
-        const selected = selectedCode === item.code;
+        const selected = selectedId === item.id;
         return (
           <button
             key={item.id}
             type="button"
-            onClick={() => onAdd(item.code, item.fee)}
+            onClick={() => onAdd(item.id)}
             className={`rounded-lg border px-2.5 py-2.5 text-start ${
               wizard
                 ? selected
@@ -41,10 +40,10 @@ export function CdtChipGrid({
             }`}
           >
             <span className="block text-[12px] font-semibold text-[#1E293B]">
-              {item.label}
+              {item.title}
             </span>
             <span className="mt-0.5 block text-[10px] text-[#64748B]">
-              {item.code}
+              {item.priceLabel ?? "No price on file"}
             </span>
           </button>
         );

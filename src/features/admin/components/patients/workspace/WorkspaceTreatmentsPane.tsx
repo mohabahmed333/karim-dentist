@@ -252,6 +252,7 @@ export function WorkspaceTreatmentsPane({
           toothFdi={selectedFdi}
           toothName={name}
           pending={chart.pending}
+          services={services}
           initialDraft={wizardSeed ?? undefined}
           alreadySaved={wizardTreatmentId !== null && wizardTreatmentId !== "new"}
           existingTreatmentId={

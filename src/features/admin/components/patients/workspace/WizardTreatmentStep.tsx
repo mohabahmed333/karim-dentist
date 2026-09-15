@@ -1,47 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import {
-  chipLabelFor,
-  isUrgentCdt,
-  shortLabelFor,
-} from "@/services/cdt";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CdtChipGrid } from "../charting/CdtChipGrid";
-import { useChairsidePresets } from "../charting/useChairsidePresets";
+import type { Service } from "@/services/services/types";
+import { ServiceChipGrid } from "../charting/ServiceChipGrid";
 import type { WizardDraft } from "./wizardModel";
 import { WIZARD_CARD, WIZARD_INK, WIZARD_MUTE, WIZARD_SOFT } from "./wizardSkin";
 
 type Props = {
   draft: WizardDraft;
   pending: boolean;
+  services: Service[];
   onDraft: (next: WizardDraft) => void;
 };
 
-export function WizardTreatmentStep({ draft, pending, onDraft }: Props) {
-  const { presets, moreItems, loading } = useChairsidePresets();
+export function WizardTreatmentStep({ draft, pending, services, onDraft }: Props) {
   const [showMore, setShowMore] = useState(false);
 
-  const favoriteChips = presets.map((preset) => ({
-    id: preset.id,
-    label: preset.label,
-    code: preset.code,
-    fee: preset.fee,
-  }));
-  const extraChips = moreItems.map((item) => ({
-    id: item.code,
-    label: chipLabelFor(item.code),
-    code: item.code,
-    fee: item.fee,
-  }));
+  const primary = services.slice(0, 4);
+  const rest = services.slice(4);
+  const byId = new Map(services.map((service) => [service.id, service]));
 
-  function pick(code: string, fee: number) {
+  function pickService(service: Service) {
     onDraft({
       ...draft,
-      cdt_code: code,
-      fee_amount: fee,
-      severity: isUrgentCdt(code) ? "Critical" : draft.severity,
+      cdt_code: "",
+      fee_amount: service.price_min_egp ?? 0,
+      last_treatment: service.title,
     });
   }
 
@@ -55,35 +41,33 @@ export function WizardTreatmentStep({ draft, pending, onDraft }: Props) {
           From Settings → Prices
         </p>
       </div>
-      {loading && presets.length === 0 ? (
-        <p className={`text-[12px] ${WIZARD_MUTE}`}>Loading treatments…</p>
-      ) : (
-        <>
-          <CdtChipGrid
-            items={showMore ? [...favoriteChips, ...extraChips] : favoriteChips}
-            selectedCode={draft.cdt_code || null}
-            onAdd={pick}
-            variant="wizard"
-          />
-          {moreItems.length > 0 ? (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => setShowMore((value) => !value)}
-              className={`${WIZARD_CARD} w-full px-2.5 py-2.5 text-[12px] font-semibold text-[#2563EB]`}
-            >
-              {showMore ? "Fewer treatments" : "More treatments"}
-            </button>
-          ) : null}
-        </>
-      )}
-      {draft.cdt_code ? (
+      <ServiceChipGrid
+        items={(showMore ? [...primary, ...rest] : primary).map((service) => ({
+          id: service.id,
+          title: service.title,
+          priceLabel: service.price_label,
+        }))}
+        selectedId={draft.last_treatment ? (services.find((s) => s.title === draft.last_treatment)?.id ?? null) : null}
+        onAdd={(id) => {
+          const service = byId.get(id);
+          if (service) pickService(service);
+        }}
+        variant="wizard"
+      />
+      {rest.length > 0 ? (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => setShowMore((value) => !value)}
+          className={`${WIZARD_CARD} w-full px-2.5 py-2.5 text-[12px] font-semibold text-[#2563EB]`}
+        >
+          {showMore ? "Fewer treatments" : "More treatments"}
+        </button>
+      ) : null}
+      {draft.last_treatment ? (
         <div className={`${WIZARD_CARD} p-3`}>
           <p className={`text-[12px] font-semibold ${WIZARD_INK}`}>
-            {shortLabelFor(draft.cdt_code)}
-            <span className={`ms-1 font-normal ${WIZARD_MUTE}`}>
-              · {draft.cdt_code}
-            </span>
+            {draft.last_treatment}
           </p>
           <p className={`mt-1 text-[11px] ${WIZARD_MUTE}`}>
             Filled from Prices — edit to override

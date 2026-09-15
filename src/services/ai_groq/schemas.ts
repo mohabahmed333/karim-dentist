@@ -59,7 +59,7 @@ export const treatmentAiPollSchema = z.preprocess((raw) => {
   .object({
     id: z.string().min(1),
     kind: z.enum([
-      "cdt",
+      "service",
       "severity",
       "appointment",
       "slot",

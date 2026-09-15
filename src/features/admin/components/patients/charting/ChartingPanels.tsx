@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import type { CdtPhase } from "@/services/cdt";
 import type { TreatmentItem } from "@/services/patient_treatments";
+import type { Service } from "@/services/services/types";
 import type { Dentition, NotationSystem } from "@/services/notation";
 import type { PaintTool, SurfaceId, SurfaceMap } from "@/services/tooth_surfaces";
 import { ChartingGltfOdontogram } from "./gltf/ChartingGltfOdontogram";
@@ -22,7 +23,8 @@ type Props = {
   onDeselect: () => void;
   onPaint: (fdi: string, surface: SurfaceId) => void;
   items: TreatmentItem[];
-  onAdd: (code: string, fee: number) => void;
+  services: Service[];
+  onAdd: (service: Service) => void;
   onPhase: (id: string, phase: CdtPhase) => void;
   onDelete: (id: string) => void;
   onBookRow: (id: string, mode: "book" | "replace") => void;
@@ -51,6 +53,7 @@ export function ChartingPanels(props: Props) {
           items={props.items}
           selectedFdi={props.selectedFdi}
           notation={props.notation}
+          services={props.services}
           onAdd={props.onAdd}
           onPhase={props.onPhase}
           onDelete={props.onDelete}

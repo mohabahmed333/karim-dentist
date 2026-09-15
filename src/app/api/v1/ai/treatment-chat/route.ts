@@ -1,17 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/api/requireAdmin";
-import {
-  chipLabelFor,
-  moreMenuItems,
-  resolveClinicMenu,
-  shortLabelFor,
-} from "@/services/cdt";
-import {
-  resolveChairsidePresets,
-  type ClinicCdtFee,
-  type ClinicTreatmentPreset,
-} from "@/services/clinic_fees";
 import { hasAnyAiKey } from "@/services/ai_chat";
 import { runTreatmentChat } from "@/services/ai_groq";
 
@@ -66,27 +55,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    const [{ data: feeRows }, { data: presetRows }] = await Promise.all([
-      auth.supabase.from("clinic_cdt_fees").select("*").order("code"),
-      auth.supabase.from("clinic_treatment_presets").select("*").order("slot"),
-    ]);
-    const fees = (feeRows ?? []) as ClinicCdtFee[];
-    const slots = (presetRows ?? []) as ClinicTreatmentPreset[];
-    const favorites = resolveChairsidePresets(slots, fees);
-    const more = moreMenuItems(resolveClinicMenu(fees), slots);
-    const menu = [
-      ...favorites.map((row) => ({
-        code: row.code,
-        label: shortLabelFor(row.code),
-        fee: row.fee,
-      })),
-      ...more.map((row) => ({
-        code: row.code,
-        label: chipLabelFor(row.code).replace(/^\+\s*/, ""),
-        fee: row.fee,
-      })),
-    ];
-
     const nowIso = new Date().toISOString();
     const [{ data: openSlotRows }, { data: takenSlotRows }, { data: serviceRows }] =
       await Promise.all([
@@ -129,7 +97,6 @@ export async function POST(request: Request) {
         patientName: parsed.data.patientName,
         patientChart: parsed.data.patientChart,
         imageUrls: parsed.data.imageUrls,
-        menu,
         existing: parsed.data.existing,
         openSlots,
         takenSlots,

@@ -2,6 +2,7 @@
 
 import type { NotationSystem } from "@/services/notation";
 import type { PaintTool, SurfaceId, SurfaceMap } from "@/services/tooth_surfaces";
+import type { Service } from "@/services/services/types";
 import type { usePatientImaging } from "../usePatientImaging";
 import type { usePatientToothNotes } from "../usePatientToothNotes";
 import type { usePatientTreatments } from "../usePatientTreatments";
@@ -28,6 +29,7 @@ type Props = {
   notesChart: ReturnType<typeof usePatientToothNotes>;
   imagingChart: ReturnType<typeof usePatientImaging>;
   treatmentsChart: ReturnType<typeof usePatientTreatments>;
+  services: Service[];
 };
 
 export function ChairsideDrawersHost({
@@ -47,6 +49,7 @@ export function ChairsideDrawersHost({
   notesChart,
   imagingChart,
   treatmentsChart,
+  services,
 }: Props) {
   return (
     <ChartingDrawers
@@ -80,9 +83,10 @@ export function ChairsideDrawersHost({
           />
         </>
       }
-      onAddProcedure={(code, fee) => {
+      services={services}
+      onAddProcedure={(service, phase) => {
         if (!selectedFdi) return;
-        void treatmentsChart.addCdtProcedure(selectedFdi, code, fee);
+        void treatmentsChart.addServiceProcedure(selectedFdi, service, phase);
         onCloseBuilder();
       }}
     />

@@ -26,7 +26,6 @@ export type TreatmentChatContext = {
   toothName: string;
   patientName?: string;
   patientChart?: string;
-  menu: { code: string; label: string; fee: number }[];
   existing: ExistingTreatmentContext[];
   imageUrls?: string[];
   /** Open clinic appointment starts (ISO) for slot polls */
@@ -34,10 +33,9 @@ export type TreatmentChatContext = {
   /** Booked starts — must never appear in slot polls */
   takenSlots?: string[];
   /**
-   * The bookable services catalog, so a draft can point at a real service
-   * (draft.service_id) instead of only a CDT code — separate list on
-   * purpose, see the Clinic Prices page: CDT codes price a clinical
-   * procedure, services price what a patient actually books.
+   * The bookable services catalog — the only source of pricing for a draft
+   * now (there is no clinic-configured CDT fee list). A draft should point
+   * at a real service (draft.service_id) and price from its range.
    */
   services?: { id: string; title: string; priceMin: number | null; priceMax: number | null }[];
 };
@@ -52,9 +50,6 @@ export async function runTreatmentChat(input: {
   context: TreatmentChatContext;
 }): Promise<TreatmentAiResponse> {
   const system = await loadTreatmentAssistantPrompt();
-  const menuLines = input.context.menu
-    .map((row) => `${row.code} · ${row.label} · EGP ${row.fee}`)
-    .join("\n");
   const existingLines = input.context.existing
     .map(
       (row) =>
@@ -83,8 +78,6 @@ export async function runTreatmentChat(input: {
   const contextBlock = [
     `Patient name: ${input.context.patientName ?? "—"}`,
     `Selected tooth: ${input.context.toothName} (#${input.context.toothFdi})`,
-    "Clinic menu (only these CDT codes):",
-    menuLines || "(empty menu — ask dentist to configure Clinic prices)",
     "Bookable services (only these; if the treatment clearly matches one, set draft.service_id to its id exactly — leave it unset rather than guess):",
     serviceLines || "(none on file)",
     "Existing required treatments (patient-wide summary):",
@@ -130,16 +123,33 @@ export async function runTreatmentChat(input: {
   // A service_id the model invented (or paraphrased from an id it wasn't
   // actually shown) must not survive — same "server offered it or it
   // doesn't count" rule slot/doctor ids already get on the WhatsApp side.
-  const offeredServiceIds = new Set((input.context.services ?? []).map((s) => s.id));
+  const offeredServices = new Map(
+    (input.context.services ?? []).map((s) => [s.id, s]),
+  );
   const dropUnofferedService = <T extends { service_id?: string }>(draft: T): T =>
-    draft.service_id && !offeredServiceIds.has(draft.service_id)
+    draft.service_id && !offeredServices.has(draft.service_id)
       ? { ...draft, service_id: undefined }
       : draft;
 
+  // The model is unreliable at arithmetic — don't trust it to have copied
+  // the service's price into fee_amount. Once a real service_id survives
+  // validation, its minimum price always wins (same "doctor price falls
+  // back to the clinic minimum" rule the Services pricing already applies).
+  const priceFromMatchedService = <T extends { service_id?: string; fee_amount: number }>(
+    draft: T,
+  ): T => {
+    const service = draft.service_id ? offeredServices.get(draft.service_id) : undefined;
+    return service?.priceMin != null ? { ...draft, fee_amount: service.priceMin } : draft;
+  };
+
   return {
     ...result,
-    draft: result.draft ? dropUnofferedService(result.draft) : result.draft,
-    choices: result.choices.map(dropUnofferedService),
+    draft: result.draft
+      ? priceFromMatchedService(dropUnofferedService(result.draft))
+      : result.draft,
+    choices: result.choices.map((draft) =>
+      priceFromMatchedService(dropUnofferedService(draft)),
+    ),
     proposedActions: proposed.actions,
   };
 }

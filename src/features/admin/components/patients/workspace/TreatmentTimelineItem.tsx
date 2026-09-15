@@ -40,7 +40,9 @@ export function TreatmentTimelineItem({
   onContext,
 }: Props) {
   const critical = item.severity === "Critical";
-  const label = item.cdtCode ? shortLabelFor(item.cdtCode) : item.toothName;
+  const label = item.cdtCode
+    ? shortLabelFor(item.cdtCode)
+    : item.lastTreatment || item.toothName;
 
   return (
     <div className="relative flex gap-3">

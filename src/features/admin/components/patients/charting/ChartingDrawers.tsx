@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { CdtPhase } from "@/services/cdt";
+import type { Service } from "@/services/services/types";
 import type { DiagTab } from "./useChartingSession";
 import { ProcedureBuilderDrawer } from "./ProcedureBuilderDrawer";
 import { ToothInspectorDrawer } from "./ToothInspectorDrawer";
@@ -17,7 +18,8 @@ type Props = {
   diagTab: DiagTab;
   onDiagTab: (tab: DiagTab) => void;
   diagnosticBody: ReactNode;
-  onAddProcedure: (code: string, fee: number, phase: CdtPhase) => void;
+  services: Service[];
+  onAddProcedure: (service: Service, phase: CdtPhase) => void;
 };
 
 export function ChartingDrawers({
@@ -31,6 +33,7 @@ export function ChartingDrawers({
   diagTab,
   onDiagTab,
   diagnosticBody,
+  services,
   onAddProcedure,
 }: Props) {
   return (
@@ -50,6 +53,7 @@ export function ChartingDrawers({
         onClose={onCloseBuilder}
         toothLabel={toothShort}
         hasTooth={Boolean(selectedFdi)}
+        services={services}
         onAdd={onAddProcedure}
       />
     </>

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PatientTreatmentAttachment, TreatmentAppointment } from "@/services/patient_treatments";
+import type { Service } from "@/services/services/types";
 import { RichTextEditor } from "../RichTextEditor";
 import { TreatmentAttachmentsField } from "../treatments/TreatmentAttachmentsField";
 import type { PendingFile } from "../treatments/TreatmentEditorForm";
@@ -16,6 +17,7 @@ type Props = {
   step: WizardStep;
   draft: WizardDraft;
   pending: boolean;
+  services: Service[];
   pendingFiles: PendingFile[];
   savedAttachments?: PatientTreatmentAttachment[];
   existingAppointment?: TreatmentAppointment | null;
@@ -29,6 +31,7 @@ export function TreatmentWizardBody({
   step,
   draft,
   pending,
+  services,
   pendingFiles,
   savedAttachments = [],
   existingAppointment = null,
@@ -39,7 +42,12 @@ export function TreatmentWizardBody({
 }: Props) {
   if (step === "treatment") {
     return (
-      <WizardTreatmentStep draft={draft} pending={pending} onDraft={onDraft} />
+      <WizardTreatmentStep
+        draft={draft}
+        pending={pending}
+        services={services}
+        onDraft={onDraft}
+      />
     );
   }
 

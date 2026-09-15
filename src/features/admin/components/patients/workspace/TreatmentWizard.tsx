@@ -18,12 +18,14 @@ import type {
   PatientTreatmentAttachment,
   TreatmentAppointment,
 } from "@/services/patient_treatments";
+import type { Service } from "@/services/services/types";
 import { toast } from "sonner";
 
 type Props = {
   toothFdi: string;
   toothName: string;
   pending: boolean;
+  services: Service[];
   initialDraft?: WizardDraft;
   alreadySaved?: boolean;
   existingTreatmentId?: string | null;
@@ -43,6 +45,7 @@ export function TreatmentWizard({
   toothFdi,
   toothName,
   pending,
+  services,
   initialDraft,
   alreadySaved = false,
   existingTreatmentId = null,
@@ -131,6 +134,7 @@ export function TreatmentWizard({
           step={step}
           draft={draft}
           pending={pending}
+          services={services}
           pendingFiles={pendingFiles}
           savedAttachments={savedAttachments}
           existingAppointment={existingAppointment}

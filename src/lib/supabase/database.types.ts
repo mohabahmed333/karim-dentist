@@ -538,24 +538,6 @@ export type Database = {
         }
         Relationships: []
       }
-      clinic_cdt_fees: {
-        Row: {
-          code: string
-          fee_egp: number
-          updated_at: string
-        }
-        Insert: {
-          code: string
-          fee_egp?: number
-          updated_at?: string
-        }
-        Update: {
-          code?: string
-          fee_egp?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
       clinic_chat_messages: {
         Row: {
           content: string
@@ -698,35 +680,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      clinic_treatment_presets: {
-        Row: {
-          code: string
-          label: string
-          slot: number
-          updated_at: string
-        }
-        Insert: {
-          code: string
-          label: string
-          slot: number
-          updated_at?: string
-        }
-        Update: {
-          code?: string
-          label?: string
-          slot?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "clinic_treatment_presets_code_fkey"
-            columns: ["code"]
-            isOneToOne: false
-            referencedRelation: "clinic_cdt_fees"
-            referencedColumns: ["code"]
-          },
-        ]
       }
       billing_payment_receipts: {
         Row: {

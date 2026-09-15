@@ -128,7 +128,7 @@ export function draftToUpsert(draft: WizardDraft) {
     severity: draft.severity,
     last_treatment: draft.last_treatment,
     cdt_code: draft.cdt_code || null,
-    phase: draft.cdt_code ? defaultPhaseForCdt(draft.cdt_code) : undefined,
+    phase: draft.cdt_code ? defaultPhaseForCdt(draft.cdt_code) : "restorative",
     fee_amount: Math.max(0, Math.round(draft.fee_amount)),
     ai_title: draft.ai_title,
     ai_description: draft.ai_description,
@@ -140,6 +140,8 @@ export function draftToUpsert(draft: WizardDraft) {
 
 export function wizardCanAdvance(step: WizardStep, draft: WizardDraft): boolean {
   if (!draft.tooth_fdi || !draft.tooth_name.trim()) return false;
-  if (step === "treatment") return Boolean(draft.cdt_code);
+  if (step === "treatment") {
+    return Boolean(draft.cdt_code) || Boolean(draft.last_treatment.trim());
+  }
   return true;
 }

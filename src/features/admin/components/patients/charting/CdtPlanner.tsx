@@ -10,8 +10,9 @@ import {
 } from "@/services/cdt";
 import { displayTooth, type NotationSystem } from "@/services/notation";
 import type { TreatmentItem } from "@/services/patient_treatments";
+import type { Service } from "@/services/services/types";
 import { CdtPhaseLane } from "./CdtPhaseLane";
-import { CdtPresetChips } from "./CdtPresetChips";
+import { ServiceQuickPickChips } from "./ServiceQuickPickChips";
 import { PlannerActions } from "./PlannerActions";
 import { useTreatmentPlanner } from "./useTreatmentPlanner";
 
@@ -24,7 +25,8 @@ type Props = {
   items: TreatmentItem[];
   selectedFdi: string | null;
   notation: NotationSystem;
-  onAdd: (code: string, fee: number) => void;
+  services: Service[];
+  onAdd: (service: Service) => void;
   onPhase: (id: string, phase: CdtPhase) => void;
   onDelete: (id: string) => void;
   onBookRow: (id: string, mode: "book" | "replace") => void;
@@ -36,6 +38,7 @@ export function CdtPlanner({
   items,
   selectedFdi,
   notation,
+  services,
   onAdd,
   onPhase,
   onDelete,
@@ -51,9 +54,10 @@ export function CdtPlanner({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <CdtPresetChips
+      <ServiceQuickPickChips
         hasTooth={Boolean(selectedFdi)}
         toothLabel={selectedTooth}
+        services={services}
         onAdd={onAdd}
       />
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">

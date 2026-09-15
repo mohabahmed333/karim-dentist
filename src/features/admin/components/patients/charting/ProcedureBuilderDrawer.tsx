@@ -6,8 +6,9 @@ import {
   type CareBucket,
   type CdtPhase,
 } from "@/services/cdt";
+import type { Service } from "@/services/services/types";
 import { SideDrawer } from "../treatments/SideDrawer";
-import { CdtPresetChips } from "./CdtPresetChips";
+import { ServiceQuickPickChips } from "./ServiceQuickPickChips";
 import { ChartingSegment } from "./ChartingSegment";
 
 type Props = {
@@ -15,7 +16,8 @@ type Props = {
   onClose: () => void;
   toothLabel: string | null;
   hasTooth: boolean;
-  onAdd: (code: string, fee: number, phase: CdtPhase) => void;
+  services: Service[];
+  onAdd: (service: Service, phase: CdtPhase) => void;
 };
 
 export function ProcedureBuilderDrawer({
@@ -23,6 +25,7 @@ export function ProcedureBuilderDrawer({
   onClose,
   toothLabel,
   hasTooth,
+  services,
   onAdd,
 }: Props) {
   const [bucket, setBucket] = useState<CareBucket>("planned");
@@ -43,11 +46,12 @@ export function ProcedureBuilderDrawer({
             ]}
           />
         </div>
-        <CdtPresetChips
+        <ServiceQuickPickChips
           hasTooth={hasTooth}
           toothLabel={toothLabel}
-          onAdd={(code, fee) => {
-            onAdd(code, fee, phaseForCareBucket(bucket));
+          services={services}
+          onAdd={(service) => {
+            onAdd(service, phaseForCareBucket(bucket));
             onClose();
           }}
         />

@@ -1,18 +1,11 @@
 export type { CdtEntry, CdtGroup, CdtPhase } from "./types";
 export { GROUP_LABELS, GROUP_ORDER } from "./groups";
 export { CDT_CATALOG, cdtByCode, chipLabelFor, shortLabelFor } from "./catalog";
-export {
-  addableCatalog,
-  canRemoveFromMenu,
-  moreMenuItems,
-  resolveClinicMenu,
-} from "./menu";
-export type { ClinicMenuItem } from "./menu";
 export { defaultPhaseForCdt, isUrgentCdt } from "./phases";
 export { formatEgp, planTotals } from "./totals";
 export type { BillableRow } from "./totals";
 export { parseChartingFee } from "./parseFee";
-export { cdtAddPayload } from "./cdtAdd";
+export { cdtAddPayload, serviceAddPayload } from "./cdtAdd";
 export { cdtAddBlocked } from "./addReady";
 export type { CdtAddDraft } from "./addReady";
 export {
@@ -24,8 +17,6 @@ export {
   phaseForCareBucket,
 } from "./careBucket";
 export type { CareBucket } from "./careBucket";
-export { TREATMENT_PRESETS } from "./presets";
-export type { TreatmentPreset } from "./presets";
 export {
   FEE_RATE_PRESETS,
   feeRateFromPct,
