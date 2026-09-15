@@ -111,7 +111,6 @@ export default async function AdminMyDayPage() {
           session.permissions.has("reservations.edit")
         }
         canEditProfile={session.permissions.has("patients.edit")}
-        canViewInbox={session.permissions.has("support.view")}
         showDoctor={!scopeToDoctor}
         doctorNameById={doctorNameById}
         doctors={doctors}

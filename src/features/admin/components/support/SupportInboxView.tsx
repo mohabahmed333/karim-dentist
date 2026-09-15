@@ -1114,6 +1114,7 @@ export function SupportInboxView({
                   }))
                 }
                 detailsOpen={false}
+                showWorkspace={!useKapso}
                 onBack={goToList}
                 onClose={onClose}
                 onLoadMore={() => {
@@ -1245,7 +1246,6 @@ export function SupportInboxView({
                 }
                 detailsOpen={detailsOpen}
                 onToggleDetails={() => setDetailsOpen((v) => !v)}
-                showWorkspace
                 onLoadMore={() => {
                   void handleLoadMore();
                 }}

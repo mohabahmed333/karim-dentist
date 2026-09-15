@@ -3,10 +3,7 @@
 import { Clock, MessageCircle, Phone, Stethoscope } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { dispatchOpenWhatsapp } from "@/features/admin/lib/adminShellEvents";
-import {
-  whatsappChatHref,
-  type PatientGroup,
-} from "@/services/reservations/patientHistory";
+import type { PatientGroup } from "@/services/reservations/patientHistory";
 import type { Reservation } from "@/services/reservations/types";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -15,8 +12,6 @@ type Props = {
   group: PatientGroup;
   reservation: Reservation;
   canPropose: boolean;
-  /** `support.view`. Without it the in-app inbox panel cannot load a thread. */
-  canViewInbox: boolean;
   /** This patient's WhatsApp thread, when one exists. */
   conversationId: string | null;
   onBill: () => void;
@@ -35,7 +30,6 @@ export function MyDayPatientHeader({
   group,
   reservation,
   canPropose,
-  canViewInbox,
   conversationId,
   onBill,
 }: Props) {
@@ -47,16 +41,6 @@ export function MyDayPatientHeader({
     minute: "2-digit",
   }).format(new Date(reservation.starts_at));
 
-  // The in-app panel, whenever the user can read the inbox at all. It is
-  // deliberately not conditional on having resolved a conversation id: a
-  // patient whose thread is not linked yet would otherwise fall through to the
-  // external wa.me link, which is not what "open the chat" means here. With an
-  // id the panel lands on their thread; without one it opens the inbox.
-  //
-  // `support.view` is what the message API checks, and a doctor does not hold
-  // it — they get the wa.me hand-off rather than a panel that would 403.
-  const canOpenPanel = canViewInbox;
-  const whatsappHref = canOpenPanel ? "" : whatsappChatHref(group.phone);
 
   const meta: { Icon: typeof Phone; label: string }[] = [
     { Icon: Clock, label: time },
@@ -97,31 +81,18 @@ export function MyDayPatientHeader({
             {t("admin.billing.billVisit")}
           </Button>
         ) : null}
-        {canOpenPanel ? (
-          <button
-            type="button"
-            onClick={() =>
-              dispatchOpenWhatsapp(
-                conversationId ? { conversationId } : {},
-              )
-            }
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-          >
-            <MessageCircle className="size-3.5" />
-            {t("admin.myDay.openWhatsapp")}
-          </button>
-        ) : null}
-        {whatsappHref ? (
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-          >
-            <MessageCircle className="size-3.5" />
-            {t("admin.myDay.openWhatsapp")}
-          </a>
-        ) : null}
+        {/* Always the in-app panel — with an id it lands on this patient's
+            thread, without one it opens the inbox. */}
+        <button
+          type="button"
+          onClick={() =>
+            dispatchOpenWhatsapp(conversationId ? { conversationId } : {})
+          }
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+        >
+          <MessageCircle className="size-3.5" />
+          {t("admin.myDay.openWhatsapp")}
+        </button>
       </div>
     </header>
   );

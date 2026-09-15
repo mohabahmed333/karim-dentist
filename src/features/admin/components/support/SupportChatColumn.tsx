@@ -79,7 +79,12 @@ type Props = {
   onMuteToggle?: (muted: boolean) => void;
   muting?: boolean;
   onAskAi?: () => void;
-  /** Show patient workspace CTA (full support page only). */
+  /**
+   * Show the patient-workspace CTA. Off everywhere in the real admin — My Day's
+   * Chart tab is the workspace now, and in a chat header the button only
+   * competed for room with the controls that act on the conversation. The
+   * showreel still turns it on: its cursor timeline waits on this button.
+   */
   showWorkspace?: boolean;
   /** Messenger-style back to conversation list. */
   onBack?: () => void;
@@ -111,7 +116,7 @@ export function SupportChatColumn({
   onMuteToggle,
   muting,
   onAskAi,
-  showWorkspace = true,
+  showWorkspace = false,
   onBack,
   onClose,
 }: Props) {

@@ -47,8 +47,6 @@ type Props = {
   canEditBilling: boolean;
   canBook: boolean;
   canEditProfile: boolean;
-  /** `support.view` — without it the inbox panel cannot load a thread. */
-  canViewInbox: boolean;
   showDoctor: boolean;
   doctorNameById: Record<string, string>;
   doctors: PriceableDoctor[];
@@ -135,7 +133,6 @@ export function MyDayView({
   canEditBilling,
   canBook,
   canEditProfile,
-  canViewInbox,
   showDoctor,
   doctorNameById,
   doctors,
@@ -344,7 +341,6 @@ export function MyDayView({
           group={group}
           reservation={selected}
           canPropose={canPropose}
-          canViewInbox={canViewInbox}
           conversationId={bundle?.whatsappConversationId ?? null}
           onBill={() => setBillOpen(true)}
         />
