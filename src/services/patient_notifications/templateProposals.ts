@@ -87,6 +87,15 @@ export const TEMPLATE_PROPOSALS: readonly TemplateProposal[] = [
     bodyEn: "Hi {{1}}, your doctor has proposed: {{2}}. Reply here if you'd like to go ahead.",
     bodyAr: "أهلاً {{1}}، دكتورك اقترح: {{2}}. ابعتلنا هنا لو موافق.",
   },
+  {
+    kind: "billing_payment_request",
+    title: "Billing payment requests",
+    names: { en: "billing_payment_request_en", ar: "billing_payment_request_ar" },
+    category: "UTILITY",
+    params: ["patient name", "amount and description"],
+    bodyEn: "Hi {{1}}, you have an outstanding bill: {{2}}. Reply here and we'll send payment details.",
+    bodyAr: "أهلاً {{1}}، عندك فاتورة مستحقة: {{2}}. ابعتلنا هنا وهنبعتلك تفاصيل الدفع.",
+  },
 ];
 
 export function proposalForKind(kind: string): TemplateProposal | null {

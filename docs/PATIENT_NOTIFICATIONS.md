@@ -252,6 +252,15 @@ Hi {{1}}, your doctor has proposed: {{2}}. Reply here if you'd like to go ahead.
 أهلاً {{1}}، دكتورك اقترح: {{2}}. ابعتلنا هنا لو موافق.
 ```
 
+**Billing payment requests** — `billing_payment_request_en` and `billing_payment_request_ar` · UTILITY
+
+`{{1}}` patient name · `{{2}}` amount and description
+
+```
+Hi {{1}}, you have an outstanding bill: {{2}}. Reply here and we'll send payment details.
+أهلاً {{1}}، عندك فاتورة مستحقة: {{2}}. ابعتلنا هنا وهنبعتلك تفاصيل الدفع.
+```
+
 <!-- /generated -->
 
 ## If nothing is being sent
