@@ -57,6 +57,13 @@ export type BuildPromptInput = {
    * it has to "how much?", since no service carries a price.
    */
   deposit?: { amountEgp: number; currency: string } | null;
+  /**
+   * A bill the front desk has already asked this patient to pay, if one is
+   * outstanding. Without it the assistant answers "I paid" or "how much do I
+   * owe?" from nothing, and either invents a figure or offers to book — while
+   * the clinic is waiting on money it has already asked for.
+   */
+  outstandingBill?: { amountEgp: number; description: string } | null;
   /** Clinic knowledge retrieved for this specific message. */
   knowledge?: { title: string; body: string }[];
   /**
@@ -116,6 +123,24 @@ function depositBlock(
     "that doctor actually charges — prefer it over the service's general one).",
     "Never guess a figure, never turn one into a range, and never add anything",
     "to a figure you were given.",
+  ].join("\n");
+}
+
+function outstandingBillBlock(
+  bill: { amountEgp: number; description: string } | null,
+): string {
+  if (!bill || !(bill.amountEgp > 0)) return "";
+  return [
+    `Outstanding bill: ${bill.amountEgp} EGP for ${bill.description}.`,
+    "The clinic has already asked this patient to pay it over WhatsApp and is",
+    "waiting. This figure is server-supplied and may be stated exactly as",
+    "given — write the currency the way the patient reads it, \"جنيه\" in",
+    "Arabic and \"EGP\" in English.",
+    "If they ask what they owe, answer with this figure.",
+    "If they say they have paid, ask them to send a photo of the transfer",
+    "confirmation here — the clinic reads it automatically. Do not tell them",
+    "the payment is confirmed; only the front desk decides that.",
+    "Do not ask for it again if they have just sent an image.",
   ].join("\n");
 }
 
@@ -281,6 +306,8 @@ export function buildAutoReplyPrompt(input: BuildPromptInput): BuiltPrompt {
     doctorBlock(input.doctors ?? []),
     "",
     depositBlock(input.deposit ?? null),
+    "",
+    outstandingBillBlock(input.outstandingBill ?? null),
     "",
     knowledgeBlock(input.knowledge ?? []),
     "",

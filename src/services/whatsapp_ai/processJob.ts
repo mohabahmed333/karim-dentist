@@ -15,6 +15,7 @@ import {
 } from "@/services/deposits/store";
 import { receiptMediaUrl } from "@/services/deposits/receiptMedia";
 import { handleInboundBillingReceipt } from "@/services/billing_payments/handleInboundReceipt";
+import { findOpenBillingRequestByConversation } from "@/services/billing_payments/store";
 import { searchClinicKnowledge } from "@/services/clinic_knowledge/search";
 import { buildHistoryTurns } from "./historyTurns";
 import { readBookingState } from "./bookingState";
@@ -254,6 +255,7 @@ export async function processAutoReplyJob(
       knowledge,
       { data: heldSlotRows },
       depositSettings,
+      openBill,
     ] = await Promise.all([
       countRecentAiReplies(db, conversation.id),
       db
@@ -338,7 +340,9 @@ export async function processAutoReplyJob(
         : Promise.resolve({ data: [] as { id: string; starts_at: string }[] }),
       // Never lets a deposit lookup break a reply: no settings simply means
       // the assistant has no price to quote.
-      loadDepositSettings(db).catch(() => null)
+      loadDepositSettings(db).catch(() => null),
+      // Same rule: a billing lookup must never cost the patient a reply.
+      findOpenBillingRequestByConversation(db, conversation.id).catch(() => null),
     ]);
 
     // Consecutive rough turns, newest first: a draft or a handoff means the
@@ -432,6 +436,15 @@ export async function processAutoReplyJob(
                 currency: depositSettings.currency || "EGP",
               }
             : null,
+        // A bill the front desk has already asked for. Without it "I paid" and
+        // "how much do I owe?" are answered from nothing, while the clinic is
+        // waiting on money it has already requested.
+        outstandingBill: openBill
+          ? {
+              amountEgp: Number(openBill.amount_egp),
+              description: openBill.description,
+            }
+          : null,
         knowledge,
         // No patient-name field is passed here on purpose. WhatsApp's own
         // display name used to be treated as the patient's real name once

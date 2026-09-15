@@ -374,3 +374,35 @@ describe("buildAutoReplyPrompt — eligible doctors", () => {
     assert.match(system, /keeps the same doctor by default/i);
   });
 });
+
+describe("buildAutoReplyPrompt — an outstanding bill", () => {
+  const bill = { amountEgp: 2222, description: "Dental laser treatments" };
+
+  it("says nothing about billing when nothing is owed", () => {
+    const { system } = build({ outstandingBill: null });
+    assert.ok(!system.includes("Outstanding bill"));
+  });
+
+  it("gives the assistant the figure and what it is for", () => {
+    const { system } = build({ outstandingBill: bill });
+    assert.ok(system.includes("Outstanding bill: 2222 EGP"));
+    assert.ok(system.includes("Dental laser treatments"));
+  });
+
+  it("asks for a photo of the transfer rather than confirming payment", () => {
+    const { system } = build({ outstandingBill: bill });
+    // The assistant must never tell a patient the money landed — only the
+    // front desk decides that, after reading the receipt.
+    assert.ok(system.includes("send a photo of the transfer"));
+    assert.ok(system.includes("Do not tell them"));
+  });
+
+  it("ignores a zero or negative amount rather than asking for nothing", () => {
+    for (const amountEgp of [0, -1]) {
+      const { system } = build({
+        outstandingBill: { amountEgp, description: "x" },
+      });
+      assert.ok(!system.includes("Outstanding bill"));
+    }
+  });
+});
