@@ -228,7 +228,7 @@ export function NotesPanel() {
                 <>
                   <GripHorizontal className="size-3.5 text-[var(--admin-muted)]" />
                   <span className="text-[12px] font-semibold text-[var(--admin-text)]">
-                    Team notes
+                    My notes
                   </span>
                   <span className="rounded-full bg-[var(--admin-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--admin-muted)]">
                     {notes.length}
@@ -446,7 +446,7 @@ function NoteEditor({
         onChange={schedule}
         onImageUpload={uploadAdminNoteImage}
         autoFocus={autoFocus}
-        placeholder="Write a note for the team…"
+        placeholder="Write a note…"
         minHeightClass="min-h-16"
         className="min-h-0 flex-1"
         scrollable
