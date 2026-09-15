@@ -20,13 +20,21 @@ type Props = {
   proposals: PendingProposalWithPatient[];
   paymentQueue: BillingPaymentQueueRow[];
   doctors: { id: string; display_name: string | null }[];
+  /** False while the payment-request template is unapproved. */
+  canRequestWhatsapp: boolean;
 };
 
 /** Long enough not to hammer the server, short enough that a dropped socket
  *  cannot hide a bill for a whole shift. */
 const BILLING_POLL_MS = 30_000;
 
-export function BillingBalancesView({ balances, proposals, paymentQueue, doctors }: Props) {
+export function BillingBalancesView({
+  balances,
+  proposals,
+  paymentQueue,
+  doctors,
+  canRequestWhatsapp,
+}: Props) {
   const router = useRouter();
   const t = useTranslations();
   const { locale } = useLocale();
@@ -73,7 +81,11 @@ export function BillingBalancesView({ balances, proposals, paymentQueue, doctors
         titleKey="admin.nav.billing"
         descriptionKey="admin.billing.clinicDescription"
       />
-      <PendingBillingRequestsList proposals={proposals} doctors={doctors} />
+      <PendingBillingRequestsList
+        proposals={proposals}
+        doctors={doctors}
+        canRequestWhatsapp={canRequestWhatsapp}
+      />
       <BillingPaymentReviewList rows={paymentQueue} />
       <Card className="bg-transparent p-0">
         <CollectionTable

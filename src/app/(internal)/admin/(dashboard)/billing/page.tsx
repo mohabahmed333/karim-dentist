@@ -3,6 +3,7 @@ import { listPatientBalances } from "@/services/patient_billing/queries";
 import { listAllPendingProposals } from "@/services/treatment_proposals/queries";
 import { listPendingBillingPayments } from "@/services/billing_payments/queries";
 import { listDoctors } from "@/services/profiles";
+import { hasApprovedTemplate } from "@/services/patient_notifications/templates";
 import { BillingBalancesView } from "@/features/admin/components/billing/BillingBalancesView";
 import { requirePagePermission } from "@/lib/auth/pageGuard";
 
@@ -19,6 +20,7 @@ export default async function AdminBillingPage() {
   ]);
   return (
     <BillingBalancesView
+      canRequestWhatsapp={hasApprovedTemplate("billing_payment_request")}
       balances={balances}
       proposals={proposals}
       paymentQueue={paymentQueue}

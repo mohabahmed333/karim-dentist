@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { WhatsappTemplateDialog } from "./WhatsappTemplateDialog";
 import type { PendingProposalWithPatient } from "@/services/treatment_proposals/queries";
 import { settleTreatmentProposal, decideTreatmentProposal } from "@/services/treatment_proposals/actions";
 import { formatEgp } from "@/services/deposits/receiptMessages";
@@ -14,9 +15,19 @@ type PriceableDoctor = { id: string; display_name: string | null };
 type Props = {
   proposals: PendingProposalWithPatient[];
   doctors: PriceableDoctor[];
+  /**
+   * False while Meta has not approved the payment-request template. The ask
+   * would be accepted and then sit in an outbox nothing can drain, so it is
+   * refused up front instead.
+   */
+  canRequestWhatsapp: boolean;
 };
 
-export function PendingBillingRequestsList({ proposals, doctors }: Props) {
+export function PendingBillingRequestsList({
+  proposals,
+  doctors,
+  canRequestWhatsapp,
+}: Props) {
   const router = useRouter();
   const { locale } = useLocale();
   const t = useTranslations();
@@ -155,11 +166,16 @@ export function PendingBillingRequestsList({ proposals, doctors }: Props) {
                   type="button"
                   size="sm"
                   variant="outline"
-                  disabled={busy}
+                  disabled={busy || !canRequestWhatsapp}
                   onClick={() => void settle(proposal.id, "whatsapp_request")}
                 >
                   {t("admin.billing.requestWhatsapp")}
                 </Button>
+                {/* Beside the button, not inside it — a button cannot contain
+                    another button, and a disabled one swallows hover anyway. */}
+                {!canRequestWhatsapp ? (
+                  <WhatsappTemplateDialog kind="billing_payment_request" />
+                ) : null}
                 <Button
                   type="button"
                   size="sm"

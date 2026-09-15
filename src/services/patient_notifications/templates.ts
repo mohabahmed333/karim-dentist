@@ -80,6 +80,18 @@ export const PATIENT_TEMPLATES: readonly PatientTemplate[] = [
  * wrong language is recoverable, but sending them a confirmation when we meant
  * a reminder is not.
  */
+/**
+ * Whether Meta has approved a template for this kind.
+ *
+ * False means the kind can only ever reach a patient inside an open 24h
+ * session: the outbox will accept it and then never drain, because there is
+ * nothing approved to send. Callers use this to refuse the action up front
+ * rather than accept it and queue silently.
+ */
+export function hasApprovedTemplate(kind: string): boolean {
+  return PATIENT_TEMPLATES.some((template) => template.kind === kind);
+}
+
 export function templateFor(
   kind: TemplateKind,
   language: BodyLanguage,
