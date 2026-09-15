@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { useTranslations } from "@/lib/i18n";
 import { AdminSkeleton } from "./AdminSkeleton";
 import {
   listServicesForPricing,
@@ -17,6 +18,7 @@ import {
  * a service still live on the Services page.
  */
 export function ClinicServicePricesSection() {
+  const t = useTranslations();
   const [rows, setRows] = useState<ServicePriceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export function ClinicServicePricesSection() {
         if (!cancelled) setRows(data);
       })
       .catch((err: unknown) => {
-        toast.error(err instanceof Error ? err.message : "Failed to load services");
+        toast.error(err instanceof Error ? err.message : t("admin.pages.clinicPrices.loadFailed"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -36,6 +38,7 @@ export function ClinicServicePricesSection() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch once on mount
   }, []);
 
   function patch(id: string, partial: Partial<ServicePriceRow>) {
@@ -46,9 +49,9 @@ export function ClinicServicePricesSection() {
     setSavingId(row.id);
     try {
       await updateServicePriceRange(row.id, row.price_min_egp, row.price_max_egp);
-      toast.success("Price saved");
+      toast.success(t("admin.pages.clinicPrices.saved"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
+      toast.error(err instanceof Error ? err.message : t("admin.saveFailed"));
     } finally {
       setSavingId(null);
     }
@@ -57,7 +60,7 @@ export function ClinicServicePricesSection() {
   if (loading) {
     return (
       <div aria-busy="true" className="space-y-2">
-        <span className="sr-only">Loading service prices…</span>
+        <span className="sr-only">{t("admin.pages.clinicPrices.loadingSr")}</span>
         {[0, 1, 2].map((i) => (
           <AdminSkeleton key={i} className="h-10 w-full rounded-lg" />
         ))}
@@ -66,7 +69,7 @@ export function ClinicServicePricesSection() {
   }
 
   if (rows.length === 0) {
-    return <p className="text-sm text-[#64748B]">No services on file yet.</p>;
+    return <p className="text-sm text-[#64748B]">{t("admin.pages.clinicPrices.empty")}</p>;
   }
 
   return (
@@ -89,8 +92,8 @@ export function ClinicServicePricesSection() {
             type="number"
             min={0}
             step={1}
-            placeholder="Min"
-            aria-label={`${row.title} minimum price in EGP`}
+            placeholder={t("admin.pages.clinicPrices.min")}
+            aria-label={t("admin.pages.clinicPrices.minAriaLabel").replace("{title}", row.title)}
             className="h-8 w-20"
             value={row.price_min_egp ?? ""}
             disabled={savingId === row.id}
@@ -100,13 +103,13 @@ export function ClinicServicePricesSection() {
               })
             }
           />
-          <span className="text-xs text-[#94A3B8]">to</span>
+          <span className="text-xs text-[#94A3B8]">{t("admin.pages.clinicPrices.to")}</span>
           <Input
             type="number"
             min={0}
             step={1}
-            placeholder="Max"
-            aria-label={`${row.title} maximum price in EGP`}
+            placeholder={t("admin.pages.clinicPrices.max")}
+            aria-label={t("admin.pages.clinicPrices.maxAriaLabel").replace("{title}", row.title)}
             className="h-8 w-20"
             value={row.price_max_egp ?? ""}
             disabled={savingId === row.id}

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { CorrectionRow } from "@/services/whatsapp_ai/corrections";
+import { useTranslations } from "@/lib/i18n";
 import { AdminSkeleton } from "./AdminSkeleton";
 
 async function fetchQueue(): Promise<CorrectionRow[]> {
@@ -19,6 +20,7 @@ async function fetchQueue(): Promise<CorrectionRow[]> {
  * wrong in a way a person knew how to fix.
  */
 export function AssistantReviewQueue() {
+  const t = useTranslations();
   const [rows, setRows] = useState<CorrectionRow[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -31,12 +33,13 @@ export function AssistantReviewQueue() {
       .catch(() => {
         if (alive) {
           setRows([]);
-          toast.error("Could not load the review queue");
+          toast.error(t("admin.pages.assistantReview.loadFailed"));
         }
       });
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch once on mount
   }, []);
 
   async function act(id: string, action: "reviewed" | "promote") {
@@ -51,11 +54,11 @@ export function AssistantReviewQueue() {
       setRows((prev) => (prev ?? []).filter((r) => r.id !== id));
       toast.success(
         action === "promote"
-          ? "Added to clinic knowledge as an unpublished entry — review it there before publishing"
-          : "Marked reviewed",
+          ? t("admin.pages.assistantReview.promoted")
+          : t("admin.pages.assistantReview.reviewed"),
       );
     } catch {
-      toast.error("That did not save");
+      toast.error(t("admin.pages.assistantReview.actionSaveFailed"));
     } finally {
       setBusy(null);
     }
@@ -64,7 +67,7 @@ export function AssistantReviewQueue() {
   if (rows === null) {
     return (
       <div aria-busy="true" className="space-y-3">
-        <span className="sr-only">Loading drafts to review…</span>
+        <span className="sr-only">{t("admin.pages.assistantReview.loadingSr")}</span>
         <div className="flex items-center justify-between gap-2">
           <AdminSkeleton className="h-4 w-72" />
           <AdminSkeleton className="h-8 w-44 rounded-md" />
@@ -99,8 +102,8 @@ export function AssistantReviewQueue() {
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
           {rows.length === 0
-            ? "Nothing to review. Every draft staff changed before sending shows up here."
-            : `${rows.length} draft${rows.length === 1 ? "" : "s"} changed by staff before sending.`}
+            ? t("admin.pages.assistantReview.emptyState")
+            : t("admin.pages.assistantReview.draftsCount").replace("{count}", String(rows.length))}
         </p>
         <a
           href="/api/v1/whatsapp/ai/corrections?export=1"
@@ -108,7 +111,7 @@ export function AssistantReviewQueue() {
           rel="noreferrer"
           className="inline-flex h-8 items-center rounded-md border px-3 text-sm hover:bg-muted"
         >
-          Export reviewed (JSON)
+          {t("admin.pages.assistantReview.exportJson")}
         </a>
       </div>
 
@@ -121,13 +124,17 @@ export function AssistantReviewQueue() {
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Assistant proposed</p>
+              <p className="text-xs font-medium text-muted-foreground">
+                {t("admin.pages.assistantReview.assistantProposed")}
+              </p>
               <p className="whitespace-pre-wrap rounded-md border border-dashed p-2 text-sm" dir="auto">
                 {row.ai_text}
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Staff sent</p>
+              <p className="text-xs font-medium text-muted-foreground">
+                {t("admin.pages.assistantReview.staffSent")}
+              </p>
               <p className="whitespace-pre-wrap rounded-md border p-2 text-sm" dir="auto">
                 {row.sent_text}
               </p>
@@ -140,10 +147,10 @@ export function AssistantReviewQueue() {
               disabled={busy === row.id}
               onClick={() => void act(row.id, "reviewed")}
             >
-              Mark reviewed
+              {t("admin.pages.assistantReview.markReviewed")}
             </Button>
             <Button size="sm" disabled={busy === row.id} onClick={() => void act(row.id, "promote")}>
-              Add staff answer to knowledge
+              {t("admin.pages.assistantReview.addToKnowledge")}
             </Button>
           </div>
         </Card>
