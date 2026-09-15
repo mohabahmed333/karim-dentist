@@ -67,7 +67,9 @@ export function PatientProfileView({
       {tab === "history" ? (
         <PatientAppointmentHistoryTab group={group} />
       ) : null}
-      {tab === "next" ? <PatientNextTreatmentTab group={group} /> : null}
+      {tab === "next" ? (
+        <PatientNextTreatmentTab group={group} treatments={treatments} />
+      ) : null}
       {tab === "medical" ? (
         <PatientMedicalRecordTab
           {...chartTabProps(chart, treatments, doctorNameById)}
