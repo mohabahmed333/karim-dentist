@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   aggregateStockValueByCategory,
+  aggregateSupplierSpend,
+  aggregateTopConsumedItems,
+  aggregateWastageByReason,
   buildReorderSuggestions,
   countItemsBelowThreshold,
   daysUntil,
@@ -139,5 +142,66 @@ describe("buildReorderSuggestions", () => {
       { id: "item-1", name: "Gauze", name_ar: "شاش", min_stock_level: 0, reorder_qty: 10, default_supplier: null },
     ];
     assert.deepEqual(buildReorderSuggestions(items, []), []);
+  });
+});
+
+describe("aggregateTopConsumedItems", () => {
+  it("sums cost per item, highest first", () => {
+    const rows = [
+      { item_id: "a", total_cost_egp: 50, item: { name: "Gauze", name_ar: "شاش" } },
+      { item_id: "b", total_cost_egp: 300, item: { name: "Anesthetic", name_ar: "مخدر" } },
+      { item_id: "a", total_cost_egp: 25, item: { name: "Gauze", name_ar: "شاش" } },
+    ];
+    assert.deepEqual(aggregateTopConsumedItems(rows), [
+      { itemId: "b", itemName: "Anesthetic", itemNameAr: "مخدر", cost: 300 },
+      { itemId: "a", itemName: "Gauze", itemNameAr: "شاش", cost: 75 },
+    ]);
+  });
+
+  it("returns an empty list for no rows", () => {
+    assert.deepEqual(aggregateTopConsumedItems([]), []);
+  });
+});
+
+describe("aggregateWastageByReason", () => {
+  it("sums cost per reason code, highest first", () => {
+    const rows = [
+      { reason_code: "expired", total_cost_egp: 40 },
+      { reason_code: "dropped_contaminated", total_cost_egp: 120 },
+      { reason_code: "expired", total_cost_egp: 10 },
+    ];
+    assert.deepEqual(aggregateWastageByReason(rows), [
+      { reasonCode: "dropped_contaminated", cost: 120 },
+      { reasonCode: "expired", cost: 50 },
+    ]);
+  });
+
+  it("buckets a missing reason code as other", () => {
+    const rows = [{ reason_code: null, total_cost_egp: 15 }];
+    assert.deepEqual(aggregateWastageByReason(rows), [{ reasonCode: "other", cost: 15 }]);
+  });
+});
+
+describe("aggregateSupplierSpend", () => {
+  it("sums cost per supplier, highest first", () => {
+    const rows = [
+      { total_cost_egp: 200, batch: { supplier_id: "s1", supplier: { name: "MedSupply" } } },
+      { total_cost_egp: 500, batch: { supplier_id: "s2", supplier: { name: "DentaCo" } } },
+      { total_cost_egp: 100, batch: { supplier_id: "s1", supplier: { name: "MedSupply" } } },
+    ];
+    assert.deepEqual(aggregateSupplierSpend(rows), [
+      { supplierId: "s2", supplierName: "DentaCo", cost: 500 },
+      { supplierId: "s1", supplierName: "MedSupply", cost: 300 },
+    ]);
+  });
+
+  it("groups a missing or deleted supplier as unknown", () => {
+    const rows = [
+      { total_cost_egp: 80, batch: { supplier_id: null, supplier: null } },
+      { total_cost_egp: 20, batch: null },
+    ];
+    assert.deepEqual(aggregateSupplierSpend(rows), [
+      { supplierId: "unknown", supplierName: null, cost: 100 },
+    ]);
   });
 });

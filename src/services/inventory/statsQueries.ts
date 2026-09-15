@@ -206,3 +206,116 @@ export async function listReorderSuggestions(
     batchesRes.data ?? [],
   );
 }
+
+export type TopConsumedItem = { itemId: string; itemName: string; itemNameAr: string; cost: number };
+
+type ConsumptionItemRow = {
+  item_id: string;
+  total_cost_egp: number;
+  item: { name: string; name_ar: string } | null;
+};
+
+/** Sums consumption cost per item, highest first — pure, no I/O. */
+export function aggregateTopConsumedItems(rows: ConsumptionItemRow[]): TopConsumedItem[] {
+  const totals = new Map<string, { cost: number; name: string; nameAr: string }>();
+  for (const row of rows) {
+    const existing = totals.get(row.item_id);
+    const name = row.item?.name ?? "";
+    const nameAr = row.item?.name_ar ?? "";
+    totals.set(row.item_id, {
+      cost: (existing?.cost ?? 0) + row.total_cost_egp,
+      name: existing?.name ?? name,
+      nameAr: existing?.nameAr ?? nameAr,
+    });
+  }
+  return [...totals.entries()]
+    .map(([itemId, v]) => ({ itemId, itemName: v.name, itemNameAr: v.nameAr, cost: v.cost }))
+    .sort((a, b) => b.cost - a.cost);
+}
+
+/** Items consumed (type='consumption') in an inclusive ISO date range, ranked by cost. */
+export async function listTopConsumedItems(
+  supabase: ServerSupabase,
+  from: string,
+  to: string,
+): Promise<TopConsumedItem[]> {
+  const { data, error } = await supabase
+    .from("inventory_transactions")
+    .select("item_id, total_cost_egp, item:inventory_items(name, name_ar)")
+    .eq("type", "consumption")
+    .gte("created_at", from)
+    .lte("created_at", to);
+  if (error) throw error;
+  return aggregateTopConsumedItems((data ?? []) as unknown as ConsumptionItemRow[]);
+}
+
+export type WastageByReason = { reasonCode: string; cost: number };
+
+type WastageRow = { reason_code: string | null; total_cost_egp: number };
+
+/** Sums wastage cost per reason code, highest first, missing code bucketed as "other" — pure, no I/O. */
+export function aggregateWastageByReason(rows: WastageRow[]): WastageByReason[] {
+  const totals = new Map<string, number>();
+  for (const row of rows) {
+    const code = row.reason_code ?? "other";
+    totals.set(code, (totals.get(code) ?? 0) + row.total_cost_egp);
+  }
+  return [...totals.entries()]
+    .map(([reasonCode, cost]) => ({ reasonCode, cost }))
+    .sort((a, b) => b.cost - a.cost);
+}
+
+/** Wastage (type='wastage') in an inclusive ISO date range, ranked by reason. */
+export async function listWastageByReason(
+  supabase: ServerSupabase,
+  from: string,
+  to: string,
+): Promise<WastageByReason[]> {
+  const { data, error } = await supabase
+    .from("inventory_transactions")
+    .select("reason_code, total_cost_egp")
+    .eq("type", "wastage")
+    .gte("created_at", from)
+    .lte("created_at", to);
+  if (error) throw error;
+  return aggregateWastageByReason(data ?? []);
+}
+
+export type SupplierSpend = { supplierId: string; supplierName: string | null; cost: number };
+
+type RestockRow = {
+  total_cost_egp: number;
+  batch: { supplier_id: string | null; supplier: { name: string } | null } | null;
+};
+
+/** Sums restock cost per supplier, highest first — a missing/deleted supplier groups as "unknown" — pure, no I/O. */
+export function aggregateSupplierSpend(rows: RestockRow[]): SupplierSpend[] {
+  const totals = new Map<string, { cost: number; name: string | null }>();
+  for (const row of rows) {
+    const supplierId = row.batch?.supplier_id ?? "unknown";
+    const existing = totals.get(supplierId);
+    totals.set(supplierId, {
+      cost: (existing?.cost ?? 0) + row.total_cost_egp,
+      name: existing?.name ?? row.batch?.supplier?.name ?? null,
+    });
+  }
+  return [...totals.entries()]
+    .map(([supplierId, v]) => ({ supplierId, supplierName: v.name, cost: v.cost }))
+    .sort((a, b) => b.cost - a.cost);
+}
+
+/** Restock spend (type='restock') in an inclusive ISO date range, ranked by supplier. Joins the batch's actual supplier — not an item's default reorder supplier, which can differ. */
+export async function listSupplierSpend(
+  supabase: ServerSupabase,
+  from: string,
+  to: string,
+): Promise<SupplierSpend[]> {
+  const { data, error } = await supabase
+    .from("inventory_transactions")
+    .select("total_cost_egp, batch:inventory_batches(supplier_id, supplier:suppliers(name))")
+    .eq("type", "restock")
+    .gte("created_at", from)
+    .lte("created_at", to);
+  if (error) throw error;
+  return aggregateSupplierSpend((data ?? []) as unknown as RestockRow[]);
+}
