@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CollectionTable, type CollectionColumn } from "@/features/admin/components/CollectionTable";
+import { SideDrawer } from "@/features/admin/components/patients/treatments/SideDrawer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLocale, useTranslations } from "@/lib/i18n";
@@ -187,93 +188,18 @@ export function InventoryManager({ initialItems, initialSuppliers }: Props) {
       </div>
 
       {view === "items" ? (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
-          <CollectionTable
-            tableId="inventory-items"
-            rows={items}
-            columns={itemColumns}
-            onRowClick={selectItem}
-            selectedId={selectedItemId}
-            emptyMessage={t("admin.pages.inventory.emptyItems")}
-            rowActions={[
-              { id: "edit", label: t("admin.edit"), icon: "edit", onClick: (r) => setItemDialog({ open: true, item: r }) },
-              { id: "archive", label: t("admin.pages.inventory.archive"), icon: "delete", tone: "danger", onClick: onArchiveItem },
-            ]}
-          />
-
-          <div className="rounded-xl border border-[var(--admin-border)] p-4">
-            {!selectedItem ? (
-              <p className="text-sm text-[var(--admin-muted)]">{t("admin.pages.inventory.selectItemHint")}</p>
-            ) : (
-              <div className="flex flex-col gap-4">
-                <div>
-                  <h3 className="text-sm font-semibold">
-                    {localizedItemName(locale, selectedItem.name, selectedItem.name_ar)}
-                  </h3>
-                  <p className="text-xs text-[var(--admin-muted)]">
-                    {t("admin.pages.inventory.stockSummary")
-                      .replace("{qty}", String(selectedItem.qty_on_hand))
-                      .replace("{unit}", selectedItem.unit)
-                      .replace("{min}", String(selectedItem.min_stock_level))}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" size="sm" variant="outline" onClick={() => setRestockOpen(true)}>
-                    {t("admin.pages.inventory.receiveStock")}
-                  </Button>
-                  <Button type="button" size="sm" variant="outline" onClick={() => setAdjustOpen(true)}>
-                    {t("admin.pages.inventory.recount")}
-                  </Button>
-                  <Button type="button" size="sm" variant="destructive" onClick={() => setWastageOpen(true)}>
-                    {t("admin.pages.inventory.logWastage")}
-                  </Button>
-                </div>
-
-                <div>
-                  <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--admin-muted)]">
-                    {t("admin.pages.inventory.batchesHeading")}
-                    {detailLoading ? ` ${t("admin.pages.inventory.loadingSuffix")}` : ""}
-                  </h4>
-                  <div className="flex flex-col gap-1 text-xs">
-                    {batches.length === 0 ? (
-                      <p className="text-[var(--admin-muted)]">{t("admin.pages.inventory.noBatches")}</p>
-                    ) : (
-                      batches.map((b) => (
-                        <div key={b.id} className="flex items-center justify-between rounded-md border border-[var(--admin-border)] px-2 py-1.5">
-                          <span>
-                            {b.lot_number
-                              ? t("admin.pages.inventory.lotLabel").replace("{lot}", b.lot_number)
-                              : t("admin.pages.inventory.noLot")}
-                            {b.expires_on ? ` · ${t("admin.pages.inventory.expLabel").replace("{date}", b.expires_on)}` : ""}
-                          </span>
-                          <span className="font-medium">{b.qty_remaining}/{b.qty_received}</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--admin-muted)]">
-                    {t("admin.pages.inventory.activityHeading")}
-                  </h4>
-                  <div className="flex flex-col gap-1 text-xs">
-                    {transactions.length === 0 ? (
-                      <p className="text-[var(--admin-muted)]">{t("admin.pages.inventory.noTransactions")}</p>
-                    ) : (
-                      transactions.slice(0, 10).map((tx) => (
-                        <div key={tx.id} className="flex items-center justify-between rounded-md border border-[var(--admin-border)] px-2 py-1.5">
-                          <span className="capitalize">{tx.type}{tx.reason_code ? ` · ${tx.reason_code.replace(/_/g, " ")}` : ""}</span>
-                          <span className="font-medium">{tx.qty}</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <CollectionTable
+          tableId="inventory-items"
+          rows={items}
+          columns={itemColumns}
+          onRowClick={selectItem}
+          selectedId={selectedItemId}
+          emptyMessage={t("admin.pages.inventory.emptyItems")}
+          rowActions={[
+            { id: "edit", label: t("admin.edit"), icon: "edit", onClick: (r) => setItemDialog({ open: true, item: r }) },
+            { id: "archive", label: t("admin.pages.inventory.archive"), icon: "delete", tone: "danger", onClick: onArchiveItem },
+          ]}
+        />
       ) : (
         <CollectionTable
           tableId="inventory-suppliers"
@@ -286,6 +212,76 @@ export function InventoryManager({ initialItems, initialSuppliers }: Props) {
           ]}
         />
       )}
+
+      <SideDrawer
+        open={selectedItem != null}
+        title={selectedItem ? localizedItemName(locale, selectedItem.name, selectedItem.name_ar) : ""}
+        onClose={() => setSelectedItemId(null)}
+      >
+        {selectedItem ? (
+          <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4">
+            <p className="text-xs text-[var(--admin-muted)]">
+              {t("admin.pages.inventory.stockSummary")
+                .replace("{qty}", String(selectedItem.qty_on_hand))
+                .replace("{unit}", selectedItem.unit)
+                .replace("{min}", String(selectedItem.min_stock_level))}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => setRestockOpen(true)}>
+                {t("admin.pages.inventory.receiveStock")}
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setAdjustOpen(true)}>
+                {t("admin.pages.inventory.recount")}
+              </Button>
+              <Button type="button" size="sm" variant="destructive" onClick={() => setWastageOpen(true)}>
+                {t("admin.pages.inventory.logWastage")}
+              </Button>
+            </div>
+
+            <div>
+              <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--admin-muted)]">
+                {t("admin.pages.inventory.batchesHeading")}
+                {detailLoading ? ` ${t("admin.pages.inventory.loadingSuffix")}` : ""}
+              </h4>
+              <div className="flex flex-col gap-1 text-xs">
+                {batches.length === 0 ? (
+                  <p className="text-[var(--admin-muted)]">{t("admin.pages.inventory.noBatches")}</p>
+                ) : (
+                  batches.map((b) => (
+                    <div key={b.id} className="flex items-center justify-between rounded-md border border-[var(--admin-border)] px-2 py-1.5">
+                      <span>
+                        {b.lot_number
+                          ? t("admin.pages.inventory.lotLabel").replace("{lot}", b.lot_number)
+                          : t("admin.pages.inventory.noLot")}
+                        {b.expires_on ? ` · ${t("admin.pages.inventory.expLabel").replace("{date}", b.expires_on)}` : ""}
+                      </span>
+                      <span className="font-medium">{b.qty_remaining}/{b.qty_received}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--admin-muted)]">
+                {t("admin.pages.inventory.activityHeading")}
+              </h4>
+              <div className="flex flex-col gap-1 text-xs">
+                {transactions.length === 0 ? (
+                  <p className="text-[var(--admin-muted)]">{t("admin.pages.inventory.noTransactions")}</p>
+                ) : (
+                  transactions.slice(0, 10).map((tx) => (
+                    <div key={tx.id} className="flex items-center justify-between rounded-md border border-[var(--admin-border)] px-2 py-1.5">
+                      <span className="capitalize">{tx.type}{tx.reason_code ? ` · ${tx.reason_code.replace(/_/g, " ")}` : ""}</span>
+                      <span className="font-medium">{tx.qty}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </SideDrawer>
 
       <ItemFormDialog
         open={itemDialog.open}

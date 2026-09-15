@@ -389,7 +389,6 @@ export const adminEn = {
   "admin.pages.inventory.colContact": "Contact",
   "admin.pages.inventory.colPhone": "Phone",
   "admin.pages.inventory.colEmail": "Email",
-  "admin.pages.inventory.selectItemHint": "Select an item to see batches and history.",
   "admin.pages.inventory.stockSummary": "{qty} {unit} on hand · min {min}",
   "admin.pages.inventory.receiveStock": "Receive stock",
   "admin.pages.inventory.recount": "Recount",

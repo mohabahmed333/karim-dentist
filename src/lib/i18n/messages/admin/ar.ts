@@ -391,7 +391,6 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.pages.inventory.colContact": "جهة الاتصال",
   "admin.pages.inventory.colPhone": "الهاتف",
   "admin.pages.inventory.colEmail": "البريد الإلكتروني",
-  "admin.pages.inventory.selectItemHint": "اختر صنفًا لعرض الدفعات والسجل.",
   "admin.pages.inventory.stockSummary": "{qty} {unit} متوفر · الحد الأدنى {min}",
   "admin.pages.inventory.receiveStock": "استلام مخزون",
   "admin.pages.inventory.recount": "جرد",
