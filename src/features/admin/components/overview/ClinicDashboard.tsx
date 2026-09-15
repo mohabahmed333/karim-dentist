@@ -76,6 +76,11 @@ type Props = {
   canViewInventory?: boolean;
   billingStats?: BillingChartStats | null;
   inventoryStats?: InventoryChartStats | null;
+  /** Billing a patient straight from their appointment. Fails closed. */
+  canPropose?: boolean;
+  /** The signed-in doctor, so billing doesn't ask them who they are. */
+  currentDoctorId?: string | null;
+  canPickDoctor?: boolean;
 };
 
 export function ClinicDashboard({
@@ -100,6 +105,9 @@ export function ClinicDashboard({
   canViewInventory = false,
   billingStats = null,
   inventoryStats = null,
+  canPropose = false,
+  currentDoctorId = null,
+  canPickDoctor = true,
 }: Props) {
   const [clinicReservation, setClinicReservation] =
     useState<Reservation | null>(null);
@@ -355,6 +363,9 @@ export function ClinicDashboard({
         onClose={() => setClinicReservation(null)}
         skipRemoteLoad={demoMode}
         demoClinical={demoMode ? demoClinical : null}
+        canPropose={canPropose}
+        currentDoctorId={currentDoctorId}
+        canPickDoctor={canPickDoctor}
       />
     </>
   );

@@ -70,6 +70,8 @@ export default async function PatientWorkspacePage({ params }: Props) {
       canPropose={session.permissions.has("patients.treatments.edit")}
       canEditBilling={session.permissions.has("patients.billing.edit")}
       billingBalance={ledger.balance}
+      currentDoctorId={session.isDoctor ? session.user!.id : null}
+      canPickDoctor={!session.isDoctor}
     />
   );
 }

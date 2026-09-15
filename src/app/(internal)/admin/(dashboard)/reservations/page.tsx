@@ -23,7 +23,7 @@ type PageProps = {
 export default async function AdminReservationsPage({
   searchParams,
 }: PageProps) {
-  await requirePagePermission("reservations.view");
+  const session = await requirePagePermission("reservations.view");
   const raw = await reservationFiltersCache.parse(searchParams);
   const filters = resolveReservationFilters(raw, defaultMonthFromTo());
 
@@ -62,6 +62,9 @@ export default async function AdminReservationsPage({
         tableTotal={tablePage.total}
         services={services.data ?? []}
         doctors={doctors}
+        canPropose={session.permissions.has("patients.treatments.edit")}
+        currentDoctorId={session.isDoctor ? session.user!.id : null}
+        canPickDoctor={!session.isDoctor}
       />
     </Suspense>
   );

@@ -3401,6 +3401,7 @@ export type Database = {
           decided_by: string | null
           doctor_id: string
           id: string
+          note: string
           patient_key: string
           reservation_id: string | null
           status: "sent" | "accepted" | "declined"
@@ -3411,6 +3412,7 @@ export type Database = {
           decided_by?: string | null
           doctor_id: string
           id?: string
+          note?: string
           patient_key: string
           reservation_id?: string | null
           status?: "sent" | "accepted" | "declined"
@@ -3421,6 +3423,7 @@ export type Database = {
           decided_by?: string | null
           doctor_id?: string
           id?: string
+          note?: string
           patient_key?: string
           reservation_id?: string | null
           status?: "sent" | "accepted" | "declined"

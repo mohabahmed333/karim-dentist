@@ -23,6 +23,35 @@ function mapItems(
   }));
 }
 
+/** The columns every read below needs — one list, so they cannot drift apart. */
+const PROPOSAL_COLUMNS =
+  "id, patient_key, doctor_id, status, created_at, reservation_id, note";
+
+type ProposalRow = {
+  id: string;
+  patient_key: string;
+  doctor_id: string;
+  status: string;
+  created_at: string;
+  reservation_id: string | null;
+  note: string | null;
+};
+
+/** Pure — one proposal row plus its already-mapped items. */
+function mapProposal(row: ProposalRow, items: ProposalItem[]): PendingProposal {
+  return {
+    id: row.id,
+    patientKey: row.patient_key,
+    doctorId: row.doctor_id,
+    status: row.status as ProposalStatus,
+    createdAt: row.created_at,
+    items,
+    total: proposalTotal(items),
+    reservationId: row.reservation_id,
+    note: row.note ?? "",
+  };
+}
+
 /** Every proposal still awaiting a decision, for this patient, newest first. */
 export async function listPendingProposals(
   supabase: ServerSupabase,
@@ -30,7 +59,7 @@ export async function listPendingProposals(
 ): Promise<PendingProposal[]> {
   const { data: proposals, error: proposalsError } = await supabase
     .from("treatment_proposals")
-    .select("id, patient_key, doctor_id, status, created_at, reservation_id")
+    .select(PROPOSAL_COLUMNS)
     .eq("patient_key", patientKey)
     .eq("status", "sent")
     .order("created_at", { ascending: false });
@@ -46,21 +75,12 @@ export async function listPendingProposals(
     );
   if (itemsError) throw itemsError;
 
-  return proposals.map((proposal) => {
-    const proposalItems = mapItems(
-      (items ?? []).filter((item) => item.proposal_id === proposal.id),
-    );
-    return {
-      id: proposal.id,
-      patientKey: proposal.patient_key,
-      doctorId: proposal.doctor_id,
-      status: proposal.status as ProposalStatus,
-      createdAt: proposal.created_at,
-      items: proposalItems,
-      total: proposalTotal(proposalItems),
-      reservationId: proposal.reservation_id,
-    };
-  });
+  return proposals.map((proposal) =>
+    mapProposal(
+      proposal,
+      mapItems((items ?? []).filter((item) => item.proposal_id === proposal.id)),
+    ),
+  );
 }
 
 /**
@@ -74,7 +94,7 @@ export async function getProposalWithItems(
 ): Promise<PendingProposal | null> {
   const { data: proposal, error: proposalError } = await supabase
     .from("treatment_proposals")
-    .select("id, patient_key, doctor_id, status, created_at, reservation_id")
+    .select(PROPOSAL_COLUMNS)
     .eq("id", proposalId)
     .maybeSingle();
   if (proposalError) throw proposalError;
@@ -86,17 +106,7 @@ export async function getProposalWithItems(
     .eq("proposal_id", proposalId);
   if (itemsError) throw itemsError;
 
-  const proposalItems = mapItems(items ?? []);
-  return {
-    id: proposal.id,
-    patientKey: proposal.patient_key,
-    doctorId: proposal.doctor_id,
-    status: proposal.status as ProposalStatus,
-    createdAt: proposal.created_at,
-    items: proposalItems,
-    total: proposalTotal(proposalItems),
-    reservationId: proposal.reservation_id,
-  };
+  return mapProposal(proposal, mapItems(items ?? []));
 }
 
 export type PendingProposalWithPatient = PendingProposal & {
@@ -123,7 +133,7 @@ export async function listAllPendingProposals(
 ): Promise<PendingProposalWithPatient[]> {
   const { data: proposals, error: proposalsError } = await supabase
     .from("treatment_proposals")
-    .select("id, patient_key, doctor_id, status, created_at, reservation_id")
+    .select(PROPOSAL_COLUMNS)
     .eq("status", "sent")
     .order("created_at", { ascending: false });
   if (proposalsError) throw proposalsError;
@@ -138,21 +148,12 @@ export async function listAllPendingProposals(
     );
   if (itemsError) throw itemsError;
 
-  const pending: PendingProposal[] = proposals.map((proposal) => {
-    const proposalItems = mapItems(
-      (items ?? []).filter((item) => item.proposal_id === proposal.id),
-    );
-    return {
-      id: proposal.id,
-      patientKey: proposal.patient_key,
-      doctorId: proposal.doctor_id,
-      status: proposal.status as ProposalStatus,
-      createdAt: proposal.created_at,
-      items: proposalItems,
-      total: proposalTotal(proposalItems),
-      reservationId: proposal.reservation_id,
-    };
-  });
+  const pending: PendingProposal[] = proposals.map((proposal) =>
+    mapProposal(
+      proposal,
+      mapItems((items ?? []).filter((item) => item.proposal_id === proposal.id)),
+    ),
+  );
 
   const reservations = await listReservationsServer(supabase).catch(() => []);
   const directory = groupReservationsByPatient(reservations);

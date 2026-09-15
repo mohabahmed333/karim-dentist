@@ -74,6 +74,11 @@ export function PendingBillingRequestsList({ proposals, doctors }: Props) {
             <p className="mt-1 text-sm font-semibold text-[var(--admin-text)]">
               {t("admin.billing.total")}: {formatEgp(proposal.total, locale)}
             </p>
+            {proposal.note ? (
+              <p className="mt-1 text-xs italic text-[var(--admin-muted)]">
+                {t("admin.billing.noteLabel")}: {proposal.note}
+              </p>
+            ) : null}
             <div className="mt-2 flex flex-wrap gap-2">
               <Button type="button" size="sm" disabled={pendingId === proposal.id} onClick={() => void settle(proposal.id, "cash")}>
                 {t("admin.billing.collectCash")}

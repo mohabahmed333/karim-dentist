@@ -89,6 +89,8 @@ export function ClinicalAiScene({ active }: Props) {
         canPropose={false}
         canEditBilling={false}
         billingBalance={0}
+        currentDoctorId={null}
+        canPickDoctor={false}
       />
     </ShowreelAdminSceneFrame>
   );

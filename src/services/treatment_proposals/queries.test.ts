@@ -28,6 +28,7 @@ describe("attachPatientInfo", () => {
         items: [],
         total: 0,
         reservationId: null,
+        note: "",
       },
     ];
     const directory = [{ patientKey: "pk1", displayName: "Sara", phone: "0100", visits: [] }];
@@ -47,6 +48,7 @@ describe("attachPatientInfo", () => {
         items: [],
         total: 0,
         reservationId: null,
+        note: "",
       },
     ];
     const result = attachPatientInfo(proposals, []);

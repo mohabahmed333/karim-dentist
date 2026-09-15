@@ -16,4 +16,6 @@ export type PendingProposal = {
   items: ProposalItem[];
   total: number;
   reservationId: string | null;
+  /** The doctor's message to whoever settles this — "" when they left it blank. */
+  note: string;
 };

@@ -45,6 +45,8 @@ type Props = {
   onDeleteClick: () => void;
   onStatus: (status: Reservation["status"]) => void;
   errors?: ReservationFieldErrors;
+  /** Omitted when the user can't create billing requests. */
+  onBill?: () => void;
 };
 
 export function ReservationFormDrawer({
@@ -62,6 +64,7 @@ export function ReservationFormDrawer({
   onDeleteClick,
   onStatus,
   errors,
+  onBill,
 }: Props) {
   const t = useTranslations();
   const [mode, setMode] = useState<Mode>("view");
@@ -166,6 +169,16 @@ export function ReservationFormDrawer({
               >
                 {t("admin.reservations.completed")}
               </Button>
+              {onBill ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={onBill}
+                >
+                  {t("admin.billing.billPatient")}
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 disabled={pending}

@@ -27,6 +27,8 @@ import {
 } from "@/features/admin/lib/adminDemoClinical";
 import { useAdminDrawerSide } from "@/features/admin/hooks/useAdminDrawerSide";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { BillPatientDialog } from "@/features/admin/components/billing/BillPatientDialog";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   open: boolean;
@@ -37,6 +39,10 @@ type Props = {
   skipRemoteLoad?: boolean;
   /** Showreel: seed imaging/notes for the schedule patient with real fixtures. */
   demoClinical?: AdminDemoClinical | null;
+  /** Billing this visit straight from the drawer. Fails closed. */
+  canPropose?: boolean;
+  currentDoctorId?: string | null;
+  canPickDoctor?: boolean;
 };
 
 export function HomePatientClinicDrawer({
@@ -46,7 +52,12 @@ export function HomePatientClinicDrawer({
   onClose,
   skipRemoteLoad = false,
   demoClinical = null,
+  canPropose = false,
+  currentDoctorId = null,
+  canPickDoctor = true,
 }: Props) {
+  const t = useTranslations();
+  const [billOpen, setBillOpen] = useState(false);
   const directory = useMemo(
     () => groupReservationsByPatient(reservations),
     [reservations],
@@ -147,6 +158,18 @@ export function HomePatientClinicDrawer({
                 .join(" · ")}
             </p>
           </div>
+          {canPropose && !skipRemoteLoad && reservation ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setBillOpen(true);
+              }}
+              className="shrink-0 rounded-md bg-[var(--admin-primary)] px-2.5 py-1.5 text-[12px] font-semibold text-white hover:opacity-90"
+            >
+              {t("admin.billing.billVisit")}
+            </button>
+          ) : null}
           <button
             type="button"
             aria-label="Close"
@@ -174,6 +197,25 @@ export function HomePatientClinicDrawer({
             />
           )}
         </div>
+        {reservation ? (
+          <BillPatientDialog
+            open={billOpen}
+            onOpenChange={setBillOpen}
+            patientKey={group.patientKey}
+            patientPhone={group.phone}
+            patientName={group.displayName}
+            reservations={group.visits}
+            visit={{
+              id: reservation.id,
+              serviceId: reservation.service_id,
+              serviceLabel: reservation.service_label,
+              startsAt: reservation.starts_at,
+              doctorId: reservation.doctor_id,
+            }}
+            currentDoctorId={currentDoctorId}
+            canPickDoctor={canPickDoctor}
+          />
+        ) : null}
       </SheetContent>
     </Sheet>
   );

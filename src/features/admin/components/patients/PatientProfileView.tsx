@@ -21,6 +21,8 @@ type Props = {
   canPropose: boolean;
   canEditBilling: boolean;
   billingBalance: number;
+  currentDoctorId: string | null;
+  canPickDoctor: boolean;
 };
 
 export function PatientProfileView({
@@ -35,6 +37,8 @@ export function PatientProfileView({
   canPropose,
   canEditBilling,
   billingBalance,
+  currentDoctorId,
+  canPickDoctor,
 }: Props) {
   return (
     <PatientWorkspaceView
@@ -49,6 +53,8 @@ export function PatientProfileView({
       canPropose={canPropose}
       canEditBilling={canEditBilling}
       billingBalance={billingBalance}
+      currentDoctorId={currentDoctorId}
+      canPickDoctor={canPickDoctor}
     />
   );
 }

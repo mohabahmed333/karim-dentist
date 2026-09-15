@@ -9,6 +9,8 @@ import { AdminReservationFilters } from "@/features/admin/components/AdminReserv
 import { CollectionTable } from "@/features/admin/components/CollectionTable";
 import { ConfirmDeleteDialog } from "@/features/admin/components/ConfirmDeleteDialog";
 import { ConsumablesCheckoutDialog } from "@/features/admin/components/inventory/ConsumablesCheckoutDialog";
+import { BillPatientDialog } from "@/features/admin/components/billing/BillPatientDialog";
+import { patientKeyFromReservation } from "@/services/reservations/patientHistory";
 import { ReservationFormDialog } from "@/features/admin/components/reservations/ReservationFormDialog";
 import { ReservationFormDrawer } from "@/features/admin/components/reservations/ReservationFormDrawer";
 import { ReservationsPageSkeleton } from "@/features/admin/components/reservations/ReservationsPageSkeleton";
@@ -66,6 +68,10 @@ type Props = {
   tableTotal: number;
   services: Service[];
   doctors?: DoctorProfile[];
+  /** Billing a patient from their booking. Fails closed. */
+  canPropose?: boolean;
+  currentDoctorId?: string | null;
+  canPickDoctor?: boolean;
 };
 
 export function ReservationsPageView({
@@ -74,7 +80,11 @@ export function ReservationsPageView({
   tableTotal,
   services,
   doctors = [],
+  canPropose = false,
+  currentDoctorId = null,
+  canPickDoctor = true,
 }: Props) {
+  const [billReservation, setBillReservation] = useState<Reservation | null>(null);
   const t = useTranslations();
   const { locale } = useLocale();
   const reduced = useReducedMotion();
@@ -521,6 +531,14 @@ export function ReservationsPageView({
         onDeleteClick={() => editor.setDeleteOpen(true)}
         onStatus={(status) => void editor.setStatus(status)}
         errors={editor.errors}
+        onBill={
+          canPropose && editId
+            ? () => {
+                const row = editor.items.find((r) => r.id === editId) ?? null;
+                if (row) setBillReservation(row);
+              }
+            : undefined
+        }
       />
 
       <ConfirmDeleteDialog
@@ -533,6 +551,28 @@ export function ReservationsPageView({
       />
 
       <ConsumablesCheckoutDialog {...editor.checkoutDialog} />
+
+      {billReservation ? (
+        <BillPatientDialog
+          open
+          onOpenChange={(next) => {
+            if (!next) setBillReservation(null);
+          }}
+          patientKey={patientKeyFromReservation(billReservation)}
+          patientPhone={billReservation.phone}
+          patientName={billReservation.patient_name}
+          reservations={[billReservation]}
+          visit={{
+            id: billReservation.id,
+            serviceId: billReservation.service_id,
+            serviceLabel: billReservation.service_label,
+            startsAt: billReservation.starts_at,
+            doctorId: billReservation.doctor_id,
+          }}
+          currentDoctorId={currentDoctorId}
+          canPickDoctor={canPickDoctor}
+        />
+      ) : null}
     </div>
   );
 }

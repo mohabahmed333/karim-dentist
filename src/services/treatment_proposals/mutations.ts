@@ -15,6 +15,7 @@ export async function insertProposal(
       patient_key: patientKey,
       doctor_id: input.doctorId,
       reservation_id: input.reservationId ?? null,
+      note: input.note ?? "",
     })
     .select("id")
     .single();

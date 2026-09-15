@@ -24,6 +24,7 @@ import {
 import type { PriceableDoctor } from "@/services/service_doctors/pricing";
 import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
 import { AddChargeForm } from "../billing/AddChargeForm";
+import { BillPatientDialog } from "@/features/admin/components/billing/BillPatientDialog";
 import { formatEgp } from "@/services/deposits/receiptMessages";
 import { useLocale } from "@/lib/i18n";
 
@@ -48,6 +49,9 @@ type Props = {
   canPropose: boolean;
   canEditBilling: boolean;
   billingBalance: number;
+  /** The signed-in doctor, so billing doesn't ask them who they are. */
+  currentDoctorId: string | null;
+  canPickDoctor: boolean;
 };
 
 export function PatientWorkspaceView(props: Props) {
@@ -63,10 +67,13 @@ export function PatientWorkspaceView(props: Props) {
     canPropose,
     canEditBilling,
     billingBalance,
+    currentDoctorId,
+    canPickDoctor,
   } = props;
   const { locale } = useLocale();
   const [balance, setBalance] = useState(billingBalance);
   const [billingOpen, setBillingOpen] = useState(false);
+  const [billDialogOpen, setBillDialogOpen] = useState(false);
   const [wizardLaunch, setWizardLaunch] = useState<WizardLaunch | null>(null);
   const w = usePatientWorkspace(
     group,
@@ -112,7 +119,10 @@ export function PatientWorkspaceView(props: Props) {
           : `relative -m-4 flex h-[calc(100dvh-4.5rem)] min-h-0 flex-col ${PATIENT_SHELL} md:-m-6`
       }
     >
-      <WorkspaceHeader group={group} />
+      <WorkspaceHeader
+        group={group}
+        onBill={canPropose ? () => setBillDialogOpen(true) : undefined}
+      />
       <div className="relative grid min-h-0 flex-1 items-stretch lg:grid-cols-2">
         <div
           data-showreel-action="clinical-chart"
@@ -151,6 +161,8 @@ export function PatientWorkspaceView(props: Props) {
             doctors={doctors}
             serviceDoctorMappings={serviceDoctorMappings}
             canPropose={canPropose}
+            currentDoctorId={currentDoctorId}
+            canPickDoctor={canPickDoctor}
           />
         </div>
       </div>
@@ -183,6 +195,16 @@ export function PatientWorkspaceView(props: Props) {
         </div>
       ) : null}
       <WorkspaceOverlays group={group} services={services} w={w} />
+      <BillPatientDialog
+        open={billDialogOpen}
+        onOpenChange={setBillDialogOpen}
+        patientKey={group.patientKey}
+        patientPhone={group.phone}
+        patientName={group.displayName}
+        reservations={group.visits}
+        currentDoctorId={currentDoctorId}
+        canPickDoctor={canPickDoctor}
+      />
     </div>
   );
 }

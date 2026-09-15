@@ -216,6 +216,9 @@ export default async function AdminOverviewPage({ searchParams }: PageProps) {
       canViewInventory={canViewInventory}
       billingStats={billingStats}
       inventoryStats={inventoryStats}
+      canPropose={session.permissions.has("patients.treatments.edit")}
+      currentDoctorId={session.isDoctor ? session.user!.id : null}
+      canPickDoctor={!session.isDoctor}
     />
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import {
   AdminSelectItem,
   AdminSelectTrigger,
   AdminSelectValue,
+  AdminTextarea,
 } from "@/features/admin/ui";
 import { useTranslations } from "@/lib/i18n";
 import { saveTreatmentProposal } from "@/services/treatment_proposals/actions";
@@ -52,6 +53,18 @@ type Props = {
   initialDoctorId?: string;
   initialItems?: DraftItem[];
   initialReservationId?: string | null;
+  /**
+   * Hide the doctor picker because we already know who is billing — a doctor
+   * billing their own patient shouldn't have to find themselves in a list.
+   * Ignored without an `initialDoctorId`, so it can never hide the only way
+   * to set a required field.
+   */
+  lockDoctor?: boolean;
+  /** Drop the Card wrapper — inside a dialog it double-pads. */
+  bare?: boolean;
+  /** `null` hides the heading, for a dialog that has its own title. */
+  title?: string | null;
+  submitLabel?: string;
 };
 
 export function ProposeServicesForm({
@@ -66,12 +79,19 @@ export function ProposeServicesForm({
   initialDoctorId,
   initialItems,
   initialReservationId,
+  lockDoctor = false,
+  bare = false,
+  title,
+  submitLabel,
 }: Props) {
   const t = useTranslations();
   const [doctorId, setDoctorId] = useState(initialDoctorId ?? "");
   const [items, setItems] = useState<DraftItem[]>(initialItems ?? [emptyItem()]);
   const [reservationId, setReservationId] = useState(initialReservationId ?? NO_RESERVATION);
+  const [note, setNote] = useState("");
   const [pending, setPending] = useState(false);
+  const hideDoctor = lockDoctor && Boolean(initialDoctorId);
+  const heading = title === undefined ? t("admin.billing.proposal.title") : title;
 
   function patchItem(index: number, partial: Partial<DraftItem>) {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...partial } : item)));
@@ -115,10 +135,13 @@ export function ProposeServicesForm({
         doctorId,
         items: parsedItems,
         reservationId: reservationId === NO_RESERVATION ? null : reservationId,
+        note: note.trim() || undefined,
       });
-      setDoctorId("");
+      // A locked doctor is who the user is, not a choice they made — keep it.
+      if (!hideDoctor) setDoctorId("");
       setItems([emptyItem()]);
       setReservationId(NO_RESERVATION);
+      setNote("");
       toast.success(t("admin.billing.proposal.sent"));
       onSent();
     } catch (err) {
@@ -128,21 +151,27 @@ export function ProposeServicesForm({
     }
   }
 
+  const Wrapper = bare ? BareWrapper : CardWrapper;
+
   return (
-    <Card className="h-full gap-3 bg-transparent p-6">
-      <p className="text-sm font-medium text-[var(--admin-text)]">{t("admin.billing.proposal.title")}</p>
-      <AdminSelect value={doctorId} onValueChange={(value) => setDoctorId(String(value))}>
-        <AdminSelectTrigger>
-          <AdminSelectValue placeholder={t("admin.billing.form.doctorPlaceholder")} />
-        </AdminSelectTrigger>
-        <AdminSelectContent>
-          {doctors.map((doctor) => (
-            <AdminSelectItem key={doctor.id} value={doctor.id}>
-              {doctor.display_name ?? t("admin.billing.form.unnamedDoctor")}
-            </AdminSelectItem>
-          ))}
-        </AdminSelectContent>
-      </AdminSelect>
+    <Wrapper>
+      {heading ? (
+        <p className="text-sm font-medium text-[var(--admin-text)]">{heading}</p>
+      ) : null}
+      {hideDoctor ? null : (
+        <AdminSelect value={doctorId} onValueChange={(value) => setDoctorId(String(value))}>
+          <AdminSelectTrigger>
+            <AdminSelectValue placeholder={t("admin.billing.form.doctorPlaceholder")} />
+          </AdminSelectTrigger>
+          <AdminSelectContent>
+            {doctors.map((doctor) => (
+              <AdminSelectItem key={doctor.id} value={doctor.id}>
+                {doctor.display_name ?? t("admin.billing.form.unnamedDoctor")}
+              </AdminSelectItem>
+            ))}
+          </AdminSelectContent>
+        </AdminSelect>
+      )}
 
       {reservations.length > 0 ? (
         <AdminSelect
@@ -194,9 +223,26 @@ export function ProposeServicesForm({
       <Button type="button" variant="outline" size="sm" onClick={() => setItems((prev) => [...prev, emptyItem()])}>
         {t("admin.billing.proposal.addService")}
       </Button>
+      <AdminTextarea
+        rows={2}
+        maxLength={500}
+        value={note}
+        placeholder={t("admin.billing.proposal.notePlaceholder")}
+        onChange={(e) => setNote(e.target.value)}
+      />
       <Button type="button" disabled={pending} onClick={() => void onSubmit()}>
-        {pending ? t("admin.billing.proposal.sending") : t("admin.billing.proposal.send")}
+        {pending
+          ? t("admin.billing.proposal.sending")
+          : (submitLabel ?? t("admin.billing.proposal.send"))}
       </Button>
-    </Card>
+    </Wrapper>
   );
+}
+
+function CardWrapper({ children }: { children: ReactNode }) {
+  return <Card className="h-full gap-3 bg-transparent p-6">{children}</Card>;
+}
+
+function BareWrapper({ children }: { children: ReactNode }) {
+  return <div className="flex flex-col gap-3">{children}</div>;
 }

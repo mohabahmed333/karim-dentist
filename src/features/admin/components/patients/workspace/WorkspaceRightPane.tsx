@@ -32,6 +32,8 @@ type Props = {
   doctors: PriceableDoctor[];
   serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
   canPropose: boolean;
+  currentDoctorId: string | null;
+  canPickDoctor: boolean;
 };
 
 export function WorkspaceRightPane(props: Props) {
@@ -53,6 +55,8 @@ export function WorkspaceRightPane(props: Props) {
         doctors={props.doctors}
         serviceDoctorMappings={props.serviceDoctorMappings}
         canPropose={props.canPropose}
+        currentDoctorId={props.currentDoctorId}
+        canPickDoctor={props.canPickDoctor}
       />
     </div>
   );

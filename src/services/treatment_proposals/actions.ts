@@ -2,6 +2,13 @@
 
 import { requirePermission } from "@/lib/api/requirePermission";
 import { createServiceClient } from "@/lib/supabase/service";
+import { listDoctors } from "@/services/profiles";
+import { listAllServiceDoctorMappings } from "@/services/service_doctors/queries";
+import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
+import type {
+  PriceableDoctor,
+  PriceableService,
+} from "@/services/service_doctors/pricing";
 import { createProposalSchema } from "./schemas";
 import { insertProposal, decideProposal, createTreatmentsFromProposal } from "./mutations";
 import { enqueueTreatmentProposalNotification } from "./notify";
@@ -10,6 +17,42 @@ import { addBillingEntry } from "@/services/patient_billing/mutations";
 import { sendBillingPaymentRequest } from "@/services/billing_payments/notify";
 import { groupReservationsByPatient } from "@/services/reservations/patientHistory";
 import { listReservationsServer } from "@/services/reservations/queries";
+
+export type BillingFormOptions = {
+  services: PriceableService[];
+  doctors: PriceableDoctor[];
+  serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
+};
+
+/**
+ * Everything the "Bill patient" dialog needs to render its pickers.
+ *
+ * Fetched on demand rather than threaded as props: the dialog opens from the
+ * overview drawer and the bookings drawer too, and neither of those pages
+ * loads the service catalog or the doctor list today. Patient-agnostic — the
+ * caller already knows which patient it is billing.
+ */
+export async function loadBillingFormOptions(): Promise<BillingFormOptions> {
+  const auth = await requirePermission("patients.treatments.edit");
+  if (auth.error) throw new Error("Forbidden");
+
+  const [servicesRes, doctors, serviceDoctorMappings] = await Promise.all([
+    auth.supabase
+      .from("services")
+      .select("id, title, title_ar, price_label")
+      .is("deleted_at", null)
+      .order("sort_order", { ascending: true }),
+    listDoctors(auth.supabase),
+    listAllServiceDoctorMappings(auth.supabase),
+  ]);
+  if (servicesRes.error) throw servicesRes.error;
+
+  return {
+    services: servicesRes.data ?? [],
+    doctors: doctors.map((d) => ({ id: d.id, display_name: d.display_name })),
+    serviceDoctorMappings,
+  };
+}
 
 export async function saveTreatmentProposal(
   patientKey: string,

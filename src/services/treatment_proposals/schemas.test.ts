@@ -84,4 +84,31 @@ describe("createProposalSchema", () => {
       }),
     );
   });
+
+  it("carries a note for the front desk, trimmed", () => {
+    const parsed = createProposalSchema.parse({
+      doctorId: "11111111-1111-4111-8111-111111111111",
+      items: [{ serviceId: "22222222-2222-4222-8222-222222222222", description: "Root canal", amountEgp: 1500 }],
+      note: "  Patient asked to pay half today  ",
+    });
+    assert.equal(parsed.note, "Patient asked to pay half today");
+  });
+
+  it("leaves the note absent when the doctor had nothing to add", () => {
+    const parsed = createProposalSchema.parse({
+      doctorId: "11111111-1111-4111-8111-111111111111",
+      items: [{ serviceId: "22222222-2222-4222-8222-222222222222", description: "Root canal", amountEgp: 1500 }],
+    });
+    assert.equal(parsed.note, undefined);
+  });
+
+  it("rejects a note too long to be a note", () => {
+    assert.throws(() =>
+      createProposalSchema.parse({
+        doctorId: "11111111-1111-4111-8111-111111111111",
+        items: [{ serviceId: "22222222-2222-4222-8222-222222222222", description: "Root canal", amountEgp: 1500 }],
+        note: "x".repeat(501),
+      }),
+    );
+  });
 });
