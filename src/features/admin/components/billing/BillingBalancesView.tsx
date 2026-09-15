@@ -7,14 +7,21 @@ import { LocalizedAdminPageHeader } from "@/features/admin/components/LocalizedA
 import { AdminPageMotion } from "@/features/admin/components/AdminPageMotion";
 import { patientProfilePath } from "@/services/reservations/patientHistory";
 import type { PatientBalance } from "@/services/patient_billing/types";
+import type { PendingProposalWithPatient } from "@/services/treatment_proposals/queries";
+import type { BillingPaymentQueueRow } from "@/services/billing_payments/queries";
 import { formatEgp } from "@/services/deposits/receiptMessages";
 import { useLocale, useTranslations } from "@/lib/i18n";
+import { PendingBillingRequestsList } from "./PendingBillingRequestsList";
+import { BillingPaymentReviewList } from "./BillingPaymentReviewList";
 
 type Props = {
   balances: PatientBalance[];
+  proposals: PendingProposalWithPatient[];
+  paymentQueue: BillingPaymentQueueRow[];
+  doctors: { id: string; display_name: string | null }[];
 };
 
-export function BillingBalancesView({ balances }: Props) {
+export function BillingBalancesView({ balances, proposals, paymentQueue, doctors }: Props) {
   const router = useRouter();
   const t = useTranslations();
   const { locale } = useLocale();
@@ -52,6 +59,8 @@ export function BillingBalancesView({ balances }: Props) {
         titleKey="admin.nav.billing"
         descriptionKey="admin.billing.clinicDescription"
       />
+      <PendingBillingRequestsList proposals={proposals} doctors={doctors} />
+      <BillingPaymentReviewList rows={paymentQueue} />
       <Card className="bg-transparent p-0">
         <CollectionTable
           rows={balances}
