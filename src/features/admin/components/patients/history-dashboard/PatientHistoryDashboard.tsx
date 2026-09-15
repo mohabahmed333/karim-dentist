@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ClinicalCanvasLtr } from "@/features/admin/components/ClinicalCanvasLtr";
 import { ConfirmDeleteDialog } from "@/features/admin/components/ConfirmDeleteDialog";
 import { ConsumablesCheckoutDialog } from "@/features/admin/components/inventory/ConsumablesCheckoutDialog";
+import { useTranslations } from "@/lib/i18n";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 import type { PatientImaging } from "@/services/patient_imaging";
 import type { PatientToothNote } from "@/services/patient_tooth_notes";
@@ -44,6 +45,7 @@ export function PatientHistoryDashboard({
   services,
   directory,
 }: Props) {
+  const t = useTranslations();
   const [records, setRecords] = useState<RecordsPane | null>(null);
   const clinicalNotes = useClinicalNotes(group.patientKey);
   const notesChart = usePatientToothNotes(group.patientKey, notes);
@@ -96,8 +98,8 @@ export function PatientHistoryDashboard({
           if (!open) imagingChart.setDeleteId(null);
         }}
         pending={imagingChart.pending}
-        title="Remove this X-ray?"
-        description="This deletes the imaging record. The file may remain in storage."
+        title={t("admin.patients.deleteXrayTitle")}
+        description={t("admin.patients.deleteXrayDesc")}
         onConfirm={imagingChart.confirmDelete}
       />
       <ConfirmDeleteDialog
@@ -106,8 +108,8 @@ export function PatientHistoryDashboard({
           if (!open) notesChart.setDeleteNoteId(null);
         }}
         pending={notesChart.pending}
-        title="Remove this note?"
-        description="This deletes the note and its attachments from this tooth."
+        title={t("admin.patients.deleteNoteTitle")}
+        description={t("admin.patients.deleteNoteDesc")}
         onConfirm={notesChart.confirmDeleteNote}
       />
       <ClinicalNoteModal

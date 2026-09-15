@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ClipboardList } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/features/admin/components/ConfirmDeleteDialog";
+import { useTranslations } from "@/lib/i18n";
 import { toothName } from "@/services/patient_tooth_findings/fdi";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 import type { Service } from "@/services/services/types";
@@ -28,6 +29,7 @@ export function RequiredTreatmentsSection({
   selectedFdi,
   chart,
 }: Props) {
+  const t = useTranslations();
   const [menu, setMenu] = useState<{ x: number; y: number; id: string } | null>(
     null,
   );
@@ -44,7 +46,7 @@ export function RequiredTreatmentsSection({
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <h2 className="flex items-center gap-2 text-[15px] font-medium text-[#111111]">
           <ClipboardList className="size-4 text-[#6b7280]" />
-          Required treatments
+          {t("admin.patients.requiredTreatmentsHeading")}
         </h2>
         <TreatmentsToolbar
           query={chart.query}
@@ -58,7 +60,7 @@ export function RequiredTreatmentsSection({
       <div className="flex-1 space-y-2 overflow-y-auto pb-2">
         {chart.visible.length === 0 ? (
           <p className="py-10 text-center text-sm text-[#9ca3af]">
-            No treatments yet. Select a tooth, then Add — or search in the form.
+            {t("admin.patients.noTreatmentsYet")}
           </p>
         ) : (
           chart.visible.map((item) => (
@@ -92,8 +94,8 @@ export function RequiredTreatmentsSection({
         scheduleLabel={
           menu &&
           chart.visible.find((row) => row.id === menu.id)?.appointment
-            ? "Replace appointment"
-            : "Schedule appointment"
+            ? t("admin.patients.replaceAppointment")
+            : t("admin.patients.scheduleAppointment")
         }
         onClose={() => setMenu(null)}
         onEdit={() => {
@@ -139,8 +141,8 @@ export function RequiredTreatmentsSection({
           if (!open) chart.setDeleteId(null);
         }}
         pending={chart.pending}
-        title="Remove this treatment?"
-        description="This deletes the required treatment record."
+        title={t("admin.patients.deleteTreatmentTitle")}
+        description={t("admin.patients.deleteTreatmentDesc")}
         onConfirm={chart.confirmDelete}
       />
     </section>

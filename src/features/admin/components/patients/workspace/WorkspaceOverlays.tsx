@@ -2,6 +2,7 @@
 
 import { ConfirmDeleteDialog } from "@/features/admin/components/ConfirmDeleteDialog";
 import { ConsumablesCheckoutDialog } from "@/features/admin/components/inventory/ConsumablesCheckoutDialog";
+import { useTranslations } from "@/lib/i18n";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 import type { Service } from "@/services/services/types";
 import { ClinicalNoteModal } from "../charting/ClinicalNoteModal";
@@ -16,6 +17,7 @@ type Props = {
 };
 
 export function WorkspaceOverlays({ group, services, w }: Props) {
+  const t = useTranslations();
   const chart = w.treatmentsChart;
 
   return (
@@ -51,8 +53,8 @@ export function WorkspaceOverlays({ group, services, w }: Props) {
           if (!open) chart.setDeleteId(null);
         }}
         pending={chart.pending}
-        title="Remove this treatment?"
-        description="This deletes the required treatment record."
+        title={t("admin.patients.deleteTreatmentTitle")}
+        description={t("admin.patients.deleteTreatmentDesc")}
         onConfirm={chart.confirmDelete}
       />
       <ConfirmDeleteDialog
@@ -61,8 +63,8 @@ export function WorkspaceOverlays({ group, services, w }: Props) {
           if (!open) w.notesChart.setDeleteNoteId(null);
         }}
         pending={w.notesChart.pending}
-        title="Remove this note?"
-        description="This deletes the note and its attachments from this tooth."
+        title={t("admin.patients.deleteNoteTitle")}
+        description={t("admin.patients.deleteNoteDesc")}
         onConfirm={w.notesChart.confirmDeleteNote}
       />
     </>

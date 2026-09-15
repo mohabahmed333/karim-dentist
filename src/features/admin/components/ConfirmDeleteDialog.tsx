@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "@/lib/i18n";
 
 type Props = {
   open: boolean;
@@ -22,17 +23,18 @@ type Props = {
 export function ConfirmDeleteDialog({
   open,
   onOpenChange,
-  title = "Delete item?",
-  description = "This cannot be undone from the admin list.",
+  title,
+  description,
   pending = false,
   onConfirm,
 }: Props) {
+  const t = useTranslations();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={!pending}>
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle>{title ?? t("admin.confirmDelete.defaultTitle")}</DialogTitle>
+          <DialogDescription>{description ?? t("admin.confirmDelete.defaultDesc")}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button
@@ -41,7 +43,7 @@ export function ConfirmDeleteDialog({
             disabled={pending}
             onClick={() => onOpenChange(false)}
           >
-            Cancel
+            {t("admin.cancel")}
           </Button>
           <Button
             type="button"
@@ -49,7 +51,7 @@ export function ConfirmDeleteDialog({
             disabled={pending}
             onClick={onConfirm}
           >
-            {pending ? "Deleting…" : "Delete"}
+            {pending ? t("admin.deleting") : t("admin.delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

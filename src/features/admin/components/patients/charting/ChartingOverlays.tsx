@@ -1,6 +1,7 @@
 "use client";
 
 import { ConfirmDeleteDialog } from "@/features/admin/components/ConfirmDeleteDialog";
+import { useTranslations } from "@/lib/i18n";
 import type { PatientGroup } from "@/services/reservations/patientHistory";
 import type { Service } from "@/services/services/types";
 import { TreatmentBookDrawer } from "../treatments/TreatmentBookDrawer";
@@ -21,6 +22,7 @@ export function ChartingOverlays({
   services,
   treatmentsChart,
 }: Props) {
+  const t = useTranslations();
   return (
     <>
       {tour.open ? (
@@ -49,8 +51,8 @@ export function ChartingOverlays({
           if (!open) treatmentsChart.setDeleteId(null);
         }}
         pending={treatmentsChart.pending}
-        title="Remove this treatment?"
-        description="This deletes the required treatment record."
+        title={t("admin.patients.deleteTreatmentTitle")}
+        description={t("admin.patients.deleteTreatmentDesc")}
         onConfirm={treatmentsChart.confirmDelete}
       />
     </>
