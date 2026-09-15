@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import { GripHorizontal, Minus, Plus, StickyNote, X } from "lucide-react";
 import { useAdminUiStore } from "@/features/admin/stores/adminUiStore";
@@ -17,6 +18,7 @@ const MAX_WIDTH = 480;
 const MIN_HEIGHT = 220;
 const MAX_HEIGHT = 640;
 const SAVE_DEBOUNCE_MS = 800;
+const VIEWPORT_MARGIN = 12;
 
 const COLOR_SWATCH: Record<string, string> = {
   yellow: "#f2b73d",
@@ -29,6 +31,21 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+/** Keeps the panel from being dragged (or left, after a resize/viewport
+ * change) somewhere the user can no longer reach to bring it back. */
+function clampToViewport(
+  pos: { x: number; y: number },
+  size: { width: number; height: number },
+) {
+  if (typeof window === "undefined") return pos;
+  const maxX = window.innerWidth - size.width - VIEWPORT_MARGIN;
+  const maxY = window.innerHeight - size.height - VIEWPORT_MARGIN;
+  return {
+    x: clamp(pos.x, VIEWPORT_MARGIN, Math.max(VIEWPORT_MARGIN, maxX)),
+    y: clamp(pos.y, VIEWPORT_MARGIN, Math.max(VIEWPORT_MARGIN, maxY)),
+  };
+}
+
 function timeAgo(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (mins < 1) return "now";
@@ -39,17 +56,20 @@ function timeAgo(iso: string): string {
 }
 
 export function NotesPanel() {
+  const reduced = useReducedMotion();
   const notes = useAdminNotesStore((state) => state.notes);
   const addNote = useAdminNotesStore((state) => state.addNote);
   const updateNote = useAdminNotesStore((state) => state.updateNote);
   const removeNote = useAdminNotesStore((state) => state.removeNote);
 
-  const position = useAdminUiStore((state) => state.notesPanelPosition);
+  const rawPosition = useAdminUiStore((state) => state.notesPanelPosition);
   const size = useAdminUiStore((state) => state.notesPanelSize);
   const minimized = useAdminUiStore((state) => state.notesPanelMinimized);
   const setPosition = useAdminUiStore((state) => state.setNotesPanelPosition);
   const setSize = useAdminUiStore((state) => state.setNotesPanelSize);
   const setMinimized = useAdminUiStore((state) => state.setNotesPanelMinimized);
+
+  const position = clampToViewport(rawPosition, size);
 
   const dragOrigin = useRef<{ mx: number; my: number; px: number; py: number } | null>(
     null,
@@ -58,6 +78,16 @@ export function NotesPanel() {
     null,
   );
   const [creating, setCreating] = useState(false);
+  const [focusId, setFocusId] = useState<string | null>(null);
+
+  // A saved position from a smaller/different screen can end up unreachable —
+  // snap it back on mount rather than only when the user next drags it.
+  useEffect(() => {
+    if (position.x !== rawPosition.x || position.y !== rawPosition.y) {
+      setPosition(position);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount only
+  }, []);
 
   if (notes.length === 0) return null;
 
@@ -67,10 +97,15 @@ export function NotesPanel() {
   }
   function onGripMove(e: PointerEvent) {
     if (!dragOrigin.current) return;
-    setPosition({
-      x: dragOrigin.current.px + (e.clientX - dragOrigin.current.mx),
-      y: dragOrigin.current.py + (e.clientY - dragOrigin.current.my),
-    });
+    setPosition(
+      clampToViewport(
+        {
+          x: dragOrigin.current.px + (e.clientX - dragOrigin.current.mx),
+          y: dragOrigin.current.py + (e.clientY - dragOrigin.current.my),
+        },
+        size,
+      ),
+    );
   }
   function onGripUp(e: PointerEvent) {
     dragOrigin.current = null;
@@ -104,7 +139,9 @@ export function NotesPanel() {
   async function handleAdd() {
     setCreating(true);
     try {
-      addNote(await createAdminNote(""));
+      const note = await createAdminNote("");
+      addNote(note);
+      setFocusId(note.id);
     } catch {
       toast.error("Could not add note");
     } finally {
@@ -121,102 +158,128 @@ export function NotesPanel() {
     }
   }
 
-  if (minimized) {
-    return (
-      <button
-        type="button"
-        onClick={() => setMinimized(false)}
-        className="fixed bottom-6 end-6 z-40 flex items-center gap-2 rounded-full border border-[var(--admin-border)] bg-[var(--admin-panel)] px-3 py-2 text-[12px] font-medium text-[var(--admin-text)] shadow-lg hover:bg-[var(--admin-hover)]"
-      >
-        <StickyNote className="size-3.5 text-[var(--admin-muted)]" />
-        {notes.length} {notes.length === 1 ? "note" : "notes"}
-      </button>
-    );
-  }
-
   return (
-    <div
-      style={{
-        position: "fixed",
-        left: position.x,
-        top: position.y,
-        width: size.width,
-        height: size.height,
-        zIndex: 40,
-      }}
-      className="flex flex-col overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)] shadow-[0_18px_50px_rgba(15,23,42,0.14)]"
-    >
-      <div
-        className="flex shrink-0 cursor-grab items-center justify-between border-b border-[var(--admin-border)] bg-[var(--admin-hover)]/40 px-3 py-2 active:cursor-grabbing"
-        onPointerDown={onGripDown}
-        onPointerMove={onGripMove}
-        onPointerUp={onGripUp}
-      >
-        <div className="flex items-center gap-1.5">
-          <GripHorizontal className="size-3.5 text-[var(--admin-muted)]" />
-          <span className="text-[12px] font-semibold text-[var(--admin-text)]">
-            Team notes
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            disabled={creating}
-            onClick={() => void handleAdd()}
-            aria-label="Add note"
-            className="flex size-5 items-center justify-center rounded text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]"
+    <AnimatePresence>
+      {minimized ? (
+        <motion.button
+          key="pill"
+          type="button"
+          onClick={() => setMinimized(false)}
+          initial={reduced ? false : { opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={reduced ? undefined : { opacity: 0, scale: 0.9 }}
+          transition={{ duration: 0.14 }}
+          className="fixed bottom-6 start-6 z-40 flex items-center gap-2 rounded-full border border-[var(--admin-border)] bg-[var(--admin-panel)] px-3 py-2 text-[12px] font-medium text-[var(--admin-text)] shadow-lg hover:bg-[var(--admin-hover)]"
+        >
+          <StickyNote className="size-3.5 text-[var(--admin-muted)]" />
+          {notes.length} {notes.length === 1 ? "note" : "notes"}
+        </motion.button>
+      ) : (
+        <motion.div
+          key="panel"
+          initial={reduced ? false : { opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={reduced ? undefined : { opacity: 0, scale: 0.96 }}
+          transition={{ duration: 0.16 }}
+          style={{
+            position: "fixed",
+            left: position.x,
+            top: position.y,
+            width: size.width,
+            height: size.height,
+            zIndex: 40,
+          }}
+          className="flex flex-col overflow-hidden rounded-xl border border-[var(--admin-border)] bg-[var(--admin-panel)] shadow-[0_18px_50px_rgba(15,23,42,0.14)]"
+        >
+          <div
+            className="flex shrink-0 cursor-grab items-center justify-between border-b border-[var(--admin-border)] bg-[var(--admin-hover)]/40 px-3 py-2 active:cursor-grabbing"
+            onPointerDown={onGripDown}
+            onPointerMove={onGripMove}
+            onPointerUp={onGripUp}
           >
-            <Plus className="size-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setMinimized(true)}
-            aria-label="Minimize"
-            className="flex size-5 items-center justify-center rounded text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] hover:text-[var(--admin-text)]"
+            <div className="flex items-center gap-1.5">
+              <GripHorizontal className="size-3.5 text-[var(--admin-muted)]" />
+              <span className="text-[12px] font-semibold text-[var(--admin-text)]">
+                Team notes
+              </span>
+              <span className="rounded-full bg-[var(--admin-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--admin-muted)]">
+                {notes.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={creating}
+                onClick={() => void handleAdd()}
+                onPointerDown={(e) => e.stopPropagation()}
+                aria-label="Add note"
+                className="flex size-5 items-center justify-center rounded text-[var(--admin-muted)] hover:bg-[var(--admin-panel)] hover:text-[var(--admin-text)]"
+              >
+                <Plus className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setMinimized(true)}
+                onPointerDown={(e) => e.stopPropagation()}
+                aria-label="Minimize"
+                className="flex size-5 items-center justify-center rounded text-[var(--admin-muted)] hover:bg-[var(--admin-panel)] hover:text-[var(--admin-text)]"
+              >
+                <Minus className="size-3.5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
+            {notes.map((note) => (
+              <NoteRow
+                key={note.id}
+                note={note}
+                autoFocus={note.id === focusId}
+                onChange={(content) => updateNote(note.id, content)}
+                onDismiss={() => void handleDismiss(note.id)}
+              />
+            ))}
+          </div>
+
+          <div
+            onPointerDown={onResizeDown}
+            onPointerMove={onResizeMove}
+            onPointerUp={onResizeUp}
+            aria-hidden
+            className="absolute bottom-0 end-0 flex size-5 cursor-nwse-resize items-end justify-end p-1 text-[var(--admin-muted)] opacity-50 hover:opacity-90"
           >
-            <Minus className="size-3.5" />
-          </button>
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
-        {notes.map((note) => (
-          <NoteRow
-            key={note.id}
-            note={note}
-            onChange={(content) => updateNote(note.id, content)}
-            onDismiss={() => void handleDismiss(note.id)}
-          />
-        ))}
-      </div>
-
-      <div
-        onPointerDown={onResizeDown}
-        onPointerMove={onResizeMove}
-        onPointerUp={onResizeUp}
-        aria-hidden
-        className="absolute bottom-0.5 end-0.5 size-3 cursor-nwse-resize opacity-40"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(135deg, currentColor 0, currentColor 1px, transparent 1px, transparent 3px)",
-          color: "var(--admin-muted)",
-        }}
-      />
-    </div>
+            <div
+              className="size-2.5"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(135deg, currentColor 0, currentColor 1px, transparent 1px, transparent 3px)",
+              }}
+            />
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
 function NoteRow({
   note,
+  autoFocus,
   onChange,
   onDismiss,
 }: {
   note: AdminNote;
+  autoFocus: boolean;
   onChange: (content: string) => void;
   onDismiss: () => void;
 }) {
   const [content, setContent] = useState(note.content);
   const saveTimer = useRef<number | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (autoFocus) textareaRef.current?.focus();
+  }, [autoFocus]);
 
   useEffect(() => {
     return () => {
@@ -241,7 +304,7 @@ function NoteRow({
   }
 
   return (
-    <div className="group rounded-lg border border-[var(--admin-border)] bg-[var(--admin-canvas)] p-2">
+    <div className="group rounded-lg border border-[var(--admin-border)] bg-[var(--admin-canvas)] p-2 transition-shadow hover:shadow-sm">
       <div className="mb-1 flex items-center justify-between">
         <span
           className="size-2 rounded-full"
@@ -260,6 +323,7 @@ function NoteRow({
         </button>
       </div>
       <textarea
+        ref={textareaRef}
         value={content}
         onChange={(e) => schedule(e.target.value)}
         onBlur={() => void save(content)}
