@@ -1,10 +1,9 @@
 import type {
   DashboardColSpan,
   DashboardLayout,
-  DashboardWidgetId,
   DashboardWidgetPlacement,
-} from "./dashboardLayoutCatalog";
-import { DASHBOARD_COL_SPANS } from "./dashboardLayoutCatalog";
+} from "./dashboardCatalog";
+import { DASHBOARD_COL_SPANS } from "./dashboardCatalog";
 import {
   resolveRowPairSpans,
   type DashboardDropEdge,
@@ -87,7 +86,7 @@ export function ensureDashboardRowIds(
 
   const stacks = groupDashboardStacksRaw(layout);
   const seeded = packGreedyRows(stacks);
-  const rowByWidgetId = new Map<DashboardWidgetId, string>();
+  const rowByWidgetId = new Map<string, string>();
   seeded.forEach((row, index) => {
     const rowId = `row-${index}`;
     for (const stack of row.stacks) {
@@ -141,14 +140,14 @@ export function groupDashboardStacks(
 function stackMembers(
   layout: DashboardLayout,
   widget: DashboardWidgetPlacement,
-): DashboardWidgetId[] {
+): string[] {
   const key = stackKey(widget);
   return layout.filter((item) => stackKey(item) === key).map((item) => item.id);
 }
 
 function setStackWidth(
   layout: DashboardLayout,
-  ids: DashboardWidgetId[],
+  ids: string[],
   colSpan: DashboardColSpan,
 ): DashboardLayout {
   const idSet = new Set(ids);
@@ -288,7 +287,7 @@ export function placeDashboardWidgetBeside(
 /** Drop into a stack's empty footer — append under the last widget. */
 export function appendToDashboardStack(
   layout: DashboardLayout,
-  fromId: DashboardWidgetId,
+  fromId: string,
   stackId: string,
 ): DashboardLayout {
   const stack = groupDashboardStacks(layout).find((s) => s.id === stackId);
@@ -303,7 +302,7 @@ export function appendToDashboardStack(
 /** Drop into blank grid space — start a new solo stack on its own row. */
 export function moveToNewDashboardStack(
   layout: DashboardLayout,
-  fromId: DashboardWidgetId,
+  fromId: string,
   colSpan: DashboardColSpan = 12,
 ): DashboardLayout {
   const base = ensureDashboardRowIds(layout);
@@ -365,7 +364,7 @@ export function rowGapColSpan(gap: number): DashboardColSpan | null {
 /** Drop into leftover columns after a stack on the same row. */
 export function placeInDashboardRowGap(
   layout: DashboardLayout,
-  fromId: DashboardWidgetId,
+  fromId: string,
   afterStackId: string,
   colSpan: DashboardColSpan,
 ): DashboardLayout {
@@ -403,7 +402,7 @@ export function placeInDashboardRowGap(
  */
 export function maxDashboardStackColSpan(
   layout: DashboardLayout,
-  id: DashboardWidgetId,
+  id: string,
 ): DashboardColSpan {
   const stacks = groupDashboardStacks(layout);
   const stack = stacks.find((s) => s.widgets.some((w) => w.id === id));
@@ -425,7 +424,7 @@ export function maxDashboardStackColSpan(
 /** Resize a whole stack column; same-row neighbors stay put, gap can grow. */
 export function resizeDashboardStack(
   layout: DashboardLayout,
-  id: DashboardWidgetId,
+  id: string,
   colSpan: DashboardColSpan,
 ): DashboardLayout {
   const base = ensureDashboardRowIds(layout);
