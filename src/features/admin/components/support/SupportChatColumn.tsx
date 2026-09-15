@@ -259,8 +259,8 @@ export function SupportChatColumn({
       style={vars as React.CSSProperties}
       className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-[var(--wa-wallpaper-bg)]"
     >
-      <header className="flex shrink-0 items-center justify-between border-b border-[var(--wa-header-border)] bg-[var(--wa-header-bg)] px-4 py-3">
-        <div className="flex min-w-0 items-center gap-2.5">
+      <header className="flex shrink-0 items-center gap-2 border-b border-[var(--wa-header-border)] bg-[var(--wa-header-bg)] px-3 py-2.5">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           {onBack ? (
             <button
               type="button"
@@ -274,6 +274,7 @@ export function SupportChatColumn({
           <SupportAvatar
             initials={conversation.initials}
             color={conversation.avatarColor}
+            className="shrink-0"
           />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-[var(--wa-header-text)]">
@@ -286,7 +287,7 @@ export function SupportChatColumn({
             ) : null}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5">
           <WaThemeSwitcher
             value={preference}
             onChange={setTheme}

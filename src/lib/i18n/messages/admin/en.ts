@@ -2200,7 +2200,6 @@ export const adminEn = {
   "admin.myDay.today": "Today",
   "admin.myDay.balanceOwed": "Balance due",
   "admin.myDay.settled": "Balance settled",
-  "admin.myDay.openWorkspace": "Open workspace",
   "admin.myDay.openWhatsapp": "WhatsApp",
   "admin.myDay.now": "Now",
   "admin.myDay.appointments": "appointments",

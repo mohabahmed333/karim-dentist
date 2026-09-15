@@ -1114,7 +1114,6 @@ export function SupportInboxView({
                   }))
                 }
                 detailsOpen={false}
-                showWorkspace
                 onBack={goToList}
                 onClose={onClose}
                 onLoadMore={() => {
