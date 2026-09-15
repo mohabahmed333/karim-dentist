@@ -1914,6 +1914,24 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_layouts: {
+        Row: {
+          layout: Json
+          page_key: string
+          updated_at: string
+        }
+        Insert: {
+          layout?: Json
+          page_key: string
+          updated_at?: string
+        }
+        Update: {
+          layout?: Json
+          page_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_feature_switches: {
         Row: {
           enabled: boolean
