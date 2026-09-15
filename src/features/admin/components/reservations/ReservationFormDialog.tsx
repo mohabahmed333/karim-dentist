@@ -20,7 +20,10 @@ import {
 } from "@/features/admin/components/reservations/PatientPickerStep";
 import { useTranslations } from "@/lib/i18n";
 import { formatReservationWhen } from "@/services/reservations/stats";
-import type { ReservationFormValues } from "@/services/reservations/schemas";
+import type {
+  ReservationFieldErrors,
+  ReservationFormValues,
+} from "@/services/reservations/schemas";
 import type { Reservation } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
 import type { DoctorProfile } from "@/services/profiles";
@@ -42,6 +45,7 @@ type Props = {
   replaceTarget?: Reservation | null;
   saveMode?: BookingSaveMode;
   onSaveModeChange?: (mode: BookingSaveMode) => void;
+  errors?: ReservationFieldErrors;
 };
 
 export function ReservationFormDialog({
@@ -57,6 +61,7 @@ export function ReservationFormDialog({
   replaceTarget = null,
   saveMode = "new",
   onSaveModeChange,
+  errors,
 }: Props) {
   const t = useTranslations();
   const reduced = useReducedMotion();
@@ -166,6 +171,7 @@ export function ReservationFormDialog({
                 doctors={doctors}
                 pending={pending}
                 onChange={onChange}
+                errors={errors}
               />
               <PatientHistorySnippet
                 reservations={reservations}

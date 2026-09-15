@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import {
   buildStartsAt,
   reservationFormSchema,
+  type ReservationFieldErrors,
+  type ReservationFormValues,
 } from "@/services/reservations/schemas";
 import {
   completeReservation,
@@ -47,6 +49,7 @@ export function useReservationEditor(initial: Reservation[]) {
   const [form, setForm] = useState(emptyReservationForm());
   const [pending, setPending] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [errors, setErrors] = useState<ReservationFieldErrors>({});
   const checkout = useConsumablesCheckout();
 
   function reservationsUrl(patch: Record<string, string | null>): string {
@@ -146,6 +149,7 @@ export function useReservationEditor(initial: Reservation[]) {
     if (!row) return;
     setSelectedId(id);
     setForm(reservationToForm(row));
+    setErrors({});
     router.replace(reservationsUrl({ selected: id, new: null }));
   }
 
@@ -155,6 +159,7 @@ export function useReservationEditor(initial: Reservation[]) {
       ...emptyReservationForm(),
       date: dateIso ?? emptyReservationForm().date,
     });
+    setErrors({});
     router.replace(
       reservationsUrl({
         new: "1",
@@ -241,9 +246,16 @@ export function useReservationEditor(initial: Reservation[]) {
 
     const parsed = reservationFormSchema.safeParse(form);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Invalid form");
+      const fieldErrors: ReservationFieldErrors = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0] as keyof ReservationFormValues | undefined;
+        if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
+      toast.error("Please fill in the required fields");
       return false;
     }
+    setErrors({});
     setPending(true);
     try {
       const payload = {
@@ -428,6 +440,7 @@ export function useReservationEditor(initial: Reservation[]) {
     selectedId,
     form,
     setForm,
+    errors,
     pending,
     deleteOpen,
     setDeleteOpen,

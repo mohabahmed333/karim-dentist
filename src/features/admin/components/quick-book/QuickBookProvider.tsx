@@ -25,6 +25,7 @@ import {
 import {
   buildStartsAt,
   reservationFormSchema,
+  type ReservationFieldErrors,
   type ReservationFormValues,
 } from "@/services/reservations/schemas";
 import { listReservations } from "@/services/reservations/queries";
@@ -65,6 +66,7 @@ export function QuickBookProvider({ children }: Props) {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [saveMode, setSaveMode] = useState<BookingSaveMode>("new");
   const [replaceTarget, setReplaceTarget] = useState<Reservation | null>(null);
+  const [errors, setErrors] = useState<ReservationFieldErrors>({});
 
   const loadCatalog = useCallback(async () => {
     try {
@@ -104,6 +106,7 @@ export function QuickBookProvider({ children }: Props) {
       setForm(nextForm);
       setReplaceTarget(null);
       setSaveMode("new");
+      setErrors({});
       setOpen(true);
       void loadCatalog().then((rows) => {
         let phone = nextForm.phone;
@@ -135,6 +138,7 @@ export function QuickBookProvider({ children }: Props) {
 
   function onFormChange(next: ReservationFormValues) {
     setForm(next);
+    if (Object.keys(errors).length > 0) setErrors({});
     if (next.phone !== form.phone) {
       syncReplaceTarget(reservations, next.phone);
     }
@@ -143,9 +147,16 @@ export function QuickBookProvider({ children }: Props) {
   async function save() {
     const parsed = reservationFormSchema.safeParse(form);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Invalid form");
+      const fieldErrors: ReservationFieldErrors = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0] as keyof ReservationFormValues | undefined;
+        if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
+      toast.error("Please fill in the required fields");
       return;
     }
+    setErrors({});
     setPending(true);
     try {
       const groups = groupReservationsByPatient(reservations);
@@ -263,12 +274,14 @@ export function QuickBookProvider({ children }: Props) {
         replaceTarget={replaceTarget}
         saveMode={saveMode}
         onSaveModeChange={setSaveMode}
+        errors={errors}
         onOpenChange={(next) => {
           setOpen(next);
           if (!next) {
             setWaConversationId(null);
             setReplaceTarget(null);
             setSaveMode("new");
+            setErrors({});
           }
         }}
         onChange={onFormChange}

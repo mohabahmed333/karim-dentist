@@ -18,6 +18,10 @@ export const reservationFormSchema = z.object({
 
 export type ReservationFormValues = z.infer<typeof reservationFormSchema>;
 
+export type ReservationFieldErrors = Partial<
+  Record<keyof ReservationFormValues, string>
+>;
+
 export function buildStartsAt(date: string, time: string): string {
   return new Date(`${date}T${time}:00`).toISOString();
 }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   splitStartsAt,
+  type ReservationFieldErrors,
   type ReservationFormValues,
 } from "@/services/reservations/schemas";
 import { RESERVATION_STATUSES } from "@/services/reservations/types";
@@ -10,6 +11,7 @@ import type { Service } from "@/services/services/types";
 import type { DoctorProfile } from "@/services/profiles";
 import { Label } from "@/components/ui/label";
 import { AdminInput, AdminNativeSelect, AdminTextarea } from "@/features/admin/ui";
+import { cn } from "@/lib/utils";
 import { useTranslations } from "@/lib/i18n";
 import {
   GENERAL_CONSULTATION_LABEL_EN,
@@ -27,7 +29,19 @@ type Props = {
   doctors?: DoctorProfile[];
   pending: boolean;
   onChange: (values: ReservationFormValues) => void;
+  errors?: ReservationFieldErrors;
 };
+
+const errorInputClass = "border-red-400 focus-visible:ring-red-200";
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-[11px] text-red-600">{message}</p>;
+}
+
+function RequiredMark() {
+  return <span className="ms-0.5 text-red-500">*</span>;
+}
 
 type SlotDto = {
   id: string;
@@ -89,6 +103,7 @@ export function ReservationFormFields({
   doctors = [],
   pending,
   onChange,
+  errors,
 }: Props) {
   const t = useTranslations();
   const [slots, setSlots] = useState<SlotDto[]>([]);
@@ -272,24 +287,34 @@ export function ReservationFormFields({
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2">
-          <Label htmlFor="patient_name">{t("admin.reservations.patientName")}</Label>
+          <Label htmlFor="patient_name">
+            {t("admin.reservations.patientName")}
+            <RequiredMark />
+          </Label>
           <AdminInput
             id="patient_name"
             data-showreel-action="reservation-patient-name"
             value={values.patient_name}
             disabled={pending}
             onChange={(event) => patch({ patient_name: event.target.value })}
+            className={cn(errors?.patient_name && errorInputClass)}
           />
+          <FieldError message={errors?.patient_name} />
         </label>
         <label className="grid gap-2">
-          <Label htmlFor="phone">{t("admin.reservations.phone")}</Label>
+          <Label htmlFor="phone">
+            {t("admin.reservations.phone")}
+            <RequiredMark />
+          </Label>
           <AdminInput
             id="phone"
             data-showreel-action="reservation-phone"
             value={values.phone}
             disabled={pending}
             onChange={(event) => patch({ phone: event.target.value })}
+            className={cn(errors?.phone && errorInputClass)}
           />
+          <FieldError message={errors?.phone} />
         </label>
         <label className="grid gap-2 sm:col-span-2">
           <Label htmlFor="email">{t("admin.reservations.email")}</Label>
@@ -302,7 +327,10 @@ export function ReservationFormFields({
           />
         </label>
         <label className="grid gap-2 sm:col-span-2">
-          <Label htmlFor="service">{t("admin.reservations.service")}</Label>
+          <Label htmlFor="service">
+            {t("admin.reservations.service")}
+            <RequiredMark />
+          </Label>
           <ServicePicker
             id="service"
             services={services}
@@ -310,15 +338,20 @@ export function ReservationFormFields({
             disabled={pending}
             onChange={onServiceChange}
           />
+          <FieldError message={errors?.service_label} />
         </label>
         {doctors.length > 0 ? (
           <label className="grid gap-2 sm:col-span-2">
-            <Label htmlFor="doctor">{t("admin.reservations.doctor")}</Label>
+            <Label htmlFor="doctor">
+              {t("admin.reservations.doctor")}
+              <RequiredMark />
+            </Label>
             <AdminNativeSelect
               id="doctor"
               value={values.doctor_id}
               disabled={pending}
               onChange={(event) => onDoctorChange(event.target.value)}
+              className={cn(errors?.doctor_id && errorInputClass)}
             >
               <option value="" disabled>
                 {t("admin.reservations.selectDoctor")}
@@ -329,10 +362,14 @@ export function ReservationFormFields({
                 </option>
               ))}
             </AdminNativeSelect>
+            <FieldError message={errors?.doctor_id} />
           </label>
         ) : null}
         <label className="grid gap-2">
-          <Label htmlFor="date">{t("admin.reservations.date")}</Label>
+          <Label htmlFor="date">
+            {t("admin.reservations.date")}
+            <RequiredMark />
+          </Label>
           <AdminNativeSelect
             id="date"
             value={values.date}
@@ -340,6 +377,7 @@ export function ReservationFormFields({
             onChange={(event) =>
               patch({ date: event.target.value, time: "", slot_id: null })
             }
+            className={cn(errors?.date && errorInputClass)}
           >
             <option value="">
               {slotsLoading
@@ -354,14 +392,19 @@ export function ReservationFormFields({
               </option>
             ))}
           </AdminNativeSelect>
+          <FieldError message={errors?.date} />
         </label>
         <label className="grid gap-2">
-          <Label htmlFor="slot">{t("admin.reservations.openSlot")}</Label>
+          <Label htmlFor="slot">
+            {t("admin.reservations.openSlot")}
+            <RequiredMark />
+          </Label>
           <AdminNativeSelect
             id="slot"
             value={selectedSlotId}
             disabled={fieldsDisabled || !values.date}
             onChange={(event) => onSlotPick(event.target.value)}
+            className={cn(errors?.time && errorInputClass)}
           >
             <option value="">
               {slotsLoading
@@ -381,6 +424,7 @@ export function ReservationFormFields({
               <option value="">{values.time} (existing)</option>
             ) : null}
           </AdminNativeSelect>
+          <FieldError message={errors?.time} />
         </label>
         <label className="grid gap-2 sm:col-span-2">
           <Label htmlFor="status">{t("admin.reservations.status")}</Label>

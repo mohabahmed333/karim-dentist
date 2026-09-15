@@ -499,6 +499,7 @@ export function ReservationsPageView({
         onOpenChange={onCreateOpenChange}
         onChange={editor.setForm}
         onSave={() => void editor.saveReservation()}
+        errors={editor.errors}
       />
 
       <ReservationFormDrawer
@@ -519,6 +520,7 @@ export function ReservationsPageView({
         onSave={() => editor.saveReservation()}
         onDeleteClick={() => editor.setDeleteOpen(true)}
         onStatus={(status) => void editor.setStatus(status)}
+        errors={editor.errors}
       />
 
       <ConfirmDeleteDialog

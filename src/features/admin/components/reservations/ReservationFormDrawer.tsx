@@ -20,7 +20,10 @@ import {
 } from "@/features/admin/components/ReservationFormFields";
 import { useAdminDrawerSide } from "@/features/admin/hooks/useAdminDrawerSide";
 import { useTranslations } from "@/lib/i18n";
-import type { ReservationFormValues } from "@/services/reservations/schemas";
+import type {
+  ReservationFieldErrors,
+  ReservationFormValues,
+} from "@/services/reservations/schemas";
 import type { Reservation } from "@/services/reservations/types";
 import type { Service } from "@/services/services/types";
 import type { DoctorProfile } from "@/services/profiles";
@@ -41,6 +44,7 @@ type Props = {
   onSave: () => Promise<boolean>;
   onDeleteClick: () => void;
   onStatus: (status: Reservation["status"]) => void;
+  errors?: ReservationFieldErrors;
 };
 
 export function ReservationFormDrawer({
@@ -57,6 +61,7 @@ export function ReservationFormDrawer({
   onSave,
   onDeleteClick,
   onStatus,
+  errors,
 }: Props) {
   const t = useTranslations();
   const [mode, setMode] = useState<Mode>("view");
@@ -122,6 +127,7 @@ export function ReservationFormDrawer({
                 doctors={doctors}
                 pending={pending}
                 onChange={onChange}
+                errors={errors}
               />
             )}
           </div>
