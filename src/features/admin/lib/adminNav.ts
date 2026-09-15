@@ -155,6 +155,7 @@ export const adminRailItems: AdminRailItem[] = [
     icon: Package,
     permission: "inventory.view",
     children: [
+      { href: "/admin/inventory", labelKey: "admin.pages.inventory.tabItems", permission: "inventory.view" },
       { href: "/admin/inventory/reports", labelKey: "admin.nav.inventoryReports", permission: "inventory.reports.view" },
       { href: "/admin/inventory/analytics", labelKey: "admin.nav.inventoryAnalytics", permission: "inventory.view" },
     ],
@@ -300,10 +301,10 @@ export const adminNavSections: AdminNavSection[] = [
       {
         id: "inventory",
         labelKey: "admin.nav.inventory",
-        href: "/admin/inventory",
         icon: Package,
         permission: "inventory.view",
         items: [
+          { href: "/admin/inventory", labelKey: "admin.pages.inventory.tabItems", permission: "inventory.view" },
           { href: "/admin/inventory/reports", labelKey: "admin.nav.inventoryReports", permission: "inventory.reports.view" },
           { href: "/admin/inventory/analytics", labelKey: "admin.nav.inventoryAnalytics", permission: "inventory.view" },
         ],
