@@ -34,11 +34,16 @@ export function WorkspaceChartPane(props: Props) {
           />
         </div>
       ) : null}
-      {/* The chart takes whatever height the pane has left. Every shape gets
-          the same box, so switching still moves nothing — and in a workspace
-          bounded to the viewport, a fixed 26rem left the rest of the column
-          empty. */}
-      <div className="relative flex min-h-0 w-full flex-1 flex-col bg-transparent">
+      {/* The chart takes whatever height the pane has left, so every shape
+          still gets one box and switching moves nothing — a fixed 26rem just
+          left the rest of the column empty.
+
+          The floor is what makes that safe. `flex-1` only fills when every
+          ancestor up to the shell has a definite height, and one indefinite
+          link anywhere in that chain collapses the chart to nothing; the
+          viewport-minus-chrome floor means the worst case is still a taller
+          chart than the 26rem this replaced. */}
+      <div className="relative flex min-h-[max(20rem,calc(100dvh-28rem))] w-full flex-1 flex-col bg-transparent">
         {model ? (
           <ChartingGltfOdontogram
             fill
