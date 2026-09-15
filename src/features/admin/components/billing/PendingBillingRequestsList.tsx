@@ -27,7 +27,21 @@ export function PendingBillingRequestsList({ proposals, doctors }: Props) {
     try {
       const result = await settleTreatmentProposal(id, method);
       if (!result.ok) throw new Error(result.error);
-      toast.success(method === "cash" ? t("admin.billing.cashCollected") : t("admin.billing.whatsappRequested"));
+
+      if (method === "cash") {
+        toast.success(t("admin.billing.cashCollected"));
+      } else if (result.via === "text") {
+        toast.success(t("admin.billing.whatsappRequested"));
+      } else {
+        // Queued, not sent: the patient's 24h window is shut and the template
+        // this kind needs has not been approved, so nothing will go out until
+        // it is. Saying "sent" here is how a patient ends up never asked.
+        toast.warning(t("admin.billing.whatsappQueued"), {
+          description: t("admin.billing.whatsappQueuedHint"),
+          duration: Infinity,
+          closeButton: true,
+        });
+      }
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("admin.deposits.applyFailed"));

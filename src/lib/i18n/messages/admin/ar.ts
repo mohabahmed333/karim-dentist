@@ -879,6 +879,8 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.billing.bellWaiting": "فواتير بانتظار السداد",
   "admin.billing.bellClear": "لا توجد فواتير منتظرة",
   "admin.billing.doctorFallback": "الطبيب",
+  "admin.billing.whatsappQueued": "في قائمة الانتظار — لم تُرسل بعد",
+  "admin.billing.whatsappQueuedHint": "لا توجد نافذة واتساب مفتوحة لهذا المريض، وقالب طلب السداد ما زال بانتظار الموافقة. الفاتورة مسجّلة، وستُرسل الرسالة فور اعتماد القالب. اتصل بالمريض إن كان الأمر عاجلًا.",
   "admin.billing.pendingRequests": "طلبات الفواتير المعلقة",
   "admin.billing.awaitingPayment": "بانتظار تأكيد الدفع",
   "admin.billing.collectCash": "استلام كاش",

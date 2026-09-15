@@ -17,6 +17,7 @@ import { addBillingEntry } from "@/services/patient_billing/mutations";
 import { sendBillingPaymentRequest } from "@/services/billing_payments/notify";
 import { groupReservationsByPatient } from "@/services/reservations/patientHistory";
 import { listReservationsServer } from "@/services/reservations/queries";
+import { assignBillingDoctor } from "@/services/reservations/mutations";
 
 export type BillingFormOptions = {
   services: PriceableService[];
@@ -73,6 +74,17 @@ export async function saveTreatmentProposal(
 
   const { id } = await insertProposal(auth.supabase, patientKey, parsed.data);
 
+  // Billing a visit is also the moment its doctor is known. Writing it back
+  // means the dialog pre-selects them next time, and the visit lands on that
+  // doctor's My Day instead of belonging to nobody.
+  if (parsed.data.reservationId) {
+    await assignBillingDoctor(
+      auth.supabase,
+      parsed.data.reservationId,
+      parsed.data.doctorId,
+    );
+  }
+
   const { data: doctor } = await auth.supabase
     .from("profiles")
     .select("display_name")
@@ -128,7 +140,10 @@ export async function decideTreatmentProposal(
 export async function settleTreatmentProposal(
   proposalId: string,
   method: "cash" | "whatsapp_request",
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; via?: "text" | "queued" }
+  | { ok: false; error: string }
+> {
   const auth = await requirePermission("patients.billing.edit");
   if (auth.error) throw new Error("Forbidden");
 
@@ -175,5 +190,9 @@ export async function settleTreatmentProposal(
     sentBy: auth.session.user.id,
   });
   if (!result.ok) return { ok: false, error: result.error };
-  return { ok: true };
+  // `via` matters to the caller: "text" actually reached the patient, "queued"
+  // only went into the outbox, where it waits on a Meta template that does not
+  // exist yet. Reporting both as success told the front desk a message had
+  // been sent when nothing had left the building.
+  return { ok: true, via: result.via };
 }

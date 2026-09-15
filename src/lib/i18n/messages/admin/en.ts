@@ -877,6 +877,8 @@ export const adminEn = {
   "admin.billing.bellWaiting": "Bills awaiting payment",
   "admin.billing.bellClear": "No bills waiting",
   "admin.billing.doctorFallback": "Doctor",
+  "admin.billing.whatsappQueued": "Queued — not sent yet",
+  "admin.billing.whatsappQueuedHint": "This patient has no open WhatsApp window, and the payment-request template is still awaiting approval. The bill is recorded; the message will go out once the template is approved. Call the patient if it is urgent.",
   "admin.billing.pendingRequests": "Pending billing requests",
   "admin.billing.awaitingPayment": "Awaiting payment confirmation",
   "admin.billing.collectCash": "Collect cash",
