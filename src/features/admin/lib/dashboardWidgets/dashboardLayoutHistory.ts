@@ -1,7 +1,7 @@
 import {
   cloneDashboardLayout,
   type DashboardLayout,
-} from "@/features/admin/lib/dashboardLayout";
+} from "./dashboardLayout";
 
 const HISTORY_LIMIT = 50;
 
