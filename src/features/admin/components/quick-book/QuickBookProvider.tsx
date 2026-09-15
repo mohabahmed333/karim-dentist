@@ -34,6 +34,7 @@ import type { Reservation } from "@/services/reservations/types";
 import { listPublishedServices } from "@/services/services/queries";
 import type { Service } from "@/services/services/types";
 import { createClient } from "@/lib/supabase/client";
+import { useTranslations } from "@/lib/i18n";
 import { listDoctors, type DoctorProfile } from "@/services/profiles";
 import { QuickBookContext } from "./QuickBookContext";
 import type { QuickBookPrefill } from "./quickBookTypes";
@@ -57,6 +58,7 @@ function nextUpcomingForPhone(
 }
 
 export function QuickBookProvider({ children }: Props) {
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<ReservationFormValues>(emptyReservationForm());
   const [pending, setPending] = useState(false);
@@ -80,10 +82,10 @@ export function QuickBookProvider({ children }: Props) {
       setDoctors(nextDoctors);
       return nextReservations;
     } catch {
-      toast.error("Could not load booking form");
+      toast.error(t("admin.reservations.loadFormFail"));
       return [] as Reservation[];
     }
-  }, []);
+  }, [t]);
 
   const syncReplaceTarget = useCallback(
     (rows: Reservation[], phone: string) => {
@@ -153,7 +155,7 @@ export function QuickBookProvider({ children }: Props) {
         if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
       }
       setErrors(fieldErrors);
-      toast.error("Please fill in the required fields");
+      toast.error(t("admin.patients.toasts.fillRequiredFields"));
       return;
     }
     setErrors({});
@@ -195,7 +197,7 @@ export function QuickBookProvider({ children }: Props) {
         setReservations((prev) =>
           prev.map((item) => (item.id === row.id ? row : item)),
         );
-        toast.success("Reservation updated");
+        toast.success(t("admin.reservations.updated"));
       } else {
         row = await createReservation(payload);
         if (parsed.data.slot_id) {
@@ -213,8 +215,8 @@ export function QuickBookProvider({ children }: Props) {
         setReservations((prev) => [...prev, row]);
         toast.success(
           matched
-            ? `Reservation created for existing patient (${matched.phone})`
-            : "Reservation created",
+            ? t("admin.reservations.createdExisting").replace("{phone}", matched.phone)
+            : t("admin.reservations.created"),
         );
       }
 
@@ -240,9 +242,9 @@ export function QuickBookProvider({ children }: Props) {
             body: JSON.stringify({ conversationId: waConversationId, text }),
           });
           if (!res.ok) throw new Error("send failed");
-          toast.success("Confirmation sent on WhatsApp");
+          toast.success(t("admin.reservations.waConfirmOk"));
         } catch {
-          toast.error("Reservation saved, but WhatsApp confirmation failed");
+          toast.error(t("admin.reservations.waConfirmFail"));
         }
       }
 
@@ -252,7 +254,7 @@ export function QuickBookProvider({ children }: Props) {
       setSaveMode("new");
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Could not create reservation",
+        err instanceof Error ? err.message : t("admin.reservations.saveFail"),
       );
     } finally {
       setPending(false);
