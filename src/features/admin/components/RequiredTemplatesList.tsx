@@ -1,36 +1,40 @@
+"use client";
+
 import { TemplateProposalCard } from "./TemplateProposalCard";
+import { useTranslations, type AdminMessageKey } from "@/lib/i18n";
 import {
   tallyTemplates,
   type RequiredTemplate,
 } from "@/services/patient_notifications/requiredTemplates";
 import { TEMPLATE_PROPOSALS } from "@/services/patient_notifications/templateProposals";
 
-const BADGE: Record<RequiredTemplate["status"], { label: string; className: string }> = {
+const BADGE_KEYS: Record<RequiredTemplate["status"], { labelKey: AdminMessageKey; className: string }> = {
   approved: {
-    label: "Approved",
+    labelKey: "admin.pages.templates.approved",
     className: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600",
   },
   missing: {
-    label: "Not in Meta",
+    labelKey: "admin.pages.templates.notInMeta",
     className: "border-red-500/40 bg-red-500/10 text-red-600",
   },
   not_submitted: {
-    label: "Not submitted",
+    labelKey: "admin.pages.templates.notSubmitted",
     className: "border-amber-500/40 bg-amber-500/10 text-amber-600",
   },
   unknown: {
-    label: "Unknown",
+    labelKey: "admin.pages.templates.unknown",
     className: "border-[var(--admin-border)] bg-[var(--admin-hover)] text-[var(--admin-muted)]",
   },
 };
 
 function Badge({ status }: { status: RequiredTemplate["status"] }) {
-  const badge = BADGE[status];
+  const t = useTranslations();
+  const badge = BADGE_KEYS[status];
   return (
     <span
       className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium ${badge.className}`}
     >
-      {badge.label}
+      {t(badge.labelKey)}
     </span>
   );
 }
@@ -48,6 +52,7 @@ export function RequiredTemplatesList({
   rows: RequiredTemplate[];
   reachedMeta: boolean;
 }) {
+  const t = useTranslations();
   const tally = tallyTemplates(rows);
 
   return (
@@ -55,19 +60,21 @@ export function RequiredTemplatesList({
       <p className="rounded-lg border border-[var(--admin-border)] bg-[var(--admin-hover)] px-3.5 py-2.5 text-sm text-[var(--admin-muted)]">
         {reachedMeta ? (
           <>
-            {tally.approved} of {rows.length} approved in Meta.{" "}
+            {t("admin.pages.templates.approvedSummary")
+              .replace("{approved}", String(tally.approved))
+              .replace("{total}", String(rows.length))}
             {tally.missing > 0
-              ? `${tally.missing} are used by the app but Meta does not list them — those sends will fail. `
+              ? t("admin.pages.templates.missingSummary").replace("{count}", String(tally.missing))
               : ""}
             {tally.not_submitted > 0
-              ? `${tally.not_submitted} have never been submitted; their text is below.`
+              ? t("admin.pages.templates.notSubmittedSummary").replace(
+                  "{count}",
+                  String(tally.not_submitted),
+                )
               : ""}
           </>
         ) : (
-          <>
-            Meta could not be asked, so approval is unknown. Check
-            KAPSO_API_KEY and KAPSO_BUSINESS_ACCOUNT_ID.
-          </>
+          <>{t("admin.pages.templates.metaUnreachable")}</>
         )}
       </p>
 
@@ -80,7 +87,10 @@ export function RequiredTemplatesList({
             <div className="min-w-0">
               <p className="truncate text-sm">{row.title}</p>
               <p className="truncate font-mono text-[11px] text-[var(--admin-muted)]">
-                {row.name} · {row.bodyLanguage === "ar" ? "Arabic body" : "English body"}
+                {row.name} ·{" "}
+                {row.bodyLanguage === "ar"
+                  ? t("admin.pages.templates.arabicBody")
+                  : t("admin.pages.templates.englishBody")}
               </p>
             </div>
             <Badge status={row.status} />
@@ -91,7 +101,7 @@ export function RequiredTemplatesList({
       {tally.not_submitted > 0 ? (
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--admin-muted)]">
-            Text to submit
+            {t("admin.pages.templates.textToSubmit")}
           </p>
           {TEMPLATE_PROPOSALS.map((proposal) => (
             <TemplateProposalCard key={proposal.kind} proposal={proposal} />

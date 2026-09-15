@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { PhoneCall } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "@/lib/i18n";
 import type { RatingRow } from "@/services/visit_ratings/queries";
 import { AdminSkeleton } from "./AdminSkeleton";
 
@@ -38,6 +39,7 @@ function Score({ rating }: { rating: number }) {
  * later whether or not anyone did — which is the point of keeping it visible.
  */
 export function VisitRatingsCard() {
+  const t = useTranslations();
   const [rows, setRows] = useState<RatingRow[] | null>(null);
   const [pending, setPending] = useState<string | null>(null);
 
@@ -63,9 +65,9 @@ export function VisitRatingsCard() {
       const res = await fetch(`/api/v1/visit-ratings/${id}`, { method: "PATCH" });
       if (!res.ok) throw new Error(((await res.json()) as { error?: string }).error ?? "Failed");
       setRows((current) => (current ?? []).filter((r) => r.id !== id));
-      toast.success("Marked as called");
+      toast.success(t("admin.pages.visitRatings.markedCalled"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed");
+      toast.error(err instanceof Error ? err.message : t("admin.pages.visitRatings.failed"));
     } finally {
       setPending(null);
     }
@@ -76,15 +78,15 @@ export function VisitRatingsCard() {
   return (
     <section className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-sm font-medium">Visits that scored badly</h3>
+        <h3 className="text-sm font-medium">{t("admin.pages.visitRatings.heading")}</h3>
         <span className="text-xs tabular-nums text-[var(--admin-muted)]">
-          {rows.length} to call
+          {t("admin.pages.visitRatings.toCall").replace("{count}", String(rows.length))}
         </span>
       </div>
 
       {rows.length === 0 ? (
         <p className="rounded-lg border border-[var(--admin-border)] px-4 py-6 text-center text-sm text-[var(--admin-muted)]">
-          Nobody is waiting for a call.
+          {t("admin.pages.visitRatings.empty")}
         </p>
       ) : (
         <ul className="overflow-hidden rounded-lg border border-[var(--admin-border)] bg-[var(--admin-panel)]">
@@ -122,7 +124,7 @@ export function VisitRatingsCard() {
                 onClick={() => void markCalled(row.id)}
               >
                 <PhoneCall aria-hidden className="size-3.5" />
-                Called
+                {t("admin.pages.visitRatings.calledButton")}
               </Button>
             </li>
           ))}
