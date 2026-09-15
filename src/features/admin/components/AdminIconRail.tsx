@@ -60,9 +60,15 @@ function RailMenuChildren({ entries }: { entries: AdminRailChild[] }) {
           <AdminDropdownMenuSub key={entry.id}>
             <AdminDropdownMenuSubTrigger>
               <RailTreeLine />
-              {t(entry.labelKey)}
+              <span className="whitespace-nowrap">{t(entry.labelKey)}</span>
             </AdminDropdownMenuSubTrigger>
-            <AdminDropdownMenuSubContent>
+            <AdminDropdownMenuSubContent
+              side="bottom"
+              align="start"
+              sideOffset={2}
+              alignOffset={0}
+              className="min-w-56"
+            >
               <RailMenuChildren entries={entry.children} />
             </AdminDropdownMenuSubContent>
           </AdminDropdownMenuSub>
@@ -72,7 +78,7 @@ function RailMenuChildren({ entries }: { entries: AdminRailChild[] }) {
             onClick={() => router.push(entry.href)}
           >
             <RailTreeLine />
-            {t(entry.labelKey)}
+            <span className="whitespace-nowrap">{t(entry.labelKey)}</span>
           </AdminDropdownMenuItem>
         ),
       )}
@@ -124,11 +130,11 @@ function RailDropdownItem({
         <Icon className="size-3.5" aria-hidden />
         <span className="sr-only">{label}</span>
       </AdminDropdownMenuTrigger>
-      <AdminDropdownMenuContent side={side} align="start" className="min-w-40">
+      <AdminDropdownMenuContent side={side} align="start" className="min-w-56">
         {item.container ? null : (
           <AdminDropdownMenuItem onClick={() => router.push(item.href)}>
             <RailTreeLine />
-            {label}
+            <span className="whitespace-nowrap">{label}</span>
           </AdminDropdownMenuItem>
         )}
         <RailMenuChildren entries={item.children ?? []} />
