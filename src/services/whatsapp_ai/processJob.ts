@@ -14,6 +14,7 @@ import {
   loadDepositSettings,
 } from "@/services/deposits/store";
 import { receiptMediaUrl } from "@/services/deposits/receiptMedia";
+import { handleInboundBillingReceipt } from "@/services/billing_payments/handleInboundReceipt";
 import { searchClinicKnowledge } from "@/services/clinic_knowledge/search";
 import { buildHistoryTurns } from "./historyTurns";
 import { readBookingState } from "./bookingState";
@@ -135,7 +136,7 @@ export async function processAutoReplyJob(
     // dismiss every image as unreadable — and handleInboundImage returns
     // `handled: false` for anything else, so an ordinary photo behaves exactly
     // as it did before deposits existed.
-    const receipt = await handleInboundImage(
+    let receipt = await handleInboundImage(
       { db },
       {
         conversationId: conversation.id,
@@ -153,6 +154,29 @@ export async function processAutoReplyJob(
       console.error("deposit receipt handling failed", err);
       return { handled: false } as const;
     });
+
+    // A screenshot that isn't a deposit receipt may still be answering a
+    // billing payment request this conversation is waiting on.
+    let receiptSource: "deposit" | "billing" = "deposit";
+    if (!receipt.handled) {
+      receipt = await handleInboundBillingReceipt(
+        { db },
+        {
+          conversationId: conversation.id,
+          messageId: inbound.id,
+          messageType: inbound.message_type,
+          mediaUrl: receiptMediaUrl(inbound.media, inbound.raw),
+          language: pickPatientLanguage({
+            lastInboundBody: inbound.body ?? "",
+            patientName: conversation.contact_name ?? "",
+          }),
+        },
+      ).catch((err) => {
+        console.error("billing payment receipt handling failed", err);
+        return { handled: false } as const;
+      });
+      receiptSource = "billing";
+    }
 
     if (receipt.handled) {
       // Written before the send, like every other outbound path here: a crash
@@ -182,7 +206,7 @@ export async function processAutoReplyJob(
         conversationId: conversation.id,
         jobId,
         decision: "skip",
-        reason: `deposit_${receipt.outcome}:${receipt.reason}`,
+        reason: `${receiptSource}_${receipt.outcome}:${receipt.reason}`,
         intent: null,
         confidence: null,
         language: null,
@@ -193,7 +217,7 @@ export async function processAutoReplyJob(
         envelope: {},
       });
       await finishJob(db, jobId, { status: "sent" });
-      return `deposit_${receipt.outcome}`;
+      return `${receiptSource}_${receipt.outcome}`;
     }
 
     // Slots this conversation was explicitly offered and may still claim — a
