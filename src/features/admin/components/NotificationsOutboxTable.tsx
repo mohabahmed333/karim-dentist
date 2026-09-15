@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Tables } from "@/lib/supabase/database.types";
+import { useTranslations, type AdminMessageKey } from "@/lib/i18n";
 import { AdminSkeleton } from "./AdminSkeleton";
 
 type Row = Pick<
@@ -11,6 +12,15 @@ type Row = Pick<
 >;
 
 const STATUSES = ["", "pending", "sent", "skipped", "failed", "superseded", "abandoned"];
+
+const STATUS_LABEL_KEYS: Record<string, AdminMessageKey> = {
+  pending: "admin.pages.outbox.statusPending",
+  sent: "admin.pages.outbox.statusSent",
+  skipped: "admin.pages.outbox.statusSkipped",
+  failed: "admin.pages.outbox.statusFailed",
+  superseded: "admin.pages.outbox.statusSuperseded",
+  abandoned: "admin.pages.outbox.statusAbandoned",
+};
 
 const TONE: Record<string, string> = {
   sent: "text-[#15803D]",
@@ -32,6 +42,7 @@ async function fetchRows(status: string): Promise<Row[]> {
  * skip_reason column is the answer to "why did this patient not hear from us".
  */
 export function NotificationsOutboxTable() {
+  const t = useTranslations();
   const [status, setStatus] = useState("");
   const [rows, setRows] = useState<Row[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -55,7 +66,9 @@ export function NotificationsOutboxTable() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-sm">
-        <label htmlFor="outbox-status" className="text-muted-foreground">Status</label>
+        <label htmlFor="outbox-status" className="text-muted-foreground">
+          {t("admin.pages.outbox.status")}
+        </label>
         <select
           id="outbox-status"
           className="h-8 rounded-md border bg-transparent px-2 text-sm"
@@ -63,17 +76,19 @@ export function NotificationsOutboxTable() {
           onChange={(e) => setStatus(e.target.value)}
         >
           {STATUSES.map((s) => (
-            <option key={s || "all"} value={s}>{s || "all"}</option>
+            <option key={s || "all"} value={s}>
+              {s ? t(STATUS_LABEL_KEYS[s]) : t("admin.pages.outbox.statusAll")}
+            </option>
           ))}
         </select>
-        <span className="text-xs text-muted-foreground">Most recent 100</span>
+        <span className="text-xs text-muted-foreground">{t("admin.pages.outbox.recent100")}</span>
       </div>
 
       {failed ? (
-        <p className="text-sm text-[#B91C1C]">Could not load the outbox.</p>
+        <p className="text-sm text-[#B91C1C]">{t("admin.pages.outbox.loadError")}</p>
       ) : rows === null ? (
         <div aria-busy="true" className="overflow-x-auto">
-          <span className="sr-only">Loading queued messages…</span>
+          <span className="sr-only">{t("admin.pages.outbox.loadingSr")}</span>
           <div className="min-w-[640px]">
             <div className="grid grid-cols-[130px_1.2fr_120px_1fr_1fr] gap-3 border-b py-2">
               {["w-14", "w-14", "w-10", "w-16", "w-16"].map((w, i) => (
@@ -95,19 +110,17 @@ export function NotificationsOutboxTable() {
           </div>
         </div>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Nothing here. A row appears the moment an appointment is booked.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("admin.pages.outbox.empty")}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="text-xs text-muted-foreground">
               <tr>
-                <th className="py-2 pr-3 font-medium">Queued</th>
-                <th className="py-2 pr-3 font-medium">Patient</th>
-                <th className="py-2 pr-3 font-medium">Kind</th>
-                <th className="py-2 pr-3 font-medium">Outcome</th>
-                <th className="py-2 font-medium">Template</th>
+                <th className="py-2 pr-3 font-medium">{t("admin.pages.outbox.colQueued")}</th>
+                <th className="py-2 pr-3 font-medium">{t("admin.pages.outbox.colPatient")}</th>
+                <th className="py-2 pr-3 font-medium">{t("admin.pages.outbox.colKind")}</th>
+                <th className="py-2 pr-3 font-medium">{t("admin.pages.outbox.colOutcome")}</th>
+                <th className="py-2 font-medium">{t("admin.pages.outbox.colTemplate")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -122,7 +135,9 @@ export function NotificationsOutboxTable() {
                   </td>
                   <td className="py-2 pr-3 font-mono text-xs">{row.kind}</td>
                   <td className="py-2 pr-3">
-                    <span className={`font-medium ${TONE[row.status] ?? ""}`}>{row.status}</span>
+                    <span className={`font-medium ${TONE[row.status] ?? ""}`}>
+                      {STATUS_LABEL_KEYS[row.status] ? t(STATUS_LABEL_KEYS[row.status]) : row.status}
+                    </span>
                     {row.skip_reason ? (
                       <div className="font-mono text-xs text-muted-foreground">{row.skip_reason}</div>
                     ) : null}
