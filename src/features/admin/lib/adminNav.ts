@@ -6,9 +6,7 @@ import {
   Inbox,
   LayoutGrid,
   Gauge,
-  MessagesSquare,
   Package,
-  Receipt,
   Settings,
   Users,
 } from "lucide-react";
@@ -91,30 +89,33 @@ export const adminRailItems: AdminRailItem[] = [
     exact: true,
   },
   {
-    id: "reservations",
+    id: "bookings",
     href: "/admin/reservations",
-    labelKey: "admin.nav.reservations",
+    labelKey: "admin.nav.bookingsGroup",
     icon: CalendarDays,
     permission: "reservations.view",
+    // Container: "Bookings" is a category label, not a page — the flyout's
+    // own-item row would otherwise read "Bookings" while linking to
+    // Reservations specifically. Every real page gets its own child instead.
+    container: true,
     children: [
+      { href: "/admin/reservations", labelKey: "admin.nav.reservations", permission: "reservations.view" },
       { href: "/admin/waitlist", labelKey: "admin.nav.waitlist", permission: "waitlist.view" },
       // A deposit belongs to a booking, same permission as the reservations list.
       { href: "/admin/deposits", labelKey: "admin.nav.deposits", permission: "reservations.view" },
     ],
   },
   {
-    id: "patients",
+    id: "patients-billing",
     href: "/admin/patients",
-    labelKey: "admin.nav.patients",
+    labelKey: "admin.nav.patientsBillingGroup",
     icon: Users,
     permission: "patients.view",
-  },
-  {
-    id: "billing",
-    href: "/admin/billing",
-    labelKey: "admin.nav.billing",
-    icon: Receipt,
-    permission: "patients.view",
+    container: true,
+    children: [
+      { href: "/admin/patients", labelKey: "admin.nav.patients", permission: "patients.view" },
+      { href: "/admin/billing", labelKey: "admin.nav.billing", permission: "patients.view" },
+    ],
   },
   {
     id: "inventory",
@@ -127,19 +128,14 @@ export const adminRailItems: AdminRailItem[] = [
     ],
   },
   {
-    id: "support",
-    href: "/admin/support",
-    labelKey: "admin.nav.support",
-    icon: MessagesSquare,
-    permission: "support.view",
-  },
-  {
     id: "messaging",
     href: "/admin/quick-replies",
     labelKey: "admin.nav.messagingGroup",
     icon: Inbox,
     permission: "quick-replies.view",
+    container: true,
     children: [
+      { href: "/admin/support", labelKey: "admin.nav.support", permission: "support.view" },
       { href: "/admin/quick-replies", labelKey: "admin.nav.quickReplies", permission: "quick-replies.view" },
       { href: "/admin/knowledge", labelKey: "admin.nav.knowledge", permission: "knowledge.view" },
       { href: "/admin/assistant-review", labelKey: "admin.nav.assistantReview", permission: "assistant-review.view" },
@@ -156,10 +152,12 @@ export const adminRailItems: AdminRailItem[] = [
   {
     id: "usage",
     href: "/admin/usage",
-    labelKey: "admin.nav.usage",
+    labelKey: "admin.nav.insightsGroup",
     icon: Gauge,
     permission: "usage.view",
+    container: true,
     children: [
+      { href: "/admin/usage", labelKey: "admin.nav.usage", permission: "usage.view" },
       { href: "/admin/assist-analytics", labelKey: "admin.nav.assistAnalytics", permission: "assist-analytics.view" },
     ],
   },
