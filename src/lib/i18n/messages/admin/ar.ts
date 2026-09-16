@@ -100,6 +100,7 @@ export const adminAr: Record<AdminMessageKey, string> = {
   "admin.nav.starred": "المفضّلة",
   "admin.nav.starItem": "تمييز بنجمة",
   "admin.nav.unstarItem": "إزالة التمييز",
+  "admin.nav.resizeSidebar": "تغيير حجم الشريط الجانبي",
   "admin.nav.sitePages": "صفحات الموقع",
   "admin.nav.hero": "القسم الرئيسي",
   "admin.nav.about": "من نحن",

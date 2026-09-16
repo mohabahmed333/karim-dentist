@@ -11,6 +11,7 @@ import {
   findActiveAdminNavGroupIds,
   selectStarredNavItems,
 } from "@/features/admin/lib/adminNav";
+import { SIDEBAR_WIDTH_DEFAULT } from "@/features/admin/lib/sidebarWidth";
 import { useAdminUiStore } from "@/features/admin/stores/adminUiStore";
 import { useTranslations } from "@/lib/i18n";
 import { AdminNavSectionBlock } from "./AdminNavSectionBlock";
@@ -20,12 +21,15 @@ type Props = {
   mobile?: boolean;
   /** Omit to show every section unfiltered (e.g. showreel demos with no session). */
   permissions?: string[] | null;
+  /** Pixel width of the sidebar's content column. Omit for the default (mobile). */
+  width?: number;
 };
 
 export function AdminSidebar({
   navBadges = {},
   mobile = false,
   permissions,
+  width = SIDEBAR_WIDTH_DEFAULT,
 }: Props) {
   const t = useTranslations();
   const pathname = usePathname();
@@ -115,7 +119,8 @@ export function AdminSidebar({
       // anywhere, including on top of the sidebar — a positioned z-index above
       // it wins the stacking order so sidebar clicks (including the star
       // toggle) never get swallowed by the panel. Below dialogs (z-50).
-      className="relative z-45 flex h-full w-[220px] shrink-0 flex-col overflow-y-auto bg-[var(--admin-canvas)] px-2.5 py-3"
+      style={{ width }}
+      className="relative z-45 flex h-full shrink-0 flex-col overflow-y-auto bg-[var(--admin-canvas)] px-2.5 py-3"
     >
       <div className="mb-4 px-2">
         <p className="text-[13px] font-semibold tracking-tight text-[var(--admin-text)]">
@@ -125,18 +130,20 @@ export function AdminSidebar({
           {t("admin.clinicWorkspace")}
         </p>
       </div>
-      {/* The whole section grows in when the first item is starred, and
-          collapses away when the last one is unstarred — the section itself
-          is what visibly reacts to the star toggle, not just its icon. */}
+      {/* The whole section fades in when the first item is starred, and
+          fades away when the last one is unstarred — the section itself
+          is what visibly reacts to the star toggle, not just its icon.
+          Deliberately not animating `height` here: with several groups
+          expanded at once, Framer Motion's "auto" height measurement for
+          this section would get stuck at 0 and never reveal it at all. */}
       <AnimatePresence initial={false}>
         {starredItems.length > 0 ? (
           <motion.div
             key="starred-section"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="overflow-hidden"
           >
             <AdminNavSectionBlock
               section={{ id: "starred", titleKey: "admin.nav.starred", entries: starredItems }}

@@ -13,8 +13,14 @@ import { AdminFloatingBubbles } from "./AdminFloatingBubbles";
 import { AdminFloatingNotes } from "./notes/AdminFloatingNotes";
 import { WhatsappLiveBoot } from "./WhatsappLiveBoot";
 import { QuickBookProvider } from "./quick-book/QuickBookProvider";
+import { InboxColumnResizeHandle } from "./support/InboxColumnResizeHandle";
 import { useAdminSidebarCollapse } from "@/features/admin/hooks/useAdminSidebarCollapse";
 import { useAdminDarkMode } from "@/features/admin/hooks/useAdminDarkMode";
+import { useSidebarWidth } from "@/features/admin/hooks/useSidebarWidth";
+import {
+  SIDEBAR_WIDTH_MAX,
+  SIDEBAR_WIDTH_MIN,
+} from "@/features/admin/lib/sidebarWidth";
 import { useAdminChatLayout } from "@/features/admin/hooks/useAdminChatLayout";
 import { nextDockCollapsedOnLayoutToggle } from "@/features/admin/lib/adminChatDemoLayout";
 import { shouldHideAdminChatBubbles } from "@/features/admin/lib/adminPatientPath";
@@ -35,7 +41,6 @@ import type { AdminDemoInbox } from "@/features/admin/lib/adminDemoInbox";
 import type { AdminChatLayout } from "@/features/admin/hooks/useAdminChatLayout";
 import type { AdminNotificationGroup } from "@/services/admin_notifications/groups";
 
-const SIDEBAR_WIDTH = 220;
 
 type ThemeDetail = {
   primary: string;
@@ -122,6 +127,11 @@ export function AdminShell({
   const { locale } = useLocale();
   const reduced = useReducedMotion();
   const { collapsed, toggle, ready: sidebarReady } = useAdminSidebarCollapse();
+  const {
+    width: sidebarWidth,
+    dragging: sidebarResizing,
+    startResize: startSidebarResize,
+  } = useSidebarWidth(locale === "ar");
   const { darkMode, toggle: toggleDarkMode } = useAdminDarkMode();
   const {
     layout: storedChatLayout,
@@ -309,14 +319,35 @@ export function AdminShell({
                 ? false
                 : { width: 0, opacity: 0 }
             }
-            animate={{ width: SIDEBAR_WIDTH, opacity: 1 }}
+            animate={{ width: sidebarWidth, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            transition={{ duration, ease }}
+            // A drag needs to track the pointer 1:1 — the collapse/expand
+            // easing would otherwise make every resize step lag behind it.
+            transition={sidebarResizing ? { duration: 0 } : { duration, ease }}
           >
-            <AdminSidebar navBadges={navBadges} permissions={permissions} />
+            <AdminSidebar
+              navBadges={navBadges}
+              permissions={permissions}
+              width={sidebarWidth}
+            />
           </motion.div>
         ) : null}
       </AnimatePresence>
+      {!sidebarCollapsed ? (
+        // z-45, matching the sidebar: the floating notes panel is `position:
+        // fixed; z-index: 40` and can sit right in this gap, swallowing the
+        // drag otherwise — see the same note on AdminSidebar's own root.
+        <div className="relative z-45 hidden h-screen shrink-0 lg:block">
+          <InboxColumnResizeHandle
+            width={sidebarWidth}
+            min={SIDEBAR_WIDTH_MIN}
+            max={SIDEBAR_WIDTH_MAX}
+            labelKey="admin.nav.resizeSidebar"
+            onPointerDown={startSidebarResize}
+            dragging={sidebarResizing}
+          />
+        </div>
+      ) : null}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col p-2 md:p-2.5">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[10px] border border-[var(--admin-border)] bg-[var(--admin-panel)]">
           <AdminTopbar

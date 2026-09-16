@@ -98,6 +98,7 @@ export const adminEn = {
   "admin.nav.starred": "Starred",
   "admin.nav.starItem": "Star",
   "admin.nav.unstarItem": "Unstar",
+  "admin.nav.resizeSidebar": "Resize sidebar",
   "admin.nav.sitePages": "Site pages",
   "admin.nav.hero": "Hero",
   "admin.nav.about": "About",

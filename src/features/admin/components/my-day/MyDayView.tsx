@@ -388,7 +388,7 @@ export function MyDayView({
         "transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none",
         floatRail || railCollapsed
           ? "xl:grid-cols-[3.5rem_minmax(0,1fr)]"
-          : "xl:grid-cols-[20rem_minmax(0,1fr)]",
+          : "xl:grid-cols-[16rem_minmax(0,1fr)]",
       )}
     >
       <aside className="flex min-h-0 min-w-0 flex-col gap-2 xl:overflow-visible">
@@ -468,7 +468,7 @@ export function MyDayView({
         id={floatRail ? "my-day-schedule" : undefined}
         aria-hidden={railCollapsed || !floatRail}
         className={cn(
-          "absolute inset-y-0 z-20 hidden w-80",
+          "absolute inset-y-0 z-20 hidden w-64",
           floatRail && "xl:flex xl:flex-col",
           "rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-panel)] shadow-xl",
           "transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none",
