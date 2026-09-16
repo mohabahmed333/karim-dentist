@@ -13,6 +13,10 @@ import { useTranslations } from "@/lib/i18n";
 type Props = {
   /** Only whoever can settle a bill is told about one. */
   canCollect: boolean;
+  /** Bookings still to confirm. */
+  canSeeBookings?: boolean;
+  /** Stock running out. */
+  canSeeInventory?: boolean;
 };
 
 /**
@@ -27,7 +31,11 @@ type Props = {
  * message; it should survive the front desk being away from the screen, which
  * is exactly when a bill is most likely to be missed.
  */
-export function AdminBillingAlerts({ canCollect }: Props) {
+export function AdminBillingAlerts({
+  canCollect,
+  canSeeBookings = false,
+  canSeeInventory = false,
+}: Props) {
   const router = useRouter();
   const t = useTranslations();
   // Ids already announced, so a refresh or a replayed event cannot re-toast the
@@ -35,38 +43,87 @@ export function AdminBillingAlerts({ canCollect }: Props) {
   const announced = useRef(new Set<string>());
 
   useEffect(() => {
-    if (!canCollect) return;
+    if (!canCollect && !canSeeBookings && !canSeeInventory) return;
 
     // Browsers refuse audio until the user has interacted with the page.
     const unlock = () => unlockWhatsappInboundChime();
     window.addEventListener("pointerdown", unlock, { once: true });
 
-    const stop = subscribeAdminLive((event) => {
-      if (event.table !== "treatment_proposals") return;
-      if (event.eventType !== "INSERT" || !event.row) return;
-      if (event.row.status !== "sent") return;
-      if (announced.current.has(event.row.id)) return;
-      announced.current.add(event.row.id);
+    /** One toast per row, whatever replays or reconnects happen. */
+    function announce(
+      id: string,
+      title: string,
+      description: string,
+      href: string,
+    ) {
+      if (announced.current.has(id)) return;
+      announced.current.add(id);
 
       playWhatsappInboundChime();
-      toast.info(t("admin.billing.newBillToast"), {
-        description: t("admin.billing.newBillToastHint"),
+      toast.info(title, {
+        description,
         duration: Infinity,
         closeButton: true,
         action: {
-          label: t("admin.billing.newBillToastAction"),
-          onClick: () => router.push("/admin/billing"),
+          label: t("admin.bell.toastAction"),
+          onClick: () => router.push(href),
         },
       });
-      // Refresh whatever is on screen, so the nav badge moves with the toast.
+      // Refresh whatever is on screen, so the bell moves with the toast.
       router.refresh();
+    }
+
+    const stop = subscribeAdminLive((event) => {
+      if (event.eventType !== "INSERT" || !event.row) return;
+
+      if (canCollect && event.table === "treatment_proposals") {
+        if (event.row.status !== "sent") return;
+        announce(
+          event.row.id,
+          t("admin.billing.newBillToast"),
+          t("admin.billing.newBillToastHint"),
+          "/admin/billing",
+        );
+        return;
+      }
+
+      if (canCollect && event.table === "billing_payment_requests") {
+        if (event.row.status !== "pending") return;
+        announce(
+          event.row.id,
+          t("admin.bell.paymentToast"),
+          t("admin.bell.paymentToastHint"),
+          "/admin/billing",
+        );
+        return;
+      }
+
+      if (canSeeBookings && event.table === "reservations") {
+        if (event.row.status !== "pending") return;
+        announce(
+          event.row.id,
+          t("admin.bell.pendingBookingToast"),
+          t("admin.bell.pendingBookingToastHint"),
+          "/admin/reservations",
+        );
+        return;
+      }
+
+      if (canSeeInventory && event.table === "inventory_alerts") {
+        announce(
+          event.row.id,
+          t("admin.bell.lowStockToast"),
+          t("admin.bell.lowStockToastHint"),
+          "/admin/inventory",
+        );
+      }
     });
 
     return () => {
       window.removeEventListener("pointerdown", unlock);
       stop();
     };
-  }, [canCollect, router, t]);
+  }, [canCollect, canSeeBookings, canSeeInventory, router, t]);
 
   return null;
 }

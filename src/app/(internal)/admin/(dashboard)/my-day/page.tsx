@@ -19,7 +19,9 @@ import { loadMyDayPatientBundle } from "@/services/my_day/actions";
 export const dynamic = "force-dynamic";
 
 export default async function AdminMyDayPage() {
-  const session = await requirePagePermission("patients.view");
+  // Its own key, not `patients.view`: front desk needs the patient directory
+  // but has no day of their own, so the cockpit is not theirs to open.
+  const session = await requirePagePermission("my-day.view");
   const supabase = await createClient();
   const today = localTodayIso();
   const scopeToDoctor = session.isDoctor;
@@ -34,9 +36,13 @@ export default async function AdminMyDayPage() {
     listReservationsServer(supabase, {
       from: today,
       to: today,
-      // A doctor sees their own day, plus anything not yet assigned to anyone.
+      // My Day is strictly the logged-in doctor's own list. Unassigned
+      // bookings are deliberately left out: showing a walk-in nobody has taken
+      // on every doctor's day put patients in front of doctors who had no
+      // relationship to them. They surface on Day Schedule and Reservations
+      // until someone assigns them.
       doctorId: scopeToDoctor ? session.user!.id : undefined,
-      includeUnassigned: scopeToDoctor,
+      includeUnassigned: false,
       sort: "starts_at",
       dir: "asc",
     }).catch(() => []),
@@ -61,14 +67,16 @@ export default async function AdminMyDayPage() {
     listAllServiceDoctorMappings(supabase).catch(() => ({})),
   ]);
 
-  // A doctor's directory is narrowed to patients they have actually seen, or
-  // who are not assigned to anyone. The history *within* such a patient stays
-  // whole — including visits with other doctors — because treating someone
-  // without their full chart is worse than the disclosure.
+  // A doctor's directory is narrowed to the patients they have actually seen.
+  // The history *within* such a patient stays whole — including visits with
+  // other doctors — because treating someone without their full chart is worse
+  // than the disclosure.
   const allGroups = groupReservationsByPatient(allReservations);
   const directory = scopeToDoctor
     ? (() => {
-        const mine = patientKeysForDoctor(allReservations, session.user!.id);
+        const mine = patientKeysForDoctor(allReservations, session.user!.id, {
+          includeUnassigned: false,
+        });
         return allGroups.filter((group) => mine.has(group.patientKey));
       })()
     : allGroups;

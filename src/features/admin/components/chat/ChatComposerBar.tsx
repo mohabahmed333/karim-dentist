@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { ImageIcon, Loader2, Mic, Paperclip, Send, Square } from "lucide-react";
 import { useTranslations } from "@/lib/i18n";
 import { CHAT_FOOTER } from "./chatSkin";
@@ -67,8 +67,10 @@ export function ChatComposerBar({
     el.style.height = `${Math.min(el.scrollHeight, MAX_HEIGHT_PX)}px`;
   }
   // Re-measure on every value change, not only on typing — so a send (which
-  // clears `value` from the parent) shrinks the box back down too.
-  useEffect(autoSize, [value]);
+  // clears `value` from the parent) shrinks the box back down too. Runs
+  // before paint (useLayoutEffect) so the box never flashes at its
+  // unstyled single-row intrinsic height first.
+  useLayoutEffect(autoSize, [value]);
 
   return (
     <div className={CHAT_FOOTER}>
@@ -121,7 +123,7 @@ export function ChatComposerBar({
             }
           }}
           placeholder={resolvedPlaceholder}
-          className="my-2 min-w-0 flex-1 resize-none bg-transparent px-3 py-1.5 text-[13px] leading-5 text-[var(--admin-text)] outline-none placeholder:text-[var(--admin-muted)] sm:px-4"
+          className="min-w-0 flex-1 resize-none bg-transparent px-3 py-3.5 text-[13px] leading-5 text-[var(--admin-text)] outline-none placeholder:text-[var(--admin-muted)] sm:px-4 sm:py-4"
         />
         {showVoice ? (
           <button

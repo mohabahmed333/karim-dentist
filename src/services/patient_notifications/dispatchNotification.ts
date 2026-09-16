@@ -123,13 +123,17 @@ export async function dispatchNotification(
       lastInboundBody: await deps.lastInboundBody(row.phone),
       patientName: row.patient_name,
     });
-    const template = (deps.buildTemplate ?? buildTemplateForKind)(row.kind, {
-      patientName: row.patient_name,
-      clinicName: deps.clinicName,
-      startsAt: row.starts_at ?? now.toISOString(),
-      serviceLabel: row.service_label,
-      language,
-    });
+    const template = (deps.buildTemplate ?? buildTemplateForKind)(
+      row.kind,
+      {
+        patientName: row.patient_name,
+        clinicName: deps.clinicName,
+        startsAt: row.starts_at ?? now.toISOString(),
+        serviceLabel: row.service_label,
+        language,
+      },
+      (row as { payload?: Record<string, unknown> | null }).payload ?? null,
+    );
 
     if (!template) {
       await deps.finish(row.id, {

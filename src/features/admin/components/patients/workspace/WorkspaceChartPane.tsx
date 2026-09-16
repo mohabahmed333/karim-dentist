@@ -20,6 +20,8 @@ type Props = {
   onSelect: (fdi: string) => void;
   onDeselect: () => void;
   onPaint: (fdi: string, surface: SurfaceId) => void;
+  /** FDIs with an existing treatment record — highlighted alongside the selection. */
+  markedFdis?: string[];
 };
 
 export function WorkspaceChartPane(props: Props) {
@@ -55,6 +57,7 @@ export function WorkspaceChartPane(props: Props) {
             onSelect={props.onSelect}
             onDeselect={props.onDeselect}
             onPaint={props.onPaint}
+            markedFdis={props.markedFdis}
           />
         ) : (
           <TeethChartCanvas

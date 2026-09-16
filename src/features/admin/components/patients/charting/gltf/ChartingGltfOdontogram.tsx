@@ -31,6 +31,8 @@ type Props = {
   onSelect: (fdi: string) => void;
   onDeselect: () => void;
   onPaint: (fdi: string, surface: SurfaceId) => void;
+  /** FDIs with an existing treatment record — highlighted alongside the selection. */
+  markedFdis?: string[];
   /** Take the parent's height rather than the 52vh/420px box. */
   fill?: boolean;
 };
@@ -111,8 +113,10 @@ export function ChartingGltfOdontogram(props: Props) {
         <div className={cn("w-full", props.fill ? "h-full" : "h-[min(52vh,420px)]")}>
           <AnatomicalArchViewer
             selectedFdi={props.selectedFdi}
+            markedFdis={props.markedFdis}
             focusMode
             highlightColor="#2563eb"
+            markedColor="#f59e0b"
             onSelectFdi={props.onSelect}
             className="h-full min-h-[320px] w-full"
           />

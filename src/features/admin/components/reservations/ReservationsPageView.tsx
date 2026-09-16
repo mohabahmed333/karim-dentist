@@ -59,6 +59,7 @@ import { useLocale, useTranslations } from "@/lib/i18n";
 import { ReservationServiceLabel } from "@/features/admin/components/ReservationServiceLabel";
 import { useReservationFilterQuery } from "@/features/admin/lib/useReservationFilterQuery";
 import { useReservationTableServerFiltering } from "@/features/admin/lib/useReservationTableServerFiltering";
+import { isBillableVisit } from "@/services/reservations/billableVisit";
 
 type Props = {
   /** Month calendar + today rail (no search / pagination). */
@@ -235,6 +236,12 @@ export function ReservationsPageView({
     editor.selectedId && editor.selectedId !== "new"
       ? editor.selectedId
       : null;
+
+  /** The row being edited, but only while it is a visit that can be billed. */
+  const billableEditRow = editId
+    ? (editor.items.find((row) => row.id === editId && isBillableVisit(row)) ??
+      null)
+    : null;
   const drawerOpen = editId !== null;
 
   function onCreateOpenChange(open: boolean) {
@@ -532,11 +539,11 @@ export function ReservationsPageView({
         onStatus={(status) => void editor.setStatus(status)}
         errors={editor.errors}
         onBill={
-          canPropose && editId
-            ? () => {
-                const row = editor.items.find((r) => r.id === editId) ?? null;
-                if (row) setBillReservation(row);
-              }
+          // Offered only once the visit has actually started — there is
+          // nothing to charge for before that, and a cancelled visit never
+          // becomes billable.
+          canPropose && editId && billableEditRow
+            ? () => setBillReservation(billableEditRow)
             : undefined
         }
       />

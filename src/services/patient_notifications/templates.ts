@@ -19,7 +19,10 @@
  * this file and nowhere else.
  */
 
-export type TemplateKind = "confirmation" | "reminder_24h";
+export type TemplateKind =
+  | "confirmation"
+  | "reminder_24h"
+  | "billing_payment_request";
 export type BodyLanguage = "ar" | "en";
 
 /** What Meta has these registered as. Not the language of the text. */

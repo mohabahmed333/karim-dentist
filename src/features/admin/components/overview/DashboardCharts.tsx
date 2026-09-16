@@ -3,7 +3,7 @@
 import type { ReservationStats } from "@/services/reservations/stats";
 import type { ReservationStatus } from "@/services/reservations/types";
 import { useLocale, useTranslations } from "@/lib/i18n";
-import type { AdminMessageKey } from "@/lib/i18n/messages/admin/en";
+import { RESERVATION_STATUS_LABEL_KEYS } from "@/features/admin/lib/reservationStatusLabels";
 
 const STATUS_COLOR: Record<ReservationStatus, string> = {
   pending: "#EA580C",
@@ -13,13 +13,7 @@ const STATUS_COLOR: Record<ReservationStatus, string> = {
   no_show: "#D97706",
 };
 
-const STATUS_LABEL: Record<ReservationStatus, AdminMessageKey> = {
-  pending: "admin.overview.chart.status.pending",
-  confirmed: "admin.overview.chart.status.confirmed",
-  completed: "admin.overview.chart.status.completed",
-  cancelled: "admin.overview.chart.status.cancelled",
-  no_show: "admin.overview.chart.status.noShow",
-};
+const STATUS_LABEL = RESERVATION_STATUS_LABEL_KEYS;
 
 export function ChartVisitsWeek({
   weekCounts,

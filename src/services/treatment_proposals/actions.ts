@@ -18,11 +18,19 @@ import { sendBillingPaymentRequest } from "@/services/billing_payments/notify";
 import { groupReservationsByPatient } from "@/services/reservations/patientHistory";
 import { listReservationsServer } from "@/services/reservations/queries";
 import { assignBillingDoctor } from "@/services/reservations/mutations";
+import { hasPermission } from "@/lib/auth/permissions";
+import { isBillableVisit } from "@/services/reservations/billableVisit";
 
 export type BillingFormOptions = {
   services: PriceableService[];
   doctors: PriceableDoctor[];
   serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
+  /**
+   * Whether this user can go and fix a missing price. Resolved here rather
+   * than passed in: the dialog opens from four places, none of which know the
+   * session, and offering a link to a page that 404s is worse than no link.
+   */
+  canManagePrices: boolean;
 };
 
 /**
@@ -55,6 +63,7 @@ export async function loadBillingFormOptions(): Promise<BillingFormOptions> {
     services: servicesRes.data ?? [],
     doctors: doctors.map((d) => ({ id: d.id, display_name: d.display_name })),
     serviceDoctorMappings,
+    canManagePrices: hasPermission(auth.session, "settings.edit"),
   };
 }
 
@@ -70,6 +79,27 @@ export async function saveTreatmentProposal(
   const parsed = createProposalSchema.safeParse(input);
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message ?? "Invalid input");
+  }
+
+  // The button is hidden for a future visit, but the gate has to be here: a
+  // bill is for work already done, and the client is not where that is decided.
+  if (parsed.data.reservationId) {
+    const { data: visit } = await auth.supabase
+      .from("reservations")
+      .select("starts_at, status")
+      .eq("id", parsed.data.reservationId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (visit && !isBillableVisit(visit)) {
+      const startsAt = new Date(visit.starts_at);
+      throw new Error(
+        visit.status === "cancelled"
+          ? "This visit was cancelled and cannot be billed."
+          : startsAt.getTime() > Date.now()
+            ? "This visit has not started yet, so it cannot be billed."
+            : "Only today's visits can be billed. This one is from an earlier day.",
+      );
+    }
   }
 
   const { id } = await insertProposal(auth.supabase, patientKey, parsed.data);

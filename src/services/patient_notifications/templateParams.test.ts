@@ -5,6 +5,7 @@ import {
   buildConfirmationTemplate,
   buildReminderTemplate,
   sanitizeTemplateParam,
+  buildTemplateForKind,
 } from "./templateParams.ts";
 
 // Meta rejects a template parameter containing a newline, a tab, or four or more
@@ -115,3 +116,42 @@ describe("buildReminderTemplate", () => {
 function tplName(t: { name: string }): string {
   return t.name;
 }
+
+describe("billing_payment_request template", () => {
+  const input = {
+    patientName: "Amr",
+    clinicName: "The Dental Lounge",
+    startsAt: "2026-09-16T10:00:00.000Z",
+    serviceLabel: "-",
+    language: "en" as const,
+  };
+
+  it("stays queued until the destination is known", () => {
+    // Telling a patient to transfer to nothing is worse than not sending.
+    assert.equal(
+      buildTemplateForKind("billing_payment_request", input, {
+        amount_label: "EGP 1,200",
+      }),
+      null,
+    );
+    assert.equal(
+      buildTemplateForKind("billing_payment_request", input, {
+        destination: "clinic@instapay",
+      }),
+      null,
+    );
+  });
+
+  it("stays queued while no template is approved for the kind", () => {
+    // PATIENT_TEMPLATES has no billing row yet, so templateFor throws and the
+    // builder reports "nothing to send with" rather than crashing the dispatch.
+    assert.equal(
+      buildTemplateForKind("billing_payment_request", input, {
+        amount_label: "EGP 1,200",
+        description: "Tooth filling",
+        destination: "clinic@instapay",
+      }),
+      null,
+    );
+  });
+});

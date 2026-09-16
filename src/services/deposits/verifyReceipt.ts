@@ -38,6 +38,13 @@ export type VerifyInput = {
     receiptMaxAgeHours: number;
     instapayHandle: string;
     walletNumber: string;
+    /**
+     * Every other InstaPay handle / wallet the clinic still accepts. A patient
+     * who saved an older number has still paid the clinic, so matching only
+     * the primary would send a good receipt to manual review.
+     */
+    instapayHandles?: string[];
+    walletNumbers?: string[];
     recipientNames: string[];
   };
   /** When the deposit was asked for; a receipt long predating it is recycled. */
@@ -82,13 +89,17 @@ function matchesClinic(candidate: string, required: VerifyInput["required"]): bo
   const value = normalise(candidate);
   if (!value) return false;
 
-  const handle = normalise(required.instapayHandle);
-  if (handle && value === handle) return true;
+  for (const raw of [required.instapayHandle, ...(required.instapayHandles ?? [])]) {
+    const handle = normalise(raw);
+    if (handle && value === handle) return true;
+  }
 
-  const wallet = digitsOf(required.walletNumber);
   const candidateDigits = digitsOf(candidate);
-  if (wallet.length >= 8 && candidateDigits.length >= 8) {
-    if (wallet.slice(-8) === candidateDigits.slice(-8)) return true;
+  for (const raw of [required.walletNumber, ...(required.walletNumbers ?? [])]) {
+    const wallet = digitsOf(raw);
+    if (wallet.length >= 8 && candidateDigits.length >= 8) {
+      if (wallet.slice(-8) === candidateDigits.slice(-8)) return true;
+    }
   }
 
   for (const name of required.recipientNames) {

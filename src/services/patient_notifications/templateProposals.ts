@@ -92,9 +92,16 @@ export const TEMPLATE_PROPOSALS: readonly TemplateProposal[] = [
     title: "Billing payment requests",
     names: { en: "billing_payment_request_en", ar: "billing_payment_request_ar" },
     category: "UTILITY",
-    params: ["patient name", "amount and description"],
-    bodyEn: "Hi {{1}}, you have an outstanding bill: {{2}}. Reply here and we'll send payment details.",
-    bodyAr: "أهلاً {{1}}، عندك فاتورة مستحقة: {{2}}. ابعتلنا هنا وهنبعتلك تفاصيل الدفع.",
+    // Carries where to pay, not just what is owed. An earlier draft said
+    // "reply and we'll send payment details", which cost a round trip and
+    // needed a second message nothing sends automatically — the patient can
+    // pay off this one and reply with the receipt, which is the only reply
+    // the clinic can read on its own.
+    params: ["patient name", "amount and description", "where to transfer"],
+    bodyEn:
+      "Hi {{1}}, your bill is {{2}}. Transfer to: {{3}}. Send us a photo of the receipt here and we'll confirm we received it.",
+    bodyAr:
+      "أهلاً {{1}}، فاتورتك {{2}}. حوّل على: {{3}}. ابعتلنا صورة الإيصال هنا وهنأكد استلامها.",
   },
 ];
 

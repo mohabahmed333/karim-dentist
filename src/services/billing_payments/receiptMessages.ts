@@ -14,17 +14,14 @@ import { formatEgp, type Language } from "@/services/deposits/receiptMessages";
 export type BillingInstructionsInput = {
   amountEgp: number;
   description: string;
-  instapayHandle: string;
-  walletNumber: string;
+  /** Where to transfer, already joined — see payment_methods/destinations. */
+  destination: string;
   language: Language;
 };
 
 export function billingPaymentInstructions(input: BillingInstructionsInput): string {
   const amount = formatEgp(input.amountEgp, input.language);
-  const destinations: string[] = [];
-  if (input.instapayHandle.trim()) destinations.push(input.instapayHandle.trim());
-  if (input.walletNumber.trim()) destinations.push(input.walletNumber.trim());
-  const to = destinations.join(" — ");
+  const to = input.destination.trim();
 
   if (input.language === "ar") {
     return [

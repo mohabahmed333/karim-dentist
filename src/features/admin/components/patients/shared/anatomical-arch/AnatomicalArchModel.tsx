@@ -21,6 +21,7 @@ type Props = {
   selectedFdi: string | null;
   markedFdis?: string[];
   highlightColor?: string;
+  markedColor?: string;
   focusMode?: boolean;
   flipped?: boolean;
   onSelectFdi?: (fdi: string) => void;
@@ -31,6 +32,7 @@ export function AnatomicalArchModel({
   selectedFdi,
   markedFdis = [],
   highlightColor = "#F97316",
+  markedColor,
   focusMode = false,
   flipped = false,
   onSelectFdi,
@@ -63,9 +65,10 @@ export function AnatomicalArchModel({
     paintArchSelection(root, selectedFdi, {
       focusMode,
       highlightColor,
+      markedColor,
       markedFdis,
     });
-  }, [root, selectedFdi, markedFdis, focusMode, highlightColor]);
+  }, [root, selectedFdi, markedFdis, focusMode, highlightColor, markedColor]);
 
   // Cached once per model load so the per-frame glide below is a flat loop,
   // not a scene-graph traversal every frame.

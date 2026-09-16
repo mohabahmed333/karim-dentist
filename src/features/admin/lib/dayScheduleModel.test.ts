@@ -8,6 +8,7 @@ import {
   dayScheduleTitle,
   dayWithinCoverage,
   expandCoverageThroughAfterTomorrow,
+  isReservationExpired,
   pickCurrentReservation,
   reservationsForDay,
 } from "./dayScheduleModel.ts";
@@ -191,5 +192,54 @@ describe("pickCurrentReservation", () => {
       pickCurrentReservation([tomorrow], new Date(2026, 8, 8, 9, 30, 0)),
       null,
     );
+  });
+});
+
+describe("isReservationExpired", () => {
+  const at = (hour: number, status: Reservation["status"]) =>
+    ({
+      ...base,
+      id: `${hour}-${status}`,
+      status,
+      starts_at: new Date(2026, 8, 8, hour, 0, 0).toISOString(),
+    }) as Reservation;
+
+  const noon = new Date(2026, 8, 8, 12, 0, 0).getTime();
+
+  it("expires an open slot once its hour has run out", () => {
+    assert.equal(isReservationExpired(at(10, "pending"), noon), true);
+    assert.equal(isReservationExpired(at(10, "confirmed"), noon), true);
+  });
+
+  it("does not expire a slot that is still running", () => {
+    const oneMinuteToNoon = new Date(2026, 8, 8, 11, 59, 0).getTime();
+    assert.equal(isReservationExpired(at(11, "pending"), oneMinuteToNoon), false);
+  });
+
+  it("expires exactly when the slot stops being the current one", () => {
+    // pickCurrentReservation holds an appointment until start + slot, exclusive.
+    // Expiring at that same instant leaves no moment where a visit is neither
+    // in the chair nor overdue.
+    const eleven = at(11, "pending");
+    const two = at(14, "confirmed");
+    // At noon the 11:00 slot no longer covers "now", so the clock has moved on
+    // to the next appointment...
+    assert.equal(pickCurrentReservation([eleven, two], new Date(noon))?.id, two.id);
+    // ...and the same instant is when it starts reading as overdue.
+    assert.equal(isReservationExpired(eleven, noon), true);
+  });
+
+  it("does not expire an appointment still to come", () => {
+    assert.equal(isReservationExpired(at(14, "confirmed"), noon), false);
+  });
+
+  it("leaves resolved outcomes alone, however old", () => {
+    for (const status of ["completed", "cancelled", "no_show"] as const) {
+      assert.equal(isReservationExpired(at(8, status), noon), false);
+    }
+  });
+
+  it("expires nothing before the clock is known", () => {
+    assert.equal(isReservationExpired(at(8, "pending"), null), false);
   });
 });

@@ -19,6 +19,7 @@ import {
   PatientProfileTabs,
   type PatientProfileTab,
 } from "./PatientProfileTabs";
+import { PatientTabPanel } from "./PatientTabPanel";
 import { chartTabProps } from "./history-dashboard/chartTabProps";
 
 type Props = {
@@ -26,6 +27,8 @@ type Props = {
   notes: PatientToothNote[];
   treatments: TreatmentItem[];
   doctorNameById: Record<string, string>;
+  /** Front desk reads the record but does not open the chart. */
+  canOpenWorkspace?: boolean;
 };
 
 /**
@@ -42,6 +45,7 @@ export function PatientProfileView({
   notes,
   treatments,
   doctorNameById,
+  canOpenWorkspace = false,
 }: Props) {
   const t = useTranslations();
   const [tab, setTab] = useState<PatientProfileTab>("information");
@@ -53,28 +57,32 @@ export function PatientProfileView({
         active={tab}
         onChange={setTab}
         actions={
-          <Link
-            href={patientWorkspacePath(group.patientKey)}
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-          >
-            <ExternalLink className="size-3.5" />
-            {t("admin.patientTabs.openWorkspace")}
-          </Link>
+          canOpenWorkspace ? (
+            <Link
+              href={patientWorkspacePath(group.patientKey)}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              <ExternalLink className="size-3.5" />
+              {t("admin.patientTabs.openWorkspace")}
+            </Link>
+          ) : null
         }
       />
 
-      {tab === "information" ? <PatientInfoTab group={group} /> : null}
-      {tab === "history" ? (
-        <PatientAppointmentHistoryTab group={group} />
-      ) : null}
-      {tab === "next" ? (
-        <PatientNextTreatmentTab group={group} treatments={treatments} />
-      ) : null}
-      {tab === "medical" ? (
-        <PatientMedicalRecordTab
-          {...chartTabProps(chart, treatments, doctorNameById)}
-        />
-      ) : null}
+      <PatientTabPanel tab={tab}>
+        {tab === "information" ? <PatientInfoTab group={group} /> : null}
+        {tab === "history" ? (
+          <PatientAppointmentHistoryTab group={group} />
+        ) : null}
+        {tab === "next" ? (
+          <PatientNextTreatmentTab group={group} treatments={treatments} />
+        ) : null}
+        {tab === "medical" ? (
+          <PatientMedicalRecordTab
+            {...chartTabProps(chart, treatments, doctorNameById)}
+          />
+        ) : null}
+      </PatientTabPanel>
     </div>
   );
 }

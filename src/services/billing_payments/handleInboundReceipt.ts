@@ -17,6 +17,8 @@ import type { Language } from "@/services/deposits/receiptMessages";
 import { loadDepositSettings } from "@/services/deposits/store";
 import { verifyReceipt } from "@/services/deposits/verifyReceipt";
 import { billingReceiptOutcomeMessage } from "./receiptMessages";
+import { destinationsOfKind } from "@/services/payment_methods/destinations";
+import { listPaymentMethods } from "@/services/payment_methods/queries";
 import {
   confirmBillingPayment,
   findOpenBillingRequestByConversation,
@@ -114,6 +116,8 @@ export async function handleInboundBillingReceipt(
     });
   }
 
+  const methods = await listPaymentMethods(db).catch(() => []);
+
   const requiredFields = {
     amountEgp,
     toleranceEgp: Number(settings.amount_tolerance_egp),
@@ -121,6 +125,9 @@ export async function handleInboundBillingReceipt(
     receiptMaxAgeHours: settings.receipt_max_age_hours,
     instapayHandle: settings.instapay_handle,
     walletNumber: settings.wallet_number,
+    // Any method the clinic still keeps counts, not just the primaries.
+    instapayHandles: destinationsOfKind(methods, "instapay"),
+    walletNumbers: destinationsOfKind(methods, "wallet"),
     recipientNames: settings.recipient_names ?? [],
   };
 

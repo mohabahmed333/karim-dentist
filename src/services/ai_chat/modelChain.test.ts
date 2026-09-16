@@ -7,6 +7,9 @@ const ALL_KEYS = {
   GEMINI_API_KEY: "g",
   MISTRAL_API_KEY: "m",
   GROQ_API_KEY: "k",
+  CEREBRAS_API_KEY: "c",
+  OPENROUTER_API_KEY: "o",
+  SAMBANOVA_API_KEY: "s",
 };
 
 const ids = (chain: { provider: string; model: string }[]) =>
@@ -14,22 +17,28 @@ const ids = (chain: { provider: string; model: string }[]) =>
 
 describe("DEFAULT_CHAIN", () => {
   /**
-   * The whole point of the feature: the strongest non-Groq models answer first,
-   * and Groq — whose per-model daily cap is what we keep hitting — is the last
-   * resort rather than the only one.
+   * The whole point of the feature: within the generous-cap providers the
+   * strongest-in-Arabic model answers first, and Groq — whose per-model daily
+   * cap is what we keep hitting — is the last resort rather than the only one.
    */
   it("puts the other providers first and every Groq model last", () => {
     assert.deepEqual(ids(DEFAULT_CHAIN), [
-      "gemini:gemini-3.8-flash",
-      "mistral:mistral-large-latest",
-      "gemini:gemini-3.6-flash",
       "mistral:mistral-saba-latest",
-      "groq:openai/gpt-oss-120b",
+      "cerebras:qwen-3-32b",
+      "gemini:gemini-3.8-flash",
+      "gemini:gemini-3.6-flash",
+      "mistral:mistral-large-latest",
+      "cerebras:llama-3.3-70b",
+      "sambanova:Meta-Llama-3.3-70B-Instruct",
+      "openrouter:meta-llama/llama-3.3-70b-instruct:free",
+      "sambanova:DeepSeek-V3-0324",
+      "openrouter:deepseek/deepseek-chat-v3-0324:free",
       "groq:qwen/qwen3.8-27b",
+      "groq:openai/gpt-oss-120b",
       "groq:openai/gpt-oss-20b",
     ]);
     const firstGroq = DEFAULT_CHAIN.findIndex((e) => e.provider === "groq");
-    const lastOther = DEFAULT_CHAIN.map((e) => e.provider).lastIndexOf("gemini");
+    const lastOther = DEFAULT_CHAIN.map((e) => e.provider).lastIndexOf("openrouter");
     assert.ok(firstGroq > lastOther, "Groq must not outrank another provider");
   });
 
@@ -91,8 +100,8 @@ describe("resolveChain", () => {
   it("drops entries whose provider key is missing", () => {
     const chain = resolveChain({ GROQ_API_KEY: "k" });
     assert.deepEqual(ids(chain), [
-      "groq:openai/gpt-oss-120b",
       "groq:qwen/qwen3.8-27b",
+      "groq:openai/gpt-oss-120b",
       "groq:openai/gpt-oss-20b",
     ]);
   });
@@ -106,14 +115,14 @@ describe("resolveChain", () => {
     const chain = resolveChain({ GROQ_API_KEY: "k", GROQ_MODEL: "llama-3.3-70b-versatile" });
     assert.deepEqual(ids(chain), [
       "groq:llama-3.3-70b-versatile",
-      "groq:qwen/qwen3.8-27b",
+      "groq:openai/gpt-oss-120b",
       "groq:openai/gpt-oss-20b",
     ]);
   });
 
   it("keeps a GROQ_MODEL that duplicates a later entry from appearing twice", () => {
     const chain = resolveChain({ GROQ_API_KEY: "k", GROQ_MODEL: "openai/gpt-oss-20b" });
-    assert.deepEqual(ids(chain), ["groq:openai/gpt-oss-20b", "groq:qwen/qwen3.8-27b"]);
+    assert.deepEqual(ids(chain), ["groq:openai/gpt-oss-20b", "groq:openai/gpt-oss-120b"]);
   });
 
   it("ignores GROQ_MODEL when AI_MODEL_CHAIN spells the chain out", () => {

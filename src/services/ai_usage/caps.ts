@@ -34,12 +34,28 @@ const MISTRAL_EXPERIMENT: ModelCap = {
   tokensPerMonth: 1_000_000_000,
 };
 
+/**
+ * OpenRouter's `:free` routes are rate-limited by requests, not tokens —
+ * published as 20 requests/minute and (with no credit ever purchased on the
+ * account) 50 requests/day across every `:free` model combined.
+ */
+const OPENROUTER_FREE: ModelCap = {
+  tokensPerDay: null,
+  requestsPerDay: 50,
+  tokensPerMonth: null,
+};
+
 const CAPS: Record<string, ModelCap> = {
   "groq:openai/gpt-oss-120b": GROQ_FREE,
   "groq:openai/gpt-oss-20b": GROQ_FREE,
   "groq:qwen/qwen3.8-27b": GROQ_FREE,
   "mistral:mistral-large-latest": MISTRAL_EXPERIMENT,
   "mistral:mistral-saba-latest": MISTRAL_EXPERIMENT,
+  "openrouter:meta-llama/llama-3.3-70b-instruct:free": OPENROUTER_FREE,
+  "openrouter:deepseek/deepseek-chat-v3-0324:free": OPENROUTER_FREE,
+  // Cerebras and SambaNova publish free-tier rate limits (requests/minute)
+  // rather than a daily token or request ceiling, so there is no NONE-shaped
+  // number to record here without inventing one.
 };
 
 /**

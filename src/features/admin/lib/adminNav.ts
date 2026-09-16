@@ -117,7 +117,7 @@ export const adminRailItems: AdminRailItem[] = [
     href: "/admin/my-day",
     labelKey: "admin.nav.myDay",
     icon: Stethoscope,
-    permission: "patients.view",
+    permission: "my-day.view",
   },
   {
     id: "bookings",
@@ -241,6 +241,7 @@ export const adminRailItems: AdminRailItem[] = [
         labelKey: "admin.settings.groupBilling",
         children: [
           { href: "/admin/settings/deposits", labelKey: "admin.settings.deposits", permission: "settings.view" },
+          { href: "/admin/settings/payment-methods", labelKey: "admin.settings.paymentMethods", permission: "settings.view" },
         ],
       },
       {
@@ -273,7 +274,7 @@ export const adminNavSections: AdminNavSection[] = [
         href: "/admin/my-day",
         labelKey: "admin.nav.myDay",
         icon: Stethoscope,
-        permission: "patients.view",
+        permission: "my-day.view",
       },
       {
         id: "bookings",
@@ -379,6 +380,7 @@ export const adminNavSections: AdminNavSection[] = [
             labelKey: "admin.settings.groupBilling",
             items: [
               { href: "/admin/settings/deposits", labelKey: "admin.settings.deposits", permission: "settings.view" },
+              { href: "/admin/settings/payment-methods", labelKey: "admin.settings.paymentMethods", permission: "settings.view" },
             ],
           },
           {
@@ -445,6 +447,7 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
   "/admin/settings/whatsapp-ai": "admin.settings.whatsappAi",
   "/admin/settings/patient-notifications": "admin.settings.notifications",
   "/admin/settings/deposits": "admin.settings.deposits",
+  "/admin/settings/payment-methods": "admin.settings.paymentMethods",
   "/admin/settings/templates": "admin.settings.templates",
   "/admin/settings/doctors": "admin.settings.doctors",
   // No adminPagePermissions entries on purpose: your own profile and password
@@ -461,7 +464,7 @@ export const adminPageLabelKeys: Record<string, AdminMessageKey> = {
  */
 export const adminPagePermissions: Record<string, string> = {
   "/admin": "dashboard.view",
-  "/admin/my-day": "patients.view",
+  "/admin/my-day": "my-day.view",
   "/admin/reservations": "reservations.view",
   "/admin/patients": "patients.view",
   "/admin/billing": "patients.view",
@@ -501,6 +504,7 @@ export const adminPagePermissions: Record<string, string> = {
   "/admin/settings/whatsapp-ai": "settings.view",
   "/admin/settings/patient-notifications": "settings.view",
   "/admin/settings/deposits": "settings.view",
+  "/admin/settings/payment-methods": "settings.view",
   "/admin/settings/templates": "settings.view",
   "/admin/settings/doctors": "settings.view",
   "/admin/settings/inventory": "settings.view",
@@ -637,6 +641,20 @@ export function flattenAdminNavItems(
       ...(section.groups?.flatMap((group) => flattenEntry(group)) ?? []),
     ];
   });
+}
+
+/**
+ * Starred leaf pages, in nav order (not starring order) so the pinned
+ * shortcut list stays stable as items are added/removed. Pass
+ * permission-filtered `sections` so a starred page the role can no longer
+ * see quietly drops out instead of dangling.
+ */
+export function selectStarredNavItems(
+  sections: AdminNavSection[],
+  starredHrefs: string[],
+): AdminNavItem[] {
+  const starred = new Set(starredHrefs);
+  return flattenAdminNavItems(sections).filter((item) => starred.has(item.href));
 }
 
 function hrefMatches(pathname: string, href: string): boolean {

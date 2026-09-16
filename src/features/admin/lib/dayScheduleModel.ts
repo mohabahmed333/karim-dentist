@@ -158,12 +158,44 @@ export function packDayBlocks(rows: Reservation[]): {
   return { blocks, laneCount: Math.max(1, laneEnds.length) };
 }
 
-export function statusBlockStyle(status: ReservationStatus): {
+/**
+ * A reservation whose slot has run out while it was still open.
+ *
+ * Nothing writes this: an appointment nobody marked completed, cancelled or
+ * no-show is only "expired" relative to the clock, so deriving it means it
+ * appears on its own and clears itself the moment someone resolves the visit.
+ * `cancelled`, `completed` and `no_show` are all resolved outcomes and never
+ * expire.
+ */
+export function isReservationExpired(
+  reservation: Reservation,
+  nowMs: number | null,
+): boolean {
+  if (nowMs === null) return false;
+  if (reservation.status !== "pending" && reservation.status !== "confirmed") {
+    return false;
+  }
+  const endMs = new Date(reservation.starts_at).getTime() + DAY_SCHEDULE_SLOT_MS;
+  return endMs <= nowMs;
+}
+
+/** What the rail actually paints: a stored status, or the derived one. */
+export type DayScheduleState = ReservationStatus | "expired";
+
+export function statusBlockStyle(status: DayScheduleState): {
   background: string;
   border: string;
   color: string;
 } {
   switch (status) {
+    case "expired":
+      // Amber, not red: an expired slot is a prompt to close the visit off,
+      // not a failure — the clinic may simply be running late.
+      return {
+        background: "color-mix(in srgb, #D97706 14%, var(--admin-panel))",
+        border: "color-mix(in srgb, #D97706 45%, var(--admin-panel))",
+        color: "#B45309",
+      };
     case "confirmed":
       return {
         background: "color-mix(in srgb, var(--admin-primary) 14%, var(--admin-panel))",

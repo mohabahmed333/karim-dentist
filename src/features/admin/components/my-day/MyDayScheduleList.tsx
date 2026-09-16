@@ -1,7 +1,11 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { statusBlockStyle } from "@/features/admin/lib/dayScheduleModel";
+import {
+  isReservationExpired,
+  statusBlockStyle,
+} from "@/features/admin/lib/dayScheduleModel";
+import { RESERVATION_STATUS_LABEL_KEYS } from "@/features/admin/lib/reservationStatusLabels";
 import type { Reservation } from "@/services/reservations/types";
 import { useLocale, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -74,7 +78,11 @@ export function MyDayScheduleList({
           !isNow &&
           nowMs !== null &&
           new Date(reservation.starts_at).getTime() < nowMs;
-        const status = statusBlockStyle(reservation.status);
+        // Expired is derived from the clock, so it outranks the stored status
+        // in the pill: "pending" on a slot that ended an hour ago says nothing.
+        const expired = isReservationExpired(reservation, nowMs);
+        const state = expired ? "expired" : reservation.status;
+        const status = statusBlockStyle(state);
         const doctorName = reservation.doctor_id
           ? doctorNameById[reservation.doctor_id]
           : null;
@@ -146,7 +154,8 @@ export function MyDayScheduleList({
                     .join(" · ")}
                 </span>
                 <span
-                  className="mt-1 inline-block rounded-full border px-1.5 py-0.5 text-[10px]"
+                  title={expired ? t("admin.myDay.expiredHint") : undefined}
+                  className="mt-1 inline-block rounded-full border px-1.5 py-0.5 text-[10px] font-medium"
                   style={
                     {
                       background: status.background,
@@ -155,7 +164,9 @@ export function MyDayScheduleList({
                     } as CSSProperties
                   }
                 >
-                  {reservation.status}
+                  {expired
+                    ? t("admin.myDay.expired")
+                    : t(RESERVATION_STATUS_LABEL_KEYS[reservation.status])}
                 </span>
               </span>
             </button>

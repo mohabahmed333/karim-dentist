@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  AdminInput,
   AdminSelect,
   AdminSelectContent,
   AdminSelectItem,
@@ -13,7 +12,7 @@ import {
   AdminSelectValue,
   AdminTextarea,
 } from "@/features/admin/ui";
-import { useTranslations } from "@/lib/i18n";
+import { useLocale, useTranslations } from "@/lib/i18n";
 import { saveTreatmentProposal } from "@/services/treatment_proposals/actions";
 import {
   resolveServiceDoctorPrice,
@@ -25,6 +24,9 @@ import type { ServiceDoctorMapping } from "@/services/service_doctors/queries";
 import type { Reservation } from "@/services/reservations/types";
 import { formatAppointmentDateTime } from "@/services/patient_notifications/formatWhen";
 import { ServiceSearchSelect } from "./ServiceSearchSelect";
+import Link from "next/link";
+import { formatEgp } from "@/services/deposits/receiptMessages";
+import { isBillableVisit } from "@/services/reservations/billableVisit";
 
 export type DraftItem = { serviceId: string; description: string; amount: string };
 
@@ -48,6 +50,12 @@ type Props = {
   serviceDoctorMappings: Record<string, ServiceDoctorMapping[]>;
   /** This patient's visits, for the optional "which visit is this for?" picker. */
   reservations: Reservation[];
+  /**
+   * Whether this user can go and set a price. Only gates the shortcut link —
+   * the amount is read-only for everyone, because a fee belongs to the service
+   * and not to whichever bill happens to mention it.
+   */
+  canManagePrices?: boolean;
   onSent: () => void;
   /** Seeds the form instead of starting blank — e.g. an AI draft proposing a starting point. */
   initialDoctorId?: string;
@@ -75,6 +83,7 @@ export function ProposeServicesForm({
   doctors,
   serviceDoctorMappings,
   reservations,
+  canManagePrices = false,
   onSent,
   initialDoctorId,
   initialItems,
@@ -85,9 +94,16 @@ export function ProposeServicesForm({
   submitLabel,
 }: Props) {
   const t = useTranslations();
+  const { locale } = useLocale();
   const [doctorId, setDoctorId] = useState(initialDoctorId ?? "");
   const [items, setItems] = useState<DraftItem[]>(initialItems ?? [emptyItem()]);
-  const [reservationId, setReservationId] = useState(initialReservationId ?? NO_RESERVATION);
+  const [reservationId, setReservationId] = useState(() => {
+    if (!initialReservationId) return NO_RESERVATION;
+    const visit = reservations.find((row) => row.id === initialReservationId);
+    // A caller can open this for an upcoming appointment; the bill then simply
+    // is not tied to a visit, rather than naming one that cannot be billed.
+    return visit && isBillableVisit(visit) ? initialReservationId : NO_RESERVATION;
+  });
   const [note, setNote] = useState("");
   const [pending, setPending] = useState(false);
   const hideDoctor = lockDoctor && Boolean(initialDoctorId);
@@ -97,16 +113,44 @@ export function ProposeServicesForm({
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...partial } : item)));
   }
 
-  function pickService(index: number, serviceId: string) {
+  function priceFor(serviceId: string): string {
+    if (!serviceId) return "";
     const service = services.find((s) => s.id === serviceId);
     const price = doctorId
       ? resolveServiceDoctorPrice(serviceId, doctorId, serviceDoctorMappings, service?.price_label ?? null)
       : (service?.price_label ?? null);
+    return extractSingleAmount(price) ?? "";
+  }
+
+  function pickService(index: number, serviceId: string) {
+    const service = services.find((s) => s.id === serviceId);
     patchItem(index, {
       serviceId,
       description: service?.title ?? "",
-      amount: extractSingleAmount(price) ?? "",
+      amount: priceFor(serviceId),
     });
+  }
+
+  // A doctor's own fee can differ from the clinic's, so the amounts already on
+  // the form have to be re-read when the doctor changes — nobody can correct
+  // them by hand any more.
+  function changeDoctor(nextDoctorId: string) {
+    setDoctorId(nextDoctorId);
+    setItems((prev) =>
+      prev.map((item) => {
+        if (!item.serviceId) return item;
+        const service = services.find((s) => s.id === item.serviceId);
+        const price = nextDoctorId
+          ? resolveServiceDoctorPrice(
+              item.serviceId,
+              nextDoctorId,
+              serviceDoctorMappings,
+              service?.price_label ?? null,
+            )
+          : (service?.price_label ?? null);
+        return { ...item, amount: extractSingleAmount(price) ?? "" };
+      }),
+    );
   }
 
   async function onSubmit() {
@@ -126,7 +170,7 @@ export function ProposeServicesForm({
       return;
     }
     if (parsedItems.some((item) => !Number.isFinite(item.amountEgp) || item.amountEgp <= 0)) {
-      toast.error(t("admin.billing.proposal.invalidAmountEach"));
+      toast.error(t("admin.billing.proposal.priceMissing"));
       return;
     }
     setPending(true);
@@ -151,6 +195,10 @@ export function ProposeServicesForm({
     }
   }
 
+  // Only visits that have happened. Listing next week's appointment invites a
+  // bill for work nobody has done yet, which the server refuses anyway.
+  const billableVisits = reservations.filter((row) => isBillableVisit(row));
+
   const Wrapper = bare ? BareWrapper : CardWrapper;
 
   return (
@@ -159,7 +207,7 @@ export function ProposeServicesForm({
         <p className="text-sm font-medium text-[var(--admin-text)]">{heading}</p>
       ) : null}
       {hideDoctor ? null : (
-        <AdminSelect value={doctorId} onValueChange={(value) => setDoctorId(String(value))}>
+        <AdminSelect value={doctorId} onValueChange={(value) => changeDoctor(String(value))}>
           <AdminSelectTrigger>
             <AdminSelectValue placeholder={t("admin.billing.form.doctorPlaceholder")} />
           </AdminSelectTrigger>
@@ -173,7 +221,7 @@ export function ProposeServicesForm({
         </AdminSelect>
       )}
 
-      {reservations.length > 0 ? (
+      {billableVisits.length > 0 ? (
         <AdminSelect
           value={reservationId}
           onValueChange={(value) => setReservationId(String(value))}
@@ -183,7 +231,7 @@ export function ProposeServicesForm({
           </AdminSelectTrigger>
           <AdminSelectContent alignItemWithTrigger={false}>
             <AdminSelectItem value={NO_RESERVATION}>{t("admin.billing.form.notTiedToVisit")}</AdminSelectItem>
-            {reservations.map((reservation) => (
+            {billableVisits.map((reservation) => (
               <AdminSelectItem key={reservation.id} value={reservation.id}>
                 {reservation.service_label} — {formatAppointmentDateTime(reservation.starts_at, "en")}
               </AdminSelectItem>
@@ -203,12 +251,29 @@ export function ProposeServicesForm({
             onChange={(serviceId) => pickService(index, serviceId)}
             placeholder={t("admin.billing.proposal.servicePlaceholder")}
           />
-          <AdminInput
-            placeholder={t("admin.billing.form.amountPlaceholder")}
-            inputMode="decimal"
-            value={item.amount}
-            onChange={(e) => patchItem(index, { amount: e.target.value })}
-          />
+          {/* Read-only: the fee belongs to the service, so it is corrected
+              once in the catalogue rather than re-typed into every bill. */}
+          <div className="flex min-w-0 items-center gap-2">
+            {item.amount ? (
+              <output className="truncate text-sm font-semibold tabular-nums text-[var(--admin-text)]">
+                {formatEgp(Number(item.amount), locale)}
+              </output>
+            ) : (
+              <span className="truncate text-sm text-[var(--admin-muted)]">
+                {item.serviceId
+                  ? t("admin.billing.proposal.noPrice")
+                  : t("admin.billing.proposal.pickServiceFirst")}
+              </span>
+            )}
+            {canManagePrices && item.serviceId && !item.amount ? (
+              <Link
+                href="/admin/settings/prices"
+                className="shrink-0 text-xs font-medium text-[var(--admin-primary)] underline-offset-2 hover:underline"
+              >
+                {t("admin.billing.proposal.setPrice")}
+              </Link>
+            ) : null}
+          </div>
           <Button
             type="button"
             variant="outline"

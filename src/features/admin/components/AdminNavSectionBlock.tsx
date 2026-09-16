@@ -12,7 +12,13 @@ import {
 } from "@/features/admin/lib/adminNav";
 import { useTranslations } from "@/lib/i18n";
 import { AdminNavLink } from "./AdminNavLink";
-import { AdminNavTreeList, AdminNavTreeRow } from "./AdminNavTreeList";
+import {
+  AdminNavTreeList,
+  AdminNavTreeRow,
+  NAV_INDENT,
+  NAV_ROW_MIDPOINT,
+  NAV_TRUNK_BACK,
+} from "./AdminNavTreeList";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -48,6 +54,9 @@ function groupBadgeTotal(
   return total;
 }
 
+/** The `mt-1.5` between a group row and the subtree it opens. */
+const CHILD_GAP = 6;
+
 function NavGroup({
   group,
   depth,
@@ -74,7 +83,23 @@ function NavGroup({
 
   return (
     <>
-      <AdminNavTreeRow isLast={isLast && !isOpen} depth={depth}>
+      {/* Closing at its own turn even while open: the subtree that follows
+          hangs off this row one level in, it does not continue this level. */}
+      <AdminNavTreeRow isLast={isLast} depth={depth}>
+        {/* While the group is open its subtree hangs off this row's node dot:
+            the children's trunk starts at the dot and runs down out of the row
+            into their list, so the tree never restarts below a parent. */}
+        {isOpen ? (
+          <span
+            aria-hidden
+            className="absolute border-s border-[var(--admin-border)]"
+            style={{
+              insetInlineStart: (depth + 1) * NAV_INDENT - NAV_TRUNK_BACK,
+              top: NAV_ROW_MIDPOINT,
+              bottom: -CHILD_GAP,
+            }}
+          />
+        ) : null}
         <div className="flex w-full items-center gap-1">
           {group.href ? (
             <AdminNavLink
@@ -134,7 +159,19 @@ function NavGroup({
             transition={{ duration: 0.18, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="mt-1.5">
+            <div className="relative mt-1.5">
+              {/* This group's own level carried down the side of the subtree to
+                  the sibling below it, so expanding a group never breaks the
+                  line its level is drawn with. */}
+              {depth > 0 && !isLast ? (
+                <span
+                  aria-hidden
+                  className="absolute -top-1.5 bottom-0 border-s border-[var(--admin-border)]"
+                  style={{
+                    insetInlineStart: depth * NAV_INDENT - NAV_TRUNK_BACK,
+                  }}
+                />
+              ) : null}
               <AdminNavEntryList
                 entries={group.items}
                 depth={depth + 1}
@@ -165,7 +202,7 @@ function AdminNavEntryList({
 }) {
   const blocks: ReactNode[] = [];
   let run: AdminNavItem[] = [];
-  const flushRun = (key: string) => {
+  const flushRun = (key: string, closesLevel: boolean) => {
     if (run.length === 0) return;
     blocks.push(
       <AdminNavTreeList
@@ -173,13 +210,14 @@ function AdminNavEntryList({
         items={run}
         depth={depth}
         navBadges={navBadges}
+        closesLevel={closesLevel}
       />,
     );
     run = [];
   };
   entries.forEach((entry, index) => {
     if (isAdminNavGroup(entry)) {
-      flushRun(`run-${index}`);
+      flushRun(`run-${index}`, false);
       blocks.push(
         <NavGroup
           key={entry.id}
@@ -197,7 +235,7 @@ function AdminNavEntryList({
       run.push(entry);
     }
   });
-  flushRun("run-end");
+  flushRun("run-end", true);
   return <>{blocks}</>;
 }
 

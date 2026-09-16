@@ -44,6 +44,8 @@ export type ReservationListFilters = {
   serviceIds: string[];
   /** "all" = every doctor (and legacy doctor-less reservations). */
   doctorId: string;
+  /** When doctorId is set, also match reservations with no doctor assigned — used to scope a doctor's own dashboard without hiding unassigned bookings from everyone. */
+  includeUnassigned?: boolean;
   q: string;
   sort: ReservationSortKey;
   dir: "asc" | "desc";

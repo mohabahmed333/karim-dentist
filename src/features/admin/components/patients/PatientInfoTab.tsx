@@ -16,8 +16,17 @@ import {
 } from "@/services/reservations/patientHistory";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { PatientMedicalProfile } from "./PatientMedicalProfile";
 
-type Props = { group: PatientGroup };
+type Props = {
+  group: PatientGroup;
+  /**
+   * Inside My Day, where the patient header and the stat tiles above the tabs
+   * already carry the name, contact and last visit. Drops what would other-
+   * wise be said twice on one screen.
+   */
+  embedded?: boolean;
+};
 
 /** Up to two letters, matching the monogram My Day uses for the same patient. */
 function initials(name: string): string {
@@ -28,7 +37,7 @@ function initials(name: string): string {
   return (first + last).toUpperCase();
 }
 
-export function PatientInfoTab({ group }: Props) {
+export function PatientInfoTab({ group, embedded = false }: Props) {
   const t = useTranslations();
   const detail = buildPatientHistoryDetail(group);
   const { stats } = detail;
@@ -43,6 +52,8 @@ export function PatientInfoTab({ group }: Props) {
     chip: string;
     labelKey: Parameters<typeof t>[0];
     value: string;
+    /** Already on the My Day stat tiles directly above these. */
+    duplicatedInMyDay?: boolean;
   }[] = [
     {
       Icon: Repeat2,
@@ -65,6 +76,7 @@ export function PatientInfoTab({ group }: Props) {
       value: stats.lastVisit
         ? formatPatientVisitDate(stats.lastVisit.starts_at)
         : "—",
+      duplicatedInMyDay: true,
     },
     {
       Icon: CalendarClock,
@@ -76,8 +88,13 @@ export function PatientInfoTab({ group }: Props) {
     },
   ];
 
+  const tiles = embedded
+    ? cards.filter((card) => !card.duplicatedInMyDay)
+    : cards;
+
   return (
-    <div className="space-y-4 pt-5">
+    <div className={cn("space-y-3", embedded ? "pt-3" : "space-y-4 pt-5")}>
+      {embedded ? null : (
       <header className="flex flex-wrap items-center gap-4 rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-panel)] p-4">
         <span
           aria-hidden
@@ -107,9 +124,27 @@ export function PatientInfoTab({ group }: Props) {
           ) : null}
         </div>
       </header>
+      )}
 
+      {/* My Day already has a row of stat tiles directly above the tab bar.
+          A second row of the same component is the biggest thing pushing the
+          record down the screen, so embedded gets one line instead. */}
+      {embedded ? (
+        <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1 rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel)] px-3 py-2">
+          {tiles.map(({ labelKey, value }) => (
+            <div key={labelKey} className="flex min-w-0 items-baseline gap-1.5">
+              <dt className="shrink-0 text-xs text-[var(--admin-muted)]">
+                {t(labelKey)}
+              </dt>
+              <dd className="truncate text-sm font-semibold text-[var(--admin-text)]">
+                {value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map(({ Icon, chip, labelKey, value }) => (
+        {tiles.map(({ Icon, chip, labelKey, value }) => (
           <article
             key={labelKey}
             className="admin-card flex items-center gap-3 rounded-md border border-[var(--admin-border)] bg-[var(--admin-panel)] p-3"
@@ -133,6 +168,9 @@ export function PatientInfoTab({ group }: Props) {
           </article>
         ))}
       </div>
+      )}
+
+      <PatientMedicalProfile group={group} />
 
       {detail.services.length > 0 ? (
         <section className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-panel)] p-4">

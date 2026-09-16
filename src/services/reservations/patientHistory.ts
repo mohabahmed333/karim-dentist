@@ -59,10 +59,13 @@ export function patientKeyFromReservation(reservation: Reservation): string {
 
 /**
  * The patients a doctor is allowed to see: anyone they have a reservation with,
- * plus anyone whose reservation has no doctor assigned yet.
+ * plus — by default — anyone whose reservation has no doctor assigned yet.
  *
  * Unassigned counts because public and legacy bookings carry a null
- * `doctor_id` — excluding them would hide walk-ins from every doctor at once.
+ * `doctor_id`, and excluding them everywhere would hide walk-ins from every
+ * doctor at once. `includeUnassigned: false` narrows it to strictly the
+ * doctor's own patients, for screens that answer "who is *mine* today" rather
+ * than "who may I open".
  *
  * This is a real access boundary, not a convenience filter. Row-level security
  * cannot express it: the `doctor` role has `is_admin_role = true`, so the RBAC
@@ -72,11 +75,15 @@ export function patientKeyFromReservation(reservation: Reservation): string {
 export function patientKeysForDoctor(
   reservations: Reservation[],
   doctorId: string,
+  options: { includeUnassigned?: boolean } = {},
 ): Set<string> {
+  const { includeUnassigned = true } = options;
   const keys = new Set<string>();
   for (const reservation of reservations) {
     if (reservation.deleted_at !== null) continue;
-    if (reservation.doctor_id !== null && reservation.doctor_id !== doctorId) {
+    if (reservation.doctor_id === null) {
+      if (!includeUnassigned) continue;
+    } else if (reservation.doctor_id !== doctorId) {
       continue;
     }
     keys.add(patientKeyFromReservation(reservation));

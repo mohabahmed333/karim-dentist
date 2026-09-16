@@ -97,21 +97,17 @@ function RailTreeLine({
       className="relative -my-2 w-4 shrink-0 self-stretch text-[var(--admin-border)]"
     >
       {/* Trunk. Drawn straight through the elbow rather than into it, so the
-          curve reads as a branch and the line never breaks between rows. A root
-          panel's first row fades it in instead of butting into the panel edge;
-          an inbound row hangs it off the junction instead. */}
+          curve reads as a branch and the line never breaks between rows. An
+          inbound row hangs it off the junction the branch arrives at — and an
+          only child, having no siblings to reach, drops no trunk at all. */}
       <span
         className={cn(
           "absolute start-[3px] border-s border-current",
           inbound
-            ? // an only child has no siblings to reach, so it drops no trunk
-              last
+            ? last
               ? "hidden"
               : "top-1/2 bottom-0"
-            : cn(
-                "top-0 group-first:[mask-image:linear-gradient(to_bottom,transparent,#000_12px)]",
-                last ? "h-[calc(50%-6px)]" : "bottom-0",
-              ),
+            : cn("top-0", last ? "h-[calc(50%-6px)]" : "bottom-0"),
         )}
       />
       {inbound ? (
@@ -302,7 +298,9 @@ export function AdminIconRail({ permissions, sidebarCollapsed = true }: Props = 
 
   return (
     <TooltipProvider>
-      <aside className="sticky top-0 hidden h-screen w-11 shrink-0 flex-col items-center gap-0.5 self-start border-e border-[var(--admin-border)] bg-[var(--admin-canvas)] py-3 md:flex">
+      {/* z-45: above the floating notes panel (z-40, fixed, can sit anywhere)
+          so rail clicks never get swallowed by it; below dialogs (z-50). */}
+      <aside className="sticky top-0 z-45 hidden h-screen w-11 shrink-0 flex-col items-center gap-0.5 self-start border-e border-[var(--admin-border)] bg-[var(--admin-canvas)] py-3 md:flex">
         <div
           className="mb-2 flex size-6 items-center justify-center rounded-[5px] text-[9px] font-bold tracking-tight text-white"
           style={{ background: "var(--admin-primary)" }}

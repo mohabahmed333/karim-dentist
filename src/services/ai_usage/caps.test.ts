@@ -37,6 +37,23 @@ describe("capFor", () => {
     assert.equal(cap.requestsPerDay, null);
   });
 
+  /** OpenRouter's `:free` routes are capped by requests, not tokens. */
+  it("knows OpenRouter's published free-route request cap", () => {
+    const cap = capFor("openrouter", "meta-llama/llama-3.3-70b-instruct:free");
+    assert.equal(cap.requestsPerDay, 50);
+    assert.equal(cap.tokensPerDay, null);
+    assert.equal(cap.tokensPerMonth, null);
+  });
+
+  /**
+   * Cerebras and SambaNova publish per-minute rate limits rather than a daily
+   * ceiling, so there is no number here to show — same reasoning as Gemini.
+   */
+  it("reports no published cap for Cerebras or SambaNova", () => {
+    assert.equal(capFor("cerebras", "qwen-3-32b").requestsPerDay, null);
+    assert.equal(capFor("sambanova", "Meta-Llama-3.3-70B-Instruct").requestsPerDay, null);
+  });
+
   it("answers for every model in the default chain", () => {
     for (const entry of DEFAULT_CHAIN) {
       assert.doesNotThrow(() => capFor(entry.provider, entry.model));

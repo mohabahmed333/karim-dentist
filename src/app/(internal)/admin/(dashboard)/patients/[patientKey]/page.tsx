@@ -23,7 +23,7 @@ type Props = {
 };
 
 export default async function AdminPatientDetailPage({ params }: Props) {
-  await requirePagePermission("patients.view");
+  const session = await requirePagePermission("patients.view");
   const { patientKey: encoded } = await params;
   const patientKey = decodePatientKey(encoded);
   const supabase = await createClient();
@@ -54,6 +54,7 @@ export default async function AdminPatientDetailPage({ params }: Props) {
       doctorNameById={Object.fromEntries(
         doctors.map((d) => [d.id, d.display_name ?? ""]),
       )}
+      canOpenWorkspace={session.permissions.has("patients.chart.edit")}
     />
   );
 }

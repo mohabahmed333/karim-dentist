@@ -99,6 +99,20 @@ describe("patientKeysForDoctor", () => {
   it("grants nothing from an empty schedule", () => {
     assert.equal(patientKeysForDoctor([], ME).size, 0);
   });
+
+  it("drops unassigned patients when asked for strictly my own", () => {
+    const keys = patientKeysForDoctor(
+      [
+        docRow("1", "Mine", "+20 100 111 1111", ME),
+        docRow("2", "Theirs", "+20 100 222 2222", OTHER),
+        docRow("3", "Walk In", "+20 100 333 3333", null),
+      ],
+      ME,
+      { includeUnassigned: false },
+    );
+    assert.equal(keys.size, 1);
+    assert.ok(keys.has(patientKeyFromNamePhone("Mine", "+20 100 111 1111")));
+  });
 });
 
 describe("patient history", () => {

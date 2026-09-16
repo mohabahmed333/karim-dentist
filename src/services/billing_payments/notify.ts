@@ -21,6 +21,9 @@ import { sendWhatsappMessage, WhatsappSessionClosedError } from "@/services/what
 import { isWhatsappSessionOpen, latestInboundAt } from "@/services/whatsapp/sessionWindow";
 import { insertBillingPaymentRequest } from "./store";
 import { billingPaymentInstructions, billingReceiptOutcomeMessage } from "./receiptMessages";
+import { formatEgp } from "@/services/deposits/receiptMessages";
+import { destinationLine } from "@/services/payment_methods/destinations";
+import { listPaymentMethods } from "@/services/payment_methods/queries";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
@@ -128,11 +131,20 @@ export async function sendBillingPaymentRequest(
   });
   const openUntil = latestInboundAt(conversation?.last_inbound_at, [lastInbound?.wa_timestamp]);
 
+  // The primaries from the payment-methods list, with the old single-field
+  // settings as the fallback for a clinic that has not added any yet.
+  const methods = await listPaymentMethods(db).catch(() => []);
+  const to =
+    destinationLine(methods) ||
+    [settings.instapay_handle, settings.wallet_number]
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .join(" — ");
+
   const text = billingPaymentInstructions({
     amountEgp: input.amountEgp,
     description: input.description,
-    instapayHandle: settings.instapay_handle,
-    walletNumber: settings.wallet_number,
+    destination: to,
     language,
   });
 
@@ -168,6 +180,15 @@ export async function sendBillingPaymentRequest(
       phone: input.patientPhone,
       patient_name: input.patientName,
       service_label: `${input.description} — ${text}`.slice(0, 500),
+      // What the template's {{2}} and {{3}} are filled from. Held apart from
+      // service_label so the queued message can carry the destination too —
+      // a patient who is only told what they owe has to ask where to send it,
+      // and nothing answers that on its own.
+      payload: {
+        amount_label: formatEgp(input.amountEgp, language),
+        description: input.description,
+        destination: to,
+      },
       starts_at: null,
       source: "manual",
       scheduled_for: new Date().toISOString(),

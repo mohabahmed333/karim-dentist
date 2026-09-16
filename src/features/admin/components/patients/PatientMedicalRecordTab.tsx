@@ -5,7 +5,6 @@ import type { PatientToothNote } from "@/services/patient_tooth_notes";
 import { Odontogram } from "./Odontogram";
 import { TOOTH_CHART_HEIGHT } from "./teeth-charts/TeethChartCanvas";
 import { cn } from "@/lib/utils";
-import { ServiceToggle, type ServiceFilter } from "./ServiceToggle";
 import { ToothRecordPanel } from "./ToothRecordPanel";
 import { ToothTreatmentTimeline } from "./ToothTreatmentTimeline";
 import type { TreatmentItem } from "@/services/patient_treatments";
@@ -41,49 +40,38 @@ type Props = {
 
 export function PatientMedicalRecordTab(props: Props) {
   const [hoveredFdi, setHoveredFdi] = useState<string | null>(null);
-  const [service, setService] = useState<ServiceFilter>("medical");
 
   return (
-    <div className="space-y-5 pt-6">
-      <ServiceToggle value={service} onChange={setService} />
-
-      {service === "cosmetic" ? (
-        <p className="rounded-2xl border border-dashed border-[#e5e7eb] bg-[#f9fafb] px-4 py-8 text-center text-sm text-[#9ca3af]">
-          Cosmetic service notes are not available yet.
-        </p>
-      ) : (
-        <div className="grid items-start gap-5 lg:grid-cols-2">
-          {/* The chart stays put while the record beside it scrolls — it is the
-              thing you keep referring back to, and a fixed height stops it
-              resizing as teeth gain and lose notes. */}
-          <div className={cn("lg:sticky lg:top-4", TOOTH_CHART_HEIGHT)}>
-            <Odontogram
-              fill
-              selectedFdi={props.selectedFdi}
-              hoveredFdi={hoveredFdi}
-              commented={props.commented}
-              onSelect={props.onSelect}
-              onHover={setHoveredFdi}
-              onDeselect={props.onDeselect}
-            />
-          </div>
-          {/* Timeline first — it is what the record is for. The note
-              composer stays below it so writing a note is still possible
-              without leaving for the clinical workspace. */}
-          <div className="min-w-0 space-y-5">
-            <ToothTreatmentTimeline
-              selectedFdi={props.selectedFdi}
-              treatments={props.treatments}
-              doctorNameById={props.doctorNameById}
-            />
-            <ToothRecordPanel
-              {...props}
-              notes={props.selectedNotes}
-              onClose={props.onDeselect}
-            />
-          </div>
-        </div>
-      )}
+    <div className="grid items-start gap-5 pt-6 lg:grid-cols-2">
+      {/* The chart stays put while the record beside it scrolls — it is the
+          thing you keep referring back to, and a fixed height stops it
+          resizing as teeth gain and lose notes. */}
+      <div className={cn("lg:sticky lg:top-4", TOOTH_CHART_HEIGHT)}>
+        <Odontogram
+          fill
+          selectedFdi={props.selectedFdi}
+          hoveredFdi={hoveredFdi}
+          commented={props.commented}
+          onSelect={props.onSelect}
+          onHover={setHoveredFdi}
+          onDeselect={props.onDeselect}
+        />
+      </div>
+      {/* Timeline first — it is what the record is for. The note composer
+          stays below it so writing a note is still possible without leaving
+          for the clinical workspace. */}
+      <div className="min-w-0 space-y-5">
+        <ToothTreatmentTimeline
+          selectedFdi={props.selectedFdi}
+          treatments={props.treatments}
+          doctorNameById={props.doctorNameById}
+        />
+        <ToothRecordPanel
+          {...props}
+          notes={props.selectedNotes}
+          onClose={props.onDeselect}
+        />
+      </div>
     </div>
   );
 }

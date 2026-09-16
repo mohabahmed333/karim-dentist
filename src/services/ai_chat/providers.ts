@@ -1,7 +1,7 @@
 /**
  * The model providers we can call.
  *
- * All three speak the OpenAI chat-completions shape with a bearer token, which
+ * All six speak the OpenAI chat-completions shape with a bearer token, which
  * is the only reason one caller can walk a chain across them. Each has its own
  * key and its own free-tier quota — that independence is the point: when one
  * provider's quota is gone the next one's is untouched.
@@ -9,9 +9,11 @@
  * Every provider here has a free tier that renews on its own (daily or
  * monthly). Trial credits are deliberately not in this list: a chain link that
  * dies thirty days after someone signed up is worse than no link at all,
- * because it fails silently once the trial lapses.
+ * because it fails silently once the trial lapses. OpenRouter is the one
+ * aggregator in the list; only its `:free`-suffixed model routes belong in the
+ * chain, since its paid routes bill per token with no free tier of their own.
  */
-export type ProviderId = "gemini" | "mistral" | "groq";
+export type ProviderId = "gemini" | "mistral" | "groq" | "cerebras" | "openrouter" | "sambanova";
 
 export type Provider = {
   id: ProviderId;
@@ -41,6 +43,24 @@ export const PROVIDERS: Record<ProviderId, Provider> = {
     label: "Groq",
     envKey: "GROQ_API_KEY",
     url: "https://api.groq.com/openai/v1/chat/completions",
+  },
+  cerebras: {
+    id: "cerebras",
+    label: "Cerebras",
+    envKey: "CEREBRAS_API_KEY",
+    url: "https://api.cerebras.ai/v1/chat/completions",
+  },
+  openrouter: {
+    id: "openrouter",
+    label: "OpenRouter",
+    envKey: "OPENROUTER_API_KEY",
+    url: "https://openrouter.ai/api/v1/chat/completions",
+  },
+  sambanova: {
+    id: "sambanova",
+    label: "SambaNova",
+    envKey: "SAMBANOVA_API_KEY",
+    url: "https://api.sambanova.ai/v1/chat/completions",
   },
 };
 

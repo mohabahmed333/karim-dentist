@@ -7,6 +7,7 @@ type Props = {
   selectedFdi: string | null;
   markedFdis?: string[];
   highlightColor?: string;
+  markedColor?: string;
   focusMode?: boolean;
   flipped?: boolean;
   onSelectFdi?: (fdi: string) => void;

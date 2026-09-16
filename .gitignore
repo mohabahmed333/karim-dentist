@@ -71,3 +71,4 @@ supabase/.temp
 *.traineddata.gz
 scripts/.seed-my-day-demo.json
 scripts/.seed-billing-demo.json
+scripts/.seed-service-prices.json

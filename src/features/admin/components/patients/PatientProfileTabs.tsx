@@ -6,21 +6,28 @@ import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export type PatientProfileTab =
+  | "chart"
   | "information"
   | "history"
   | "next"
   | "medical";
 
-const tabs: { id: PatientProfileTab; labelKey: AdminMessageKey }[] = [
-  { id: "information", labelKey: "admin.patientTabs.information" },
-  { id: "history", labelKey: "admin.patientTabs.history" },
-  { id: "next", labelKey: "admin.patientTabs.next" },
-  { id: "medical", labelKey: "admin.patientTabs.medical" },
-];
+const labelByTab: Record<PatientProfileTab, AdminMessageKey> = {
+  chart: "admin.myDay.chart",
+  information: "admin.patientTabs.information",
+  history: "admin.patientTabs.history",
+  next: "admin.patientTabs.next",
+  medical: "admin.patientTabs.medical",
+};
+
+/** The record's own four. My Day prepends its chairside chart to these. */
+const RECORD_TABS = ["information", "history", "next", "medical"] as const;
 
 type Props = {
   active: PatientProfileTab;
   onChange: (tab: PatientProfileTab) => void;
+  /** Which tabs to show, in order. Defaults to the patient record's four. */
+  tabs?: readonly PatientProfileTab[];
   /**
    * Sits on the tab row's baseline. Kept inside the bar so the rule underneath
    * still runs the full width — putting it beside the bar cropped the rule to
@@ -29,7 +36,12 @@ type Props = {
   actions?: ReactNode;
 };
 
-export function PatientProfileTabs({ active, onChange, actions }: Props) {
+export function PatientProfileTabs({
+  active,
+  onChange,
+  tabs = RECORD_TABS,
+  actions,
+}: Props) {
   const t = useTranslations();
   return (
     <div className="flex items-end gap-4 border-b border-[var(--admin-border)]">
@@ -37,13 +49,13 @@ export function PatientProfileTabs({ active, onChange, actions }: Props) {
         className="-mb-px flex min-w-0 flex-1 gap-8 overflow-x-auto"
         aria-label={t("admin.patientTabs.legend")}
       >
-        {tabs.map((tab) => {
-          const selected = tab.id === active;
+        {tabs.map((id) => {
+          const selected = id === active;
           return (
             <button
-              key={tab.id}
+              key={id}
               type="button"
-              onClick={() => onChange(tab.id)}
+              onClick={() => onChange(id)}
               aria-current={selected ? "page" : undefined}
               className={cn(
                 "shrink-0 border-b-2 pb-3 text-[15px] font-medium transition-colors",
@@ -52,7 +64,7 @@ export function PatientProfileTabs({ active, onChange, actions }: Props) {
                   : "border-transparent text-[var(--admin-muted)] hover:text-[var(--admin-text)]",
               )}
             >
-              {t(tab.labelKey)}
+              {t(labelByTab[id])}
             </button>
           );
         })}

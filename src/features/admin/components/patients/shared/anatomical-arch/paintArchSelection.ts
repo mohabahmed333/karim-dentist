@@ -9,6 +9,8 @@ export { nearestArchToothFdi, tagArchToothFdi } from "./tagArchToothFdi";
 type PaintOpts = {
   focusMode: boolean;
   highlightColor: string;
+  /** Teeth with an existing record but not the current selection. Defaults to highlightColor. */
+  markedColor?: string;
   markedFdis: string[];
 };
 
@@ -49,10 +51,17 @@ export function paintArchSelection(
     const isMarked = fdi != null && marked.has(fdi);
     const isSelected = opts.focusMode && fdi === selectedFdi;
 
-    if (isSelected || isMarked) {
+    if (isSelected) {
       // Soft tint toward crown white — no emissive glow.
       const tint = new THREE.Color(opts.highlightColor);
-      tint.lerp(CROWN_TARGET, isSelected ? 0.55 : 0.72);
+      tint.lerp(CROWN_TARGET, 0.45);
+      setArchTarget(mat, tint);
+    } else if (isMarked) {
+      // A distinct hue from the selection color, so "has a record" and
+      // "currently selected" read as different colors, not just different
+      // intensities of the same one.
+      const tint = new THREE.Color(opts.markedColor ?? opts.highlightColor);
+      tint.lerp(CROWN_TARGET, 0.6);
       setArchTarget(mat, tint);
     } else {
       setArchTarget(mat, CROWN_TARGET);

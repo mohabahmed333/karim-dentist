@@ -11,13 +11,25 @@ describe("providers", () => {
     );
     assert.equal(PROVIDERS.mistral.url, "https://api.mistral.ai/v1/chat/completions");
     assert.equal(PROVIDERS.groq.url, "https://api.groq.com/openai/v1/chat/completions");
+    assert.equal(PROVIDERS.cerebras.url, "https://api.cerebras.ai/v1/chat/completions");
+    assert.equal(PROVIDERS.openrouter.url, "https://openrouter.ai/api/v1/chat/completions");
+    assert.equal(PROVIDERS.sambanova.url, "https://api.sambanova.ai/v1/chat/completions");
   });
 
   it("reads each provider's key from its own env var", () => {
-    const env = { GEMINI_API_KEY: "g", MISTRAL_API_KEY: "m" };
+    const env = {
+      GEMINI_API_KEY: "g",
+      MISTRAL_API_KEY: "m",
+      CEREBRAS_API_KEY: "c",
+      OPENROUTER_API_KEY: "o",
+      SAMBANOVA_API_KEY: "s",
+    };
     assert.equal(providerApiKey("gemini", env), "g");
     assert.equal(providerApiKey("mistral", env), "m");
     assert.equal(providerApiKey("groq", env), "");
+    assert.equal(providerApiKey("cerebras", env), "c");
+    assert.equal(providerApiKey("openrouter", env), "o");
+    assert.equal(providerApiKey("sambanova", env), "s");
   });
 
   /** A key pasted with a trailing newline is the classic Vercel mistake. */

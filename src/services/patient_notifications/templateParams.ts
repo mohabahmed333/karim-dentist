@@ -95,6 +95,38 @@ export function buildReminderTemplate(input: ReminderInput): TemplateSendInput {
   };
 }
 
+export type BillingPaymentRequestInput = {
+  patientName: string;
+  /** Already formatted for the patient's language, e.g. "EGP 1,200". */
+  amountLabel: string;
+  description: string;
+  /** InstaPay handle and/or wallet number, joined for display. */
+  destination: string;
+  language: BodyLanguage;
+};
+
+/**
+ * "Hi {{1}}, your bill is {{2}}. Transfer to: {{3}}. Send us a photo of the
+ * receipt here and we'll confirm we received it."
+ *
+ * {{3}} is the whole point: a bill the patient cannot act on without asking
+ * where to send the money is a round trip the clinic has to answer by hand.
+ */
+export function buildBillingPaymentRequestTemplate(
+  input: BillingPaymentRequestInput,
+): TemplateSendInput {
+  const tpl = templateFor("billing_payment_request", input.language);
+  return {
+    name: tpl.name,
+    language: tpl.language,
+    body: body(
+      sanitizeTemplateParam(input.patientName),
+      sanitizeTemplateParam(`${input.amountLabel} (${input.description})`),
+      sanitizeTemplateParam(input.destination),
+    ),
+  };
+}
+
 /**
  * The template for one outbox row, or null when this clinic has none approved.
  *
@@ -108,12 +140,34 @@ export function buildReminderTemplate(input: ReminderInput): TemplateSendInput {
 export function buildTemplateForKind(
   kind: string,
   input: ConfirmationInput,
+  /** Row payload, for kinds whose text is not derivable from a reservation. */
+  payload?: Record<string, unknown> | null,
 ): TemplateSendInput | null {
   switch (kind) {
     case "confirmation":
       return buildConfirmationTemplate(input);
     case "reminder_24h":
       return buildReminderTemplate(input);
+    case "billing_payment_request": {
+      const amountLabel = String(payload?.amount_label ?? "").trim();
+      const destination = String(payload?.destination ?? "").trim();
+      // Without both, the message would tell the patient to transfer to
+      // nothing. Better to stay queued and visible in the outbox.
+      if (!amountLabel || !destination) return null;
+      try {
+        return buildBillingPaymentRequestTemplate({
+          patientName: input.patientName,
+          amountLabel,
+          description: String(payload?.description ?? "").trim() || "-",
+          destination,
+          language: input.language,
+        });
+      } catch {
+        // No approved template for this kind yet; the dispatcher records
+        // `no_approved_template` and stays quiet, as for every other kind.
+        return null;
+      }
+    }
     default:
       return null;
   }

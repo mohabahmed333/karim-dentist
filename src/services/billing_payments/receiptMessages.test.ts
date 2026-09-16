@@ -8,8 +8,7 @@ describe("billingPaymentInstructions", () => {
     const text = billingPaymentInstructions({
       amountEgp: 1500,
       description: "Root canal",
-      instapayHandle: "clinic@instapay",
-      walletNumber: "01005551234",
+      destination: "clinic@instapay — 01005551234",
       language: "en",
     });
     assert.match(text, /EGP 1,500/);
@@ -18,24 +17,33 @@ describe("billingPaymentInstructions", () => {
     assert.match(text, /01005551234/);
   });
 
-  it("omits an unset destination", () => {
+  it("omits the transfer line when nothing is configured", () => {
     const text = billingPaymentInstructions({
       amountEgp: 500,
       description: "Filling",
-      instapayHandle: "",
-      walletNumber: "01005551234",
+      destination: "01005551234",
       language: "en",
     });
     assert.doesNotMatch(text, /Transfer to: —/);
     assert.match(text, /01005551234/);
   });
 
+  it("drops the transfer line entirely with no destination", () => {
+    const text = billingPaymentInstructions({
+      amountEgp: 500,
+      description: "Filling",
+      destination: "",
+      language: "en",
+    });
+    assert.doesNotMatch(text, /Transfer to/);
+    assert.match(text, /EGP 500/);
+  });
+
   it("renders in Arabic", () => {
     const text = billingPaymentInstructions({
       amountEgp: 1500,
       description: "حشو",
-      instapayHandle: "clinic@instapay",
-      walletNumber: "",
+      destination: "clinic@instapay",
       language: "ar",
     });
     assert.match(text, /جنيه/);

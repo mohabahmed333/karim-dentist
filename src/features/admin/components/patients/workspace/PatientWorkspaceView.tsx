@@ -96,6 +96,14 @@ export function PatientWorkspaceView(props: Props) {
     forcedToothFdi,
   );
 
+  const markedFdis = [
+    ...new Set(
+      w.treatmentsChart.items
+        .map((item) => item.toothFdi)
+        .filter((fdi): fdi is string => Boolean(fdi)),
+    ),
+  ];
+
   function applyAiDraft(
     draft: TreatmentAiDraft,
     existingTreatmentId?: string | null,
@@ -158,6 +166,7 @@ export function PatientWorkspaceView(props: Props) {
               w.selectTooth(fdi);
               void w.surfaces.paint(fdi, surface, w.session.paintTool);
             }}
+            markedFdis={markedFdis}
           />
         </div>
         <div className="flex min-h-0 flex-col border-t border-[#e5e7eb] lg:border-t-0">

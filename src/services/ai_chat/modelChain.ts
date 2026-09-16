@@ -7,28 +7,49 @@ type Env = Record<string, string | undefined>;
 /**
  * The models we try, in order, until one answers.
  *
- * Groq sits at the bottom on purpose. Its free tier is capped per model per
- * day, and running that cap out is what used to take every AI feature down;
- * the stronger providers now absorb the traffic first and Groq is the last
- * resort. Every model here handles Arabic — patients write Egyptian Arabic on
- * WhatsApp — and mistral-saba is in the list specifically for it.
+ * Patients write Egyptian Arabic on WhatsApp, so within each tier below the
+ * order is the strongest-in-Arabic model first. Groq still sits below every
+ * other provider regardless of how good its Arabic is: its free tier is
+ * capped per model per day, and running that cap out is what used to take
+ * every AI feature down, so the generous-cap providers absorb traffic first
+ * and Groq stays the last resort.
  *
- * Consecutive entries deliberately alternate providers where they can, so a
- * provider-wide outage moves us on rather than down a list of its siblings.
+ * Tier 1 (generous/no known hard cap), ranked by Arabic quality:
+ *   1. mistral-saba — Mistral's own model, built specifically for Arabic.
+ *   2. Qwen (Cerebras) — heavy Arabic training investment, strong open model.
+ *   3-4. Gemini 3.8 / 3.6 flash — Google's broad multilingual strength.
+ *   5. mistral-large — strong multilingual flagship, not Arabic-specialized.
+ *   6. Llama 3.3 70B, mirrored across Cerebras/SambaNova/OpenRouter — decent
+ *      but not Arabic-specialized; three hosts for outage redundancy.
+ *   7. DeepSeek, mirrored across SambaNova/OpenRouter — trained overwhelmingly
+ *      on English/Chinese data, the weakest Arabic performer of this tier.
+ * Tier 2 (Groq, capped), ranked by Arabic quality among themselves:
+ *   8. Qwen — Groq's strongest Arabic model, so it leads this tier.
+ *   9-10. gpt-oss 120b / 20b, largest first.
+ *
+ * This ranking is a reasoned estimate from each model family's known design
+ * and training emphasis, not a formal Arabic benchmark — AI_MODEL_CHAIN below
+ * exists to correct it without a code change if real usage says otherwise.
  *
  * Only providers whose free tier renews by itself are here. Anything running
  * on trial credits would quietly stop answering once they ran out.
  */
 export const DEFAULT_CHAIN: ChainEntry[] = [
+  { provider: "mistral", model: "mistral-saba-latest" },
+  { provider: "cerebras", model: "qwen-3-32b" },
   { provider: "gemini", model: "gemini-3.8-flash" },
-  { provider: "mistral", model: "mistral-large-latest" },
   // gemini-2.5-flash was retired by Google (a live 404, "no longer available
   // to new users") — 3.6 is a genuinely different model from the 3.8 entry
   // above, so this slot still buys real redundancy rather than repeating it.
   { provider: "gemini", model: "gemini-3.6-flash" },
-  { provider: "mistral", model: "mistral-saba-latest" },
-  { provider: "groq", model: "openai/gpt-oss-120b" },
+  { provider: "mistral", model: "mistral-large-latest" },
+  { provider: "cerebras", model: "llama-3.3-70b" },
+  { provider: "sambanova", model: "Meta-Llama-3.3-70B-Instruct" },
+  { provider: "openrouter", model: "meta-llama/llama-3.3-70b-instruct:free" },
+  { provider: "sambanova", model: "DeepSeek-V3-0324" },
+  { provider: "openrouter", model: "deepseek/deepseek-chat-v3-0324:free" },
   { provider: "groq", model: "qwen/qwen3.8-27b" },
+  { provider: "groq", model: "openai/gpt-oss-120b" },
   { provider: "groq", model: "openai/gpt-oss-20b" },
 ];
 

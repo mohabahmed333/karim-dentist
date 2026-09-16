@@ -131,6 +131,7 @@ export function BillPatientDialog({
               services={options.services}
               doctors={options.doctors}
               serviceDoctorMappings={options.serviceDoctorMappings}
+              canManagePrices={options.canManagePrices}
               reservations={reservations}
               initialDoctorId={initialDoctorId}
               initialItems={initialItems}

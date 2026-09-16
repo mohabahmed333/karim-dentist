@@ -9,6 +9,10 @@ import {
   normalizeHexColor,
 } from "@/services/site_settings/dashboardTheme";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import {
+  loadAdminNotificationCounts,
+  visibleNotificationGroups,
+} from "@/services/admin_notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +81,17 @@ export default async function AdminLayout({
   const supabase = await createClient();
   const session = await resolveSessionPermissions(supabase);
 
+  // The bell's contents, resolved once per navigation next to the nav badges.
+  // Filtered here rather than in the client so a count nobody may act on never
+  // reaches the browser.
+  const notificationCounts = await loadAdminNotificationCounts(supabase).catch(
+    () => ({}),
+  );
+  const notifications = visibleNotificationGroups(
+    notificationCounts,
+    session.permissions,
+  );
+
   return (
     <NuqsAdapter>
       <AdminShell
@@ -86,6 +101,7 @@ export default async function AdminLayout({
         canvasColor={chrome.canvasColor}
         contentColor={chrome.contentColor}
         permissions={[...session.permissions]}
+        notifications={notifications}
       >
         {children}
       </AdminShell>

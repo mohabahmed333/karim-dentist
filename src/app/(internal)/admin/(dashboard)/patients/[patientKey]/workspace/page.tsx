@@ -24,7 +24,10 @@ type Props = {
 };
 
 export default async function PatientWorkspacePage({ params }: Props) {
-  const session = await requirePagePermission("patients.view");
+  // The workspace *is* the dental chart, so it takes the chart permission
+  // rather than the directory one. Front desk can look a patient up; opening
+  // their chart is clinical work.
+  const session = await requirePagePermission("patients.chart.edit");
   const { patientKey: encoded } = await params;
   const patientKey = decodePatientKey(encoded);
   const supabase = await createClient();

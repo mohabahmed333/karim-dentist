@@ -26,6 +26,21 @@ export type AdminLiveEvent =
       table: "treatment_proposals";
       eventType: string;
       row: { id: string; status: string } | null;
+    }
+  | {
+      table: "inventory_alerts";
+      eventType: string;
+      row: { id: string; item_id: string } | null;
+    }
+  | {
+      table: "reservations";
+      eventType: string;
+      row: { id: string; status: string; patient_name: string } | null;
+    }
+  | {
+      table: "billing_payment_requests";
+      eventType: string;
+      row: { id: string; status: string; patient_name: string } | null;
     };
 
 /** @deprecated Use {@link AdminLiveEvent}; kept for the inbox's imports. */
@@ -100,6 +115,39 @@ async function startChannel() {
             id: string;
             status: string;
           } | null,
+        });
+      },
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "inventory_alerts" },
+      (payload) => {
+        emit({
+          table: "inventory_alerts",
+          eventType: payload.eventType,
+          row: (payload.new ?? null) as { id: string; item_id: string } | null,
+        });
+      },
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "reservations" },
+      (payload) => {
+        emit({
+          table: "reservations",
+          eventType: payload.eventType,
+          row: (payload.new ?? null) as { id: string; status: string; patient_name: string } | null,
+        });
+      },
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "billing_payment_requests" },
+      (payload) => {
+        emit({
+          table: "billing_payment_requests",
+          eventType: payload.eventType,
+          row: (payload.new ?? null) as { id: string; status: string; patient_name: string } | null,
         });
       },
     )

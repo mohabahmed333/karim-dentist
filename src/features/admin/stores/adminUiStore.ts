@@ -66,6 +66,9 @@ type AdminUiState = LegacyAdminUiState & {
    *  on the same page restores them instead of collapsing back to just
    *  whatever the current page auto-opens. */
   openGroupIds: string[];
+  /** Hrefs of sidebar pages the user starred — pinned into a "Starred"
+   *  section at the top of the sidebar as a quick-access shortcut. */
+  starredHrefs: string[];
   /** The floating team-notes panel's last position/size/collapsed state —
    *  a per-browser UI preference, separate from the notes' shared DB content. */
   notesPanelPosition: { x: number; y: number };
@@ -75,6 +78,7 @@ type AdminUiState = LegacyAdminUiState & {
   toggleSidebar: () => void;
   setWaThemePreference: (id: WaThemePreference) => void;
   setOpenGroupIds: (ids: string[]) => void;
+  toggleStarred: (href: string) => void;
   setNotesPanelPosition: (pos: { x: number; y: number }) => void;
   setNotesPanelSize: (size: { width: number; height: number }) => void;
   setNotesPanelMinimized: (minimized: boolean) => void;
@@ -96,6 +100,7 @@ export const useAdminUiStore = create<AdminUiState>()(
       waThemePreference: "light",
       hasHydrated: false,
       openGroupIds: [],
+      starredHrefs: [],
       notesPanelPosition: { x: 24, y: 96 },
       notesPanelSize: { width: 280, height: 360 },
       notesPanelMinimized: false,
@@ -103,6 +108,12 @@ export const useAdminUiStore = create<AdminUiState>()(
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       setWaThemePreference: (id) => set({ waThemePreference: id }),
       setOpenGroupIds: (ids) => set({ openGroupIds: ids }),
+      toggleStarred: (href) =>
+        set((state) => ({
+          starredHrefs: state.starredHrefs.includes(href)
+            ? state.starredHrefs.filter((h) => h !== href)
+            : [...state.starredHrefs, href],
+        })),
       setNotesPanelPosition: (pos) => set({ notesPanelPosition: pos }),
       setNotesPanelSize: (size) => set({ notesPanelSize: size }),
       setNotesPanelMinimized: (minimized) => set({ notesPanelMinimized: minimized }),
@@ -116,6 +127,7 @@ export const useAdminUiStore = create<AdminUiState>()(
         sidebarCollapsed: state.sidebarCollapsed,
         waThemePreference: state.waThemePreference,
         openGroupIds: state.openGroupIds,
+        starredHrefs: state.starredHrefs,
         notesPanelPosition: state.notesPanelPosition,
         notesPanelSize: state.notesPanelSize,
         notesPanelMinimized: state.notesPanelMinimized,

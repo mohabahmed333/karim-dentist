@@ -33,6 +33,7 @@ import {
 } from "@/features/admin/lib/adminShellEvents";
 import type { AdminDemoInbox } from "@/features/admin/lib/adminDemoInbox";
 import type { AdminChatLayout } from "@/features/admin/hooks/useAdminChatLayout";
+import type { AdminNotificationGroup } from "@/services/admin_notifications/groups";
 
 const SIDEBAR_WIDTH = 220;
 
@@ -48,6 +49,8 @@ type ThemeDetail = {
 type Props = {
   children: ReactNode;
   navBadges?: Record<string, number>;
+  /** What the topbar bell lists, already filtered to this user. */
+  notifications?: AdminNotificationGroup[];
   primaryColor?: string;
   secondaryColor?: string;
   canvasColor?: string;
@@ -94,6 +97,7 @@ function clearRootThemeVars() {
 export function AdminShell({
   children,
   navBadges = {},
+  notifications = [],
   primaryColor = DEFAULT_DASHBOARD_PRIMARY,
   secondaryColor = DEFAULT_DASHBOARD_SECONDARY,
   canvasColor = DEFAULT_DASHBOARD_CANVAS,
@@ -291,6 +295,8 @@ export function AdminShell({
       {/* Shell-level, so a bill announces itself wherever the front desk is. */}
       <AdminBillingAlerts
         canCollect={(permissions ?? []).includes("patients.billing.edit")}
+        canSeeBookings={(permissions ?? []).includes("reservations.view")}
+        canSeeInventory={(permissions ?? []).includes("inventory.view")}
       />
       <AdminIconRail permissions={permissions} sidebarCollapsed={sidebarCollapsed} />
       <AnimatePresence initial={false}>
@@ -315,6 +321,7 @@ export function AdminShell({
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[10px] border border-[var(--admin-border)] bg-[var(--admin-panel)]">
           <AdminTopbar
             navBadges={navBadges}
+            notifications={notifications}
             sidebarCollapsed={sidebarCollapsed}
             onToggleSidebar={isCustomize ? undefined : toggle}
             darkMode={darkMode}

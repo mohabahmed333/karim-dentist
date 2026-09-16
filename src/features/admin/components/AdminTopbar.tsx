@@ -8,10 +8,13 @@ import { adminPageLabelKeys } from "@/features/admin/lib/adminNav";
 import { AdminNewMenu } from "./AdminNewMenu";
 import { CommandPalette } from "./CommandPalette";
 import { DashboardLayoutTopbarControls } from "@/features/admin/components/dashboardWidgets/DashboardLayoutTopbarControls";
-import { AdminBillingBell } from "./AdminBillingBell";
+import { AdminNotificationBell } from "./AdminNotificationBell";
+import type { AdminNotificationGroup } from "@/services/admin_notifications/groups";
 
 type Props = {
   navBadges?: Record<string, number>;
+  /** Already permission-filtered by the layout. */
+  notifications?: AdminNotificationGroup[];
   sidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
   darkMode?: boolean;
@@ -21,6 +24,7 @@ type Props = {
 
 export function AdminTopbar({
   navBadges = {},
+  notifications = [],
   sidebarCollapsed = false,
   onToggleSidebar,
   darkMode = false,
@@ -68,8 +72,8 @@ export function AdminTopbar({
           <CommandPalette permissions={permissions} />
         </div>
         <div className="ms-auto flex items-center gap-2">
-          {canCollect ? (
-            <AdminBillingBell count={navBadges["/admin/billing"] ?? 0} />
+          {notifications.length > 0 || canCollect ? (
+            <AdminNotificationBell groups={notifications} />
           ) : null}
           {onToggleDarkMode ? (
             <button

@@ -189,6 +189,7 @@ describe("adminNavSections (new IA)", () => {
         "/admin/settings/patient-notifications",
         "/admin/settings/templates",
         "/admin/settings/deposits",
+        "/admin/settings/payment-methods",
         "/admin/settings/theme",
         "/admin/settings/site",
         "/admin/settings/accounts",
